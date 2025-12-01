@@ -1,0 +1,63 @@
+.range-container {
+  --bs-track-height: #{$form-range-track-height}; // 0.25rem
+  --bs-thumb-size: #{$form-range-thumb-width}; // 1rem (matches Bootstrap default)
+
+  .slider-container {
+    height: var(--bs-thumb-size);
+    display: flex;
+    align-items: center;
+  }
+
+  .track {
+    flex: 1;
+    height: var(--bs-track-height);
+    background-color: $body-secondary-bg; // Light gray unfilled track
+    border-radius: var(--bs-track-height);
+    position: relative;
+    cursor: pointer;
+  }
+
+  .filled {
+    height: 100%;
+    background-color: $primary; // Primary blue filled track
+    border-radius: var(--bs-track-height);
+    top: 0;
+    left: 0;
+    transition: all 0.1s ease;
+  }
+
+  .filled.no-transition {
+    transition: none;
+  }
+
+  .thumb {
+    width: var(--bs-thumb-size);
+    height: var(--bs-thumb-size);
+    background-color: $primary;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    cursor: grab;
+    user-select: none;
+    z-index: 2;
+    will-change: transform;
+
+    &:active {
+      cursor: grabbing;
+    }
+  }
+
+  .min-thumb {
+    z-index: 3;
+  }
+
+  .max-thumb {
+    z-index: 2;
+  }
+
+  /* Ensure number inputs look consistent */
+  .min-input, .max-input {
+    width: 100px;
+  }
+}

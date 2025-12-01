@@ -1,0 +1,86 @@
+//@mixin btn-transparent-dark() {
+//  --bs-btn-box-shadow: 0;
+//  --bs-btn-active-shadow: 0;
+//  --bs-btn-focus-shadow: 0;
+//  @include button-variant(
+//                  rgba(0, 0, 0, 0),
+//                  rgba(0, 0, 0, 0),
+//                  #000,
+//                  rgba(0, 0, 0, 0.1),
+//                  rgba(0, 0, 0, 0),
+//                  #000,
+//                  rgba(0, 0, 0, 0.2),
+//                  rgba(0, 0, 0, 0),
+//                  #000
+//  );
+//}
+//
+//@include color-mode(dark) {
+//  .btn-transparent {
+//    @include btn-transparent-dark();
+//  }
+//}
+//
+//.btn-light-outline {
+//  --bs-btn-box-shadow: 0;
+//  --bs-btn-active-shadow: 0;
+//  --bs-btn-focus-shadow: 0;
+//  @include button-variant(
+//                  rgba(255, 255, 255, 0.0),
+//                  rgba(255, 255, 255, 0.3),
+//                  #fff,
+//                  rgba(255, 255, 255, 0.05),
+//                  rgba(255, 255, 255, 0.4),
+//                  #fff
+//  );
+//}
+//
+//.btn-default {
+//  @include button-variant(
+//          $background: $light,
+//          $border: $border-color-translucent,
+//          $hover-background: shade-color($light, $btn-hover-bg-shade-amount),
+//          $hover-border: shade-color($light, $btn-hover-border-shade-amount),
+//          $active-background: shade-color($light, $btn-active-bg-shade-amount),
+//          $active-border: shade-color($light, $btn-active-border-shade-amount)
+//  );
+//}
+//
+//@include color-mode(dark) {
+//  .btn-default {
+//    @include button-variant(
+//            $background: tint-color($dark, 10%),
+//            $border: $border-color-translucent-dark,
+//            $hover-background: tint-color($dark, $btn-hover-bg-tint-amount),
+//            $hover-border: tint-color($border-color-translucent-dark, $btn-hover-border-tint-amount),
+//            $active-background: tint-color($dark, $btn-active-bg-tint-amount),
+//            $active-border: tint-color($border-color-translucent-dark, $btn-active-border-tint-amount)
+//    );
+//
+//    --bs-btn-active-shadow: inset 0 -3px 5px rgba(255, 255, 255, .125);
+//    --bs-btn-box-shadow: #{inset 0 1px 0 rgba($black, .15), 0 1px 1px rgba($black, .075)};
+//  }
+//}
+
+@include color-mode(dark) {
+  .btn-grab {
+    --bs-btn-bg: #{rgba($white, 0.05)};
+    --bs-btn-color: rgba(var(--bs-body-color-rgb), 0.75);
+  }
+}
+
+.btn-py {
+  display: inline-block;
+  padding: $btn-padding-y 0;
+  @include font-size(var(--#{$prefix}btn-font-size));
+  line-height: $btn-line-height;
+  vertical-align: middle;
+}
+
+.btn-sm-py {
+  display: inline-block;
+  padding: $btn-padding-y-sm 0;
+  @include font-size(var(--#{$prefix}btn-font-size));
+  line-height: $btn-line-height;
+  vertical-align: middle;
+}
