@@ -1,8 +1,10 @@
+import BitMaskIslandEdges from './components/Step/BitMaskIslandEdges.vue'
+import GrowBitMaskIslandEdges from './components/Step/GrowBitMaskIslandEdges.vue'
 import HeightMapGlow from './components/Step/HeightMapGlow.vue'
 import HeightMapNoise from './components/Step/HeightMapNoise.vue'
 import HeightMapToNormalMap from './components/Step/HeightMapToNormalMap.vue'
 import Mask from './components/Step/Mask.vue'
-import NormalLighting from './components/Step/NormalLighting.vue'
+import NormalMapToImageLighting from './components/Step/NormalMapToImageLighting.vue'
 import type { StepDefinition } from './lib/pipeline/StepRegistry.ts'
 import { BaseDataStructure } from './lib/step-data-types/BaseDataStructure.ts'
 import { BitMask } from './lib/step-data-types/BitMask.ts'
@@ -34,13 +36,24 @@ export const STEP_DEFINITIONS: StepDefinition[] = [
   {
     def: 'normal_map_to_lighting',
     displayName: 'Normal Map -> Texture Lighting',
-    component: NormalLighting,
+    component: NormalMapToImageLighting,
+  },
+  {
+    def: 'bitmask_island_edges',
+    displayName: 'BitMask Island Edges',
+    component: BitMaskIslandEdges,
+  },
+  {
+    def: 'bitmask_grow_island_edges',
+    displayName: 'BitMask Grow Edges',
+    component: GrowBitMaskIslandEdges,
   },
 ]
+
 export interface DataStructureConstructor<
-T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
+  T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
 > {
-  new (width: number, height: number, ...args: any[]): T
+  new(width: number, height: number, ...args: any[]): T
 }
 
 export const STEP_DATA_TYPES: DataStructureConstructor[] = [

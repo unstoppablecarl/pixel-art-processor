@@ -1,4 +1,6 @@
 <script lang="ts">
+import { watch } from 'vue'
+
 export type StepImage = {
   imageData: ImageData | null,
   label?: string,
@@ -8,14 +10,17 @@ export type StepImage = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { AnyStepContext, Step } from '../lib/pipeline/Step.ts'
 import { imageDataToUrlImage } from '../lib/util/ImageData.ts'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 
 const store = useScaleStore()
 const {
   image,
+  step,
 } = defineProps<{
   image: StepImage,
+  step: Step<AnyStepContext>
 }>()
 
 const width = computed(() => {
@@ -33,6 +38,10 @@ const encoded = computed(() => {
     return '/placeholder.png'
   }
   return imageDataToUrlImage(image.imageData)
+})
+
+watch(encoded, () => {
+  console.warn('IMAGE UPDATE', step.id)
 })
 
 </script>

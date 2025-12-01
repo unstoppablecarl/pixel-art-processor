@@ -93,6 +93,7 @@ const validationErrors = computed(() => {
         <StepImg
           v-for="image in stepImages"
           :key="image.label"
+          :step="step"
           :image="image"
         />
       </div>
