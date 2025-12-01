@@ -1,6 +1,6 @@
 
 import { ADJACENT_DIRECTIONS, type Point } from '../step-data-types/BaseDataStructure.ts'
-import { Island } from '../data/Island.ts'
+import { Island } from '../step-data-types/BitMask/Island.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { getRandomFloatRange, prng, randomArrayValue } from '../util/prng.ts'
 

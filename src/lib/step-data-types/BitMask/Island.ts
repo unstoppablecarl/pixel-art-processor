@@ -1,5 +1,5 @@
-import { BitMask } from '../step-data-types/BitMask.ts'
-import { PointSet } from './PointSet.ts'
+import { BitMask } from '../BitMask.ts'
+import { PointSet } from '../../data/PointSet.ts'
 
 export enum IslandType {
   HORIZONTAL_EDGE = 'HORIZONTAL',

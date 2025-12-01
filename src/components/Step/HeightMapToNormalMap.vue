@@ -23,7 +23,7 @@ const step = useStepHandler(stepId, {
     const normalMap = heightMap.toNormalMap(config.normalMapStrength)
     return {
       output: normalMap,
-      preview: normalMap,
+      preview: normalMap.toImageData(),
     }
   },
 })

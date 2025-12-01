@@ -8,6 +8,7 @@ import { BaseDataStructure } from './lib/step-data-types/BaseDataStructure.ts'
 import { BitMask } from './lib/step-data-types/BitMask.ts'
 import { HeightMap } from './lib/step-data-types/HeightMap.ts'
 import { NormalMap } from './lib/step-data-types/NormalMap.ts'
+import { PixelMap } from './lib/step-data-types/PixelMap.ts'
 
 export const STEP_DEFINITIONS: StepDefinition[] = [
   {
@@ -36,22 +37,23 @@ export const STEP_DEFINITIONS: StepDefinition[] = [
     component: NormalLighting,
   },
 ]
+export interface DataStructureConstructor<
+T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
+> {
+  new (width: number, height: number, ...args: any[]): T
+}
 
-export const STEP_DATA_TYPES: ValidStepDataTypeConstructors[] = [
-  BitMask as typeof BaseDataStructure,
-  NormalMap as typeof ImageData,
-  HeightMap as typeof BaseDataStructure,
-  ImageData,
+export const STEP_DATA_TYPES: DataStructureConstructor[] = [
+  BitMask as DataStructureConstructor,
+  NormalMap as DataStructureConstructor,
+  HeightMap as DataStructureConstructor,
+  PixelMap as DataStructureConstructor,
 ]
-
-export type ValidStepDataTypeConstructors = typeof BaseDataStructure | typeof ImageData
-
-export type StepDataTypeInstance = InstanceType<StepDataType>;
 
 export type StepDataType =
   | typeof BitMask
   | typeof NormalMap
   | typeof HeightMap
-  | typeof ImageData;
+  | typeof PixelMap
 
-export type GetStepDataTypeInstances<I extends readonly StepDataType[]> = InstanceType<I[number]>
+export type StepDataTypeInstance = BitMask | NormalMap | HeightMap | PixelMap

@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, shallowReactive } from 'vue'
-import { applyLighting } from '../../lib/ImageData/normal-map.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
+import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
@@ -12,7 +12,7 @@ const { stepId } = defineProps<{ stepId: string }>()
 
 const step = useStepHandler(stepId, {
   inputDataTypes: [NormalMap],
-  outputDataType: ImageData,
+  outputDataType: PixelMap,
   config() {
     return shallowReactive({
       lightX: 0.5,
@@ -25,9 +25,8 @@ const step = useStepHandler(stepId, {
     if (!inputData) return
     if (!config.textureImageData) return
 
-    const result = applyLighting(
+    const result = inputData.applyLighting(
       config.textureImageData,
-      inputData,
       config.lightX,
       config.lightY,
       config.lightZ,
@@ -35,7 +34,7 @@ const step = useStepHandler(stepId, {
 
     return {
       output: result,
-      preview: result,
+      preview: result.toImageData(),
     }
   },
   serializeConfig(config) {
@@ -70,7 +69,7 @@ const images = computed(() => [
   },
   {
     label: 'Output',
-    imageData: step.outputData,
+    imageData: step.outputPreview,
     placeholderWidth: config.textureImageData?.width,
     placeholderHeight: config.textureImageData?.height,
   },

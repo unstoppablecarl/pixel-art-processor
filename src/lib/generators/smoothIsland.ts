@@ -1,5 +1,5 @@
 import { type Bit, BitMask } from '../step-data-types/BitMask.ts'
-import type { Island } from '../data/Island.ts'
+import type { Island } from '../step-data-types/BitMask/Island.ts'
 
 export function growIsland(island: Island, radius: number = 1): void {
   // Collect current island points for fast lookup

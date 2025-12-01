@@ -2,7 +2,7 @@ import PoissonDiskSampling from 'poisson-disk-sampling'
 import type { Point } from '../step-data-types/BaseDataStructure.ts'
 import { prng } from '../util/prng.ts'
 import type { BitMask } from '../step-data-types/BitMask.ts'
-import { Island } from './Island.ts'
+import { Island } from '../step-data-types/BitMask/Island.ts'
 
 export class PointSet extends Map<string, Point> {
   add(x: number, y: number) {

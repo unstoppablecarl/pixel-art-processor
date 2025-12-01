@@ -1,4 +1,4 @@
-import { type ValidStepDataTypeConstructors } from '../../steps.ts'
+import { type DataStructureConstructor } from '../../steps.ts'
 
 type ClassConstructor = new (...args: any[]) => any;
 
@@ -7,11 +7,11 @@ export class StepDataTypeRegistry {
     [ImageData, 'Image Data (Native)'],
   ])
 
-  constructor(types: ValidStepDataTypeConstructors[] = []) {
+  constructor(types: DataStructureConstructor[] = []) {
     this.register(types)
   }
 
-  register(type: ValidStepDataTypeConstructors | ValidStepDataTypeConstructors[]) {
+  register(type: DataStructureConstructor | DataStructureConstructor[]) {
     if (!Array.isArray(type)) {
       type = [type]
     }

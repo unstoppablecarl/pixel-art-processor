@@ -27,17 +27,41 @@ export const ADJACENT_DIRECTIONS: [number, number][] = [
   [1, -1],
 ] as const
 
-export abstract class BaseDataStructure<T = any, D extends Uint8Array | Uint16Array | Uint32Array | Uint8ClampedArray = Uint8ClampedArray> {
-  readonly bounds: Bounds
+export type ArrayTypeConstructors = typeof Uint8Array<ArrayBufferLike> |
+  typeof Uint16Array<ArrayBufferLike> |
+  typeof Uint32Array<ArrayBufferLike> |
+  typeof Uint8ClampedArray<ArrayBufferLike>
 
-  protected constructor(
+export type ArrayTypeInstance = InstanceType<ArrayTypeConstructors>;
+
+export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>> {
+  readonly bounds: Bounds
+  cacheBust: number
+
+  readonly data: D
+
+  readonly abstract dataConstructor: new (length: number) => D
+
+  // Hook for subclasses with complex storage (like BitMask)
+  // set to false if direct array access does not work
+  protected readonly canUseDirectAccess: boolean = true
+
+  constructor(
     readonly width: number,
     readonly height: number,
-    readonly data: D,
+    data?: D,
   ) {
     this.bounds = new Bounds(0, width, 0, height)
+    this.data = data ?? this.initData(width, height)
     this.data.fill(0)
+    this.cacheBust = Date.now()
   }
+
+  protected initData(width: number, height: number): D {
+    return new this.dataConstructor(this.calcDataLength(width, height))
+  }
+
+  protected abstract calcDataLength(width: number, height: number): number
 
   // Lazy-computed cached offsets for adjacent cell access
   private _adjacentOffsets?: number[]
@@ -66,7 +90,7 @@ export abstract class BaseDataStructure<T = any, D extends Uint8Array | Uint16Ar
     return x >= 0 && x < this.width && y >= 0 && y < this.height
   }
 
-  toImageData(valueToColor: (value: T) => RGBA): ImageData {
+  generateImageData(valueToColor: (value: T) => RGBA): ImageData {
     const result = new ImageData(this.width, this.height)
     this.each((x, y, v) => {
       setImageDataPixelColor(result, x, y, valueToColor(v))
@@ -80,9 +104,16 @@ export abstract class BaseDataStructure<T = any, D extends Uint8Array | Uint16Ar
 
   abstract copy(): this;
 
-  // Hook for subclasses with complex storage (like BitMask)
-  // Override this to return false if direct array access won't work
-  protected readonly canUseDirectAccess: boolean = true
+  abstract toImageData(...args: any): ImageData;
+
+  toUrlImage(): string {
+    const canvas = document.createElement('canvas')
+    canvas.width = this.width
+    canvas.height = this.height
+    const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+    ctx.putImageData(this.toImageData(), 0, 0)
+    return canvas.toDataURL()
+  }
 
   // Fast path for direct array access - subclasses can override for packed storage
   protected getRaw(idx: number): T {
@@ -507,5 +538,25 @@ export abstract class BaseDataStructure<T = any, D extends Uint8Array | Uint16Ar
 
   clear(): void {
     this.data.fill(0)
+  }
+
+  /**
+   * For performance, mutations can directly modify `data`.
+   * Call `invalidate()` after batch operations to trigger reactivity.
+   *
+   * @example
+   * // Batch update
+   * for (let i = 0; i < pixelMap.data.length; i++) {
+   *   pixelMap.data[i] = 0
+   * }
+   * pixelMap.invalidate() // Notify Vue
+   */
+  invalidate(): void {
+    this.cacheBust = Date.now()
+  }
+
+  mutate(cb: () => void) {
+    cb()
+    this.cacheBust = Date.now()
   }
 }

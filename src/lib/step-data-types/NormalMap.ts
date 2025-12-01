@@ -1,5 +1,7 @@
-import type { HeightMap } from './HeightMap.ts'
 import { copyImageData } from '../util/ImageData.ts'
+import { BaseDataStructure } from './BaseDataStructure.ts'
+import { type HeightMap } from './HeightMap.ts'
+import { PixelMap } from './PixelMap.ts'
 
 export type Normal = {
   x: number,
@@ -7,11 +9,17 @@ export type Normal = {
   z: number
 }
 
-export class NormalMap extends ImageData {
-  readonly __brand = 'NormalMap';
+export class NormalMap extends BaseDataStructure<Normal> {
+  readonly __brand = 'NormalMap'
   static displayName = 'NormalMap'
 
-  getNormal(x: number, y: number): Normal {
+  dataConstructor = Uint8ClampedArray
+
+  protected calcDataLength(width: number, height: number): number {
+    return width * height * 4
+  }
+
+  get(x: number, y: number): Normal {
     const index = (y * this.width + x) * 4
     return {
       x: (this.data[index]! / 255) * 2 - 1,
@@ -21,7 +29,7 @@ export class NormalMap extends ImageData {
   }
 
   // Encode normal to pixel
-  setNormal(x: number, y: number, normal: Normal): void {
+  set(x: number, y: number, normal: Normal): void {
     const index = (y * this.width + x) * 4
     this.data[index] = ((normal.x + 1) * 0.5 * 255) | 0
     this.data[index + 1] = ((normal.y + 1) * 0.5 * 255) | 0
@@ -61,7 +69,7 @@ export class NormalMap extends ImageData {
         normalData[idx + 3] = 255
       }
     }
-    return new NormalMap(normalData, width, height)
+    return new NormalMap(width, height, normalData)
   }
 
   applyLighting(
@@ -92,12 +100,22 @@ export class NormalMap extends ImageData {
       const B = baseData[i + 2]! * brightness
       const A = baseData[i + 3]!
 
-      data[i] =  R
+      data[i] = R
       data[i + 1] = G
       data[i + 2] = B
       data[i + 3] = A
     }
 
-    return imgData
+    return new PixelMap(this.width, this.height, imgData.data)
+  }
+
+  copy(): this {
+    const dataCopy = new Uint8ClampedArray(this.data)
+    return new NormalMap(this.width, this.height, dataCopy) as this
+  }
+
+  toImageData(): ImageData {
+    const dataCopy = new Uint8ClampedArray(this.data)
+    return new ImageData(dataCopy, this.width, this.height)
   }
 }

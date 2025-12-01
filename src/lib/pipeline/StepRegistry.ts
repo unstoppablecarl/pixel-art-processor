@@ -1,5 +1,5 @@
 import { type App, type Component, inject, type InjectionKey } from 'vue'
-import type { ValidStepDataTypeConstructors } from '../../steps.ts'
+import type { DataStructureConstructor } from '../../steps.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 
 export type StepDefinition = {
@@ -11,7 +11,7 @@ export type StepDefinition = {
 export type StepDefinitions = Record<string, StepDefinition>
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
 
-export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDataTypes: ValidStepDataTypeConstructors[] = []) {
+export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
   const STEP_DEFINITIONS: StepDefinitions = {}
   const dataTypeRegistry: StepDataTypeRegistry = new StepDataTypeRegistry(stepDataTypes)
 

@@ -2,7 +2,6 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { shallowReactive, type ShallowReactive } from 'vue'
-import { heightMapToNormalMap } from '../src/lib/ImageData/normal-map.ts'
 import type { AnyStepContext, Step, StepRef } from '../src/lib/pipeline/Step'
 import type { StepRunnerRaw } from '../src/lib/pipeline/StepHandler'
 import { makeStepRegistry, STEP_REGISTRY_INJECT_KEY } from '../src/lib/pipeline/StepRegistry'
@@ -125,10 +124,9 @@ describe('basic type testing', async () => {
         run({ config, inputData }) {
           if (!inputData) return
 
-          const result = heightMapToNormalMap(inputData.toImageData(), config.normalMapStrength)
           return {
-            output: result as NormalMap,
-            preview: result,
+            output: inputData.toNormalMap(config.normalMapStrength),
+            preview: inputData.toImageData(),
           }
         },
       })
