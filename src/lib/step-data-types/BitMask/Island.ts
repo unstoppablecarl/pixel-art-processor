@@ -7,6 +7,8 @@ export enum IslandType {
   NORMAL = 'NORMAL'
 }
 
+const EDGE_INSET_RATIO = 0.2
+
 export class Island {
   frontier: Set<string> = new Set() // "x,y"
   pixels: Set<string> = new Set() // all filled pixels in island
@@ -20,6 +22,7 @@ export class Island {
     public maxY: number,
     readonly type: IslandType = IslandType.NORMAL,
   ) {
+    if (minX > maxX || minY > maxY) throw new Error('Invalid bounds')
     this.initializeFrontier()
   }
 
@@ -73,43 +76,25 @@ export class Island {
 
   getExpandableBounds() {
     let minX = this.minX - 1
-    if (minX < 0) {
-      minX = 0
-    }
+    minX = Math.max(minX, 0)
 
     let maxX = this.maxX + 1
-    if (maxX > this.mask.width) {
-      maxX = this.mask.width
-    }
+    maxX = Math.min(maxX, this.mask.width)
 
     let minY = this.minY - 1
-    if (minY < 0) {
-      minY = 0
-    }
+    minY = Math.max(minY, 0)
 
     let maxY = this.maxY + 1
-    if (maxY > this.mask.height) {
-      maxY = this.mask.height
-    }
+    maxY = Math.min(maxY, this.mask.height)
 
     if (this.type === IslandType.HORIZONTAL_EDGE) {
-      minX = this.minX
-      maxX = this.maxX
+      minX = this.minX + Math.floor(this.height * EDGE_INSET_RATIO)
+      maxX = this.maxX - Math.floor(this.height * EDGE_INSET_RATIO)
     }
 
     if (this.type === IslandType.VERTICAL_EDGE) {
-      minY = this.minY
-      maxY = this.maxY
-    }
-
-    if (this.type === IslandType.HORIZONTAL_EDGE) {
-      minX = this.minX + Math.floor(this.height * 0.2)
-      maxX = this.maxX - Math.floor(this.height * 0.2)
-    }
-
-    if (this.type === IslandType.VERTICAL_EDGE) {
-      minY = this.minY + Math.floor(this.width * 0.2)
-      maxY = this.maxY - Math.floor(this.width * 0.2)
+      minY = this.minY + Math.floor(this.width * EDGE_INSET_RATIO)
+      maxY = this.maxY - Math.floor(this.width * EDGE_INSET_RATIO)
     }
 
     return this.mask.bounds.trim(
