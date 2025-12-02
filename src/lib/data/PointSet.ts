@@ -1,8 +1,7 @@
 import PoissonDiskSampling from 'poisson-disk-sampling'
 import type { Point } from '../step-data-types/BaseDataStructure.ts'
-import { prng } from '../util/prng.ts'
 import type { BitMask } from '../step-data-types/BitMask.ts'
-import { Island } from '../step-data-types/BitMask/Island.ts'
+import { prng } from '../util/prng.ts'
 
 export class PointSet extends Map<string, Point> {
   add(x: number, y: number) {
@@ -54,18 +53,16 @@ export function addRandomInnerPoints(
   p.fill()
 
   const points: Point[] = []
-  const islands: Island[] = []
 
   p.getAllPoints()
     .forEach(([x, y]) => {
       x = Math.floor(x)
       y = Math.floor(y)
       if (!edgePoints.contains(x, y)) {
-        islands.push(new Island(mask, x, x, y + 1, y + 1))
         points.push({ x, y })
         mask.set(x, y, 1)
       }
     })
 
-  return { islands, points }
+  return points
 }
