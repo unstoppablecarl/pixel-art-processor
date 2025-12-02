@@ -108,6 +108,10 @@ export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray, stri
     return new PixelMap(this.width, this.height, imgData.data)
   }
 
+  static fromImageData(imageData: ImageData) {
+    return new PixelMap(imageData.width, imageData.height, imageData.data)
+  }
+
   toImageData(): ImageData {
     const dataCopy = new Uint8ClampedArray(this.data)
     return new ImageData(dataCopy, this.width, this.height)

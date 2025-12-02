@@ -35,8 +35,7 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, Seriali
   }
 
   static fromImageData(imageData: ImageData) {
-    const dataCopy = new Uint8ClampedArray(imageData.data)
-    return new PixelMap(imageData.width, imageData.height, dataCopy)
+    return new PixelMap(imageData.width, imageData.height, imageData.data)
   }
 
   protected serializeValue(value: RGBA): SerializedRGBA {

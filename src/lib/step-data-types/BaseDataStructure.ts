@@ -47,12 +47,16 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   constructor(
     readonly width: number,
     readonly height: number,
-    data?: D,
+    sourceData?: D,
   ) {
     if (width <= 0 || height <= 0) throw new Error(`Invalid dimensions: ${width}, ${height}`)
     this.bounds = new Bounds(0, width, 0, height)
-    this.data = data ?? this.initData(width, height)
-    this.data.fill(0)
+    this.data = this.initData(width, height)
+    if (sourceData) {
+      this.data.set(sourceData)
+    } else {
+      this.data.fill(0)
+    }
     this.cacheBust = Date.now()
   }
 
