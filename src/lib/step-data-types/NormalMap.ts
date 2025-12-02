@@ -9,11 +9,10 @@ export type Normal = {
   z: number
 }
 
-export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray> {
+export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray, string> {
   readonly __brand = 'NormalMap'
   static displayName = 'NormalMap'
-
-  dataConstructor = Uint8ClampedArray
+  canUseDirectAccess = false
 
   protected initData(width: number, height: number): Uint8ClampedArray {
     return new Uint8ClampedArray(width * height * 4)
@@ -117,5 +116,9 @@ export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray> {
   toImageData(): ImageData {
     const dataCopy = new Uint8ClampedArray(this.data)
     return new ImageData(dataCopy, this.width, this.height)
+  }
+
+  protected serializeValue({ x, y, z }: Normal): string {
+    return `${x},${y},${z}`
   }
 }

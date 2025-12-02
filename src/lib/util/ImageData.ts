@@ -1,4 +1,9 @@
 export type RGBA = { r: number, g: number, b: number, a: number }
+export type SerializedRGBA = string
+
+export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
+  return `${r},${g},${b},${a}`
+}
 
 export function imageToCanvas(img: HTMLImageElement): {
   canvas: HTMLCanvasElement;

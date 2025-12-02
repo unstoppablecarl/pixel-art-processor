@@ -2,6 +2,7 @@ import type { BoundsLike } from '../data/Bounds.ts'
 import { eachImageDataPixel, type RGBA, updateImageData } from '../util/ImageData.ts'
 import { BaseDataStructure, CARDINAL_DIRECTIONS, type Point } from './BaseDataStructure.ts'
 import { Island } from './BitMask/Island.ts'
+import { PixelMap } from './PixelMap.ts'
 
 export type Bit = 0 | 1
 
@@ -104,19 +105,6 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     return result
   }
 
-  draw(canvas: HTMLCanvasElement, color: string): void {
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return
-    ctx.fillStyle = color
-    for (let y = 0; y < this.height; y++) {
-      for (let x = 0; x < this.width; x++) {
-        if (this.get(x, y) === 1) {
-          ctx.fillRect(x, y, 1, 1)
-        }
-      }
-    }
-  }
-
   static fromImageData(imageData: ImageData) {
     const result = new BitMask(imageData.width, imageData.height)
     eachImageDataPixel(imageData, (x, y, color) => {
@@ -146,6 +134,14 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
       type = IslandType.VERTICAL_EDGE
     }
     return type
+  }
+
+  getInnerIslands() {
+    return this.getIslands().filter(i => i.type === IslandType.NORMAL)
+  }
+
+  getEdgeIslands() {
+    return this.getIslands().filter(i => i.type !== IslandType.NORMAL)
   }
 
   getIslands(): Island[] {

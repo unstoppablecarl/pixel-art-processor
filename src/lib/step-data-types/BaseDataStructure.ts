@@ -34,7 +34,7 @@ export type ArrayTypeConstructors = typeof Uint8Array<ArrayBufferLike> |
 
 export type ArrayTypeInstance = InstanceType<ArrayTypeConstructors>;
 
-export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>> {
+export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>, SerializedT = T> {
   readonly bounds: Bounds
   cacheBust: number
 
@@ -162,7 +162,35 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return result
   }
 
-  filter(cb: (x: number, y: number, value: T) => boolean): Point[] {
+  find(cb: PointValueFilter<T>): undefined | PointValue<T> {
+    const width = this.width
+    const height = this.height
+
+    if (this.canUseDirectAccess) {
+      for (let y = 0; y < height; y++) {
+        let idx = y * width
+        for (let x = 0; x < width; x++, idx++) {
+          const value = this.getRaw(idx)
+          if (cb(x, y, value)) {
+            return { x, y, value }
+          }
+        }
+      }
+    } else {
+      for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+          const value = this.get(x, y)
+          if (cb(x, y, value)) {
+            return { x, y, value }
+          }
+        }
+      }
+    }
+
+    return
+  }
+
+  filter(cb: PointValueFilter<T>): Point[] {
     const width = this.width
     const height = this.height
     const result: Point[] = []
@@ -553,5 +581,29 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   mutate(cb: () => void) {
     cb()
     this.cacheBust = Date.now()
+  }
+
+  isOneSolidColor(): boolean {
+    let prev: any = undefined
+
+    return !!this.find((_x, _y, v) => {
+      if (prev === undefined) {
+        prev = v
+      }
+      return v !== prev
+    })
+  }
+
+  getUniqueValues() {
+    const result = new Set()
+    this.each((_x, _y, v) => {
+      result.add(this.serializeValue(v))
+    })
+
+    return [...result.values()]
+  }
+
+  protected serializeValue(value: T): SerializedT {
+    return value as unknown as SerializedT
   }
 }

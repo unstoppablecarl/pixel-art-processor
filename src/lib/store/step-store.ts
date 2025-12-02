@@ -23,7 +23,7 @@ import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { copyImageDataOrNull } from '../util/ImageData.ts'
 import { prng } from '../util/prng.ts'
-import { logStepEvent } from '../util/logStepEvent.ts'
+import { logStepEvent } from '../util/misc.ts'
 
 export type StepStore = ReturnType<typeof useStepStore>
 

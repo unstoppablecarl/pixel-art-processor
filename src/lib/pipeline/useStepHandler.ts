@@ -3,7 +3,7 @@ import { toValue, watch } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { StepValidationError } from '../errors.ts'
 import { useStepStore } from '../store/step-store.ts'
-import { logStepWatch } from '../util/logStepEvent.ts'
+import { logStepWatch } from '../util/misc.ts'
 import type {
   AnyStepContext,
   ReactiveConfigType,

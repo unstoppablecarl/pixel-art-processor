@@ -1,11 +1,10 @@
-import type { RGBA } from '../util/ImageData.ts'
+import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
-export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray> {
+export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, SerializedRGBA> {
   readonly __brand = 'PixelMap'
   static displayName = 'PixelMap'
-
-  dataConstructor = Uint8ClampedArray
+  canUseDirectAccess = false
 
   protected initData(width: number, height: number): Uint8ClampedArray {
     return new Uint8ClampedArray(width * height * 4)
@@ -43,5 +42,10 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray> {
   static fromImageData(imageData: ImageData) {
     const dataCopy = new Uint8ClampedArray(imageData.data)
     return new PixelMap(imageData.width, imageData.height, dataCopy)
+  }
+
+  protected serializeValue(value: RGBA): SerializedRGBA {
+    console.log(value)
+    return serializeRGBA(value)
   }
 }
