@@ -1,6 +1,4 @@
 <script lang="ts">
-import { watch } from 'vue'
-
 export type StepImage = {
   imageData: ImageData | null,
   label?: string,
@@ -40,9 +38,9 @@ const encoded = computed(() => {
   return imageDataToUrlImage(image.imageData)
 })
 
-watch(encoded, () => {
-  console.warn('IMAGE UPDATE', step.id)
-})
+// watch(encoded, () => {
+//   console.warn('IMAGE UPDATE', step.id)
+// })
 
 </script>
 <template>
