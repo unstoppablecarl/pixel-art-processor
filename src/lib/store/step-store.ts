@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { type Component, type Reactive, reactive, ref, type Ref } from 'vue'
+import { type Component, type Reactive, reactive, ref, type Ref, watch } from 'vue'
 import { GenericValidationError, StepValidationError } from '../errors.ts'
 import {
   type AnyStepContext,
@@ -22,23 +22,27 @@ import {
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { copyImageDataOrNull } from '../util/ImageData.ts'
+import { prng } from '../util/prng.ts'
 
 export type StepStore = ReturnType<typeof useStepStore>
 
 type SerializedStepData = {
   idIncrement: number,
   stepIdOrder: string[],
-  stepsById: Record<string, SerializedStep>
+  stepsById: Record<string, SerializedStep>,
+  seed: number,
 }
 export const useStepStore = defineStore('steps', () => {
 
     const stepRegistry = useStepRegistry()
+    const seed = ref(3)
 
     const idIncrement = ref(0)
     const stepIdOrder = ref<string[]>([]) as Ref<string[]>
     const stepsById = reactive({}) as Reactive<Record<string, StepRef>>
 
     function $reset() {
+      seed.value = 3
       idIncrement.value = 0
       stepIdOrder.value = []
       Object.assign(stepsById, {})
@@ -49,6 +53,7 @@ export const useStepStore = defineStore('steps', () => {
         idIncrement: idIncrement.value,
         stepIdOrder: stepIdOrder.value,
         stepsById: serializeSteps(stepsById),
+        seed: seed.value,
       }
     }
 
@@ -56,6 +61,7 @@ export const useStepStore = defineStore('steps', () => {
     function $restoreState(data: SerializedStepData) {
       idIncrement.value = data.idIncrement ?? 0
       stepIdOrder.value = data.stepIdOrder
+      seed.value = data.seed
 
       Object.values(data.stepsById)
         .forEach((stepData: DeSerializedStep) => {
@@ -63,6 +69,11 @@ export const useStepStore = defineStore('steps', () => {
           stepsById[step.id] = step
         })
     }
+
+    watch(seed, () => {
+      prng.setSeed(seed.value)
+      invalidateAll()
+    })
 
     function add(def: string): StepRef {
       stepRegistry.validateDef(def)
@@ -199,6 +210,15 @@ export const useStepStore = defineStore('steps', () => {
       _invalidateFromStep(minStepId)
     }
 
+    function invalidateAll() {
+      if (!stepIdOrder.value.length) {
+        return
+      }
+
+      const firstStepId = stepIdOrder.value[0]
+      _invalidateFromStep(firstStepId)
+    }
+
     function _invalidateFromStep(stepId: string) {
       syncImageDataFromPrev(stepId)
       syncImageDataToNext(stepId)
@@ -272,6 +292,8 @@ export const useStepStore = defineStore('steps', () => {
         inputData = inputData.copy()
       }
 
+      prng.reset()
+
       const result = run({ config: step.config, inputData })
 
       let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(result)
@@ -336,6 +358,7 @@ export const useStepStore = defineStore('steps', () => {
       idIncrement,
       stepIdOrder,
       stepsById,
+      seed,
 
       $reset,
       $serializeState,

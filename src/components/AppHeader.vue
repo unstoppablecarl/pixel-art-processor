@@ -2,9 +2,11 @@
 import { computed, nextTick, ref, watch } from 'vue'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { useScaleStore } from '../lib/store/scale-store.ts'
+import { useStepStore } from '../lib/store/step-store.ts'
 
 const emit = defineEmits(['addStep'])
 const store = useScaleStore()
+const stepStore = useStepStore()
 const steps = computed(() => useStepRegistry().toArray())
 
 const selected = ref('none')
@@ -27,8 +29,13 @@ watch(selected, async () => {
       <input type="range" id="scale" min="1" max="10" step="1" v-model.number="store.scale"
              class="form-range pt-3 d-inline-block w-auto" />
     </div>
-    <div class="float-end">
+    <div class="float-end px-3 w-auto p-0">
 
+      <label class="form-label me-2" for="seed">Seed</label>
+      <input type="number" id="seed" step="1" v-model.number="stepStore.seed"
+             class="form-control d-inline-block" style="width: 60px" />
+    </div>
+    <div class="float-end">
       <select class="form-select me-2" aria-label="Default select example" v-model="selected">
         <option v-for="step in steps" :value="step.def" :key="step.def">{{ step.displayName }}</option>
         <option value="none">Add Step</option>

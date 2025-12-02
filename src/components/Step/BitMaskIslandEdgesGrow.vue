@@ -18,16 +18,6 @@ const step = useStepHandler(stepId, {
 
       edgePerlin: 1,
       edgeSmooth: 1,
-
-      clusterGrowthIterations: 0,
-      clusterRadius: 0,
-      weightedRandomIterations: 0,
-      perlinIterations: 0,
-      directionalGrowthIterations: 0,
-
-      marchingGrowthIterations: 0,
-      marchingGrowthPixelsPerIteration: 1,
-      smooth: 2,
     })
   },
   run({ config, inputData }) {
@@ -37,7 +27,6 @@ const step = useStepHandler(stepId, {
     const islands = mask.getIslands()
     const C = config
 
-    // const innerIslands = islands.filter(i => i.type === IslandType.NORMAL)
     const edgeIslands = islands.filter(i => i.type !== IslandType.NORMAL)
 
     const edgeGrower = new BlobGrower(mask, edgeIslands, prng, config.minDistance)
@@ -74,17 +63,12 @@ const config = step.config
       </div>
       <div>
         <label class="form-label">Edge Perlin: {{ config.edgePerlin }}</label>
-        <input type="range" min="1" max="20" step="1" v-model.number="config.edgePerlin"
+        <input type="range" min="1" max="100" step="1" v-model.number="config.edgePerlin"
                class="form-range" />
       </div>
       <div>
-        <label class="form-label">Cluster Growth Iter: {{ config.clusterGrowthIterations }}</label>
-        <input type="range" min="1" max="20" step="1" v-model.number="config.clusterGrowthIterations"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Cluster Radius: {{ config.clusterRadius }}</label>
-        <input type="range" min="1" max="20" step="1" v-model.number="config.clusterRadius"
+        <label class="form-label">Edge Smooth: {{ config.edgeSmooth }}</label>
+        <input type="range" min="1" max="100" step="1" v-model.number="config.edgeSmooth"
                class="form-range" />
       </div>
     </template>

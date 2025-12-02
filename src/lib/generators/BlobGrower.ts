@@ -1,14 +1,14 @@
-
 import { ADJACENT_DIRECTIONS, type Point } from '../step-data-types/BaseDataStructure.ts'
-import { Island } from '../step-data-types/BitMask/Island.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
-import { getRandomFloatRange, prng, randomArrayValue } from '../util/prng.ts'
+import { Island } from '../step-data-types/BitMask/Island.ts'
+import { type Prng } from '../util/prng.ts'
 
 export class BlobGrower {
 
   constructor(
     private mask: BitMask,
     private islands: Island[],
+    private prng: Prng,
     private minDistance: number = 4,
     private doneIslands = new WeakSet<Island>(),
   ) {
@@ -33,7 +33,7 @@ export class BlobGrower {
       // Sort by weight descending, then randomly select from top candidates
       weighted.sort((a, b) => b.weight - a.weight)
       const topCandidates = weighted.slice(0, Math.max(1, Math.ceil(expandable.length * 0.3)))
-      const selected = topCandidates[Math.floor(prng() * topCandidates.length)]!
+      const selected = topCandidates[Math.floor(this.prng() * topCandidates.length)]!
 
       if (this.isValidExpansion(selected.point, island)) {
         const { x, y } = selected.point
@@ -57,7 +57,7 @@ export class BlobGrower {
       // Prioritize expansion around blob edges with good weight distribution
       const sorted = expandable
         .map(p => ({ p, dist: this.distanceToIslandEdge(p, island) }))
-        .sort(() => prng() - 0.5)
+        .sort(() => this.prng() - 0.5)
 
       for (const { p } of sorted) {
         if (grown >= pixelsPerIteration) break
@@ -80,7 +80,7 @@ export class BlobGrower {
     const islandDirections = new Map<Island, [number, number]>()
 
     for (const island of islands) {
-      islandDirections.set(island, randomArrayValue(ADJACENT_DIRECTIONS))
+      islandDirections.set(island, this.prng.randomArrayValue(ADJACENT_DIRECTIONS))
     }
 
     this.iterateIslands(iterations, (island) => {
@@ -184,7 +184,7 @@ export class BlobGrower {
     const skipChance = new WeakMap<Island, number>()
 
     for (const island of this.islands) {
-      skipChance.set(island, getRandomFloatRange(0.2, 1))
+      skipChance.set(island, this.prng.randomFloatRange(0.2, 1))
     }
 
     for (let iter = 0; iter < iterations; iter++) {
@@ -197,7 +197,7 @@ export class BlobGrower {
 
           continue
         }
-        if (prng() < skipChance.get(island)!)
+        if (this.prng() < skipChance.get(island)!)
           cb(island)
       }
     }
