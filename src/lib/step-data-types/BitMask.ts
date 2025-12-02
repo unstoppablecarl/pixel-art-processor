@@ -47,13 +47,6 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     }
   }
 
-  copy(): this {
-    const clone = new BitMask(this.width, this.height) as this
-    // efficient copy (works for Uint8Array or Uint8ClampedArray)
-    clone.data.set(this.data)
-    return clone
-  }
-
   protected getRaw(idx: number): Bit {
     const byteIndex = idx >> 3
     const mask = 1 << (idx & 7)
@@ -68,6 +61,26 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     } else {
       this.data[byteIndex]! &= ~mask
     }
+  }
+
+  toPixelMap(valueToColor?: ((value: Bit) => RGBA)): PixelMap;
+  toPixelMap(color1?: RGBA, color0?: RGBA): PixelMap;
+
+  toPixelMap(
+    valueToColor: ((value: Bit) => RGBA) | RGBA = {
+      r: 255,
+      g: 255,
+      b: 255,
+      a: 255,
+    },
+    colorB: RGBA = {
+      r: 0,
+      g: 0,
+      b: 0,
+      a: 0,
+    },
+  ): PixelMap {
+    return PixelMap.fromImageData(this.toImageData(...arguments as any))
   }
 
   toImageData(valueToColor?: ((value: Bit) => RGBA)): ImageData;

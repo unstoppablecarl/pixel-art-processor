@@ -10,11 +10,6 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, Seriali
     return new Uint8ClampedArray(width * height * 4)
   }
 
-  copy(): this {
-    const dataCopy = new Uint8ClampedArray(this.data)
-    return new PixelMap(this.width, this.height, dataCopy) as this
-  }
-
   get(x: number, y: number): RGBA {
     const index = (y * this.width + x) * 4
 

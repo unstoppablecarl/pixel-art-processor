@@ -49,6 +49,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     readonly height: number,
     data?: D,
   ) {
+    if (width <= 0 || height <= 0) throw new Error(`Invalid dimensions: ${width}, ${height}`)
     this.bounds = new Bounds(0, width, 0, height)
     this.data = data ?? this.initData(width, height)
     this.data.fill(0)
@@ -96,7 +97,17 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   abstract set(x: number, y: number, value: T): void;
 
-  abstract copy(): this;
+  copy(): this {
+    const constructor = this.constructor as new (width: number, height: number, data?: D) => this
+    const copyInstance = new constructor(
+      this.width,
+      this.height,
+    )
+
+    copyInstance.data.set(this.data)
+    copyInstance.cacheBust = this.cacheBust
+    return copyInstance
+  }
 
   abstract toImageData(...args: any): ImageData;
 
@@ -107,6 +118,13 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
     ctx.putImageData(this.toImageData(), 0, 0)
     return canvas.toDataURL()
+  }
+
+  toUrlImageAsync(): Promise<string> {
+    const offscreen = new OffscreenCanvas(this.width, this.height)
+    const ctx = offscreen.getContext('2d') as OffscreenCanvasRenderingContext2D
+    ctx.putImageData(this.toImageData(), 0, 0)
+    return offscreen.convertToBlob().then(blob => URL.createObjectURL(blob))
   }
 
   // Fast path for direct array access - subclasses can override for packed storage
@@ -549,6 +567,12 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return Array.from(this.iterateCircle(x, y, radius))
   }
 
+  setCircle(cx: number, cy: number, radius: number, value: T): void {
+    for (const { x, y } of this.iterateCircle(cx, cy, radius)) {
+      this.set(x, y, value)
+    }
+  }
+
   getCircleBounds(x: number, y: number, radius: number) {
     const minX = Math.max(0, Math.floor(x - radius))
     const maxX = Math.min(this.width - 1, Math.ceil(x + radius))
@@ -583,13 +607,10 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     this.cacheBust = Date.now()
   }
 
-  isOneSolidColor(): boolean {
-    let prev: any = undefined
+  isOneSolidValue(): boolean {
+    let prev: any = this.get(0, 0)
 
-    return !!this.find((_x, _y, v) => {
-      if (prev === undefined) {
-        prev = v
-      }
+    return !this.find((_x, _y, v) => {
       return v !== prev
     })
   }

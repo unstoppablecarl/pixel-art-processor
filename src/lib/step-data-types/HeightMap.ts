@@ -18,13 +18,6 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
     this.data[y * this.width + x] = value
   }
 
-  copy(): this {
-    const clone = new HeightMap(this.width, this.height) as this
-    // efficient copy (works for Uint8Array or Uint8ClampedArray)
-    clone.data.set(this.data)
-    return clone
-  }
-
   static fromImageData(imageData: ImageData, toGrayscaleValue: (color: RGBA) => number = standardLuminanceFormula): HeightMap {
     const heightmap = new HeightMap(imageData.width, imageData.height)
     const pixels = imageData.data
