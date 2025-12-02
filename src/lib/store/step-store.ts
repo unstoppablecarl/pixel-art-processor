@@ -23,6 +23,7 @@ import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { copyImageDataOrNull } from '../util/ImageData.ts'
 import { prng } from '../util/prng.ts'
+import { logStepEvent } from '../util/logStepEvent.ts'
 
 export type StepStore = ReturnType<typeof useStepStore>
 
@@ -141,7 +142,8 @@ export const useStepStore = defineStore('steps', () => {
     function _syncImageData<T extends AnyStepContext>(stepId: string, nextStepId: string) {
       const currentStep = get<T>(stepId)
       const nextStep = getNext<AnyStepContext>(stepId)
-      console.log(`[${stepId}] _syncImageData`, stepId, '->', nextStepId)
+      logStepEvent(stepId, '_syncImageData', stepId, '->', nextStepId)
+
       if (nextStep === null) {
         return
       }
@@ -229,8 +231,7 @@ export const useStepStore = defineStore('steps', () => {
       outputData: ImageData | null,
       validationErrors: StepValidationError[] = [],
     ) {
-      console.log(`[${stepId}] updateStep`, { outputData, validationErrors })
-
+      logStepEvent(stepId, 'updateStep', { outputData, validationErrors })
       const currentStep = get(stepId)
 
       currentStep.outputData = copyImageDataOrNull(outputData)
@@ -298,8 +299,7 @@ export const useStepStore = defineStore('steps', () => {
 
       let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(result)
 
-      console.log(`[${stepId}] updateStep`, { outputData, preview, validationErrors })
-
+      logStepEvent(stepId, 'updateStep', { outputData, preview, validationErrors })
       step.outputData = copyStepDataOrNull(outputData)
       step.outputPreview = preview
       step.validationErrors = [
