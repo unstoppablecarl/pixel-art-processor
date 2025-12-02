@@ -36,7 +36,7 @@ watch(selected, async () => {
              class="form-control d-inline-block" style="width: 60px" />
     </div>
     <div class="float-end">
-      <select class="form-select me-2" aria-label="Default select example" v-model="selected">
+      <select class="form-select me-2" aria-label="" v-model="selected">
         <option v-for="step in steps" :value="step.def" :key="step.def">{{ step.displayName }}</option>
         <option value="none">Add Step</option>
       </select>
