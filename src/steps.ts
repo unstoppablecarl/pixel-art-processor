@@ -1,5 +1,5 @@
 import BitMaskIslandEdges from './components/Step/BitMaskIslandEdges.vue'
-import GrowBitMaskIslandEdges from './components/Step/GrowBitMaskIslandEdges.vue'
+import BitMaskIslandEdgesGrow from './components/Step/BitMaskIslandEdgesGrow.vue'
 import HeightMapGlow from './components/Step/HeightMapGlow.vue'
 import HeightMapNoise from './components/Step/HeightMapNoise.vue'
 import HeightMapToNormalMap from './components/Step/HeightMapToNormalMap.vue'
@@ -46,7 +46,7 @@ export const STEP_DEFINITIONS: StepDefinition[] = [
   {
     def: 'bitmask_grow_island_edges',
     displayName: 'BitMask Grow Edges',
-    component: GrowBitMaskIslandEdges,
+    component: BitMaskIslandEdgesGrow,
   },
 ]
 

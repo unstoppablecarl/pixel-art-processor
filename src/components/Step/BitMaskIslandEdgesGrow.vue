@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
-import { addRandomInnerPoints } from '../../lib/data/PointSet.ts'
 import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask, IslandType } from '../../lib/step-data-types/BitMask.ts'
+import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
@@ -40,7 +40,7 @@ const step = useStepHandler(stepId, {
     // const innerIslands = islands.filter(i => i.type === IslandType.NORMAL)
     const edgeIslands = islands.filter(i => i.type !== IslandType.NORMAL)
 
-    const edgeGrower = new BlobGrower(mask, edgeIslands, config.minDistance)
+    const edgeGrower = new BlobGrower(mask, edgeIslands, prng, config.minDistance)
     edgeGrower.perlinLikeGrowth(C.edgePerlin)
 
     edgeIslands.forEach(i => {
@@ -48,16 +48,6 @@ const step = useStepHandler(stepId, {
         return !mask.isWithinBorder(x, y, 2)
       })
     })
-
-    const { islands: innerIslands, points: innerPoints } = addRandomInnerPoints(mask)
-    //
-    const grower = new BlobGrower(mask, innerIslands, C.minDistance)
-
-    grower.clusterGrowth(C.clusterGrowthIterations, C.clusterRadius)
-    // grower.weightedRandomGrowth(C.weightedRandomIterations)
-    // grower.perlinLikeGrowth(C.perlinIterations)
-    // grower.directionalGrowth(C.directionalGrowthIterations)
-    // grower.marchingGrowth(C.marchingGrowthIterations, C.marchingGrowthPixelsPerIteration)
 
     return {
       output: mask,
