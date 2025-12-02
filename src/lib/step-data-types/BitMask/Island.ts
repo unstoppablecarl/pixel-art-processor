@@ -124,7 +124,7 @@ export class Island {
     return false
   }
 
-  isAdjacentToIsland(otherIsland: Island, maxDistance: number): boolean {
+  isAdjacentToIsland(otherIsland: Island, minDistance: number): boolean {
     if (otherIsland === this) return false
 
     // Iterate through all pixels within this island with value 1
@@ -138,7 +138,7 @@ export class Island {
             if (this.mask.get(ox, oy) !== 1) continue
 
             const dist = Math.hypot(x - ox, y - oy)
-            if (dist <= maxDistance) {
+            if (dist <= minDistance) {
               return true
             }
           }
