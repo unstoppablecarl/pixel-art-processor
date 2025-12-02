@@ -140,7 +140,7 @@ export function updateImageData(
       color.r ??= 0
       color.g ??= 0
       color.b ??= 0
-      color.a ??= 2550
+      color.a ??= 255
 
       data[index] = color.r
       data[index + 1] = color.g
