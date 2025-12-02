@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
-import { addRandomInnerPoints } from '../../lib/data/PointSet.ts'
 import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { BitMask, IslandType } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
 
@@ -45,7 +44,8 @@ const step = useStepHandler(stepId, {
     const mask = inputData as BitMask
     const C = config
 
-    const { islands: innerIslands, points: innerPoints } = addRandomInnerPoints(mask)
+    const islands = mask.getIslands()
+    const innerIslands = islands.filter(i => i.type === IslandType.NORMAL)
 
     const grower = new BlobGrower(mask, innerIslands, prng, C.minDistance)
 
