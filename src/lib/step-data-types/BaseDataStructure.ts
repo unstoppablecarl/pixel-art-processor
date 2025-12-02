@@ -11,6 +11,7 @@ export type PointValue<T> = Point & {
 }
 
 export type PointValueFilter<T> = (x: number, y: number, value: T) => boolean
+export type PointValueInspector<T> = (x: number, y: number, value: T) => void
 
 export const CARDINAL_DIRECTIONS: [number, number][] = [
   [0, 1],  // right
@@ -33,6 +34,12 @@ export type ArrayTypeConstructors = typeof Uint8Array<ArrayBufferLike> |
   typeof Uint8ClampedArray<ArrayBufferLike>
 
 export type ArrayTypeInstance = InstanceType<ArrayTypeConstructors>;
+
+enum QueryType {
+  FIND,
+  FILTER,
+  EACH
+}
 
 export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>, SerializedT = T> {
   readonly bounds: Bounds
@@ -428,18 +435,36 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  // Unified query logic - handles both find and filter operations
   private queryPoints(
     iterator: Generator<PointValue<T>>,
     filterValue: T | PointValueFilter<T>,
-    findOnly: boolean,
-  ): boolean | PointValue<T>[] {
+    queryType: QueryType.FIND,
+  ): boolean
+
+  private queryPoints(
+    iterator: Generator<PointValue<T>>,
+    filterValue: T | PointValueFilter<T>,
+    queryType: QueryType.FILTER,
+  ): PointValue<T>[]
+
+  private queryPoints(
+    iterator: Generator<PointValue<T>>,
+    each: PointValueInspector<T>,
+    queryType: QueryType.EACH,
+  ): PointValue<T>[]
+
+  // Unified query logic - handles both find and filter operations
+  private queryPoints(
+    iterator: Generator<PointValue<T>>,
+    filterValue: T | PointValueFilter<T> | PointValueInspector<T>,
+    queryType: QueryType,
+  ): boolean | PointValue<T>[] | void {
     // Determine filter function once, outside the loop
     const filter = typeof filterValue === 'function'
       ? filterValue as PointValueFilter<T>
       : (_x: number, _y: number, v: T) => v === filterValue
 
-    if (findOnly) {
+    if (queryType === QueryType.FIND) {
       for (const point of iterator) {
         if (filter(point.x, point.y, point.value)) {
           return true
@@ -447,7 +472,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
       }
       return false
     }
-
+    if (queryType === QueryType.FILTER) {
     const result: PointValue<T>[] = []
     for (const point of iterator) {
       if (filter(point.x, point.y, point.value)) {
@@ -457,13 +482,22 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return result
   }
 
+    for (const point of iterator) {
+      filter(point.x, point.y, point.value)
+    }
+  }
+
   // Adjacent operations
   hasAdjacent(x: number, y: number, filterValue: T | PointValueFilter<T>, withinBounds?: Bounds): boolean {
-    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), filterValue, true) as boolean
+    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), filterValue, QueryType.FIND)
   }
 
   filterAdjacent(x: number, y: number, filterValue: T | PointValueFilter<T>, withinBounds?: Bounds): PointValue<T>[] {
-    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), filterValue, false) as PointValue<T>[]
+    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), filterValue, QueryType.FILTER)
+  }
+
+  eachAdjacent(x: number, y: number, each: PointValueInspector<T>, withinBounds?: Bounds): PointValue<T>[] {
+    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), each, QueryType.EACH)
   }
 
   getAdjacent(x: number, y: number): PointValue<T>[] {
@@ -507,7 +541,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     filterValue: T | PointValueFilter<T>,
     withinBounds?: Bounds,
   ): boolean {
-    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, true) as boolean
+    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, QueryType.FIND) as boolean
   }
 
   filterRect(
@@ -518,7 +552,18 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     filterValue: T | PointValueFilter<T>,
     withinBounds?: Bounds,
   ): PointValue<T>[] {
-    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, false) as PointValue<T>[]
+    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, QueryType.FILTER) as PointValue<T>[]
+  }
+
+  eachRect(
+    minX: number,
+    maxX: number,
+    minY: number,
+    maxY: number,
+    cb: PointValueInspector<T>,
+    withinBounds?: Bounds,
+  ): PointValue<T>[] {
+    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), cb, QueryType.EACH) as PointValue<T>[]
   }
 
   getRect(minX: number, maxX: number, minY: number, maxY: number): PointValue<T>[] {
@@ -554,7 +599,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     filterValue: T | PointValueFilter<T>,
     withinBounds?: Bounds,
   ): boolean {
-    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), filterValue, true) as boolean
+    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), filterValue, QueryType.FIND) as boolean
   }
 
   filterCircle(
@@ -564,7 +609,17 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     filterValue: T | PointValueFilter<T>,
     withinBounds?: Bounds,
   ): PointValue<T>[] {
-    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), filterValue, false) as PointValue<T>[]
+    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), filterValue, QueryType.FILTER) as PointValue<T>[]
+  }
+
+  eachCircle(
+    x: number,
+    y: number,
+    radius: number,
+    each: PointValueInspector<T>,
+    withinBounds?: Bounds,
+  ): PointValue<T>[] {
+    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), each, QueryType.EACH) as PointValue<T>[]
   }
 
   getCircle(x: number, y: number, radius: number): PointValue<T>[] {
