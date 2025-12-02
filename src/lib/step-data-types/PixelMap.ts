@@ -45,7 +45,6 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, Seriali
   }
 
   protected serializeValue(value: RGBA): SerializedRGBA {
-    console.log(value)
     return serializeRGBA(value)
   }
 }
