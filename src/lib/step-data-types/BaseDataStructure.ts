@@ -545,8 +545,9 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
    * }
    * pixelMap.invalidate() // Notify Vue
    */
-  invalidate(): void {
+  invalidate(): this {
     this.cacheBust = Date.now()
+    return this
   }
 
   mutate(cb: () => void) {

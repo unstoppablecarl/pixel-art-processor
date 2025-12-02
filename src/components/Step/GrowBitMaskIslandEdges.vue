@@ -59,9 +59,8 @@ const step = useStepHandler(stepId, {
     // grower.directionalGrowth(C.directionalGrowthIterations)
     // grower.marchingGrowth(C.marchingGrowthIterations, C.marchingGrowthPixelsPerIteration)
 
-    console.error('RUN')
     return {
-      output: mask.copy(),
+      output: mask,
       preview: mask.toImageData(),
     }
   },

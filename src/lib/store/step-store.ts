@@ -268,6 +268,9 @@ export const useStepStore = defineStore('steps', () => {
       if (inputTypeErrors.length) {
         inputData = null
       }
+      if (inputData) {
+        inputData = inputData.copy()
+      }
 
       const result = run({ config: step.config, inputData })
 
