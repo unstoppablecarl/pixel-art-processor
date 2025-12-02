@@ -10,7 +10,6 @@ const store = useStepStore()
 
 const {
   step,
-  showDimensions = false,
   images,
 } = defineProps<{
   step: AnyConfiguredStep
@@ -19,7 +18,6 @@ const {
 }>()
 
 const dimensions = computed(() => {
-  // if (!showDimensions) return ''
   if (!step.outputData) return ''
 
   return step.outputData.width + 'x' + step.outputData.height
