@@ -33,12 +33,25 @@ body {
   white-space: nowrap;
 }
 
-.steps-container {
+.processor-container {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
   gap: 0.5rem;
   min-width: 100%;
+}
+
+.steps-container {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.after-steps-container {
+  position: relative;
+  padding-top: var(--step-card-margin);
+  padding-right: 20px;
 }
 
 .step {
@@ -65,6 +78,10 @@ body {
   &.drop-zone {
     border-radius: calc(var(--bs-border-radius) + var(--step-card-margin));
     background-color: #f0f9ff;
+
+    .step-header {
+      color: #000;
+    }
   }
 
   &.input-invalid {
@@ -76,6 +93,10 @@ body {
     cursor: grabbing !important;
     box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
     0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  }
+
+  .step-header {
+    padding: 0 calc(var(--step-card-margin) + 0.5rem)
   }
 }
 

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import Generator from './components/Generator.vue'
+import Processor from './components/Processor.vue'
 </script>
 <template>
   <div class="min-vh-100">
-    <Generator />
+    <Processor />
   </div>
 </template>

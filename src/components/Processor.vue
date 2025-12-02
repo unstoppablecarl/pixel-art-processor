@@ -4,6 +4,7 @@ import { computed, onMounted, useTemplateRef, watch } from 'vue'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
+import AddStepDropDown from './UI/AddStepDropDown.vue'
 
 const store = useStepStore()
 
@@ -68,14 +69,19 @@ onMounted(() => {
 
   <AppHeader @add-step="addStep" />
 
-  <div class="overflow">
-    <div ref="stepContainer" class="steps-container px-3 pb-3 min-vw-100">
-      <component
-        v-for="{ def, id } in steps"
-        :key="id"
-        :is="store.defToComponent(def)"
-        :step-id="id"
-      />
+  <div class="overflow min-vh-100">
+    <div class="processor-container px-3 pb-3 min-vw-100">
+      <div ref="stepContainer" class="steps-container">
+        <component
+          v-for="{ def, id } in steps"
+          :key="id"
+          :is="store.defToComponent(def)"
+          :step-id="id"
+        />
+      </div>
+      <div class="after-steps-container">
+        <AddStepDropDown />
+      </div>
     </div>
   </div>
 </template>

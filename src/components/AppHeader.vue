@@ -47,5 +47,6 @@ watch(selected, async () => {
 .app-header {
   background-color: var(--bs-body-bg);
   border-bottom: 1px solid var(--bs-border-color);
+  position: absolute;
 }
 </style>

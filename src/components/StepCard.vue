@@ -19,7 +19,7 @@ const {
 }>()
 
 const dimensions = computed(() => {
-  if (!showDimensions) return ''
+  // if (!showDimensions) return ''
   if (!step.outputData) return ''
 
   return step.outputData.width + 'x' + step.outputData.height
@@ -70,6 +70,9 @@ const validationErrors = computed(() => {
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
+    <div class="step-header">
+      <slot name="header"></slot>
+    </div>
     <div :class="{
       'card card-step': true,
       'border-danger': validationErrors.length,
@@ -83,10 +86,7 @@ const validationErrors = computed(() => {
         >:::
         </button>
 
-        <span class="flex-grow-1 btn-py mx-2">
-          <slot name="header"></slot>
-        </span>
-        <span v-if="showDimensions" class="btn-py mx-2 flex-shrink-1">{{ dimensions }}</span>
+        <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
         <button role="button" class="btn btn-sm btn-danger flex-shrink-1" @click="remove">X</button>
       </div>
       <div class="card-body">
