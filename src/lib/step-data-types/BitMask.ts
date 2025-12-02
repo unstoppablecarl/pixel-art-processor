@@ -17,12 +17,15 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
 
   protected readonly canUseDirectAccess = false
 
-  dataConstructor = Uint8Array
+  constructor(width: number, height: number, data?: Uint8Array) {
+    super(width, height, data)
+  }
 
-  protected calcDataLength(width: number, height: number): number {
+  protected initData(width: number, height: number): Uint8Array {
     const totalBits = width * height
     const byteCount = Math.ceil(totalBits / 8)
-    return byteCount
+
+    return new Uint8Array(byteCount)
   }
 
   get(x: number, y: number): Bit {

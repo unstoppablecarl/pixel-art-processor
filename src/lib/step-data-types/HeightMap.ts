@@ -6,10 +6,8 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
   readonly __brand = 'HeightMap'
   static displayName = 'HeightMap'
 
-  dataConstructor = Uint8ClampedArray
-
-  protected calcDataLength(width: number, height: number) {
-    return width * height
+  protected initData(width: number, height: number): Uint8ClampedArray {
+    return new Uint8ClampedArray(width * height)
   }
 
   get(x: number, y: number): number {

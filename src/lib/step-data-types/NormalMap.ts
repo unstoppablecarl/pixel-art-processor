@@ -9,14 +9,14 @@ export type Normal = {
   z: number
 }
 
-export class NormalMap extends BaseDataStructure<Normal> {
+export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray> {
   readonly __brand = 'NormalMap'
   static displayName = 'NormalMap'
 
   dataConstructor = Uint8ClampedArray
 
-  protected calcDataLength(width: number, height: number): number {
-    return width * height * 4
+  protected initData(width: number, height: number): Uint8ClampedArray {
+    return new Uint8ClampedArray(width * height * 4)
   }
 
   get(x: number, y: number): Normal {

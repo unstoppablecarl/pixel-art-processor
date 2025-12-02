@@ -7,8 +7,8 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray> {
 
   dataConstructor = Uint8ClampedArray
 
-  protected calcDataLength(width: number, height: number): number {
-    return width * height * 4
+  protected initData(width: number, height: number): Uint8ClampedArray {
+    return new Uint8ClampedArray(width * height * 4)
   }
 
   copy(): this {

@@ -40,8 +40,6 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   readonly data: D
 
-  readonly abstract dataConstructor: new (length: number) => D
-
   // Hook for subclasses with complex storage (like BitMask)
   // set to false if direct array access does not work
   protected readonly canUseDirectAccess: boolean = true
@@ -57,11 +55,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     this.cacheBust = Date.now()
   }
 
-  protected initData(width: number, height: number): D {
-    return new this.dataConstructor(this.calcDataLength(width, height))
-  }
-
-  protected abstract calcDataLength(width: number, height: number): number
+  protected abstract initData(width: number, height: number): D;
 
   // Lazy-computed cached offsets for adjacent cell access
   private _adjacentOffsets?: number[]
