@@ -3,6 +3,7 @@ import { toValue, watch } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { StepValidationError } from '../errors.ts'
 import { useStepStore } from '../store/step-store.ts'
+import { logStepWatch } from '../util/logStepEvent.ts'
 import type {
   AnyStepContext,
   ReactiveConfigType,
@@ -54,8 +55,6 @@ export function useStepHandler<
 ) {
   type T = StepContext<C, SC, RC, I, O>;
 
-  console.log(`[${stepId}] useStepHandler`)
-
   if (__DEV__) {
     expectTypeOf(options.config).toExtend<StepHandlerOptions<T>['config']>()
     expectTypeOf(options.run).toExtend<StepHandlerOptions<T>['run']>()
@@ -85,7 +84,7 @@ export function useStepHandler<
   watch(
     handler.watcher(step as StepRef<T>),
     () => {
-      console.log('[watch]', step.id)
+      logStepWatch(step.id)
       process()
     }, { immediate: true },
   )
