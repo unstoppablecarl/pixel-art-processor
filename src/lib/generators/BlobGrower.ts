@@ -39,7 +39,7 @@ export class BlobGrower {
         const { x, y } = selected.point
 
         this.mask.set(x, y, 1)
-        island.updateBounds(x, y)
+        island.claimPixel(x, y)
       }
     })
   }
@@ -64,7 +64,7 @@ export class BlobGrower {
         if (this.isValidExpansion(p, island)) {
           const { x, y } = p
           this.mask.set(x, y, 1)
-          island.updateBounds(x, y)
+          island.claimPixel(x, y)
           grown++
         }
       }
@@ -101,7 +101,7 @@ export class BlobGrower {
         if (this.isValidExpansion(sorted[i]!, island)) {
           const { x, y } = sorted[i]!
           this.mask.set(x, y, 1)
-          island.updateBounds(x, y)
+          island.claimPixel(x, y)
         }
       }
     })
@@ -144,7 +144,7 @@ export class BlobGrower {
           if (this.isValidExpansion(sorted[i]!.p, island)) {
             const { x, y } = sorted[i]!.p
             this.mask.set(x, y, 1)
-            island.updateBounds(x, y)
+            island.claimPixel(x, y)
           }
         }
       }
@@ -174,7 +174,7 @@ export class BlobGrower {
         if (this.isValidExpansion(scored[i]!.point, island)) {
           const { x, y } = scored[i]!.point
           this.mask.set(x, y, 1)
-          island.updateBounds(x, y)
+          island.claimPixel(x, y)
         }
       }
     })

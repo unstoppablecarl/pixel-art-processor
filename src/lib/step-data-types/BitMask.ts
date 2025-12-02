@@ -161,6 +161,7 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     const visited = new Set<string>()
     const islands: Island[] = []
 
+    let idIncrement = 0
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         if (this.get(x, y) === 1 && !visited.has(x + ',' + y)) {
@@ -168,7 +169,7 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
 
           let type = this.getIslandType(minY, maxY, minX, maxX)
 
-          islands.push(new Island(this, minX, maxX, minY, maxY, type))
+          islands.push(new Island(this, idIncrement++, minX, maxX, minY, maxY, type))
         }
       }
     }
