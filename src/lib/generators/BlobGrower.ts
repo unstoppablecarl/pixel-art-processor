@@ -10,7 +10,6 @@ export class BlobGrower {
     private islands: Island[],
     private prng: Prng,
     private minDistance: number = 4,
-    private doneIslands = new WeakSet<Island>(),
   ) {
   }
 
@@ -21,7 +20,7 @@ export class BlobGrower {
   weightedRandomGrowth(iterations: number): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandable()
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
       if (expandable.length === 0) return
 
       // Weight candidates by smoothness (prefer expanding where already expanded)
@@ -39,7 +38,7 @@ export class BlobGrower {
         const { x, y } = selected.point
 
         this.mask.set(x, y, 1)
-        island.claimPixel(x, y)
+        island.claimPoint(x, y)
       }
     })
   }
@@ -52,7 +51,7 @@ export class BlobGrower {
     this.iterateIslands(iterations, (island) => {
 
       let grown = 0
-      const expandable = island.getExpandable()
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
 
       // Prioritize expansion around blob edges with good weight distribution
       const sorted = expandable
@@ -64,7 +63,7 @@ export class BlobGrower {
         if (this.isValidExpansion(p, island)) {
           const { x, y } = p
           this.mask.set(x, y, 1)
-          island.claimPixel(x, y)
+          island.claimPoint(x, y)
           grown++
         }
       }
@@ -86,12 +85,12 @@ export class BlobGrower {
     this.iterateIslands(iterations, (island) => {
 
       const [prefDx, prefDy] = islandDirections.get(island)!
-      const expandable = island.getExpandable()
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
 
       // Sort by alignment with preferred direction
       const sorted = expandable.sort((a, b) => {
-        const aDist = Math.abs(a.x - island.minX - prefDx) + Math.abs(a.y - island.minY - prefDy)
-        const bDist = Math.abs(b.x - island.minX - prefDx) + Math.abs(b.y - island.minY - prefDy)
+        const aDist = Math.abs(a.x - island.bounds.minX - prefDx) + Math.abs(a.y - island.bounds.minY - prefDy)
+        const bDist = Math.abs(b.x - island.bounds.minX - prefDx) + Math.abs(b.y - island.bounds.minY - prefDy)
         return aDist - bDist
       })
 
@@ -101,7 +100,7 @@ export class BlobGrower {
         if (this.isValidExpansion(sorted[i]!, island)) {
           const { x, y } = sorted[i]!
           this.mask.set(x, y, 1)
-          island.claimPixel(x, y)
+          island.claimPoint(x, y)
         }
       }
     })
@@ -114,7 +113,7 @@ export class BlobGrower {
   clusterGrowth(iterations: number, clusterRadius: number = 3): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandable()
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
       if (expandable.length === 0) return
 
       // Find clusters of adjacent expandable pixels
@@ -144,7 +143,7 @@ export class BlobGrower {
           if (this.isValidExpansion(sorted[i]!.p, island)) {
             const { x, y } = sorted[i]!.p
             this.mask.set(x, y, 1)
-            island.claimPixel(x, y)
+            island.claimPoint(x, y)
           }
         }
       }
@@ -158,7 +157,7 @@ export class BlobGrower {
   perlinLikeGrowth(iterations: number): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandable()
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
       if (expandable.length === 0) return
 
       // Score based on local gradient (smoother transitions grow more)
@@ -174,7 +173,7 @@ export class BlobGrower {
         if (this.isValidExpansion(scored[i]!.point, island)) {
           const { x, y } = scored[i]!.point
           this.mask.set(x, y, 1)
-          island.claimPixel(x, y)
+          island.claimPoint(x, y)
         }
       }
     })
@@ -189,14 +188,6 @@ export class BlobGrower {
 
     for (let iter = 0; iter < iterations; iter++) {
       for (const island of this.islands) {
-
-        if (this.doneIslands.has(island)) continue
-        if (island.isAdjacentToAnyIslands(this.islands, this.minDistance)) {
-
-          this.doneIslands.add(island)
-
-          continue
-        }
         if (this.prng() < skipChance.get(island)!)
           cb(island)
       }
@@ -246,8 +237,8 @@ export class BlobGrower {
 
   private distanceToIslandEdge(point: Point, island: Island): number {
     let minDist = Infinity
-    for (let y = island.minY; y < island.maxY; y++) {
-      for (let x = island.minX; x < island.maxX; x++) {
+    for (let y = island.bounds.minY; y < island.bounds.maxY; y++) {
+      for (let x = island.bounds.minX; x < island.bounds.maxX; x++) {
         if (this.mask.get(x, y) === 1) {
           const dist = Math.hypot(point.x - x, point.y - y)
           minDist = Math.min(minDist, dist)
@@ -271,8 +262,8 @@ export class BlobGrower {
 
   private distanceToPoint(point: Point, island: Island): number {
     let minDist = Infinity
-    for (let y = island.minY; y < island.maxY; y++) {
-      for (let x = island.minX; x < island.maxX; x++) {
+    for (let y = island.bounds.minY; y < island.bounds.maxY; y++) {
+      for (let x = island.bounds.minX; x < island.bounds.maxX; x++) {
         if (this.mask.get(x, y) === 1) {
           const dist = Math.hypot(point.x - x, point.y - y)
           minDist = Math.min(minDist, dist)

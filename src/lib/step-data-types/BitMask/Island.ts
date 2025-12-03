@@ -1,3 +1,4 @@
+import { Bounds } from '../../data/Bounds.ts'
 import type { Point } from '../BaseDataStructure.ts'
 import { BitMask } from '../BitMask.ts'
 
@@ -10,140 +11,141 @@ export enum IslandType {
 const EDGE_INSET_RATIO = 0.2
 
 export class Island {
-  frontier: Set<string> = new Set() // "x,y"
-  pixels: Set<string> = new Set() // all filled pixels in island
+  readonly frontier: Set<number> = new Set()
+  readonly expandableBounds: Bounds
+  readonly bounds: Bounds
+
+  private maskWidth: number // cache
+  private _expandable: Point[] | null = null; // Cache for getExpandable()
 
   constructor(
     readonly mask: BitMask,
     readonly id: number,
-    public minX: number,
-    public maxX: number,
-    public minY: number,
-    public maxY: number,
+    minX: number,
+    maxX: number,
+    minY: number,
+    maxY: number,
     readonly type: IslandType = IslandType.NORMAL,
   ) {
     if (minX > maxX || minY > maxY) throw new Error('Invalid bounds')
+    this.maskWidth = this.mask.width; // Cache fixed width
+    this.bounds = mask.bounds.trimNewBounds(minX, maxX, minY, maxY)
+    this.expandableBounds = new Bounds()
+    this.updateExpandableBounds()
     this.initializeFrontier()
   }
 
-  // call this once at creation time:
-  initializeFrontier() {
-    this.mask.eachRect(this.minX, this.maxX, this.minY, this.maxY, (x, y, v) => {
+  protected initializeFrontier() {
+    this.mask.eachRect(this.bounds, (x, y, v) => {
       if (v === 1) {
-        this.frontier.add(`${x},${y}`)
+        this.mask.eachAdjacent(x, y, (ax, ay, av) => {
+          if (av === 0) {
+            const id = ax + ay * this.maskWidth;
+            this.frontier.add(id);
+          }
+        });
       }
-    })
+    });
   }
 
-  // update when you claim (x,y)
-  claimPixel(x: number, y: number) {
-    this.updateBounds(x, y)
-    const key = `${x},${y}`
-    this.pixels.add(key)
-    // remove claimed from frontier (if present)
+  protected expandBounds(x: number, y: number) {
+    this.bounds.expand(x, y)
+    this.updateExpandableBounds()
+  }
+
+  claimPoint(x: number, y: number) {
+    this.expandBounds(x, y)
+
+    const key = x + y * this.maskWidth;
     this.frontier.delete(key)
 
-    // for each neighbor, if empty then add to frontier
-    this.mask.eachAdjacent(x, y, (x, y, v) => {
-      if (v === 0) {
-        this.frontier.add(`${x},${y}`)
+    this.mask.eachAdjacent(x, y, (nx, ny, nv) => {
+      if (nv === 0) {
+        const nid = nx + ny * this.maskWidth;
+        this.frontier.add(nid);
       }
     })
-  }
 
-  protected updateBounds(x: number, y: number): void {
-    if (x < this.minX) this.minX = x
-    if (x + 1 > this.maxX) this.maxX = x + 1
-    if (y < this.minY) this.minY = y
-    if (y + 1 > this.maxY) this.maxY = y + 1
-  }
-
-  get height() {
-    return this.maxY - this.minY
-  }
-
-  get width() {
-    return this.maxX - this.minX
+    this._expandable = null;
   }
 
   each(cb: (x: number, y: number, v: number) => void) {
-    for (let y = this.minY; y < this.maxY; y++) {
-      for (let x = this.minX; x < this.maxX; x++) {
+    const bounds = this.bounds
+
+    for (let y = bounds.minY; y < bounds.maxY; y++) {
+      for (let x = bounds.minX; x < bounds.maxX; x++) {
         cb(x, y, this.mask.get(x, y))
       }
     }
   }
 
-  getExpandableBounds() {
-    let minX = this.minX - 1
-    minX = Math.max(minX, 0)
+  protected updateExpandableBounds() {
+    const bounds = this.bounds
 
-    let maxX = this.maxX + 1
-    maxX = Math.min(maxX, this.mask.width)
+    let minX = Math.max(bounds.minX - 1, 0)
+    let maxX = Math.min(bounds.maxX + 1, this.mask.width)
 
-    let minY = this.minY - 1
-    minY = Math.max(minY, 0)
-
-    let maxY = this.maxY + 1
-    maxY = Math.min(maxY, this.mask.height)
+    let minY = Math.max(bounds.minY - 1, 0)
+    let maxY = Math.min(bounds.maxY + 1, this.mask.height)
 
     if (this.type === IslandType.HORIZONTAL_EDGE) {
-      minX = this.minX + Math.floor(this.height * EDGE_INSET_RATIO)
-      maxX = this.maxX - Math.floor(this.height * EDGE_INSET_RATIO)
+      minX = bounds.minX + Math.floor(this.bounds.height * EDGE_INSET_RATIO)
+      maxX = bounds.maxX - Math.floor(this.bounds.height * EDGE_INSET_RATIO)
     }
 
     if (this.type === IslandType.VERTICAL_EDGE) {
-      minY = this.minY + Math.floor(this.width * EDGE_INSET_RATIO)
-      maxY = this.maxY - Math.floor(this.width * EDGE_INSET_RATIO)
+      minY = bounds.minY + Math.floor(this.bounds.width * EDGE_INSET_RATIO)
+      maxY = bounds.maxY - Math.floor(this.bounds.width * EDGE_INSET_RATIO)
     }
 
-    return this.mask.bounds.trim(
-      minX,
-      maxX,
-      minY,
-      maxY,
-    )
+    this.expandableBounds.minX = minX
+    this.expandableBounds.minY = minY
+    this.expandableBounds.maxX = maxX
+    this.expandableBounds.maxY = maxY
+    this.expandableBounds.trim(this.mask.bounds)
   }
 
   getExpandable(): Point[] {
-    // convert frontier Set to Point[] once if needed
-    return Array.from(this.frontier, s => {
-      const [sx, sy] = s.split(',').map(Number)
-      return { x: sx, y: sy }
+    if (this._expandable === null) {
+      this._expandable = Array.from(this.frontier, id => {
+        const x = id % this.maskWidth;
+        const y = Math.floor(id / this.maskWidth);
+        return { x, y };
+      });
+    }
+    return this._expandable
+  }
+
+  getExpandableRespectingMinDistance(otherIslands: Island[], maxDistance: number): Point[] {
+    return this.getExpandable().filter(({ x, y }) => {
+      return this.pointRespectsMinDistance(x, y, otherIslands, maxDistance)
     })
   }
 
-  isAdjacentToAnyIslands(otherIslands: Island[], maxDistance: number): boolean {
+  pointRespectsMinDistance(x: number, y: number, otherIslands: Island[], maxDistance: number): boolean {
     for (const otherIsland of otherIslands) {
-      if (this.isAdjacentToIsland(otherIsland, maxDistance)) {
-        return true
+      if (otherIsland === this) continue
+      if (!this.pointRespectsMinDistanceToIsland(x, y, otherIsland, maxDistance)) {
+        return false
       }
     }
-    return false
+    return true
   }
 
-  isAdjacentToIsland(otherIsland: Island, minDistance: number): boolean {
-    if (otherIsland === this) return false
+  pointRespectsMinDistanceToIsland(x: number, y: number, otherIsland: Island, minDistance: number): boolean {
+    if (otherIsland === this) return true // Self shouldn't fail
 
-    // Iterate through all pixels within this island with value 1
-    for (let y = this.minY; y < this.maxY; y++) {
-      for (let x = this.minX; x < this.maxX; x++) {
-        if (this.mask.get(x, y) !== 1) continue
-
-        // Check distance to all pixels within the other island with value 1
-        for (let oy = otherIsland.minY; oy < otherIsland.maxY; oy++) {
-          for (let ox = otherIsland.minX; ox < otherIsland.maxX; ox++) {
-            if (this.mask.get(ox, oy) !== 1) continue
-
-            const dist = Math.hypot(x - ox, y - oy)
-            if (dist <= minDistance) {
-              return true
-            }
-          }
-        }
+    const minDistSq = minDistance * minDistance
+    const expandable = otherIsland.getExpandable() // Cached
+    for (let i = 0; i < expandable.length; i++) {
+      const p = expandable[i]
+      const dx = x - p.x
+      const dy = y - p.y
+      const distSq = dx * dx + dy * dy
+      if (distSq < minDistSq) {
+        return false
       }
     }
-
-    return false
+    return true
   }
 }

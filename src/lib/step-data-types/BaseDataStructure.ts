@@ -1,4 +1,4 @@
-import { Bounds } from '../data/Bounds.ts'
+import { Bounds, type BoundsLike } from '../data/Bounds.ts'
 import { type RGBA, setImageDataPixelColor } from '../util/ImageData.ts'
 
 export type Point = {
@@ -319,14 +319,42 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
+  private iterateRect(bounds: BoundsLike, withinBounds?: Bounds): Generator<PointValue<T>>;
+
+  private iterateRect(minX: number, maxX: number, minY: number, maxY: number, withinBounds?: Bounds): Generator<PointValue<T>>;
+
   private* iterateRect(
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number,
-    withinBounds?: Bounds,
+    arg1: number | BoundsLike,
+    arg2?: number | Bounds,
+    arg3?: number,
+    arg4?: number,
+    arg5?: Bounds,
   ): Generator<PointValue<T>> {
-    const { minX: x0, maxX: x1, minY: y0, maxY: y1 } = this.bounds.trim(minX, maxX, minY, maxY)
+    let minX: number, maxX: number, minY: number, maxY: number, withinBounds: undefined | Bounds
+
+    if (arguments.length === 1 && typeof arg1 === 'object' && arg1 !== null) {
+      const bounds = arg1 as Bounds;
+      ({ minX, maxX, minY, maxY } = bounds)
+      withinBounds = arg2 as undefined | Bounds
+    } else {
+      minX = arg1 as number
+      maxX = arg2 as number
+      minY = arg3 as number
+      maxY = arg4 as number
+      withinBounds = arg5
+    }
+
+    if (arguments.length === 1 && typeof minX === 'object' && minX !== null) {
+      const bounds = minX as BoundsLike;
+      ({ minX, maxX, minY, maxY } = bounds)
+    }
+
+    const {
+      minX: x0,
+      maxX: x1,
+      minY: y0,
+      maxY: y1,
+    } = this.bounds.trimNewBounds(minX, maxX, minY, maxY)
     const width = this.width
 
     if (this.canUseDirectAccess) {
@@ -473,14 +501,14 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
       return false
     }
     if (queryType === QueryType.FILTER) {
-    const result: PointValue<T>[] = []
-    for (const point of iterator) {
-      if (filter(point.x, point.y, point.value)) {
-        result.push(point)
+      const result: PointValue<T>[] = []
+      for (const point of iterator) {
+        if (filter(point.x, point.y, point.value)) {
+          result.push(point)
+        }
       }
+      return result
     }
-    return result
-  }
 
     for (const point of iterator) {
       filter(point.x, point.y, point.value)
@@ -555,15 +583,36 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, QueryType.FILTER) as PointValue<T>[]
   }
 
+  eachRect(bounds: BoundsLike, cb: PointValueInspector<T>, withinBounds?: Bounds): void;
+
+  eachRect(minX: number, maxX: number, minY: number, maxY: number, cb: PointValueInspector<T>, withinBounds?: Bounds): void;
   eachRect(
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number,
-    cb: PointValueInspector<T>,
-    withinBounds?: Bounds,
-  ): PointValue<T>[] {
-    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), cb, QueryType.EACH) as PointValue<T>[]
+    arg1: number | BoundsLike,
+    arg2?: number | PointValueInspector<T>,
+    arg3?: number | Bounds,
+    arg4?: number,
+    arg5?: PointValueInspector<T>,
+    arg6?: Bounds,
+  ): void {
+
+    let minX: number, maxX: number, minY: number, maxY: number, cb: PointValueInspector<T>,
+      withinBounds: undefined | Bounds
+
+    if (arguments.length < 5 && typeof arg1 === 'object' && arg1 !== null) {
+      const bounds = arg1 as Bounds;
+      ({ minX, maxX, minY, maxY } = bounds)
+      cb = arg2 as PointValueInspector<T>
+      withinBounds = arg3 as undefined | Bounds
+    } else {
+      minX = arg1 as number
+      maxX = arg2 as number
+      minY = arg3 as number
+      maxY = arg4 as number
+      cb = arg5 as PointValueInspector<T>
+      withinBounds = arg6
+    }
+
+    this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), cb, QueryType.EACH)
   }
 
   getRect(minX: number, maxX: number, minY: number, maxY: number): PointValue<T>[] {
