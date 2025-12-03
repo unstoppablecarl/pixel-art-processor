@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { shallowReactive } from 'vue'
+import { ref, shallowReactive } from 'vue'
 import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask, IslandType } from '../../lib/step-data-types/BitMask.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { type Island, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
+import EnumSelect from '../UI/EnumSelect.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -16,6 +18,25 @@ enum GrowType {
   PERLIN = 'PERLIN'
 }
 
+const ISLAND_TYPES = {
+  ALL: {
+    label: 'All',
+    filter: (i: Island) => true,
+  },
+  INNER: {
+    label: 'Inner',
+    filter: (i: Island) => i.type === IslandType.NORMAL,
+  },
+  EDGE: {
+    label: 'Edge',
+    filter: (i: Island) => i.type !== IslandType.NORMAL,
+  },
+}
+
+const GrowIslandSelectOptions = ref(Object.fromEntries(
+  Object.entries(ISLAND_TYPES).map(([key, val]) => [key, val.label]),
+))
+
 const step = useStepHandler(stepId, {
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
@@ -23,6 +44,7 @@ const step = useStepHandler(stepId, {
     return shallowReactive({
       minDistance: 4,
 
+      islandType: 'ALL' as keyof typeof ISLAND_TYPES,
       growType: GrowType.CLUSTER as GrowType,
 
       clusterGrowthIterations: 0,
@@ -45,9 +67,9 @@ const step = useStepHandler(stepId, {
     const C = config
 
     const islands = mask.getIslands()
-    const innerIslands = islands.filter(i => i.type === IslandType.NORMAL)
-
-    const grower = new BlobGrower(mask, innerIslands, prng, C.minDistance)
+    const islandFilter = ISLAND_TYPES[C.islandType].filter
+    const withinBounds = mask.borderToBounds(C.minDistance)
+    const grower = new BlobGrower(mask, islands, prng, C.minDistance, islandFilter, withinBounds)
 
     const map = {
       [GrowType.CLUSTER]: () => grower.clusterGrowth(C.clusterGrowthIterations, C.clusterRadius),
@@ -70,9 +92,7 @@ const config = step.config
 
 </script>
 <template>
-  <StepCard
-    :step="step"
-  >
+  <StepCard :step="step">
     <template #header>
       Grow BitMsk Islands
     </template>
@@ -81,6 +101,10 @@ const config = step.config
         <label class="form-label">Min Dist: {{ config.minDistance }}</label>
         <input type="range" min="1" max="20" step="1" v-model.number="config.minDistance"
                class="form-range" />
+      </div>
+      <div class="pb-2">
+        <label class="form-label">Island Type</label>
+        <EnumSelect :options="GrowIslandSelectOptions" v-model="config.islandType" />
       </div>
       <div class="pb-2">
         <label class="form-label">Grow Type</label>

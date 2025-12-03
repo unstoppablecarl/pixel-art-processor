@@ -38,13 +38,13 @@
     position: absolute;
     top: 50%;
     transform: translate(-50%, -50%);
-    cursor: grab;
+    cursor: pointer;
     user-select: none;
     z-index: 2;
     will-change: transform;
 
     &:active {
-      cursor: grabbing;
+      cursor: pointer;
     }
   }
 

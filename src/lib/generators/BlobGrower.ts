@@ -1,5 +1,6 @@
+import type { Bounds } from '../data/Bounds.ts'
 import { ADJACENT_DIRECTIONS, type Point } from '../step-data-types/BaseDataStructure.ts'
-import { BitMask } from '../step-data-types/BitMask.ts'
+import { BitMask, IslandType } from '../step-data-types/BitMask.ts'
 import { Island } from '../step-data-types/BitMask/Island.ts'
 import { type Prng } from '../util/prng.ts'
 
@@ -10,6 +11,8 @@ export class BlobGrower {
     private islands: Island[],
     private prng: Prng,
     private minDistance: number = 4,
+    private islandTypeFilter?: IslandType | ((island: Island) => boolean),
+    private withinBounds?: Bounds,
   ) {
   }
 
@@ -20,7 +23,7 @@ export class BlobGrower {
   weightedRandomGrowth(iterations: number): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
       if (expandable.length === 0) return
 
       // Weight candidates by smoothness (prefer expanding where already expanded)
@@ -34,12 +37,12 @@ export class BlobGrower {
       const topCandidates = weighted.slice(0, Math.max(1, Math.ceil(expandable.length * 0.3)))
       const selected = topCandidates[Math.floor(this.prng() * topCandidates.length)]!
 
-      if (this.isValidExpansion(selected.point, island)) {
-        const { x, y } = selected.point
+      // if (this.isValidExpansion(selected.point, island)) {
+      const { x, y } = selected.point
 
-        this.mask.set(x, y, 1)
-        island.claimPoint(x, y)
-      }
+      this.mask.set(x, y, 1)
+      island.claimPoint(x, y)
+      // }
     })
   }
 
@@ -51,7 +54,7 @@ export class BlobGrower {
     this.iterateIslands(iterations, (island) => {
 
       let grown = 0
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
 
       // Prioritize expansion around blob edges with good weight distribution
       const sorted = expandable
@@ -60,12 +63,10 @@ export class BlobGrower {
 
       for (const { p } of sorted) {
         if (grown >= pixelsPerIteration) break
-        if (this.isValidExpansion(p, island)) {
-          const { x, y } = p
-          this.mask.set(x, y, 1)
-          island.claimPoint(x, y)
-          grown++
-        }
+        const { x, y } = p
+        this.mask.set(x, y, 1)
+        island.claimPoint(x, y)
+        grown++
       }
     })
   }
@@ -85,7 +86,7 @@ export class BlobGrower {
     this.iterateIslands(iterations, (island) => {
 
       const [prefDx, prefDy] = islandDirections.get(island)!
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
 
       // Sort by alignment with preferred direction
       const sorted = expandable.sort((a, b) => {
@@ -97,11 +98,9 @@ export class BlobGrower {
       // Expand in preferred direction with some randomness
       const toExpand = Math.ceil(expandable.length * 0.15)
       for (let i = 0; i < toExpand && i < sorted.length; i++) {
-        if (this.isValidExpansion(sorted[i]!, island)) {
-          const { x, y } = sorted[i]!
-          this.mask.set(x, y, 1)
-          island.claimPoint(x, y)
-        }
+        const { x, y } = sorted[i]!
+        this.mask.set(x, y, 1)
+        island.claimPoint(x, y)
       }
     })
   }
@@ -113,7 +112,7 @@ export class BlobGrower {
   clusterGrowth(iterations: number, clusterRadius: number = 3): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
       if (expandable.length === 0) return
 
       // Find clusters of adjacent expandable pixels
@@ -140,11 +139,9 @@ export class BlobGrower {
           .sort((a, b) => a.d - b.d)
 
         for (let i = 0; i < toGrow && i < sorted.length; i++) {
-          if (this.isValidExpansion(sorted[i]!.p, island)) {
-            const { x, y } = sorted[i]!.p
-            this.mask.set(x, y, 1)
-            island.claimPoint(x, y)
-          }
+          const { x, y } = sorted[i]!.p
+          this.mask.set(x, y, 1)
+          island.claimPoint(x, y)
         }
       }
     })
@@ -157,7 +154,7 @@ export class BlobGrower {
   perlinLikeGrowth(iterations: number): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
       if (expandable.length === 0) return
 
       // Score based on local gradient (smoother transitions grow more)
@@ -170,24 +167,34 @@ export class BlobGrower {
       const toGrow = Math.ceil(scored.length * 0.2)
 
       for (let i = 0; i < toGrow && i < scored.length; i++) {
-        if (this.isValidExpansion(scored[i]!.point, island)) {
-          const { x, y } = scored[i]!.point
-          this.mask.set(x, y, 1)
-          island.claimPoint(x, y)
-        }
+        const { x, y } = scored[i]!.point
+        this.mask.set(x, y, 1)
+        island.claimPoint(x, y)
       }
     })
   }
 
+  private filter(island: Island): boolean {
+
+    if (this.islandTypeFilter === undefined) return true
+
+    return typeof this.islandTypeFilter === 'function'
+      ? this.islandTypeFilter(island)
+      : island.type === this.islandTypeFilter
+  }
+
   private iterateIslands(iterations: number, cb: (island: Island) => void) {
+
     const skipChance = new WeakMap<Island, number>()
 
     for (const island of this.islands) {
       skipChance.set(island, this.prng.randomFloatRange(0.2, 1))
     }
-
     for (let iter = 0; iter < iterations; iter++) {
       for (const island of this.islands) {
+
+        if (!this.filter(island)) continue
+        console.log(island)
         if (this.prng() < skipChance.get(island)!)
           cb(island)
       }
@@ -246,31 +253,6 @@ export class BlobGrower {
       }
     }
     return minDist === Infinity ? 0 : minDist
-  }
-
-  private isValidExpansion(point: Point, currentIsland: Island): boolean {
-    // Check minimum distance from OTHER islands only
-    const islands = this.islands
-    for (const island of islands) {
-      if (island === currentIsland) continue
-      if (this.distanceToPoint(point, island) < this.minDistance) {
-        return false
-      }
-    }
-    return true
-  }
-
-  private distanceToPoint(point: Point, island: Island): number {
-    let minDist = Infinity
-    for (let y = island.bounds.minY; y < island.bounds.maxY; y++) {
-      for (let x = island.bounds.minX; x < island.bounds.maxX; x++) {
-        if (this.mask.get(x, y) === 1) {
-          const dist = Math.hypot(point.x - x, point.y - y)
-          minDist = Math.min(minDist, dist)
-        }
-      }
-    }
-    return minDist === Infinity ? Infinity : minDist
   }
 
   private findCluster(start: Point, candidates: Point[], radius: number, used: Set<string>): Point[] {

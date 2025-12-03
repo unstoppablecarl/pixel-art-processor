@@ -4,6 +4,7 @@ import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask, IslandType } from '../../lib/step-data-types/BitMask.ts'
+import { setImageDataPixelColor } from '../../lib/util/ImageData.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
 
@@ -29,7 +30,7 @@ const step = useStepHandler(stepId, {
 
     const edgeIslands = islands.filter(i => i.type !== IslandType.NORMAL)
 
-    const edgeGrower = new BlobGrower(mask, edgeIslands, prng, config.minDistance)
+    const edgeGrower = new BlobGrower(mask, islands, prng, config.minDistance, (i) => i.type !== IslandType.NORMAL)
     edgeGrower.perlinLikeGrowth(C.edgePerlin)
 
     edgeIslands.forEach(i => {
@@ -38,9 +39,25 @@ const step = useStepHandler(stepId, {
       })
     })
 
+    const preview = mask.toImageData()
+    edgeIslands.forEach((i) => {
+      i.getExpandable().forEach(({ x, y }) => {
+        setImageDataPixelColor(preview, x, y, { r: 255, g: 0, b: 0, a: 255 })
+      })
+
+      i.getExpandableRespectingMinDistance(edgeIslands, C.minDistance).forEach(({ x, y }) => {
+        setImageDataPixelColor(preview, x, y, { r: 0, g: 0, b: 255, a: 255 })
+      })
+
+      i.each((x, y, v) => {
+        if (v) {
+          setImageDataPixelColor(preview, x, y, { r: 0, g: 255, b: 0, a: 255 })
+        }
+      })
+    })
     return {
       output: mask,
-      preview: mask.toImageData(),
+      preview,
     }
   },
 })
@@ -53,7 +70,7 @@ const config = step.config
     :step="step"
   >
     <template #header>
-      Grow BitMsk Island Edges
+      BitMsk Grow Edge Islands
     </template>
     <template #footer>
       <div>

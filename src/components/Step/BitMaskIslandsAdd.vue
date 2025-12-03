@@ -4,6 +4,7 @@ import { addRandomInnerPoints } from '../../lib/data/PointSet.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import StepCard from '../StepCard.vue'
+import RangeBandSlider from '../UI/RangeBandSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -35,24 +36,20 @@ const config = step.config
 
 </script>
 <template>
-  <StepCard
-    :step="step"
-  >
+  <StepCard :step="step">
     <template #header>
-      BitMsk Add Islands
+      BitMask Add Islands
     </template>
     <template #footer>
-      <div>
-        <label class="form-label">Min Dist: {{ config.minDistance }}</label>
-        <input type="range" min="1" max="20" step="1" v-model.number="config.minDistance"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Max Dist: {{ config.maxDistance }}</label>
-        <input type="range" min="1" max="20" step="1" v-model.number="config.maxDistance"
-               class="form-range" />
-      </div>
-
+      <RangeBandSlider
+        v-model:minValue="config.minDistance "
+        v-model:maxValue="config.maxDistance "
+        :show-inputs="false"
+        :min="0"
+        :max="step.inputData?.width ?? 400"
+        :step="1"
+        :label="`Min/Max Dist: ${config.minDistance}-${config.maxDistance}`"
+      />
     </template>
   </StepCard>
 </template>

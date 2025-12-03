@@ -4,7 +4,7 @@ import { computed, onMounted, useTemplateRef, watch } from 'vue'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
-import AddStepDropDown from './UI/AddStepDropDown.vue'
+import AddStepButtons from './UI/AddStepButtons.vue'
 
 const store = useStepStore()
 
@@ -80,7 +80,7 @@ onMounted(() => {
         />
       </div>
       <div class="after-steps-container">
-        <AddStepDropDown />
+        <AddStepButtons />
       </div>
     </div>
   </div>

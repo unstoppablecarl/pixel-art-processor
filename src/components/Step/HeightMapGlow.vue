@@ -5,7 +5,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
-import RangeBandSlider from '../RangeBandSlider.vue'
+import RangeBandSlider from '../UI/RangeBandSlider.vue'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
