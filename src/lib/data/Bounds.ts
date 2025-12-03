@@ -1,11 +1,11 @@
-export type BoundsLike = Bounds | {
+export interface BoundsLike {
   minX: number,
   maxX: number,
   minY: number,
   maxY: number,
 }
 
-export class Bounds {
+export class Bounds implements BoundsLike {
 
   constructor(
     public minX: number = -Infinity,
@@ -44,7 +44,7 @@ export class Bounds {
   private _trim(createNew: boolean, arg1: number | BoundsLike, arg2?: number, arg3?: number, arg4?: number): void | Bounds {
     let minX: number, maxX: number, minY: number, maxY: number
 
-    if (arguments.length === 1 && typeof arg1 === 'object' && arg1 !== null) {
+    if (typeof arg1 === 'object' && arg1 !== null) {
       const bounds = arg1 as BoundsLike;
       ({ minX, maxX, minY, maxY } = bounds)
     } else {
@@ -64,6 +64,13 @@ export class Bounds {
 
     minY = Math.max(0, Math.min(minY, maxY))
     maxY = Math.min(this.maxY, Math.max(minY, maxY))
+
+    // if (__DEV__) {
+    //   if (isNaN(minX) || isNaN(maxX) || isNaN(minY) || isNaN(maxY)) {
+    //     console.error('invalid island expandable bounds', minX, maxX, minY, maxY)
+    //     throw new Error('invalid island expandable bounds')
+    //   }
+    // }
 
     if (createNew) {
       return new Bounds(minX, maxX, minY, maxY)
@@ -88,6 +95,13 @@ export class Bounds {
     const minY = Math.min(this.minY, y)
     const maxX = Math.max(this.maxX, x + 1)
     const maxY = Math.max(this.maxY, y + 1)
+
+    // if (__DEV__) {
+    //   if (isNaN(minX) || isNaN(maxX) || isNaN(minY) || isNaN(maxY)) {
+    //     console.error('invalid island expandable bounds', minX, maxX, minY, maxY)
+    //     throw new Error('invalid island expandable bounds')
+    //   }
+    // }
 
     if (createNew) {
       return new Bounds(minX, maxX, minY, maxY)
