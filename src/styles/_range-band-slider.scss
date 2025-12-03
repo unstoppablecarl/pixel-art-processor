@@ -37,7 +37,6 @@
     border-radius: 50%;
     position: absolute;
     top: 50%;
-    transform: translate(-50%, -50%);
     cursor: pointer;
     user-select: none;
     z-index: 2;
@@ -50,10 +49,13 @@
 
   .min-thumb {
     z-index: 3;
+    transform: translate(0, -50%);
   }
 
   .max-thumb {
     z-index: 2;
+    transform: translate(-100%, -50%);
+
   }
 
   /* Ensure number inputs look consistent */

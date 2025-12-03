@@ -10,6 +10,7 @@ export enum IslandType {
   RIGHT_EDGE = 1 << 4,
   HORIZONTAL_EDGE = IslandType.TOP_EDGE | IslandType.BOTTOM_EDGE,
   VERTICAL_EDGE = IslandType.LEFT_EDGE | IslandType.RIGHT_EDGE,
+  EDGE = IslandType.TOP_EDGE | IslandType.BOTTOM_EDGE | IslandType.LEFT_EDGE | IslandType.RIGHT_EDGE,
 }
 
 export type AssignableIslandType = IslandType.NORMAL
@@ -17,6 +18,10 @@ export type AssignableIslandType = IslandType.NORMAL
   | IslandType.BOTTOM_EDGE
   | IslandType.LEFT_EDGE
   | IslandType.RIGHT_EDGE
+
+export const isIslandType = (type: IslandType, match: IslandType) => {
+  return (type & match) !== 0
+}
 
 const GROW_RATIO = 0.5
 
