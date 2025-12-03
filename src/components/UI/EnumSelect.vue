@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineModel, toValue ,toRaw} from 'vue'
+import { toRaw, toValue } from 'vue'
 
 const { options } = defineProps<{
   options: Record<string, string>;

@@ -19,6 +19,7 @@
   "dependencies": {
     "@formkit/drag-and-drop": "^0.5.3",
     "alea": "^1.0.1",
+    "bootstrap-vue-next": "^0.40.9",
     "pinia": "^3.0.4",
     "poisson-disk-sampling": "^2.3.1",
     "simplex-noise": "^4.0.3",

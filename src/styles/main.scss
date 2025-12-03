@@ -1,13 +1,38 @@
 $border-radius: 6px;
 $enable-shadows: true;
+@import "../../node_modules/bootstrap/scss/functions";
 
-@import '../../node_modules/bootstrap/scss/functions';
-@import '../../node_modules/bootstrap/scss/variables';
-@import '../../node_modules/bootstrap/scss/variables-dark';
+$accordion-icon-color-dark: #fff;
+$accordion-icon-active-color-dark: #fff;
 
-@import 'bootstrap';
-@import '_range-band-slider';
-@import 'bootstrap/buttons';
+$font-size-base: 0.9rem;
+
+$dropdown-border-width: 1px;
+$border-color-translucent: rgba(#000, 0.25);
+
+$dropdown-header-padding-y: .2rem;
+$dropdown-divider-margin-y: .2rem;
+$table-bg: transparent;
+
+$spacer: 1rem;
+
+$card-spacer-y: $spacer;
+$card-spacer-x: $spacer;
+
+$card-cap-padding-x: $card-spacer-y * .5;
+$card-cap-padding-y: $card-spacer-y * .5;
+
+$enable-shadows: true;
+
+$toast-background-color: rgba(var(--bs-body-bg-rgb), 1);
+
+$navbar-dark-color: #d14d27;
+
+@import "../../node_modules/bootstrap/scss/bootstrap";
+@import '../../node_modules/bootstrap-vue-next/src/styles/styles';
+@import "bootstrap/buttons";
+
+@import "fonts/icons";
 
 body {
   background: #1b1b1b;

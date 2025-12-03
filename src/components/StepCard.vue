@@ -77,12 +77,12 @@ const validationErrors = computed(() => {
       'invalid-input-type': invalidInputType,
     }">
       <div class="card-header px-2 d-flex">
-        <button role="button"
-                class=" btn btn-sm btn-secondary btn-grab flex-shrink-1"
+        <span role="button"
+                class="btn btn-sm btn-secondary btn-grab"
                 draggable="false"
                 @pointerdown.stop
         >:::
-        </button>
+        </span>
 
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
         <button role="button" class="btn btn-sm btn-danger flex-shrink-1" @click="remove">X</button>

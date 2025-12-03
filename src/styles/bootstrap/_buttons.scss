@@ -66,6 +66,7 @@
   .btn-grab {
     --bs-btn-bg: #{rgba($white, 0.05)};
     --bs-btn-color: rgba(var(--bs-body-color-rgb), 0.75);
+    padding-top: 0.35rem;
   }
 }
 
