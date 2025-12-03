@@ -85,6 +85,9 @@ const validationErrors = computed(() => {
         >:::
         </span>
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
+        <button role="button" class="btn btn-sm btn-secondary flex-shrink-1 mx-1" @click="store.duplicate(step.id)">
+          <span class="material-symbols-outlined">content_copy</span>
+        </button>
         <button role="button" class="btn btn-sm btn-danger flex-shrink-1" @click="remove">
           <span class="material-symbols-outlined">delete</span>
         </button>

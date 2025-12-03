@@ -22,8 +22,8 @@ import {
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { copyImageDataOrNull } from '../util/ImageData.ts'
-import { prng } from '../util/prng.ts'
 import { logStepEvent } from '../util/misc.ts'
+import { prng } from '../util/prng.ts'
 
 export type StepStore = ReturnType<typeof useStepStore>
 
@@ -84,6 +84,25 @@ export const useStepStore = defineStore('steps', () => {
       stepsById[step.id] = step
 
       return step
+    }
+
+    function duplicate(stepId: string) {
+      const step = get(stepId)
+      const newStep = add(step.def)
+      const freshConfig = step.handler!.config()
+
+      Object.assign(
+        freshConfig,
+        step.config,
+      )
+      newStep.config = freshConfig
+
+      if (!isLast(stepId)) {
+        const index = stepIdOrder.value.indexOf(stepId)
+        moveTo(newStep.id, index + 1)
+      }
+
+      return newStep
     }
 
     function get<T extends AnyStepContext>(stepId: string): StepRef<T> {
@@ -366,6 +385,7 @@ export const useStepStore = defineStore('steps', () => {
 
       add,
       get,
+      duplicate,
       remove,
       moveTo,
       all,
