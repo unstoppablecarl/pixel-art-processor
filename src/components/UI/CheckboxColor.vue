@@ -1,27 +1,46 @@
 <script setup lang="ts">
-import {withDefaults} from 'vue'
+import { BPopover } from 'bootstrap-vue-next'
+import { computed } from 'vue'
+import { ChromePicker, tinycolor } from 'vue-color'
+
+const active = defineModel('active')
+const color = defineModel<string>('color')
+console.log('init', color.value)
 
 const {
   label,
-  color,
-  bgColor,
-} = withDefaults(defineProps<{
+  bgColor = '#fff',
+  check = true,
+
+} = defineProps<{
   label: string,
-  color: string
   bgColor?: string,
-}>(), {
-  bgColor: 'rgba(255,255,255,1)',
+  check?: boolean,
+}>()
+
+const tinyColorValue = computed({
+  get: () => {
+    return tinycolor(color.value)
+  },
+  set(rgba) {
+    color.value = tinycolor(rgba).toRgbString()
+  },
 })
 
-const modelValue = defineModel()
 </script>
 <template>
   <div class="form-check">
-    <input type="checkbox" class="form-check-input" name="generic"
-           v-model="modelValue" />
+    <input v-if="check" type="checkbox" class="form-check-input" v-model="active" />
     <label class="form-check-label">
-      <span class="color-indicator" :style="`background: ${bgColor};`">
-        <span :style="`background: ${color};`">&nbsp;</span> </span>
+      <BPopover click body-class="p-2">
+        <template #target>
+          <span class="color-indicator" :style="`background: ${bgColor};`">
+            <span :style="`background: ${color};`"></span>
+          </span>
+        </template>
+
+        <ChromePicker v-model.tinycolor="tinyColorValue" />
+      </BPopover>
       {{ label }}
     </label>
   </div>

@@ -11,10 +11,12 @@ const store = useStepStore()
 const {
   step,
   images,
+  footerTabs = false,
 } = defineProps<{
   step: AnyConfiguredStep
   showDimensions?: boolean,
-  images?: StepImage[]
+  images?: StepImage[],
+  footerTabs?: boolean
 }>()
 
 const dimensions = computed(() => {
@@ -64,7 +66,6 @@ const invalidInputType = computed(() => {
 const validationErrors = computed(() => {
   return step.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
 })
-
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
@@ -78,14 +79,15 @@ const validationErrors = computed(() => {
     }">
       <div class="card-header px-2 d-flex">
         <span role="button"
-                class="btn btn-sm btn-secondary btn-grab"
-                draggable="false"
-                @pointerdown.stop
+              class="btn btn-sm btn-secondary btn-grab"
+              draggable="false"
+              @pointerdown.stop
         >:::
         </span>
-
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
-        <button role="button" class="btn btn-sm btn-danger flex-shrink-1" @click="remove">X</button>
+        <button role="button" class="btn btn-sm btn-danger flex-shrink-1" @click="remove">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
       </div>
       <div class="card-body">
         <StepImg
@@ -95,8 +97,9 @@ const validationErrors = computed(() => {
           :image="image"
         />
       </div>
-      <div class="card-footer">
-        <div class="pt-2 pb-3" v-for="error in step.validationErrors">
+
+      <div :class="{'card-footer': true, 'card-footer-tabs': footerTabs}">
+        <div class="pt-2 pb-3 step-validation-errors-container" v-for="error in step.validationErrors">
           <component :is="error.component" :error="error" />
         </div>
         <slot name="footer"></slot>

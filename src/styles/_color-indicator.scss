@@ -21,10 +21,5 @@
     border-radius: 100%;
     width: calc(1rem - var(--color-indicator-padding) * 2);
     height: calc(1rem - var(--color-indicator-padding) * 2);
-
-    & ::content {
-
-      content: '&nbsp;';
-    }
   }
 }

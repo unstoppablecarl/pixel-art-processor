@@ -1,16 +1,20 @@
-import { ColorSpace, parse, sRGB } from 'colorjs.io/fn'
+import tinycolor from 'tinycolor2'
 import type { RGBA } from './ImageData.ts'
 
-// Can parse keywords and hex colors
-ColorSpace.register(sRGB)
-export const parseColor = (color: string): RGBA => {
-  const result = parse(color)
+export const parseColor = (color: string) => {
+  const result = tinycolor(color)
+  return result.toRgb()
+}
+
+export const parseColorData = (color: string): RGBA => {
+  const result = tinycolor(color)
+  const { r, g, b, a } = result.toRgb()
 
   return {
-    r: result.coords[0],
-    g: result.coords[1],
-    b: result.coords[2],
-    a: Math.floor(Number(result.alpha) * 255),
+    r,
+    g,
+    b,
+    a: Math.floor(Number(a) * 255),
   }
 }
 

@@ -101,6 +101,10 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     }
     const colorA = valueToColor
 
+    console.log({
+      colorA,
+      colorB
+    })
     const result = new ImageData(this.width, this.height)
     updateImageData(result, (x, y) => {
       if (this.get(x, y)) {

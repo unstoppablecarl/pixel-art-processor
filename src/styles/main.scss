@@ -2,6 +2,7 @@ $border-radius: 6px;
 $enable-shadows: true;
 @import '../../node_modules/bootstrap/scss/functions';
 
+$popover-bg: #fff;
 $accordion-icon-color-dark: #fff;
 $accordion-icon-active-color-dark: #fff;
 
@@ -27,6 +28,7 @@ $enable-shadows: true;
 $toast-background-color: rgba(var(--bs-body-bg-rgb), 1);
 
 $navbar-dark-color: #d14d27;
+$transition-fade: opacity .05s linear;
 
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/bootstrap-vue-next/src/styles/styles';

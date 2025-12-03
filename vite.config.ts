@@ -1,6 +1,8 @@
 /// <reference types="vitest/config" />
 import vue from '@vitejs/plugin-vue'
+import { BootstrapVueNextResolver } from 'bootstrap-vue-next/resolvers'
 import { fileURLToPath } from 'node:url'
+import Components from 'unplugin-vue-components/vite'
 import { defineConfig } from 'vite'
 
 export default defineConfig(({ mode }) => {
@@ -14,6 +16,9 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       vue(),
+      Components({
+        resolvers: [BootstrapVueNextResolver()],
+      }),
     ],
     css: {
       preprocessorOptions: {
