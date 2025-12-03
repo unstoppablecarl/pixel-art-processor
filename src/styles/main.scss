@@ -1,6 +1,6 @@
 $border-radius: 6px;
 $enable-shadows: true;
-@import "../../node_modules/bootstrap/scss/functions";
+@import '../../node_modules/bootstrap/scss/functions';
 
 $accordion-icon-color-dark: #fff;
 $accordion-icon-active-color-dark: #fff;
@@ -28,11 +28,13 @@ $toast-background-color: rgba(var(--bs-body-bg-rgb), 1);
 
 $navbar-dark-color: #d14d27;
 
-@import "../../node_modules/bootstrap/scss/bootstrap";
+@import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/bootstrap-vue-next/src/styles/styles';
-@import "bootstrap/buttons";
+@import 'bootstrap/buttons';
 
-@import "fonts/icons";
+@import 'fonts/icons';
+@import 'step';
+@import 'color-indicator';
 
 body {
   background: #1b1b1b;
@@ -42,15 +44,6 @@ body {
   font-size: 0.875em;
 }
 
-[data-bs-theme="dark"],
-:root {
-  --step-padding: 10px;
-  --step-padding-per-image: calc(var(--step-padding));
-  --step-total-border-width: calc(var(--bs-border-width) * 2);
-  --step-card-body-padding-x: calc(var(--step-padding) * 0.5);
-  --step-card-body-padding-y: var(--step-padding);
-  --step-card-margin: 5px;
-}
 
 .overflow {
   overflow-x: auto;
@@ -64,89 +57,4 @@ body {
   align-items: flex-start;
   gap: 0.5rem;
   min-width: 100%;
-}
-
-.steps-container {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.after-steps-container {
-  position: relative;
-  padding-top: var(--step-card-margin);
-  padding-right: 20px;
-}
-
-.step {
-  flex-shrink: 0;
-  min-width: 150px;
-  --step-total-image-width: 150px;
-  --stem-image-count: 0;
-  user-select: auto;
-
-  width: calc(
-          var(--stem-image-count) * var(--step-padding-per-image)
-          + var(--step-total-border-width)
-          + var(--step-card-body-padding-x) * 2
-          + var(--step-total-image-width) * var(--step-img-scale)
-          + var(--step-card-margin) * 2
-  );
-
-  // preview of item in drop zone
-  &.drag-placeholder {
-    opacity: 0.33;
-  }
-
-  // drop preview
-  &.drop-zone {
-    border-radius: calc(var(--bs-border-radius) + var(--step-card-margin));
-    background-color: #f0f9ff;
-
-    .step-header {
-      color: #000;
-    }
-  }
-
-  &.input-invalid {
-    border-left-color: var(--bs-danger);
-  }
-
-  &.step-dragging {
-    opacity: 1 !important;
-    cursor: grabbing !important;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1),
-    0 8px 10px -6px rgba(0, 0, 0, 0.1);
-  }
-
-  .step-header {
-    padding: 0 calc(var(--step-card-margin) + 0.5rem)
-  }
-}
-
-
-.card-step {
-  margin: var(--step-card-margin);
-
-  &.invalid-input-type {
-    border-left-color: var(--bs-danger);
-    //border-left-width: 5px;
-  }
-
-  .card-body {
-    padding: var(--step-card-body-padding-y) var(--step-card-body-padding-x);
-    white-space: nowrap;
-  }
-
-  .card-footer {
-    .form-label {
-      display: block;
-    }
-  }
-}
-
-.step-img {
-  margin: 0 calc(var(--step-padding) * 0.5);
-  display: inline-block;
 }

@@ -1,7 +1,7 @@
 import type { Bounds } from '../data/Bounds.ts'
 import { ADJACENT_DIRECTIONS, type Point } from '../step-data-types/BaseDataStructure.ts'
-import { BitMask, IslandType } from '../step-data-types/BitMask.ts'
-import { Island } from '../step-data-types/BitMask/Island.ts'
+import { BitMask } from '../step-data-types/BitMask.ts'
+import { Island, IslandType } from '../step-data-types/BitMask/Island.ts'
 import { type Prng } from '../util/prng.ts'
 
 export class BlobGrower {
@@ -194,7 +194,6 @@ export class BlobGrower {
       for (const island of this.islands) {
 
         if (!this.filter(island)) continue
-        console.log(island)
         if (this.prng() < skipChance.get(island)!)
           cb(island)
       }

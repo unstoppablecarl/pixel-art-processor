@@ -3,12 +3,22 @@ import type { Point } from '../BaseDataStructure.ts'
 import { BitMask } from '../BitMask.ts'
 
 export enum IslandType {
-  HORIZONTAL_EDGE = 'HORIZONTAL',
-  VERTICAL_EDGE = 'VERTICAL',
-  NORMAL = 'NORMAL'
+  NORMAL = 1 << 0,
+  TOP_EDGE = 1 << 1,
+  BOTTOM_EDGE = 1 << 2,
+  LEFT_EDGE = 1 << 3,
+  RIGHT_EDGE = 1 << 4,
+  HORIZONTAL_EDGE = IslandType.TOP_EDGE | IslandType.BOTTOM_EDGE,
+  VERTICAL_EDGE = IslandType.LEFT_EDGE | IslandType.RIGHT_EDGE,
 }
 
-const EDGE_INSET_RATIO = 0.2
+export type AssignableIslandType = IslandType.NORMAL
+  | IslandType.TOP_EDGE
+  | IslandType.BOTTOM_EDGE
+  | IslandType.LEFT_EDGE
+  | IslandType.RIGHT_EDGE
+
+const GROW_RATIO = 0.5
 
 export class Island {
   readonly frontier: Set<number> = new Set()
@@ -26,7 +36,7 @@ export class Island {
     maxX: number,
     minY: number,
     maxY: number,
-    readonly type: IslandType = IslandType.NORMAL,
+    readonly type: AssignableIslandType = IslandType.NORMAL,
   ) {
     if (minX > maxX || minY > maxY) throw new Error('Invalid bounds')
     this.maskWidth = this.mask.width // Cache fixed width
@@ -40,14 +50,14 @@ export class Island {
   protected initializeFrontier() {
     this.mask.eachRect(this.bounds, (x, y, v) => {
       if (v === 1) {
-        this.mask.eachAdjacent(x, y, (ax, ay, av) => {
-          if (av === 0) {
-            if (this.expandableBounds.contains(x, y)) {
+        if (this.isValidExpansion(x, y)) {
+          this.mask.eachAdjacent(x, y, (ax, ay, av) => {
+            if (av === 0) {
               const id = ax + ay * this.maskWidth
               this.frontier.add(id)
             }
-          }
-        })
+          })
+        }
       }
     })
   }
@@ -65,7 +75,7 @@ export class Island {
 
     this.mask.eachAdjacent(x, y, (nx, ny, v) => {
       if (v === 0) {
-        if (this.expandableBounds.contains(nx, ny)) {
+        if (this.isValidExpansion(nx, ny)) {
           const nid = nx + ny * this.maskWidth
           this.frontier.add(nid)
         }
@@ -85,23 +95,48 @@ export class Island {
     }
   }
 
+  protected isValidExpansion(x: number, y: number): boolean {
+    if (this.type == IslandType.NORMAL) return true
+
+    return this.expandableBounds.contains(x, y)
+  }
+
   protected updateExpandableBounds() {
-    const bounds = this.bounds
+    if (this.type == IslandType.NORMAL) return true
 
-    let minX = Math.max(bounds.minX - 1, 0)
-    let maxX = Math.min(bounds.maxX + 1, this.mask.width)
+    let minX = this.initialBounds.minX
+    let maxX = this.initialBounds.maxX
+    let minY = this.initialBounds.minY
+    let maxY = this.initialBounds.maxY
 
-    let minY = Math.max(bounds.minY - 1, 0)
-    let maxY = Math.min(bounds.maxY + 1, this.mask.height)
-
-    if (this.type === IslandType.HORIZONTAL_EDGE) {
-      minX = this.initialBounds.minX// + Math.floor(this.initialBounds.height * EDGE_INSET_RATIO)
-      maxX = this.initialBounds.maxX// - Math.floor(this.initialBounds.height * EDGE_INSET_RATIO)
+    if (this.type === IslandType.LEFT_EDGE) {
+      maxX = this.initialBounds.minX + this.initialBounds.height * GROW_RATIO
     }
 
-    if (this.type === IslandType.VERTICAL_EDGE) {
-      minY = this.initialBounds.minY// + Math.floor(this.initialBounds.width * EDGE_INSET_RATIO)
-      maxY = this.initialBounds.maxY// - Math.floor(this.initialBounds.width * EDGE_INSET_RATIO)
+    if (this.type === IslandType.RIGHT_EDGE) {
+      minX = this.initialBounds.maxX - this.initialBounds.height * GROW_RATIO
+    }
+
+    if (this.type === IslandType.TOP_EDGE) {
+      maxY = this.initialBounds.minY + this.initialBounds.width * GROW_RATIO
+    }
+
+    if (this.type === IslandType.BOTTOM_EDGE) {
+      minY = this.initialBounds.maxY - this.initialBounds.width * GROW_RATIO
+    }
+
+    // never grow wider
+    const isHorizontalEdge = (this.type & IslandType.HORIZONTAL_EDGE) !== 0
+    if (isHorizontalEdge) {
+      minX = this.initialBounds.minX + 1
+      maxX = this.initialBounds.maxX - 1
+    }
+
+    // never grow taller
+    const isVerticalEdge = (this.type & IslandType.VERTICAL_EDGE) !== 0
+    if (isVerticalEdge) {
+      minY = this.initialBounds.minY + 1
+      maxY = this.initialBounds.maxY - 1
     }
 
     // if (__DEV__) {
@@ -115,7 +150,8 @@ export class Island {
     this.expandableBounds.minY = minY
     this.expandableBounds.maxX = maxX
     this.expandableBounds.maxY = maxY
-    this.expandableBounds.trim(this.mask.bounds)
+    // not sure if needed
+    // this.expandableBounds.trim(this.mask.bounds)
   }
 
   getExpandable(): Point[] {

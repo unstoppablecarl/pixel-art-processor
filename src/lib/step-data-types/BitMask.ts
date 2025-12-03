@@ -1,16 +1,10 @@
 import { Bounds, type BoundsLike } from '../data/Bounds.ts'
 import { eachImageDataPixel, type RGBA, updateImageData } from '../util/ImageData.ts'
 import { BaseDataStructure, CARDINAL_DIRECTIONS, type Point } from './BaseDataStructure.ts'
-import { Island } from './BitMask/Island.ts'
+import { Island, IslandType } from './BitMask/Island.ts'
 import { PixelMap } from './PixelMap.ts'
 
 export type Bit = 0 | 1
-
-export enum IslandType {
-  HORIZONTAL_EDGE = 'HORIZONTAL',
-  VERTICAL_EDGE = 'VERTICAL',
-  NORMAL = 'NORMAL'
-}
 
 export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>> {
   readonly __brand = 'BitMask'
@@ -158,14 +152,27 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
       }
     }
 
-    const horzCount = Math.max(topCount, bottomCount)
-    const vertCount = Math.max(leftCount, rightCount)
+    const horzCount = Math.max(topCount, bottomCount);
+    const vertCount = Math.max(leftCount, rightCount);
+
     if (horzCount > vertCount) {
-      return IslandType.HORIZONTAL_EDGE
+      if (topCount > bottomCount) {
+        return IslandType.TOP_EDGE;
+      } else if (bottomCount > topCount) {
+        return IslandType.BOTTOM_EDGE;
+      } else {
+        return IslandType.TOP_EDGE | IslandType.BOTTOM_EDGE;
+      }
     } else if (vertCount > horzCount) {
-      return IslandType.VERTICAL_EDGE
+      if (leftCount > rightCount) {
+        return IslandType.LEFT_EDGE;
+      } else if (rightCount > leftCount) {
+        return IslandType.RIGHT_EDGE;
+      } else {
+        return IslandType.LEFT_EDGE | IslandType.RIGHT_EDGE;
+      }
     } else {
-      return IslandType.NORMAL
+      return IslandType.NORMAL;
     }
   }
 
