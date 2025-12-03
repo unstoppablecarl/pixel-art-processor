@@ -14,6 +14,7 @@ export class Island {
   readonly frontier: Set<number> = new Set()
   readonly expandableBounds: Bounds
   readonly bounds: Bounds
+  readonly initialBounds: Bounds
 
   private maskWidth: number // cache
   private _expandable: Point[] | null = null // Cache for getExpandable()
@@ -29,7 +30,8 @@ export class Island {
   ) {
     if (minX > maxX || minY > maxY) throw new Error('Invalid bounds')
     this.maskWidth = this.mask.width // Cache fixed width
-    this.bounds = mask.bounds.trimNewBounds(minX, maxX, minY, maxY)
+    this.bounds = mask.bounds.trimNewBounds({ minX, maxX, minY, maxY })
+    this.initialBounds = this.bounds.copy()
     this.expandableBounds = new Bounds()
     this.updateExpandableBounds()
     this.initializeFrontier()
@@ -40,8 +42,10 @@ export class Island {
       if (v === 1) {
         this.mask.eachAdjacent(x, y, (ax, ay, av) => {
           if (av === 0) {
-            const id = ax + ay * this.maskWidth
-            this.frontier.add(id)
+            if (this.expandableBounds.contains(x, y)) {
+              const id = ax + ay * this.maskWidth
+              this.frontier.add(id)
+            }
           }
         })
       }
@@ -56,13 +60,15 @@ export class Island {
   claimPoint(x: number, y: number) {
     this.expandBounds(x, y)
 
-    const key = x + y * this.maskWidth
-    this.frontier.delete(key)
+    const id = x + y * this.maskWidth
+    this.frontier.delete(id)
 
-    this.mask.eachAdjacent(x, y, (nx, ny, nv) => {
-      if (nv === 0) {
-        const nid = nx + ny * this.maskWidth
-        this.frontier.add(nid)
+    this.mask.eachAdjacent(x, y, (nx, ny, v) => {
+      if (v === 0) {
+        if (this.expandableBounds.contains(nx, ny)) {
+          const nid = nx + ny * this.maskWidth
+          this.frontier.add(nid)
+        }
       }
     })
 
@@ -89,14 +95,21 @@ export class Island {
     let maxY = Math.min(bounds.maxY + 1, this.mask.height)
 
     if (this.type === IslandType.HORIZONTAL_EDGE) {
-      minX = bounds.minX + Math.floor(this.bounds.height * EDGE_INSET_RATIO)
-      maxX = bounds.maxX - Math.floor(this.bounds.height * EDGE_INSET_RATIO)
+      minX = this.initialBounds.minX// + Math.floor(this.initialBounds.height * EDGE_INSET_RATIO)
+      maxX = this.initialBounds.maxX// - Math.floor(this.initialBounds.height * EDGE_INSET_RATIO)
     }
 
     if (this.type === IslandType.VERTICAL_EDGE) {
-      minY = bounds.minY + Math.floor(this.bounds.width * EDGE_INSET_RATIO)
-      maxY = bounds.maxY - Math.floor(this.bounds.width * EDGE_INSET_RATIO)
+      minY = this.initialBounds.minY// + Math.floor(this.initialBounds.width * EDGE_INSET_RATIO)
+      maxY = this.initialBounds.maxY// - Math.floor(this.initialBounds.width * EDGE_INSET_RATIO)
     }
+
+    // if (__DEV__) {
+    //   if (isNaN(minX) || isNaN(maxX) || isNaN(minY) || isNaN(maxY)) {
+    //     console.error('invalid island expandable bounds', minX, maxX, minY, maxY)
+    //     throw new Error('invalid island expandable bounds')
+    //   }
+    // }
 
     this.expandableBounds.minX = minX
     this.expandableBounds.minY = minY

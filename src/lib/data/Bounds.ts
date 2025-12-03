@@ -27,43 +27,28 @@ export class Bounds implements BoundsLike {
     return (x < this.maxX && x >= this.minX) && (y < this.maxY && y >= this.minY)
   }
 
-  trim(minX: number, maxX: number, minY: number, maxY: number): void;
-  trim(bounds: BoundsLike): void;
-
-  trim(arg1: number | BoundsLike, arg2?: number, arg3?: number, arg4?: number): void {
-    this._trim(false, arg1, arg2, arg3, arg4)
+  trim(bounds: BoundsLike): void {
+    this._trim(false, bounds)
   }
 
-  trimNewBounds(minX: number, maxX: number, minY: number, maxY: number): Bounds;
-  trimNewBounds(bounds: BoundsLike): Bounds;
-
-  trimNewBounds(arg1: number | BoundsLike, arg2?: number, arg3?: number, arg4?: number): Bounds {
-    return this._trim(true, arg1, arg2, arg3, arg4) as Bounds
+  trimNewBounds(bounds: BoundsLike): Bounds {
+    return this._trim(true, bounds) as Bounds
   }
 
-  private _trim(createNew: boolean, arg1: number | BoundsLike, arg2?: number, arg3?: number, arg4?: number): void | Bounds {
-    let minX: number, maxX: number, minY: number, maxY: number
+  copy(): Bounds {
+    return new Bounds(
+      this.minX,
+      this.maxX,
+      this.minY,
+      this.maxY,
+    )
+  }
 
-    if (typeof arg1 === 'object' && arg1 !== null) {
-      const bounds = arg1 as BoundsLike;
-      ({ minX, maxX, minY, maxY } = bounds)
-    } else {
-      minX = arg1 as number
-      maxX = arg2 as number
-      minY = arg3 as number
-      maxY = arg4 as number
-    }
-    minX = Math.max(0, minX)
-    maxX = Math.min(this.width, maxX)
-
-    minY = Math.max(0, minY)
-    maxY = Math.min(this.height, maxY)
-
-    minX = Math.max(0, Math.min(minX, maxX))
-    maxX = Math.min(this.maxX, Math.max(minX, maxX))
-
-    minY = Math.max(0, Math.min(minY, maxY))
-    maxY = Math.min(this.maxY, Math.max(minY, maxY))
+  private _trim(createNew: boolean, { minX, maxX, minY, maxY }: BoundsLike): void | Bounds {
+    minX = Math.max(this.minX, minX)
+    maxX = Math.min(this.maxX, maxX)
+    minY = Math.max(this.minY, minY)
+    maxY = Math.min(this.maxY, maxY)
 
     // if (__DEV__) {
     //   if (isNaN(minX) || isNaN(maxX) || isNaN(minY) || isNaN(maxY)) {

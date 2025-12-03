@@ -4,8 +4,8 @@ import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask, IslandType } from '../../lib/step-data-types/BitMask.ts'
-import { setImageDataPixelColor } from '../../lib/util/ImageData.ts'
 import { prng } from '../../lib/util/prng.ts'
+import { Sketch } from '../../lib/util/Sketch.ts'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
@@ -39,25 +39,23 @@ const step = useStepHandler(stepId, {
       })
     })
 
-    const preview = mask.toImageData()
+    const sketch = new Sketch(mask.width, mask.height)
+    sketch.putImageData(mask.toImageData())
+
     edgeIslands.forEach((i) => {
+      sketch.fillRectBounds(i.expandableBounds, 'rgba(0, 0, 255, 0.5)')
       i.getExpandable().forEach(({ x, y }) => {
-        setImageDataPixelColor(preview, x, y, { r: 255, g: 0, b: 0, a: 255 })
+        sketch.setPixel(x, y, 'rgba(255, 0, 0, 0.5)')
       })
 
       i.getExpandableRespectingMinDistance(edgeIslands, C.minDistance).forEach(({ x, y }) => {
-        setImageDataPixelColor(preview, x, y, { r: 0, g: 0, b: 255, a: 255 })
+        sketch.setPixel(x, y, 'rgba(0, 255, 0, 0.5)')
       })
 
-      i.each((x, y, v) => {
-        if (v) {
-          setImageDataPixelColor(preview, x, y, { r: 0, g: 255, b: 0, a: 255 })
-        }
-      })
     })
     return {
       output: mask,
-      preview,
+      preview: sketch.toImageData(),
     }
   },
 })
@@ -80,7 +78,7 @@ const config = step.config
       </div>
       <div>
         <label class="form-label">Edge Perlin: {{ config.edgePerlin }}</label>
-        <input type="range" min="1" max="100" step="1" v-model.number="config.edgePerlin"
+        <input type="range" min="0" max="100" step="1" v-model.number="config.edgePerlin"
                class="form-range" />
       </div>
       <div>

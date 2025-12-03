@@ -354,7 +354,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
       maxX: x1,
       minY: y0,
       maxY: y1,
-    } = this.bounds.trimNewBounds(minX, maxX, minY, maxY)
+    } = this.bounds.trimNewBounds({minX, maxX, minY, maxY})
     const width = this.width
 
     if (this.canUseDirectAccess) {
