@@ -113,8 +113,8 @@ export function smoothIslandGaussian(
     }
 
     // Apply smoothing only within island bounds and to pixels that pass the filter
-    for (let y = island.minY; y < island.maxY; y++) {
-      for (let x = island.minX; x < island.maxX; x++) {
+    for (let y = island.bounds.minY; y < island.bounds.maxY; y++) {
+      for (let x = island.bounds.minX; x < island.bounds.maxX; x++) {
         const value = mask.get(x, y)
 
         // Skip if filter returns false
@@ -150,8 +150,8 @@ export function smoothIslandGaussian(
     }
 
     // Copy temp back to mask
-    for (let y = island.minY; y < island.maxY; y++) {
-      for (let x = island.minX; x < island.maxX; x++) {
+    for (let y = island.bounds.minY; y < island.bounds.maxY; y++) {
+      for (let x = island.bounds.minX; x < island.bounds.maxX; x++) {
         mask.set(x, y, temp.get(x, y))
       }
     }
