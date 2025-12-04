@@ -1,18 +1,32 @@
-const blue = '#CCEDFC'
-const green = '#D1FCCC'
-const orange = '#FCEECC'
-const purple = '#DACCFC'
+import tinycolor from 'tinycolor2'
+
+const blue = makeBgColor('#CCEDFC')
+const green = makeBgColor('#D1FCCC')
+const orange = makeBgColor('#FCEECC')
+const purple = makeBgColor('#DACCFC')
+
+function darkModeColor(color: string) {
+  const hsl = tinycolor(color).toHsl()
+  hsl.l = 1 - hsl.l
+
+  return tinycolor(hsl).toRgbString()
+}
+
+function makeBgColor(light: string) {
+  const dark = darkModeColor(light)
+  return `background: light-dark(${light}, ${dark});`
+}
 
 export function logStepEvent(stepId: string, event: string, ...args: any[]) {
-  console.log(`%c[${stepId}] %c${event}`, `background: ${blue}`, `background: ${green}`, ...args)
+  console.log(`%c[${stepId}] %c${event}`, `${blue}`, `${green}`, ...args)
 }
 
 export function logStepWatch(stepId: string, ...args: any[]) {
-  console.log(`%c[${stepId}] %cWATCH`, `background: ${blue}`, `background: ${orange}`, ...args)
+  console.log(`%c[${stepId}] %cWATCH`, `${blue}`, `${orange}`, ...args)
 }
 
 export function logStepDebug(stepId: string, ...args: any[]) {
-  console.log(`%c[${stepId}] %DEBUG`, `background: ${blue}`, `background: ${purple}`, ...args)
+  console.log(`%c[${stepId}] %DEBUG`, `${blue}`, `${purple}`, ...args)
 }
 
 export function objectsAreEqual(obj1: any, obj2: any, maxDepth = 400, currentDepth = 0) {
