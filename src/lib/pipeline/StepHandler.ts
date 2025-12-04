@@ -3,6 +3,7 @@ import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
+import { deepUnwrap } from '../util/vue-util.ts'
 import type { AnyStepContext, ReactiveConfigType, StepRef } from './Step.ts'
 import { useStepRegistry } from './StepRegistry.ts'
 
@@ -123,7 +124,7 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
     serializeConfig(config: RC): SerializedConfig {
       return {
         ...config,
-        ...this.serializeConfigKeys(config),
+        ...this.serializeConfigKeys(deepUnwrap(config)),
       } as SerializedConfig
     },
 
