@@ -365,6 +365,12 @@ export const useStepStore = defineStore('steps', () => {
 
       const prevHandler = getHandler(prev.id)
       const currentHandler = getHandler(stepId)
+
+      const hasInputTypes = currentHandler.inputDataTypes.length
+      if (!hasInputTypes) {
+        return []
+      }
+
       return [
         ...currentHandler.validateInputType(prevHandler.outputDataType, currentHandler.inputDataTypes),
         ...currentHandler.validateInput(prev.outputData),
