@@ -24,7 +24,7 @@ import StepCard from '../StepCard.vue'
 import CheckboxColorList, { type CheckboxColorListItem } from '../UI/CheckboxColorList.vue'
 import EnumSelect from '../UI/EnumSelect.vue'
 import RangeSlider from '../UI/RangeSlider.vue'
-import { rangeSliderConfig, rangeSliderConfigAdapter } from '../UI/RangeSlider.ts'
+import { rangeSliderConfig } from '../UI/RangeSlider.ts'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -178,9 +178,6 @@ const step = useStepHandler(stepId, {
       output: mask,
       preview: sketch.toImageData(),
     }
-  },
-  configKeyAdapters: {
-    perlinIterations: rangeSliderConfigAdapter,
   },
 })
 

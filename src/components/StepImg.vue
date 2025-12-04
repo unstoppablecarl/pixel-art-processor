@@ -15,6 +15,7 @@ import { useScaleStore } from '../lib/store/scale-store.ts'
 const store = useScaleStore()
 const {
   image,
+  // @ts-expect-error
   step,
 } = defineProps<{
   image: StepImage,

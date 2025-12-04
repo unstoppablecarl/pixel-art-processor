@@ -1,5 +1,5 @@
 import { expectTypeOf } from 'expect-type'
-import { toValue, watch } from 'vue'
+import { toValue, watch, type WatchSource } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { StepValidationError } from '../errors.ts'
 import { useStepStore } from '../store/step-store.ts'
@@ -11,7 +11,6 @@ import type {
   StepContext,
   StepInputTypesToInstances,
   StepLoaderSerialized,
-  StepRef,
 } from './Step.ts'
 import type { Config, ConfigKeyAdapters, StepHandlerOptions, StepRunnerOptions } from './StepHandler.ts'
 
@@ -45,7 +44,7 @@ export function useStepHandler<
     serializeConfig?: (config: C) => SC,
     deserializeConfig?: (config: SC) => C,
     run: StepRunnerOptions<C, RC, I, O>,
-    watcher?: (step: StepRef<StepContext<C, SC, RC, I, O>>) => any,
+    watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatchSource[]) => WatchSource[],
     loadConfig?: (config: RC, serializedConfig: SC) => void,
     prevOutputToInput?: (outputData: StepDataTypeInstance | null) => StepInputTypesToInstances<I> | null,
     validateInputType?: (typeFromPrevOutput: StepDataType, inputDataTypes: I) => StepValidationError[],
@@ -81,12 +80,19 @@ export function useStepHandler<
     store.resolveStep<T>(stepId, inputData, handler.run)
   }
 
+  const defaultWatcherTargets = [
+    step.config,
+    () => step.inputData,
+  ]
+
+  const watcherTargets = handler.watcher(step as ConfiguredStep<T>, defaultWatcherTargets)
   watch(
-    handler.watcher(step as StepRef<T>),
+    watcherTargets,
     () => {
       logStepWatch(step.id)
       process()
-    }, { immediate: true },
+    },
+    { immediate: true },
   )
 
   if (__DEV__) {

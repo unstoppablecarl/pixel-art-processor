@@ -1,11 +1,12 @@
-import { reactive, type WatchEffect, type WatchSource } from 'vue'
+import { reactive, type WatchSource, type Reactive } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import type { AnyStepContext, ReactiveConfigType, StepRef } from './Step.ts'
+import type { AnyStepContext, ReactiveConfigType } from './Step.ts'
 import { useStepRegistry } from './StepRegistry.ts'
+import type { ConfiguredStep } from './useStepHandler.ts'
 
 export type Config = Record<string, any>
 
@@ -33,6 +34,8 @@ export type ConfigKeyAdapters<
   [K in keyof C & keyof SerializedConfig]: ConfigKeyAdapter<SerializedConfig[K], C[K]>
 }>
 
+type WatcherTarget = WatchSource | Reactive<any>
+
 export interface IStepHandler<T extends AnyStepContext> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
@@ -42,7 +45,7 @@ export interface IStepHandler<T extends AnyStepContext> {
   config(): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: StepRef<T>): WatchSource | WatchSource[] | WatchEffect | object,
+  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -93,10 +96,9 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
       return reactive({}) as RC
     },
 
-    watcher(step: StepRef<T>) {
+    watcher(_step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
-        step.config,
-        () => step.inputData,
+        ...defaultWatcherTargets,
       ]
     },
 

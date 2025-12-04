@@ -1,64 +1,3 @@
-<template>
-  <div class="range-container position-relative mb-3">
-    <label v-if="label" class="form-label">{{ label }}</label>
-    <div ref="sliderContainer" class="slider-container position-relative w-100">
-      <div ref="track" class="track position-relative">
-        <div
-          ref="filled"
-          class="filled position-absolute"
-          :style="filledStyle"
-          :class="{ 'no-transition': isDragging }"
-        ></div>
-        <div
-          ref="minThumb"
-          class="thumb min-thumb position-absolute"
-          :style="{ left: `${minPos}%` }"
-          @mousedown="onThumbMousedown($event, true)"
-          @touchstart="onThumbTouchstart($event, true)"
-        ></div>
-        <div
-          ref="maxThumb"
-          class="thumb max-thumb position-absolute"
-          :style="{ left: `${maxPos}%` }"
-          @mousedown="onThumbMousedown($event, false)"
-          @touchstart="onThumbTouchstart($event, false)"
-        ></div>
-      </div>
-    </div>
-    <!-- Value display (optional) -->
-    <div v-if="showInputs" class="row g-2 mt-3">
-      <div class="col-md-6">
-        <label class="form-label" :for="`${id}-min-input`">Min:</label>
-        <input
-          type="number"
-          :class="['form-control', 'min-input']"
-          :id="`${id}-min-input`"
-          :min="min"
-          :max="max"
-          :step="step"
-          :value="internalMinValue"
-          @input="handleMinInput"
-          @change="handleMinChange"
-        />
-      </div>
-      <div class="col-md-6">
-        <label class="form-label" :for="`${id}-max-input`">Max:</label>
-        <input
-          type="number"
-          :class="['form-control', 'max-input']"
-          :id="`${id}-max-input`"
-          :min="min"
-          :max="max"
-          :step="step"
-          :value="internalMaxValue"
-          @input="handleMaxInput"
-          @change="handleMaxChange"
-        />
-      </div>
-    </div>
-  </div>
-</template>
-
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 
@@ -88,7 +27,7 @@ const props = withDefaults(defineProps<DualRangeProps>(), {
   minValue: 0,
   maxValue: 100,
   label: '',
-  showInputs: true,
+  showInputs: false,
   showOutput: true,
   prefix: '',
   suffix: '',
@@ -126,6 +65,8 @@ const filledStyle = computed(() => {
   return {
     left: `${minPos.value}%`,
     width: `${maxPos.value - minPos.value}%`,
+    // left: `calc(${minPos.value}% + 0.5rem)`,
+    // width: `calc(${maxPos.value - minPos.value}% - 0.5rem)`,
   }
 })
 
@@ -287,3 +228,77 @@ const onDragEnd = (): void => {
   document.removeEventListener('touchend', onDragEnd)
 }
 </script>
+<template>
+  <div class="range-container position-relative mb-3">
+    <div class="d-flex">
+
+      <label v-if="label" class="form-label flex-grow-1">{{ label }} {{ minValue }}-{{ maxValue }}</label>
+      <div class="">
+        <div class="badge badge-dark">
+          <span class="text-muted text-uppercase">
+            range:
+          </span>
+          {{ min }} - {{ max }}
+        </div>
+      </div>
+
+    </div>
+    <div ref="sliderContainer" class="slider-container position-relative w-100">
+      <div ref="track" class="track position-relative">
+        <div
+          ref="filled"
+          class="filled position-absolute"
+          :style="filledStyle"
+          :class="{ 'no-transition': isDragging }"
+        ></div>
+        <div class="thumb-container">
+          <div
+            ref="minThumb"
+            class="thumb min-thumb position-absolute"
+            :style="{ left: `${minPos}%` }"
+            @mousedown="onThumbMousedown($event, true)"
+            @touchstart="onThumbTouchstart($event, true)"
+          ></div>
+          <div
+            ref="maxThumb"
+            class="thumb max-thumb position-absolute"
+            :style="{ left: `${maxPos}%` }"
+            @mousedown="onThumbMousedown($event, false)"
+            @touchstart="onThumbTouchstart($event, false)"
+          ></div>
+        </div>
+      </div>
+    </div>
+    <!-- Value display (optional) -->
+    <div v-if="showInputs" class="row g-2 mt-3">
+      <div class="col-md-6">
+        <label class="form-label" :for="`${id}-min-input`">Min:</label>
+        <input
+          type="number"
+          :class="['form-control', 'min-input']"
+          :id="`${id}-min-input`"
+          :min="min"
+          :max="max"
+          :step="step"
+          :value="internalMinValue"
+          @input="handleMinInput"
+          @change="handleMinChange"
+        />
+      </div>
+      <div class="col-md-6">
+        <label class="form-label" :for="`${id}-max-input`">Max:</label>
+        <input
+          type="number"
+          :class="['form-control', 'max-input']"
+          :id="`${id}-max-input`"
+          :min="min"
+          :max="max"
+          :step="step"
+          :value="internalMaxValue"
+          @input="handleMaxInput"
+          @change="handleMaxChange"
+        />
+      </div>
+    </div>
+  </div>
+</template>

@@ -14,7 +14,6 @@
     background-color: $body-secondary-bg; // Light gray unfilled track
     border-radius: var(--bs-track-height);
     position: relative;
-    cursor: pointer;
   }
 
   .filled {
@@ -41,6 +40,7 @@
     user-select: none;
     z-index: 2;
     will-change: transform;
+    transform: translate(-50%, -50%);
 
     &:active {
       cursor: pointer;
@@ -49,13 +49,19 @@
 
   .min-thumb {
     z-index: 3;
-    transform: translate(0, -50%);
+    //transform: translate(0, -50%);
   }
 
   .max-thumb {
     z-index: 2;
-    transform: translate(-100%, -50%);
+    //transform: translate(-100%, -50%);
 
+  }
+
+  .thumb-container {
+    margin: 0 0.5rem;
+    position: relative;
+    height: var(--bs-track-height);
   }
 
   /* Ensure number inputs look consistent */
