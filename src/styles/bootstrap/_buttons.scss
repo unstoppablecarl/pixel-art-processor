@@ -70,6 +70,23 @@
   }
 }
 
+
+.btn-xs {
+  @include button-size(
+                  $badge-padding-y,
+                  $badge-padding-x,
+                  $badge-font-size,
+                  $btn-border-radius-sm
+  );
+  --bs-btn-box-shadow: none;
+  --bs-btn-active-shadow: none;
+  --bs-btn-focus-shadow-rgb: none;
+  --bs-btn-border-width: 1px;
+  --bs-btn-border-color: rgba(255,255,255, 0.15);
+  line-height: 1;
+}
+
+
 .btn-py {
   display: inline-block;
   padding: $btn-padding-y 0;
@@ -78,10 +95,10 @@
   vertical-align: middle;
 }
 
-.btn-sm-py {
-  display: inline-block;
-  padding: $btn-padding-y-sm 0;
-  @include font-size(var(--#{$prefix}btn-font-size));
-  line-height: $btn-line-height;
-  vertical-align: middle;
-}
+//.btn-sm-py {
+//  display: inline-block;
+//  padding: $btn-padding-y-sm 0;
+//  @include font-size(var(--#{$prefix}btn-font-size));
+//  line-height: $btn-line-height;
+//  vertical-align: middle;
+//}

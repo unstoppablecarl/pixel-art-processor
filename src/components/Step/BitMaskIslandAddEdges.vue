@@ -3,11 +3,10 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
   def: 'bitmask_island_edges',
-  displayName: 'BitMask Add Edge Island',
+  displayName: 'BitMask Add Edge Islands',
   inputDataTypes: [],
   outputDataType: BitMask,
 }
-
 </script>
 <script setup lang="ts">
 import { shallowReactive } from 'vue'

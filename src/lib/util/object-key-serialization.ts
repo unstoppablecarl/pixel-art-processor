@@ -1,10 +1,10 @@
 import type { Reactive, ShallowReactive } from 'vue'
-import { deserializeImageData, type SerializedImageData, serializeImageData } from './ImageData.ts'
 import type { Config, ConfigKeyAdapters } from '../pipeline/StepHandler.ts'
+import { deserializeImageData, type SerializedImageData, serializeImageData } from './ImageData.ts'
 
 export type ConfigKeyAdapter<Serialized = any, Deserialized = any> = {
   serialize(value: Deserialized): Serialized,
-  deserialize(value: Serialized): Deserialized,
+  deserialize?: (value: Serialized) => Deserialized,
 }
 
 export const configImageDataAdapter: ConfigKeyAdapter<SerializedImageData | null, ImageData | null> = {
@@ -25,7 +25,7 @@ export function deserializeObjectKeys<
   for (const key in objectKeyAdapters) {
     const adapter = objectKeyAdapters[key]!
     const value = serializedConfig[key]
-    if (value !== undefined) {
+    if (value !== undefined && adapter.deserialize) {
       result[key] = adapter.deserialize(value)
     }
   }
