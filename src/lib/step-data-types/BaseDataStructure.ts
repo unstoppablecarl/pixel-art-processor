@@ -736,3 +736,9 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return value as unknown as SerializedT
   }
 }
+
+export interface DataStructureConstructor<
+  T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
+> {
+  new(width: number, height: number, ...args: any[]): T
+}

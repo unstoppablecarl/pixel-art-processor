@@ -1,4 +1,4 @@
-import { type DataStructureConstructor } from '../../steps.ts'
+import type { DataStructureConstructor } from './BaseDataStructure.ts'
 
 type ClassConstructor = new (...args: any[]) => any;
 

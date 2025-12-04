@@ -1,3 +1,14 @@
+<script lang="ts">
+import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+
+export const STEP_META: StepMeta = {
+  def: 'INPUT_MASK',
+  displayName: 'Input Mask Image',
+  inputDataTypes: [],
+  outputDataType: BitMask,
+}
+
+</script>
 <script setup lang="ts">
 import { ref, shallowReactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
@@ -21,8 +32,7 @@ const handleFileUpload = (event: Event) => {
 }
 
 const step = useStepHandler(stepId, {
-  inputDataTypes: [],
-  outputDataType: BitMask,
+  ...STEP_META,
   config() {
     return shallowReactive({
       maskImageData: null as null | ImageData,

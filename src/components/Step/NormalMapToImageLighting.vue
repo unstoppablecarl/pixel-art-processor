@@ -1,3 +1,14 @@
+<script lang="ts">
+import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+
+export const STEP_META: StepMeta = {
+  def: 'normal_map_to_lighting',
+  displayName: 'Normal Map -> Texture Lighting',
+  inputDataTypes: [NormalMap],
+  outputDataType: PixelMap,
+}
+
+</script>
 <script setup lang="ts">
 import { computed, ref, shallowReactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
@@ -11,8 +22,7 @@ import StepCard from '../StepCard.vue'
 const { stepId } = defineProps<{ stepId: string }>()
 
 const step = useStepHandler(stepId, {
-  inputDataTypes: [NormalMap],
-  outputDataType: PixelMap,
+  ...STEP_META,
   config() {
     return shallowReactive({
       lightX: 0.5,

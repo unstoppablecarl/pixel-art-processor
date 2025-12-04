@@ -31,7 +31,13 @@ const tinyColorValue = computed({
   <div class="form-check">
     <input v-if="check" type="checkbox" class="form-check-input" v-model="active" />
     <label class="form-check-label">
-      <BPopover click body-class="p-2">
+      <BPopover
+        body-class="p-2"
+        placement="left"
+        click
+        lazy
+        unmount-lazy
+      >
         <template #target>
           <span class="color-indicator" :style="`background: ${bgColor};`">
             <span :style="`background: ${color};`"></span>

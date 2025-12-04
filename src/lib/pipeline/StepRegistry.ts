@@ -1,5 +1,6 @@
 import { type App, type Component, inject, type InjectionKey } from 'vue'
-import type { DataStructureConstructor } from '../../steps.ts'
+
+import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 
 export type StepDefinition = {

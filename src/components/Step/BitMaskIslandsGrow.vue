@@ -1,3 +1,14 @@
+<script lang="ts">
+import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+
+export const STEP_META: StepMeta = {
+  def: 'bitmask_grow_islands',
+  displayName: 'BitMask Islands Grow',
+  inputDataTypes: [BitMask],
+  outputDataType: BitMask,
+}
+
+</script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
 import { ref, shallowReactive, toRef } from 'vue'
@@ -56,6 +67,7 @@ const GrowIslandSelectOptions = ref(Object.fromEntries(
 ))
 
 const step = useStepHandler(stepId, {
+  ...STEP_META,
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
   config() {
@@ -274,37 +286,7 @@ const checkboxColors: CheckboxColorListItem[] = [
           title="Display"
           id="display"
         >
-
           <CheckboxColorList :items="checkboxColors" />
-
-          <!--          <CheckboxColor-->
-          <!--            label="Islands"-->
-          <!--            v-model:color="config.islandColor"-->
-          <!--          />-->
-
-          <!--          <CheckboxColor-->
-          <!--            label="Expandable"-->
-          <!--            v-model:active="config.showExpandable"-->
-          <!--            v-model:color="config.showExpandableColor"-->
-          <!--          />-->
-
-          <!--          <CheckboxColor-->
-          <!--            label="Expandable Dist."-->
-          <!--            v-model:active="config.showExpandableRespectingDistance"-->
-          <!--            v-model:color="config.showExpandableRespectingDistanceColor"-->
-          <!--          />-->
-
-          <!--          <CheckboxColor-->
-          <!--            label="Expandable Bounds"-->
-          <!--            v-model:active="config.showExpandableBounds"-->
-          <!--            v-model:color="config.showExpandableBoundsColor"-->
-          <!--          />-->
-
-          <!--          <button role="button" class="btn btn-sm btn-secondary mt-2" @click="Object.assign(config, DEFAULT_COLORS)">-->
-          <!--            Reset Colors-->
-          <!--          </button>-->
-
-
         </BTab>
       </BTabs>
     </template>

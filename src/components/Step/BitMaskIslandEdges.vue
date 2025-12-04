@@ -1,3 +1,14 @@
+<script lang="ts">
+import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+
+export const STEP_META: StepMeta = {
+  def: 'bitmask_island_edges',
+  displayName: 'BitMask Add Edge Island',
+  inputDataTypes: [],
+  outputDataType: BitMask,
+}
+
+</script>
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
@@ -7,8 +18,7 @@ import StepCard from '../StepCard.vue'
 const { stepId } = defineProps<{ stepId: string }>()
 
 const step = useStepHandler(stepId, {
-  inputDataTypes: [],
-  outputDataType: BitMask,
+  ...STEP_META,
   config() {
     return shallowReactive({
       size: 64,

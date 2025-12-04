@@ -1,3 +1,14 @@
+<script lang="ts">
+import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+
+export const STEP_META: StepMeta = {
+  def: 'height_map_to_normal_map',
+  displayName: 'Height Map -> Normal Map',
+  inputDataTypes: [HeightMap],
+  outputDataType: NormalMap,
+}
+
+</script>
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
@@ -8,8 +19,7 @@ import StepCard from '../StepCard.vue'
 const { stepId } = defineProps<{ stepId: string }>()
 
 const step = useStepHandler(stepId, {
-  inputDataTypes: [HeightMap],
-  outputDataType: NormalMap,
+  ...STEP_META,
   config() {
     return shallowReactive({
       normalMapStrength: 1.5,

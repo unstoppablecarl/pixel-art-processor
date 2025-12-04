@@ -1,3 +1,14 @@
+<script lang="ts">
+import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+
+export const STEP_META: StepMeta = {
+  def: 'bitmask_add_islands',
+  displayName: 'BitMask Add Islands',
+  inputDataTypes: [BitMask],
+  outputDataType: BitMask,
+}
+
+</script>
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
 import { addRandomInnerPoints } from '../../lib/data/PointSet.ts'
@@ -9,8 +20,7 @@ import RangeBandSlider from '../UI/RangeBandSlider.vue'
 const { stepId } = defineProps<{ stepId: string }>()
 
 const step = useStepHandler(stepId, {
-  inputDataTypes: [BitMask],
-  outputDataType: BitMask,
+  ...STEP_META,
   config() {
     return shallowReactive({
       minDistance: 4,
