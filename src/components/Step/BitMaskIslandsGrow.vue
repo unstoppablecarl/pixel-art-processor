@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { ref, shallowReactive } from 'vue'
+import { ref, shallowReactive, toRef } from 'vue'
 import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
-import { type Island, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
+import { type Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
 import StepCard from '../StepCard.vue'
-import CheckboxColor from '../UI/CheckboxColor.vue'
+import CheckboxColorList, { type CheckboxColorListItem } from '../UI/CheckboxColorList.vue'
 import EnumSelect from '../UI/EnumSelect.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
@@ -19,7 +19,7 @@ const DEFAULT_COLORS = {
   showExpandableBoundsColor: 'rgba(0, 0, 255, 0.5)',
   showExpandableColor: 'rgba(255, 0, 0, 0.5)',
   showExpandableRespectingDistanceColor: 'rgba(0, 255, 0, 0.5)',
-  islandColor: 'rgba(255, 255, 255, 1)',
+  showIslandColor: 'rgba(255, 255, 255, 1)',
 }
 
 enum GrowType {
@@ -30,16 +30,22 @@ enum GrowType {
   PERLIN = 'Perlin'
 }
 
+enum IslandFilterType {
+  ALL,
+  INNER,
+  EDGE,
+}
+
 const ISLAND_TYPES = {
-  ALL: {
+  [IslandFilterType.ALL]: {
     label: 'All',
     filter: (i: Island) => true,
   },
-  INNER: {
+  [IslandFilterType.INNER]: {
     label: 'Inner',
     filter: (i: Island) => i.type === IslandType.NORMAL,
   },
-  EDGE: {
+  [IslandFilterType.EDGE]: {
     label: 'Edge',
     filter: (i: Island) => i.type !== IslandType.NORMAL,
   },
@@ -56,7 +62,7 @@ const step = useStepHandler(stepId, {
     return shallowReactive({
       minDistance: 4,
       maxDistance: 100,
-      islandType: 'ALL' as keyof typeof ISLAND_TYPES,
+      islandType: IslandFilterType.ALL as IslandFilterType,
       growType: GrowType.CLUSTER as GrowType,
 
       clusterGrowthIterations: 0,
@@ -76,6 +82,7 @@ const step = useStepHandler(stepId, {
       showExpandableBounds: false,
       showExpandable: false,
       showExpandableRespectingDistance: false,
+      showIsland: true,
 
       activeTabIndex: 0,
       ...DEFAULT_COLORS,
@@ -85,12 +92,21 @@ const step = useStepHandler(stepId, {
     if (!inputData) return
 
     const mask = inputData as BitMask
+    const islands = mask.getIslands()
     const C = config
 
-    const islands = mask.getIslands()
     const islandFilter = ISLAND_TYPES[C.islandType].filter
-    const withinBounds = mask.borderToBounds(C.minDistance)
-    const grower = new BlobGrower(mask, islands, prng, C.minDistance, islandFilter, withinBounds)
+    const borderBounds = mask.borderToBounds(C.minDistance)
+
+    const pointFilter: IslandPointFilter = (x, y, island) => {
+      if (island.type === IslandType.NORMAL) {
+        if (!borderBounds.contains(x, y)) return false
+      }
+
+      return true
+    }
+
+    const grower = new BlobGrower(mask, islands, prng, C.minDistance, islandFilter, pointFilter)
 
     const map = {
       [GrowType.CLUSTER]: () => grower.clusterGrowth(C.clusterGrowthIterations, C.clusterRadius),
@@ -105,18 +121,21 @@ const step = useStepHandler(stepId, {
     const filteredIslands = islands.filter(islandFilter)
     filteredIslands.forEach(i => {
       smoothIslandGaussian(i, C.smooth, (x, y) => {
+        if (i.type === IslandType.NORMAL) return true
         return !mask.isWithinBorder(x, y, 2)
       })
     })
 
     const sketch = new Sketch(mask.width, mask.height)
-    const islandColor = parseColorData(config.islandColor)
-    sketch.putImageData(mask.toImageData(islandColor))
+    const islandColor = parseColorData(config.showIslandColor)
+
+    if (C.showIsland) {
+      sketch.putImageData(mask.toImageData(islandColor))
+    }
 
     filteredIslands.forEach((i) => {
-
       if (C.showExpandableBounds) {
-        sketch.fillRectBounds(i.expandableBounds, C.showExpandableBoundsColor)
+        sketch.fillRectBounds(i.expandableBounds.growNew(1), C.showExpandableBoundsColor)
       }
 
       if (C.showExpandable) {
@@ -130,7 +149,6 @@ const step = useStepHandler(stepId, {
           sketch.setPixel(x, y, C.showExpandableRespectingDistanceColor)
         })
       }
-
     })
     return {
       output: mask,
@@ -141,6 +159,34 @@ const step = useStepHandler(stepId, {
 })
 
 const config = step.config
+
+const checkboxColors: CheckboxColorListItem[] = [
+  {
+    label: 'Islands',
+    active: toRef(config, 'showIsland'),
+    color: toRef(config, 'showIslandColor'),
+    defaultColor: DEFAULT_COLORS.showIslandColor,
+  },
+  {
+    label: 'Expandable',
+    active: toRef(config, 'showExpandable'),
+    color: toRef(config, 'showExpandableColor'),
+    defaultColor: DEFAULT_COLORS.showExpandableColor,
+  },
+  {
+    label: 'Expandable Dist.',
+    active: toRef(config, 'showExpandableRespectingDistance'),
+    color: toRef(config, 'showExpandableRespectingDistanceColor'),
+    defaultColor: DEFAULT_COLORS.showExpandableRespectingDistanceColor,
+  },
+  {
+    label: 'Expandable Bounds',
+    active: toRef(config, 'showExpandableBounds'),
+    color: toRef(config, 'showExpandableBoundsColor'),
+    defaultColor: DEFAULT_COLORS.showExpandableBoundsColor,
+  },
+]
+
 
 </script>
 <template>
@@ -229,34 +275,35 @@ const config = step.config
           id="display"
         >
 
-          <CheckboxColor
-            label="Islands"
-            :check="false"
-            v-model:color="config.islandColor"
-          />
+          <CheckboxColorList :items="checkboxColors" />
 
-          <CheckboxColor
-            label="Expandable"
-            v-model:active="config.showExpandable"
-            v-model:color="config.showExpandableColor"
-          />
+          <!--          <CheckboxColor-->
+          <!--            label="Islands"-->
+          <!--            v-model:color="config.islandColor"-->
+          <!--          />-->
 
-          <CheckboxColor
-            label="Expandable Bounds"
-            v-model:active="config.showExpandableRespectingDistance"
-            v-model:color="config.showExpandableRespectingDistanceColor"
-          />
+          <!--          <CheckboxColor-->
+          <!--            label="Expandable"-->
+          <!--            v-model:active="config.showExpandable"-->
+          <!--            v-model:color="config.showExpandableColor"-->
+          <!--          />-->
 
-          <CheckboxColor
-            label="Expandable Bounds"
-            v-model:active="config.showExpandableBounds"
-            v-model:color="config.showExpandableBoundsColor"
-          />
+          <!--          <CheckboxColor-->
+          <!--            label="Expandable Dist."-->
+          <!--            v-model:active="config.showExpandableRespectingDistance"-->
+          <!--            v-model:color="config.showExpandableRespectingDistanceColor"-->
+          <!--          />-->
 
+          <!--          <CheckboxColor-->
+          <!--            label="Expandable Bounds"-->
+          <!--            v-model:active="config.showExpandableBounds"-->
+          <!--            v-model:color="config.showExpandableBoundsColor"-->
+          <!--          />-->
 
-          <button role="button" class="btn btn-sm btn-secondary mt-2" @click="Object.assign(config, DEFAULT_COLORS)">
-            Reset Colors
-          </button>
+          <!--          <button role="button" class="btn btn-sm btn-secondary mt-2" @click="Object.assign(config, DEFAULT_COLORS)">-->
+          <!--            Reset Colors-->
+          <!--          </button>-->
+
 
         </BTab>
       </BTabs>

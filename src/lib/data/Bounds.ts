@@ -97,4 +97,24 @@ export class Bounds implements BoundsLike {
     this.maxX = maxX
     this.maxY = maxY
   }
+
+  grow(count: number = 1): this {
+    this.minX -= count
+    this.minY -= count
+    this.maxX += count
+    this.maxY += count
+    return this
+  }
+
+  growNew(count: number = 1): Bounds {
+    return this.copy().grow(count)
+  }
+
+  shrink(count: number = 1): this {
+    return this.grow(-1 * count)
+  }
+
+  shrinkNew(count: number = 1): Bounds {
+    return this.copy().shrink(count)
+  }
 }

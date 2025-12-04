@@ -1,18 +1,16 @@
-import type { Bounds } from '../data/Bounds.ts'
 import { ADJACENT_DIRECTIONS, type Point } from '../step-data-types/BaseDataStructure.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
-import { Island, IslandType } from '../step-data-types/BitMask/Island.ts'
+import { Island, type IslandPointFilter, type IslandFilter } from '../step-data-types/BitMask/Island.ts'
 import { type Prng } from '../util/prng.ts'
 
 export class BlobGrower {
-
   constructor(
     private mask: BitMask,
     private islands: Island[],
     private prng: Prng,
     private minDistance: number = 4,
-    private islandTypeFilter?: IslandType | ((island: Island) => boolean),
-    private withinBounds?: Bounds,
+    private islandFilter?: IslandFilter,
+    private pointFilter?: IslandPointFilter,
   ) {
   }
 
@@ -23,7 +21,7 @@ export class BlobGrower {
   weightedRandomGrowth(iterations: number): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.islandFilter, this.pointFilter)
       if (expandable.length === 0) return
 
       // Weight candidates by smoothness (prefer expanding where already expanded)
@@ -54,7 +52,7 @@ export class BlobGrower {
     this.iterateIslands(iterations, (island) => {
 
       let grown = 0
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.islandFilter, this.pointFilter)
 
       // Prioritize expansion around blob edges with good weight distribution
       const sorted = expandable
@@ -86,7 +84,7 @@ export class BlobGrower {
     this.iterateIslands(iterations, (island) => {
 
       const [prefDx, prefDy] = islandDirections.get(island)!
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.islandFilter, this.pointFilter)
 
       // Sort by alignment with preferred direction
       const sorted = expandable.sort((a, b) => {
@@ -112,7 +110,7 @@ export class BlobGrower {
   clusterGrowth(iterations: number, clusterRadius: number = 3): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.islandFilter, this.pointFilter)
       if (expandable.length === 0) return
 
       // Find clusters of adjacent expandable pixels
@@ -154,7 +152,7 @@ export class BlobGrower {
   perlinLikeGrowth(iterations: number): void {
     this.iterateIslands(iterations, (island) => {
 
-      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.withinBounds)
+      const expandable = island.getExpandableRespectingMinDistance(this.islands, this.minDistance, this.islandFilter, this.pointFilter)
       if (expandable.length === 0) return
 
       // Score based on local gradient (smoother transitions grow more)
@@ -174,15 +172,6 @@ export class BlobGrower {
     })
   }
 
-  private filter(island: Island): boolean {
-
-    if (this.islandTypeFilter === undefined) return true
-
-    return typeof this.islandTypeFilter === 'function'
-      ? this.islandTypeFilter(island)
-      : island.type === this.islandTypeFilter
-  }
-
   private iterateIslands(iterations: number, cb: (island: Island) => void) {
 
     const skipChance = new WeakMap<Island, number>()
@@ -193,7 +182,7 @@ export class BlobGrower {
     for (let iter = 0; iter < iterations; iter++) {
       for (const island of this.islands) {
 
-        if (!this.filter(island)) continue
+        if (this.islandFilter && !this.islandFilter(island)) continue
         if (this.prng() < skipChance.get(island)!)
           cb(island)
       }

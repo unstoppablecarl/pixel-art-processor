@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { toRaw, toValue } from 'vue'
-
 const { options } = defineProps<{
-  options: Record<string, string>;
+  options: Record<string | number, string>;
 }>()
-console.log('opt', toValue(toRaw(options)))
-const selectedValue = defineModel<string>()
+const selectedValue = defineModel<string | number>()
 </script>
 <template>
   <select

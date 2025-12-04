@@ -25,6 +25,9 @@ export const isIslandType = (type: IslandType, match: IslandType) => {
 
 const GROW_RATIO = 0.5
 
+export type IslandPointFilter = (x: number, y: number, island: Island) => boolean
+export type IslandFilter = (island: Island) => boolean
+
 export class Island {
   readonly frontier: Set<number> = new Set()
   readonly expandableBounds: Bounds
@@ -173,10 +176,13 @@ export class Island {
   getExpandableRespectingMinDistance(
     otherIslands: Island[],
     minDistance: number,
-    withinBounds?: Bounds,
+    islandFilter?: IslandFilter,
+    pointFilter?: IslandPointFilter,
   ): Point[] {
     return this.getExpandable().filter(({ x, y }) => {
-      return this.pointRespectsMinDistance(x, y, otherIslands, minDistance, withinBounds)
+      if (islandFilter && !islandFilter(this)) return
+
+      return this.pointRespectsMinDistance(x, y, otherIslands, minDistance, pointFilter)
     })
   }
 
@@ -185,9 +191,9 @@ export class Island {
     y: number,
     otherIslands: Island[],
     minDistance: number,
-    withinBounds?: Bounds,
+    pointFilter?: IslandPointFilter,
   ): boolean {
-    if (withinBounds && !withinBounds.contains(x, y)) return false
+    if (pointFilter && !pointFilter(x, y, this)) return false
 
     for (const otherIsland of otherIslands) {
       if (otherIsland === this) continue
