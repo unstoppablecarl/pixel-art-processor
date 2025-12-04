@@ -1,47 +1,68 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from 'vue'
+import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
+import { computed } from 'vue'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 
-const emit = defineEmits(['addStep'])
 const store = useScaleStore()
 const stepStore = useStepStore()
 const steps = computed(() => useStepRegistry().toArray())
 
-const selected = ref('none')
-
-watch(selected, async () => {
-  if (selected.value === 'none') {
-    return
-  }
-  emit('addStep', selected.value)
-  await nextTick()
-  selected.value = 'none'
-})
-
 </script>
 <template>
-  <div class="mb-3 px-1 pt-1 sticky-top app-header shadow">
-    <h3 class="lead ps-3 py-2 d-inline-block">Pixel Art Processor</h3>
-    <div class="float-end px-3 form-control form-control-sm w-auto p-0">
-      <label class="form-label me-2" for="scale">Scale: {{ store.scale }}</label>
-      <input type="range" id="scale" min="1" max="10" step="1" v-model.number="store.scale"
-             class="form-range pt-3 d-inline-block w-auto" />
-    </div>
-    <div class="float-end px-3 w-auto p-0">
+  <nav class="navbar navbar-expand fixed-top shadow border-bottom app-header">
+    <div class="container-fluid">
 
-      <label class="form-label me-2" for="seed">Seed</label>
-      <input type="number" id="seed" step="1" v-model.number="stepStore.seed"
-             class="form-control d-inline-block" style="width: 60px" />
+      <a class="navbar-brand fw-bold" href="#">
+        Pixel Art Processor
+      </a>
+
+      <form class="d-flex align-items-center ms-auto gap-3 flex-nowrap">
+
+        <div class="form-group d-flex align-items-center gap-2 mb-0">
+
+          <BDropdown
+            text="Add Step"
+            size="sm"
+          >
+            <BDropdownItem
+              v-for="step in steps"
+              @click="stepStore.add(step.def)"
+            >
+              {{ step.displayName }}
+            </BDropdownItem>
+          </BDropdown>
+        </div>
+
+        <div class="form-group d-flex align-items-center gap-2 mb-0">
+          <label class="form-label form-label-sm mb-0 text-nowrap" for="seed">Seed</label>
+          <input type="number" id="seed" step="1" v-model.number="stepStore.seed"
+                 class="form-control form-control-sm d-inline-block" style="width: 60px" />
+
+        </div>
+        <div class="form-group d-flex align-items-center gap-2 mb-0">
+          <label
+            for="scale"
+            class="form-label form-label-sm mb-0 text-nowrap"
+            style="width: 50px;"
+          >
+            Scale: {{ store.scale }}
+          </label>
+          <input type="range"
+                 class="form-range form-range-sm"
+                 id="scale"
+                 min="1"
+                 max="10"
+                 step="1"
+                 style="width: 150px;"
+                 v-model.number="store.scale"
+          >
+        </div>
+      </form>
     </div>
-    <div class="float-end">
-      <select class="form-select me-2" aria-label="" v-model="selected">
-        <option v-for="step in steps" :value="step.def" :key="step.def">{{ step.displayName }}</option>
-        <option value="none">Add Step</option>
-      </select>
-    </div>
-  </div>
+  </nav>
+
 </template>
 <style lang="scss">
 .app-header {

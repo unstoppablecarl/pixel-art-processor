@@ -69,7 +69,7 @@ onMounted(() => {
 
   <AppHeader @add-step="addStep" />
 
-  <div class="overflow min-vh-100">
+  <div class="overflow">
     <div class="processor-container px-3 pb-3 min-vw-100">
       <div ref="stepContainer" class="steps-container">
         <component

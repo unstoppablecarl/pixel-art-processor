@@ -41,6 +41,7 @@ $transition-fade: opacity .05s linear;
 
 body {
   background: #1b1b1b;
+  padding-top: 80px;
 }
 
 .form-label, .form-check-label {
@@ -52,6 +53,12 @@ body {
   overflow-x: auto;
   overflow-y: auto;
   white-space: nowrap;
+
+  position: fixed;
+  top: 80px;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 .processor-container {

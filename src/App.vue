@@ -10,8 +10,6 @@ const appDefaults = {
 </script>
 <template>
   <BApp :defaults="appDefaults">
-    <div id="app-container min-vh-100">
-      <Processor />
-    </div>
+    <Processor />
   </BApp>
 </template>
