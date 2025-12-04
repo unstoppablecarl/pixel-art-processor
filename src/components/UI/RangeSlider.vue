@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BCollapse } from 'bootstrap-vue-next'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import type { RangeSliderDefaultSettings } from './RangeSlider.ts'
+import type { RangeSliderConfig } from './RangeSlider.ts'
 
 const {
   id,
@@ -31,7 +31,7 @@ const {
   min?: number,
   max?: number,
   step?: number,
-  defaults?: RangeSliderDefaultSettings,
+  defaults?: RangeSliderConfig,
   canBeNegative?: boolean,
   canResetDefaults?: boolean,
 }>()

@@ -11,7 +11,7 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { ref, reactive, toRef, toRaw } from 'vue'
+import { ref, reactive, toRef } from 'vue'
 import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
 import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
@@ -83,7 +83,6 @@ const step = useStepHandler(stepId, {
   config() {
     return reactive({
       minDistance: 4,
-      maxDistance: 100,
       islandType: IslandFilterType.ALL as IslandFilterType,
       growType: GrowType.PERLIN as GrowType,
 
@@ -272,12 +271,14 @@ const checkboxColors: CheckboxColorListItem[] = [
           </template>
 
           <template v-if="config.growType === GrowType.PERLIN">
-
             <RangeSlider
               :id="`${stepId}-perlin-iterations`"
               label="Iterations"
-              :defaults="toRaw(CONFIG_DEFAULTS.perlinIterations)"
-              v-model="config.perlinIterations"
+              :defaults="CONFIG_DEFAULTS.perlinIterations"
+              v-model:value="config.perlinIterations.value"
+              v-model:min="config.perlinIterations.min"
+              v-model:max="config.perlinIterations.max"
+              v-model:step="config.perlinIterations.step"
             />
           </template>
 

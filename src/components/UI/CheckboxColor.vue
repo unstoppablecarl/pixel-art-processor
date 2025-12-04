@@ -10,7 +10,6 @@ const {
   label,
   bgColor = '#fff',
   check = true,
-
 } = defineProps<{
   label: string,
   bgColor?: string,
@@ -18,14 +17,9 @@ const {
 }>()
 
 const tinyColorValue = computed({
-  get: () => {
-    return tinycolor(color.value)
-  },
-  set(rgba) {
-    color.value = tinycolor(rgba).toRgbString()
-  },
+  get: () => tinycolor(color.value),
+  set: (rgba) => color.value = tinycolor(rgba).toRgbString(),
 })
-
 </script>
 <template>
   <div class="form-check">
