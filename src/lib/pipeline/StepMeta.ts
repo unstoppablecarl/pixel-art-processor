@@ -1,6 +1,13 @@
 import type { Component } from 'vue'
 import { STEP_DEFINITIONS } from '../../steps.ts'
+import type { IStepHandler } from './StepHandler.ts'
 import type { StepDefinition } from './StepRegistry.ts'
+
+
+export type StepMeta = {
+  def: string,
+  displayName: string,
+} & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
 
 export function loadStepComponentsMetaData(globResults: Record<string, any>): StepDefinition[] {
 
