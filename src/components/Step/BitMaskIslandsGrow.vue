@@ -23,6 +23,7 @@ import { Sketch } from '../../lib/util/Sketch.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList, { type CheckboxColorListItem } from '../UI/CheckboxColorList.vue'
 import EnumSelect from '../UI/EnumSelect.vue'
+import RangeSlider from '../UI/RangeSlider.vue'
 import { rangeSliderConfig, rangeSliderConfigAdapter } from '../UI/RangeSlider.ts'
 
 const { stepId } = defineProps<{ stepId: string }>()
@@ -179,7 +180,7 @@ const step = useStepHandler(stepId, {
     }
   },
   configKeyAdapters: {
-    perlinIterations: rangeSliderConfigAdapter
+    perlinIterations: rangeSliderConfigAdapter,
   },
 })
 
@@ -279,10 +280,7 @@ const checkboxColors: CheckboxColorListItem[] = [
               :id="`${stepId}-perlin-iterations`"
               label="Iterations"
               :defaults="toRaw(CONFIG_DEFAULTS.perlinIterations)"
-              v-model:min.number="config.perlinIterations.min"
-              v-model:max.number="config.perlinIterations.max"
-              v-model:step.number="config.perlinIterations.step"
-              v-model:value.number="config.perlinIterations.value"
+              v-model="config.perlinIterations"
             />
           </template>
 
