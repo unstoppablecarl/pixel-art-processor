@@ -120,3 +120,8 @@
   margin: 0 calc(var(--step-padding) * 0.5);
   display: inline-block;
 }
+
+.step-header-buttons .dropdown > .btn {
+  // no idea why this dropdown doesn't set padding correctly for sm
+  --bs-btn-padding-x: 0.5rem;
+}

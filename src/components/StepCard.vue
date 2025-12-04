@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { BButtonGroup, BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
+import { getStepsCompatibleWithOutput } from '../lib/pipeline/StepMeta.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import StepImg, { type StepImage } from './StepImg.vue'
@@ -66,6 +68,14 @@ const invalidInputType = computed(() => {
 const validationErrors = computed(() => {
   return step.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
 })
+
+const addableSteps = computed(() => {
+  return getStepsCompatibleWithOutput(step.def).map(({ displayName, def }) => ({ displayName, def }))
+})
+
+function addAfter(def: string) {
+  store.add(def, step.id)
+}
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
@@ -85,12 +95,30 @@ const validationErrors = computed(() => {
         >:::
         </span>
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
-        <button role="button" class="btn btn-sm btn-secondary flex-shrink-1 mx-1" @click="store.duplicate(step.id)">
-          <span class="material-symbols-outlined">content_copy</span>
-        </button>
-        <button role="button" class="btn btn-sm btn-danger flex-shrink-1" @click="remove">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
+        <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
+          <button role="button" class="btn btn-danger" @click="remove">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+          <button role="button" class="btn btn-secondary" @click="store.duplicate(step.id)">
+            <span class="material-symbols-outlined">content_copy</span>
+          </button>
+
+          <BDropdown
+            v-if="addableSteps.length"
+            no-caret
+          >
+            <template #button-content>
+              <span class="material-symbols-outlined">add</span>
+            </template>
+            <BDropdownItem
+              v-for="item in addableSteps"
+              @click="addAfter(item.def)"
+            >
+              {{ item.displayName }}
+            </BDropdownItem>
+
+          </BDropdown>
+        </BButtonGroup>
       </div>
       <div class="card-body">
         <StepImg

@@ -2,12 +2,13 @@ import { type App, type Component, inject, type InjectionKey } from 'vue'
 
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
+import type { IStepHandler } from './StepHandler.ts'
 
 export type StepDefinition = {
   readonly def: string,
   readonly displayName: string,
   readonly component: Component,
-}
+} & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
 
 export type StepDefinitions = Record<string, StepDefinition>
 export type StepRegistry = ReturnType<typeof makeStepRegistry>

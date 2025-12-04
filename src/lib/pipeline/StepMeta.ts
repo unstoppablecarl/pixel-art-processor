@@ -1,11 +1,6 @@
 import type { Component } from 'vue'
-import type { IStepHandler } from './StepHandler.ts'
+import { STEP_DEFINITIONS } from '../../steps.ts'
 import type { StepDefinition } from './StepRegistry.ts'
-
-export type StepMeta = {
-  def: string,
-  displayName: string,
-} & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
 
 export function loadStepComponentsMetaData(globResults: Record<string, any>): StepDefinition[] {
 
@@ -23,7 +18,7 @@ export function loadStepComponentsMetaData(globResults: Record<string, any>): St
   }
 
   return Object.entries(globResults).map(([path, module]) => {
-    const { def, displayName, inputDataTypes, outputDataType } = (module as any).STEP_META as StepMeta
+    const { def, displayName, inputDataTypes, outputDataType } = (module as any).STEP_META as StepDefinition
 
     return {
       def,
@@ -36,7 +31,7 @@ export function loadStepComponentsMetaData(globResults: Record<string, any>): St
 }
 
 function validateModule(path: string, module: any): ComponentError | void {
-  const STEP_META = (module as any).STEP_META as StepMeta
+  const STEP_META = (module as any).STEP_META as StepDefinition
 
   if (!STEP_META) {
     return {
@@ -79,4 +74,14 @@ function validateModule(path: string, module: any): ComponentError | void {
 type ComponentError = {
   path: string,
   errors: string[]
+}
+
+export function getStepsCompatibleWithOutput(stepDef: string) {
+
+  const currentStep = STEP_DEFINITIONS.find(s => s.def === stepDef)
+  if (!currentStep) {
+    throw new Error('stepDef not found: ' + stepDef)
+  }
+
+  return STEP_DEFINITIONS.filter(s => s.inputDataTypes.includes(currentStep.outputDataType))
 }

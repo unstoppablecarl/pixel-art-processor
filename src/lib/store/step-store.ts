@@ -76,14 +76,22 @@ export const useStepStore = defineStore('steps', () => {
       invalidateAll()
     })
 
-    function add(def: string): StepRef {
+    function add(def: string, afterStepId?: string): StepRef {
       stepRegistry.validateDef(def)
       idIncrement.value += 1
       const step = createNewStep(def, idIncrement.value)
       stepIdOrder.value.push(step.id)
       stepsById[step.id] = step
 
+      if (afterStepId !== undefined) {
+        moveAfter(step.id, afterStepId)
+      }
+
       return step
+    }
+
+    function getIndex(stepId: string) {
+      return stepIdOrder.value.indexOf(stepId)
     }
 
     function duplicate(stepId: string) {
@@ -219,9 +227,13 @@ export const useStepStore = defineStore('steps', () => {
       return step.handler
     }
 
+    function moveAfter(stepId: string, afterStepId: string) {
+      const index = getIndex(afterStepId)
+      moveTo(stepId, index+1)
+    }
+
     function moveTo(stepId: string, newIndex: number): void {
       validate(stepId)
-
       const currentIndex = stepIdOrder.value.indexOf(stepId)
       stepIdOrder.value.splice(currentIndex, 1)
       stepIdOrder.value.splice(newIndex, 0, stepId)
@@ -395,6 +407,7 @@ export const useStepStore = defineStore('steps', () => {
       remove,
       moveTo,
       all,
+      getIndex,
       loadStepData,
       syncImageDataFromPrev,
       setStepValidationErrors,
