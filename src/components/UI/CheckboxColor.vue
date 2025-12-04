@@ -5,7 +5,6 @@ import { ChromePicker, tinycolor } from 'vue-color'
 
 const active = defineModel('active')
 const color = defineModel<string>('color')
-console.log('init', color.value)
 
 const {
   label,
