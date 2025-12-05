@@ -76,9 +76,17 @@
     //border-left-width: 5px;
   }
 
-  .card-body {
+  > .card-body {
     padding: var(--step-card-body-padding-y) var(--step-card-body-padding-x);
     white-space: nowrap;
+  }
+
+  .card {
+    .card-body,
+    .card-header,
+    .card-footer {
+      padding: 5px;
+    }
   }
 
   .card-footer {
@@ -125,3 +133,5 @@
   // no idea why this dropdown doesn't set padding correctly for sm
   --bs-btn-padding-x: 0.5rem;
 }
+
+

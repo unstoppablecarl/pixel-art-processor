@@ -1,30 +1,34 @@
 <script setup lang="ts">
 import { BCollapse } from 'bootstrap-vue-next'
-import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
+import {
+  computed,
+  getCurrentInstance,
+  onMounted,
+  onUnmounted,
+  readonly,
+  ref,
+  watch,
+  type WritableComputedRef,
+} from 'vue'
 import type { RangeSliderConfig } from './RangeSlider.ts'
 
 interface IProps {
   id: string,
   label: string,
+
+  value?: number,
+  min?: number,
+  max?: number,
+  step?: number,
+
+  defaults?: Partial<RangeSliderConfig>,
+
   decimals?: number,
   expandStep?: number,
   expandDelay?: number,
-  value?: number,
-  defaults?: RangeSliderConfig,
   canBeNegative?: boolean,
   canResetDefaults?: boolean,
 }
-
-type Props = IProps & (
-  | { max: number; hardMax?: never }
-  | { hardMax: number; max?: never }
-  ) & (
-  | { min: number; hardMin?: never }
-  | { hardMin: number; min?: never }
-  ) & (
-  | { step: number; hardStep?: never }
-  | { hardStep: number; step?: never }
-  );
 
 const {
   id,
@@ -38,60 +42,48 @@ const {
   decimals = 0,
   canBeNegative = false,
   canResetDefaults = true,
-  hardMax,
-  hardMin,
-  hardStep,
-  defaults = {
-    min: 0,
-    max: 100,
-    value: 50,
-    step: 1,
-  },
-} = defineProps<Props>()
+  defaults,
+} = defineProps<IProps>()
+
+const DEFAULTS = readonly({
+  min: 0,
+  max: 100,
+  value: 50,
+  step: 1,
+  ...defaults,
+})
 
 const m_value = defineModel<number>('value')
 const m_min = defineModel<number>('min')
 const m_max = defineModel<number>('max')
 const m_step = defineModel<number>('step')
 
-if (__DEV__) {
-  if (m_min.value !== undefined && hardMin !== undefined) {
-    console.error('[RangeSlider] Cannot use both v-model:min and hardMin')
-  }
-  if (m_max.value !== undefined && hardMax !== undefined) {
-    console.error('[RangeSlider] Cannot use both v-model:max and hardMax')
-  }
-  if (m_step.value !== undefined && hardStep !== undefined) {
-    console.error('[RangeSlider] Cannot use both v-model:step and hardStep')
-  }
-}
+const instance = getCurrentInstance()
+const hasVModel = (key: string) => !!instance?.vnode?.props?.['onUpdate:' + key]
 
-const clamp = (val: number, minimum: number, maximum: number): number => {
-  return Math.max(minimum, Math.min(maximum, val))
-}
+const canEditMin = hasVModel('min')
+const canEditMax = hasVModel('max')
+const canEditStep = hasVModel('step')
 
 const value = computed({
-  get: () => m_value.value ?? p_value ?? defaults.value,
+  get: () => m_value.value ?? p_value ?? DEFAULTS.value,
   set: (v) => m_value.value = v,
-})
+}) as WritableComputedRef<number>
 
 const min = computed({
-  get: () => hardMin ?? m_min.value ?? p_min ?? defaults.min,
+  get: () => m_min.value ?? p_min ?? DEFAULTS.min,
   set: (v) => m_min.value = v,
-})
+}) as WritableComputedRef<number>
 
 const max = computed({
-  get: () => hardMax ?? m_max.value ?? p_max ?? defaults.max,
+  get: () => m_max.value ?? p_max ?? DEFAULTS.max,
   set: (v) => m_max.value = v,
-})
+}) as WritableComputedRef<number>
 
 const step = computed({
-  get: () => hardStep ?? m_step.value ?? p_step ?? defaults.step,
-  set: (v) => {
-    const maxStep = max.value - min.value
-    m_step.value = clamp(Math.abs(v), 0.0001, maxStep)
-  },
-})
+  get: () => m_step.value ?? p_step ?? DEFAULTS.step,
+  set: (v) => m_step.value = v,
+}) as WritableComputedRef<number>
 
 const isDragging = ref(false)
 let expandInterval: number | null = null
@@ -101,18 +93,11 @@ const expandMin = (): void => {
   if (!canBeNegative) {
     min.value = Math.max(min.value, 0)
   }
-  if (hardMin !== undefined) {
-    min.value = Math.max(min.value, hardMin)
-  }
-
   value.value = min.value
 }
 
 const expandMax = (): void => {
   max.value += expandStep
-  if (hardMax !== undefined) {
-    max.value = Math.min(max.value, hardMax)
-  }
   value.value = max.value
 }
 
@@ -151,10 +136,11 @@ const stopDragging = (): void => {
 }
 
 const reset = (): void => {
-  min.value = defaults.min
-  max.value = defaults.max
-  step.value = defaults.step
-  value.value = defaults.value
+  if (canEditMin) min.value = DEFAULTS.min
+  if (canEditMax) max.value = DEFAULTS.max
+  if (canEditStep) step.value = DEFAULTS.step
+
+  value.value = DEFAULTS.value
 }
 
 watch([min, max], () => {
@@ -167,17 +153,6 @@ onMounted(() => {
   max.value = Math.max(max.value, value.value)
 })
 
-onMounted(() => {
-  // Ensure range accommodates initial value
-  const currentValue = value.value
-  if (hardMin === undefined && currentValue < min.value) {
-    min.value = currentValue
-  }
-  if (hardMax === undefined && currentValue > max.value) {
-    max.value = currentValue
-  }
-})
-
 onUnmounted(() => {
   if (expandInterval) {
     clearInterval(expandInterval)
@@ -186,12 +161,8 @@ onUnmounted(() => {
 
 const settingsVisible = ref(false)
 
-function closeSettings() {
-  settingsVisible.value = false
-}
-
-function openSettings() {
-  settingsVisible.value = true
+function toggleSettings() {
+  settingsVisible.value = !settingsVisible.value
 }
 </script>
 <template>
@@ -212,7 +183,13 @@ function openSettings() {
       </div>
 
       <div class="ms-1">
-        <button role="button" class="btn btn-xs btn-dark d-inline-block" @click="openSettings()">Edit</button>
+        <button
+          role="button"
+          :class="`btn btn-xs d-inline-block ${settingsVisible ? 'btn-secondary' : 'btn-dark'}`"
+          @click="toggleSettings()"
+        >
+          {{ settingsVisible ? 'Close' : 'Edit' }}
+        </button>
       </div>
     </div>
 
@@ -222,11 +199,14 @@ function openSettings() {
           <div class="flex-grow-1">
             Settings
           </div>
-          <button v-if="canResetDefaults" role="button" class="btn btn-xs btn-secondary me-1" @click="reset()">Reset To
-            Defaults
+          <button
+            v-if="canResetDefaults"
+            role="button"
+            class="btn btn-xs btn-secondary"
+            @click="reset()"
+          >
+            Reset To Defaults
           </button>
-
-          <button role="button" class="btn btn-secondary btn-xs" @click="closeSettings()">Close</button>
         </div>
 
         <div class="card-body">
@@ -254,7 +234,7 @@ function openSettings() {
                 <div class="col-8">
                   <input
                     :id="`${id}-step-manual`"
-                    :disabled="hardStep !== undefined"
+                    :disabled="!canEditStep"
                     class="form-control form-control-sm"
                     type="number"
                     v-model="step"
@@ -273,7 +253,7 @@ function openSettings() {
                 <div class="col-8">
                   <input
                     :id="`${id}-min-manual`"
-                    :disabled="hardMin !== undefined"
+                    :disabled="!canEditMin"
                     class="form-control form-control-sm"
                     type="number"
                     :step="step"
@@ -289,7 +269,7 @@ function openSettings() {
                 <div class="col-8">
                   <input
                     :id="`${id}-max-manual`"
-                    :disabled="hardMax !== undefined"
+                    :disabled="!canEditMax"
                     class="form-control form-control-sm"
                     type="number"
                     :step="step"

@@ -144,11 +144,14 @@ const config = step.config
           title="Settings"
           id="settings"
         >
-          <div>
-            <label class="form-label">Min Dist: {{ config.minDistance }}</label>
-            <input type="range" min="1" max="20" step="1" v-model.number="config.minDistance"
-                   class="form-range" />
-          </div>
+          <RangeSlider
+            :id="`${stepId}-min-distance`"
+            label="Min Distance"
+            v-model:value="config.minDistance"
+            :min="0"
+            :max="step.inputData?.width"
+            :step="1"
+          />
 
           <RangeSlider
             :id="`${stepId}-iterations`"
