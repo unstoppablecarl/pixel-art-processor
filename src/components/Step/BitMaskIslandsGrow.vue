@@ -12,13 +12,17 @@ export const STEP_META: StepMeta = {
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
 import { ref, reactive, toRef } from 'vue'
-import { BlobGrower } from '../../lib/generators/BlobGrower.ts'
+import { type GroIslandsOptions, growIslands, type IslandGrower } from '../../lib/generators/IslandGrower.ts'
+import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
+import { directionalGrower } from '../../lib/generators/IslandGrower/DirectionalGrowth.ts'
+import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower.ts'
+import { perlinGrower } from '../../lib/generators/IslandGrower/PerlinGrower.ts'
+import { weightedRandomGrower } from '../../lib/generators/IslandGrower/WeightedRandomGrower.ts'
 import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { type Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import { parseColorData } from '../../lib/util/color.ts'
-import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList, { type CheckboxColorListItem } from '../UI/CheckboxColorList.vue'
@@ -86,21 +90,13 @@ const step = useStepHandler(stepId, {
       islandType: IslandFilterType.ALL as IslandFilterType,
       growType: GrowType.PERLIN as GrowType,
 
-      clusterGrowthIterations: 0,
-      clusterRadius: 0,
-
-      weightedRandomIterations: 0,
-
-      perlinIterations: {
+      iterations: {
         ...CONFIG_DEFAULTS.perlinIterations,
       },
-
-      directionalGrowthIterations: 0,
-
-      marchingGrowthIterations: 0,
-      marchingGrowthPixelsPerIteration: 1,
-
       smooth: 1,
+
+      clusterRadius: 0,
+      marchingGrowthPixelsPerIteration: 1,
 
       showExpandableBounds: false,
       showExpandable: false,
@@ -118,6 +114,15 @@ const step = useStepHandler(stepId, {
     const islands = mask.getIslands()
     const C = config
 
+    const map: Record<string, () => IslandGrower> = {
+      [GrowType.CLUSTER]: () => clusterGrower(C.clusterRadius),
+      [GrowType.DIRECTIONAL]: () => directionalGrower(),
+      [GrowType.MARCHING]: () => marchingGrower(C.marchingGrowthPixelsPerIteration),
+      [GrowType.WEIGHTED]: () => weightedRandomGrower(),
+      [GrowType.PERLIN]: () => perlinGrower(),
+    }
+    const grower = map[config.growType]()
+
     const islandFilter = ISLAND_TYPES[C.islandType].filter
     const borderBounds = mask.borderToBounds(C.minDistance)
 
@@ -129,17 +134,17 @@ const step = useStepHandler(stepId, {
       return true
     }
 
-    const grower = new BlobGrower(mask, islands, prng, C.minDistance, islandFilter, pointFilter)
-
-    const map = {
-      [GrowType.CLUSTER]: () => grower.clusterGrowth(C.clusterGrowthIterations, C.clusterRadius),
-      [GrowType.DIRECTIONAL]: () => grower.directionalGrowth(C.directionalGrowthIterations),
-      [GrowType.MARCHING]: () => grower.marchingGrowth(C.marchingGrowthIterations, C.marchingGrowthPixelsPerIteration),
-      [GrowType.WEIGHTED]: () => grower.weightedRandomGrowth(C.weightedRandomIterations),
-      [GrowType.PERLIN]: () => grower.perlinLikeGrowth(C.perlinIterations.value),
+    const options: GroIslandsOptions = {
+      mask,
+      islands,
+      minDistance: C.minDistance,
+      islandFilter,
+      pointFilter,
+      iterations: C.iterations.value,
+      grower,
     }
 
-    map[config.growType]()
+    growIslands(options)
 
     const filteredIslands = islands.filter(islandFilter)
     filteredIslands.forEach(i => {
@@ -240,13 +245,19 @@ const checkboxColors: CheckboxColorListItem[] = [
               </select>
             </div>
           </div>
+          <template v-if="config.growType === GrowType.PERLIN">
+            <RangeSlider
+              :id="`${stepId}-perlin-iterations`"
+              label="Iterations"
+              :defaults="CONFIG_DEFAULTS.perlinIterations"
+              v-model:value="config.iterations.value"
+              v-model:min="config.iterations.min"
+              v-model:max="config.iterations.max"
+              v-model:step="config.iterations.step"
+            />
+          </template>
 
           <template v-if="config.growType === GrowType.CLUSTER">
-            <div>
-              <label class="form-label">Iterations: {{ config.clusterGrowthIterations }}</label>
-              <input type="range" min="1" max="20" step="1" v-model.number="config.clusterGrowthIterations"
-                     class="form-range" />
-            </div>
             <div>
               <label class="form-label">Radius: {{ config.clusterRadius }}</label>
               <input type="range" min="1" max="20" step="1" v-model.number="config.clusterRadius"
@@ -254,47 +265,23 @@ const checkboxColors: CheckboxColorListItem[] = [
             </div>
           </template>
 
-          <template v-if="config.growType === GrowType.DIRECTIONAL">
-            <div>
-              <label class="form-label">Iterations: {{ config.clusterGrowthIterations }}</label>
-              <input type="range" min="1" max="20" step="1" v-model.number="config.directionalGrowthIterations"
-                     class="form-range" />
-            </div>
-          </template>
-
-          <template v-if="config.growType === GrowType.WEIGHTED">
-            <div>
-              <label class="form-label">Iterations: {{ config.weightedRandomIterations }}</label>
-              <input type="range" min="1" max="20" step="1" v-model.number="config.weightedRandomIterations"
-                     class="form-range" />
-            </div>
-          </template>
-
-          <template v-if="config.growType === GrowType.PERLIN">
-            <RangeSlider
-              :id="`${stepId}-perlin-iterations`"
-              label="Iterations"
-              :defaults="CONFIG_DEFAULTS.perlinIterations"
-              v-model:value="config.perlinIterations.value"
-              v-model:min="config.perlinIterations.min"
-              v-model:max="config.perlinIterations.max"
-              v-model:step="config.perlinIterations.step"
-            />
-          </template>
-
           <template v-if="config.growType === GrowType.MARCHING">
-            <div>
-              <label class="form-label">Iterations: {{ config.marchingGrowthIterations }}</label>
-              <input type="range" min="1" max="20" step="1" v-model.number="config.marchingGrowthIterations"
-                     class="form-range" />
-            </div>
-
             <div>
               <label class="form-label">Pixels Per Iteration: {{ config.marchingGrowthPixelsPerIteration }}</label>
               <input type="range" min="1" max="20" step="1" v-model.number="config.marchingGrowthPixelsPerIteration"
                      class="form-range" />
             </div>
           </template>
+
+          <RangeSlider
+            :id="`${stepId}-smooth`"
+            label="Smooth"
+            :defaults="{min: 0, step:1, max: 50, value: 1}"
+            v-model:value="config.smooth"
+            :min="0"
+            :max="50"
+            :step="1"
+          />
 
         </BTab>
         <BTab

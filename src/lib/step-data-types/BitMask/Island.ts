@@ -26,7 +26,7 @@ export const isIslandType = (type: IslandType, match: IslandType) => {
 const GROW_RATIO = 0.5
 
 export type IslandPointFilter = (x: number, y: number, island: Island) => boolean
-export type IslandFilter = (island: Island) => boolean
+export type IslandFilter = (island: Island, index?: number | undefined) => boolean
 
 export class Island {
   readonly frontier: Set<number> = new Set()
