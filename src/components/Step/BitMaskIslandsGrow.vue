@@ -11,74 +11,51 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { ref, reactive, toRef } from 'vue'
+import { reactive } from 'vue'
+import {
+  DEFAULT_ISLAND_VISIBILITY_CONFIG,
+  ISLAND_FILTERS,
+  ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
+  IslandFilterType, sketchIslandVisuals,
+} from '../../lib/generators/island-ui.ts'
 import { type GroIslandsOptions, growIslands, type IslandGrower } from '../../lib/generators/IslandGrower.ts'
 import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
 import { directionalGrower } from '../../lib/generators/IslandGrower/DirectionalGrowth.ts'
 import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower.ts'
 import { perlinGrower } from '../../lib/generators/IslandGrower/PerlinGrower.ts'
 import { weightedRandomGrower } from '../../lib/generators/IslandGrower/WeightedRandomGrower.ts'
-import { smoothIslandGaussian } from '../../lib/generators/smoothIsland.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
-import { type Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
-import { parseColorData } from '../../lib/util/color.ts'
-import { Sketch } from '../../lib/util/Sketch.ts'
+import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
-import CheckboxColorList, { type CheckboxColorListItem } from '../UI/CheckboxColorList.vue'
-import EnumSelect from '../UI/EnumSelect.vue'
+import CheckboxColorList from '../UI/CheckboxColorList.vue'
+import RecordSelect from '../UI/RecordSelect.vue'
 import RangeSlider from '../UI/RangeSlider.vue'
 import { rangeSliderConfig } from '../UI/RangeSlider.ts'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
-const DEFAULT_COLORS = {
-  showExpandableBoundsColor: 'rgba(0, 0, 255, 0.5)',
-  showExpandableColor: 'rgba(255, 0, 0, 0.5)',
-  showExpandableRespectingDistanceColor: 'rgba(0, 255, 0, 0.5)',
-  showIslandColor: 'rgba(255, 255, 255, 1)',
-}
-
 enum GrowType {
-  PERLIN = 'Perlin',
-  CLUSTER = 'Cluster',
-  WEIGHTED = 'Weighted',
-  DIRECTIONAL = 'Directional',
-  MARCHING = 'Marching',
+  PERLIN = 'PERLIN',
+  CLUSTER = 'CLUSTER',
+  WEIGHTED = 'WEIGHTED',
+  DIRECTIONAL = 'DIRECTIONAL',
+  MARCHING = 'MARCHING',
 }
 
-enum IslandFilterType {
-  ALL,
-  INNER,
-  EDGE,
+const GROW_TYPE_OPTIONS: Record<GrowType, string> = {
+  [GrowType.PERLIN]: 'Perlin',
+  [GrowType.CLUSTER]: 'Cluster',
+  [GrowType.WEIGHTED]: 'Weighted',
+  [GrowType.DIRECTIONAL]: 'Directional',
+  [GrowType.MARCHING]: 'Marching',
 }
 
-const ISLAND_TYPES = {
-  [IslandFilterType.ALL]: {
-    label: 'All',
-    filter: (i: Island) => true,
-  },
-  [IslandFilterType.INNER]: {
-    label: 'Inner',
-    filter: (i: Island) => i.type === IslandType.NORMAL,
-  },
-  [IslandFilterType.EDGE]: {
-    label: 'Edge',
-    filter: (i: Island) => i.type !== IslandType.NORMAL,
-  },
-}
-
-const GrowIslandSelectOptions = ref(Object.fromEntries(
-  Object.entries(ISLAND_TYPES).map(([key, val]) => [key, val.label]),
-))
-
-const CONFIG_DEFAULTS = {
-  perlinIterations: rangeSliderConfig({
-    min: 1,
-    max: 50,
-    value: 1,
-  }),
-}
+const ITERATION_DEFAULTS = rangeSliderConfig({
+  min: 1,
+  max: 50,
+  value: 1,
+})
 
 const step = useStepHandler(stepId, {
   ...STEP_META,
@@ -91,20 +68,14 @@ const step = useStepHandler(stepId, {
       growType: GrowType.PERLIN as GrowType,
 
       iterations: {
-        ...CONFIG_DEFAULTS.perlinIterations,
+        ...ITERATION_DEFAULTS,
       },
-      smooth: 1,
 
       clusterRadius: 0,
       marchingGrowthPixelsPerIteration: 1,
 
-      showExpandableBounds: false,
-      showExpandable: false,
-      showExpandableRespectingDistance: false,
-      showIsland: true,
-
       activeTabIndex: 0,
-      ...DEFAULT_COLORS,
+      ...DEFAULT_ISLAND_VISIBILITY_CONFIG,
     })
   },
   run({ config, inputData }) {
@@ -123,7 +94,7 @@ const step = useStepHandler(stepId, {
     }
     const grower = map[config.growType]()
 
-    const islandFilter = ISLAND_TYPES[C.islandType].filter
+    const islandFilter = ISLAND_FILTERS[C.islandType].filter
     const borderBounds = mask.borderToBounds(C.minDistance)
 
     const pointFilter: IslandPointFilter = (x, y, island) => {
@@ -147,37 +118,8 @@ const step = useStepHandler(stepId, {
     growIslands(options)
 
     const filteredIslands = islands.filter(islandFilter)
-    filteredIslands.forEach(i => {
-      smoothIslandGaussian(i, C.smooth, (x, y) => {
-        if (i.type === IslandType.NORMAL) return true
-        return !mask.isWithinBorder(x, y, 2)
-      })
-    })
+    const sketch = sketchIslandVisuals(mask, config, filteredIslands, islands)
 
-    const sketch = new Sketch(mask.width, mask.height)
-    const islandColor = parseColorData(config.showIslandColor)
-
-    if (C.showIsland) {
-      sketch.putImageData(mask.toImageData(islandColor))
-    }
-
-    filteredIslands.forEach((i) => {
-      if (C.showExpandableBounds) {
-        sketch.fillRectBounds(i.expandableBounds.growNew(1), C.showExpandableBoundsColor)
-      }
-
-      if (C.showExpandable) {
-        i.getExpandable().forEach(({ x, y }) => {
-          sketch.setPixel(x, y, C.showExpandableColor)
-        })
-      }
-
-      if (C.showExpandableRespectingDistance) {
-        i.getExpandableRespectingMinDistance(islands, C.minDistance).forEach(({ x, y }) => {
-          sketch.setPixel(x, y, C.showExpandableRespectingDistanceColor)
-        })
-      }
-    })
     return {
       output: mask,
       preview: sketch.toImageData(),
@@ -187,32 +129,6 @@ const step = useStepHandler(stepId, {
 
 const config = step.config
 
-const checkboxColors: CheckboxColorListItem[] = [
-  {
-    label: 'Islands',
-    active: toRef(config, 'showIsland'),
-    color: toRef(config, 'showIslandColor'),
-    defaultColor: DEFAULT_COLORS.showIslandColor,
-  },
-  {
-    label: 'Expandable',
-    active: toRef(config, 'showExpandable'),
-    color: toRef(config, 'showExpandableColor'),
-    defaultColor: DEFAULT_COLORS.showExpandableColor,
-  },
-  {
-    label: 'Expandable Dist.',
-    active: toRef(config, 'showExpandableRespectingDistance'),
-    color: toRef(config, 'showExpandableRespectingDistanceColor'),
-    defaultColor: DEFAULT_COLORS.showExpandableRespectingDistanceColor,
-  },
-  {
-    label: 'Expandable Bounds',
-    active: toRef(config, 'showExpandableBounds'),
-    color: toRef(config, 'showExpandableBoundsColor'),
-    defaultColor: DEFAULT_COLORS.showExpandableBoundsColor,
-  },
-]
 </script>
 <template>
   <StepCard :step="step" :footer-tabs="true">
@@ -233,29 +149,27 @@ const checkboxColors: CheckboxColorListItem[] = [
             <input type="range" min="1" max="20" step="1" v-model.number="config.minDistance"
                    class="form-range" />
           </div>
-          <div class="row pb-2">
+
+          <RangeSlider
+            :id="`${stepId}-iterations`"
+            label="Iterations"
+            :defaults="ITERATION_DEFAULTS"
+            v-model:value="config.iterations.value"
+            v-model:min="config.iterations.min"
+            v-model:max="config.iterations.max"
+            v-model:step="config.iterations.step"
+          />
+
+          <div class="row pb-2 gx-1">
             <div class="col">
               <label class="form-label">Island Type</label>
-              <EnumSelect :options="GrowIslandSelectOptions" v-model="config.islandType" />
+              <RecordSelect :options="ISLAND_TYPES_FILTER_OPTIONS" v-model="config.islandType" />
             </div>
             <div class="col">
               <label class="form-label">Grow Type</label>
-              <select class="form-select me-2" aria-label="" v-model="config.growType">
-                <option v-for="growType in GrowType" :value="growType" :key="growType">{{ growType }}</option>
-              </select>
+              <RecordSelect :options="GROW_TYPE_OPTIONS" v-model="config.growType" />
             </div>
           </div>
-          <template v-if="config.growType === GrowType.PERLIN">
-            <RangeSlider
-              :id="`${stepId}-perlin-iterations`"
-              label="Iterations"
-              :defaults="CONFIG_DEFAULTS.perlinIterations"
-              v-model:value="config.iterations.value"
-              v-model:min="config.iterations.min"
-              v-model:max="config.iterations.max"
-              v-model:step="config.iterations.step"
-            />
-          </template>
 
           <template v-if="config.growType === GrowType.CLUSTER">
             <div>
@@ -273,22 +187,12 @@ const checkboxColors: CheckboxColorListItem[] = [
             </div>
           </template>
 
-          <RangeSlider
-            :id="`${stepId}-smooth`"
-            label="Smooth"
-            :defaults="{min: 0, step:1, max: 50, value: 1}"
-            v-model:value="config.smooth"
-            :min="0"
-            :max="50"
-            :step="1"
-          />
-
         </BTab>
         <BTab
           title="Display"
           id="display"
         >
-          <CheckboxColorList :items="checkboxColors" />
+          <CheckboxColorList :items="islandCheckboxColors(config)" />
         </BTab>
       </BTabs>
     </template>

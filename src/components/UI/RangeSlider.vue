@@ -3,6 +3,29 @@ import { BCollapse } from 'bootstrap-vue-next'
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { RangeSliderConfig } from './RangeSlider.ts'
 
+interface IProps {
+  id: string,
+  label: string,
+  decimals?: number,
+  expandStep?: number,
+  expandDelay?: number,
+  value?: number,
+  defaults?: RangeSliderConfig,
+  canBeNegative?: boolean,
+  canResetDefaults?: boolean,
+}
+
+type Props = IProps & (
+  | { max: number; hardMax?: never }
+  | { hardMax: number; max?: never }
+  ) & (
+  | { min: number; hardMin?: never }
+  | { hardMin: number; min?: never }
+  ) & (
+  | { step: number; hardStep?: never }
+  | { hardStep: number; step?: never }
+  );
+
 const {
   id,
   label,
@@ -15,31 +38,37 @@ const {
   decimals = 0,
   canBeNegative = false,
   canResetDefaults = true,
+  hardMax,
+  hardMin,
+  hardStep,
   defaults = {
     min: 0,
     max: 100,
     value: 50,
     step: 1,
   },
-} = defineProps<{
-  id: string,
-  label: string,
-  decimals?: number,
-  expandStep?: number,
-  expandDelay?: number,
-  value?: number,
-  min?: number,
-  max?: number,
-  step?: number,
-  defaults?: RangeSliderConfig,
-  canBeNegative?: boolean,
-  canResetDefaults?: boolean,
-}>()
+} = defineProps<Props>()
 
 const m_value = defineModel<number>('value')
 const m_min = defineModel<number>('min')
 const m_max = defineModel<number>('max')
 const m_step = defineModel<number>('step')
+
+if (__DEV__) {
+  if (m_min.value !== undefined && hardMin !== undefined) {
+    console.error('[RangeSlider] Cannot use both v-model:min and hardMin')
+  }
+  if (m_max.value !== undefined && hardMax !== undefined) {
+    console.error('[RangeSlider] Cannot use both v-model:max and hardMax')
+  }
+  if (m_step.value !== undefined && hardStep !== undefined) {
+    console.error('[RangeSlider] Cannot use both v-model:step and hardStep')
+  }
+}
+
+const clamp = (val: number, minimum: number, maximum: number): number => {
+  return Math.max(minimum, Math.min(maximum, val))
+}
 
 const value = computed({
   get: () => m_value.value ?? p_value ?? defaults.value,
@@ -47,35 +76,43 @@ const value = computed({
 })
 
 const min = computed({
-  get: () => m_min.value ?? p_min ?? defaults.min,
+  get: () => hardMin ?? m_min.value ?? p_min ?? defaults.min,
   set: (v) => m_min.value = v,
 })
 
 const max = computed({
-  get: () => m_max.value ?? p_max ?? defaults.max,
+  get: () => hardMax ?? m_max.value ?? p_max ?? defaults.max,
   set: (v) => m_max.value = v,
 })
 
 const step = computed({
-  get: () => m_step.value ?? p_step ?? defaults.step,
-  set: (v) => m_step.value = v,
+  get: () => hardStep ?? m_step.value ?? p_step ?? defaults.step,
+  set: (v) => {
+    const maxStep = max.value - min.value
+    m_step.value = clamp(Math.abs(v), 0.0001, maxStep)
+  },
 })
 
 const isDragging = ref(false)
 let expandInterval: number | null = null
 
 const expandMin = (): void => {
-
-  min.value! -= expandStep
+  min.value -= expandStep
   if (!canBeNegative) {
     min.value = Math.max(min.value, 0)
+  }
+  if (hardMin !== undefined) {
+    min.value = Math.max(min.value, hardMin)
   }
 
   value.value = min.value
 }
 
 const expandMax = (): void => {
-  max.value! += expandStep
+  max.value += expandStep
+  if (hardMax !== undefined) {
+    max.value = Math.min(max.value, hardMax)
+  }
   value.value = max.value
 }
 
@@ -87,15 +124,15 @@ const handleInput = (event: Event): void => {
   if (!isDragging.value) return
 
   // Check if at minimum
-  if (val <= min.value! && !expandInterval) {
+  if (val <= min.value && !expandInterval) {
     expandInterval = window.setInterval(expandMin, expandDelay)
   }
   // Check if at maximum
-  else if (val >= max.value! && !expandInterval) {
+  else if (val >= max.value && !expandInterval) {
     expandInterval = window.setInterval(expandMax, expandDelay)
   }
   // Stop expanding if moved away from edges
-  else if (val > min.value! && val < max.value! && expandInterval) {
+  else if (val > min.value && val < max.value && expandInterval) {
     clearInterval(expandInterval)
     expandInterval = null
   }
@@ -114,21 +151,31 @@ const stopDragging = (): void => {
 }
 
 const reset = (): void => {
-  min.value = defaults.min as number
-  max.value = defaults.max as number
-  step.value = defaults.step as number
-  value.value = defaults.value as number
-
+  min.value = defaults.min
+  max.value = defaults.max
+  step.value = defaults.step
+  value.value = defaults.value
 }
 
 watch([min, max], () => {
-  if (value.value < min.value!) value.value = min.value!
-  if (value.value > max.value!) value.value = max.value!
+  if (value.value < min.value) value.value = min.value
+  if (value.value > max.value) value.value = max.value
 })
 
 onMounted(() => {
-  min.value = Math.min(min.value!, value.value!)
-  max.value = Math.max(max.value!, value.value!)
+  min.value = Math.min(min.value, value.value)
+  max.value = Math.max(max.value, value.value)
+})
+
+onMounted(() => {
+  // Ensure range accommodates initial value
+  const currentValue = value.value
+  if (hardMin === undefined && currentValue < min.value) {
+    min.value = currentValue
+  }
+  if (hardMax === undefined && currentValue > max.value) {
+    max.value = currentValue
+  }
 })
 
 onUnmounted(() => {
@@ -207,6 +254,7 @@ function openSettings() {
                 <div class="col-8">
                   <input
                     :id="`${id}-step-manual`"
+                    :disabled="hardStep !== undefined"
                     class="form-control form-control-sm"
                     type="number"
                     v-model="step"
@@ -225,6 +273,7 @@ function openSettings() {
                 <div class="col-8">
                   <input
                     :id="`${id}-min-manual`"
+                    :disabled="hardMin !== undefined"
                     class="form-control form-control-sm"
                     type="number"
                     :step="step"
@@ -240,6 +289,7 @@ function openSettings() {
                 <div class="col-8">
                   <input
                     :id="`${id}-max-manual`"
+                    :disabled="hardMax !== undefined"
                     class="form-control form-control-sm"
                     type="number"
                     :step="step"

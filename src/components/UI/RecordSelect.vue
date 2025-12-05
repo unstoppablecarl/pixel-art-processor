@@ -3,6 +3,7 @@ const { options } = defineProps<{
   options: Record<string | number, string>;
 }>()
 const selectedValue = defineModel<string | number>()
+
 </script>
 <template>
   <select

@@ -1,10 +1,20 @@
-import { type Bit, BitMask } from '../step-data-types/BitMask.ts'
-import type { Island } from '../step-data-types/BitMask/Island.ts'
+import { BitMask } from '../step-data-types/BitMask.ts'
+import type { Island, IslandPointFilter } from '../step-data-types/BitMask/Island.ts'
+
+export function smoothIslandsGaussian(
+  islands: Island[],
+  iterations: number = 1,
+  pointFilter?: IslandPointFilter,
+): void {
+  for (let i = 0; i < islands.length; i++) {
+    smoothIslandGaussian(islands[i], iterations, pointFilter)
+  }
+}
 
 export function smoothIslandGaussian(
   island: Island,
   iterations: number = 1,
-  shouldSmooth?: (x: number, y: number, value: Bit) => boolean,
+  pointFilter?: IslandPointFilter,
 ): void {
   const mask = island.mask
 
@@ -24,7 +34,7 @@ export function smoothIslandGaussian(
         const value = mask.get(x, y)
 
         // Skip if filter returns false
-        if (shouldSmooth && !shouldSmooth(x, y, value)) {
+        if (pointFilter && !pointFilter(x, y, island)) {
           continue
         }
 
