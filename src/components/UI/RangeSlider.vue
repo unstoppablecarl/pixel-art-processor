@@ -12,24 +12,6 @@ import {
 } from 'vue'
 import type { RangeSliderConfig } from './RangeSlider.ts'
 
-interface IProps {
-  id: string,
-  label: string,
-
-  value?: number,
-  min?: number,
-  max?: number,
-  step?: number,
-
-  defaults?: Partial<RangeSliderConfig>,
-
-  decimals?: number,
-  expandStep?: number,
-  expandDelay?: number,
-  canBeNegative?: boolean,
-  canResetDefaults?: boolean,
-}
-
 const {
   id,
   label,
@@ -43,7 +25,23 @@ const {
   canBeNegative = false,
   canResetDefaults = true,
   defaults,
-} = defineProps<IProps>()
+} = defineProps<{
+  id: string,
+  label: string,
+
+  value: number,
+  min?: number,
+  max?: number,
+  step?: number,
+
+  defaults?: Partial<RangeSliderConfig>,
+
+  decimals?: number,
+  expandStep?: number,
+  expandDelay?: number,
+  canBeNegative?: boolean,
+  canResetDefaults?: boolean,
+}>()
 
 const DEFAULTS = readonly({
   min: 0,
@@ -89,14 +87,19 @@ const isDragging = ref(false)
 let expandInterval: number | null = null
 
 const expandMin = (): void => {
+  if (!canEditMin) return
+
   min.value -= expandStep
   if (!canBeNegative) {
     min.value = Math.max(min.value, 0)
   }
+
   value.value = min.value
 }
 
 const expandMax = (): void => {
+  if (!canEditMax) return
+
   max.value += expandStep
   value.value = max.value
 }
@@ -166,9 +169,7 @@ function toggleSettings() {
 }
 </script>
 <template>
-
   <div>
-
     <div class="d-flex">
       <span class="flex-grow-1">{{ label }} {{ Number(value).toFixed(decimals) }}</span>
 
@@ -177,7 +178,6 @@ function toggleSettings() {
           <span class="text-muted text-uppercase">
             range:
           </span>
-
           {{ min }} - {{ max }}
         </div>
       </div>
