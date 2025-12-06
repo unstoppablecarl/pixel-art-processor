@@ -85,7 +85,7 @@ const step = useStepHandler(stepId, {
     const islands = mask.getIslands()
     const C = config
 
-    const map: Record<string, () => IslandIterator> = {
+    const map: Record<GrowType, () => IslandIterator> = {
       [GrowType.CLUSTER]: () => clusterGrower(C.clusterRadius),
       [GrowType.DIRECTIONAL]: () => directionalGrower(),
       [GrowType.MARCHING]: () => marchingGrower(C.marchingGrowthPixelsPerIteration),

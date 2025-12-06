@@ -17,6 +17,7 @@ import {
   ISLAND_FILTERS, ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
+import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
@@ -30,11 +31,13 @@ import { rangeSliderConfig } from '../UI/RangeSlider.ts'
 const { stepId } = defineProps<{ stepId: string }>()
 
 enum SmoothType {
-  GAUSSIAN = 'GAUSSIAN'
+  GAUSSIAN = 'GAUSSIAN',
+  AUTOMATA = 'AUTOMATA'
 }
 
 const SMOOTH_TYPE_OPTIONS: Record<SmoothType, string> = {
   [SmoothType.GAUSSIAN]: 'Gaussian',
+  [SmoothType.AUTOMATA]: 'Automata',
 }
 
 const ITERATION_DEFAULTS = rangeSliderConfig({
@@ -78,8 +81,9 @@ const step = useStepHandler(stepId, {
       return !mask.isWithinBorder(x, y, C.borderBuffer)
     }
 
-    const map: Record<string, () => void> = {
+    const map: Record<SmoothType, () => void> = {
       [SmoothType.GAUSSIAN]: () => smoothIslandsGaussian(filteredIslands, C.iterations.value, pointFilter),
+      [SmoothType.AUTOMATA]: () => smoothAutomata(mask, C.iterations.value, (x, y, v) => !mask.isWithinBorder(x, y, C.borderBuffer)),
     }
     map[config.smoothType]()
 
@@ -97,7 +101,7 @@ const config = step.config
 <template>
   <StepCard :step="step" :footer-tabs="true">
     <template #header>
-      {{STEP_META.displayName}}
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <BTabs
