@@ -24,6 +24,7 @@ import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.t
 import { copyImageDataOrNull } from '../util/ImageData.ts'
 import { logStepEvent } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
+import { deepUnwrap } from '../util/vue-util.ts'
 
 export type StepStore = ReturnType<typeof useStepStore>
 
@@ -101,8 +102,9 @@ export const useStepStore = defineStore('steps', () => {
 
       Object.assign(
         freshConfig,
-        step.config,
+        deepUnwrap(step.config),
       )
+
       newStep.config = freshConfig
 
       if (!isLast(stepId)) {
