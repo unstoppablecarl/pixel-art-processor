@@ -3,7 +3,7 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
   def: 'bitmask_island_edges',
-  displayName: 'BitMask Add Edge Islands',
+  displayName: 'BitMask Add Island Edges',
   inputDataTypes: [],
   outputDataType: BitMask,
 }
@@ -102,7 +102,7 @@ const computedSize = computed(() => config.size.value)
 <template>
   <StepCard :step="step">
     <template #header>
-      BitMsk Island Edges
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <div>

@@ -48,7 +48,7 @@ const config = step.config
 <template>
   <StepCard :step="step">
     <template #header>
-      BitMask Add Islands
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <RangeBandSlider

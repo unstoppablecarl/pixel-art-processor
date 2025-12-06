@@ -3,7 +3,7 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
   def: 'SIMPLEX_NOISE',
-  displayName: 'Add Noise',
+  displayName: 'HeightMap Noise',
   inputDataTypes: [HeightMap],
   outputDataType: HeightMap,
 }
@@ -75,7 +75,7 @@ const config = step.config
     :images="images"
   >
     <template #header>
-      Height Map Noise
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <div>

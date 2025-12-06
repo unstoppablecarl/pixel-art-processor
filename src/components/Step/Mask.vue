@@ -67,7 +67,7 @@ const step = useStepHandler(stepId, {
     :show-dimensions="true"
   >
     <template #header>
-      Mask
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <input ref="maskInputEl" type="file" accept="image/*" @change="handleFileUpload" class="form-control" />

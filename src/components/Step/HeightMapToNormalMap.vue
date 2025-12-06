@@ -3,7 +3,7 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
   def: 'height_map_to_normal_map',
-  displayName: 'Height Map -> Normal Map',
+  displayName: 'HeightMap -> NormalMap',
   inputDataTypes: [HeightMap],
   outputDataType: NormalMap,
 }
@@ -42,7 +42,7 @@ const config = step.config
 <template>
   <StepCard :step="step">
     <template #header>
-      Normal Map
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <div>

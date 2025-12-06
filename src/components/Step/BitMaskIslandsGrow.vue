@@ -133,7 +133,7 @@ const config = step.config
 <template>
   <StepCard :step="step" :footer-tabs="true">
     <template #header>
-      BitMsk Islands Grow
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <BTabs

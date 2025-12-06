@@ -3,7 +3,7 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
   def: 'INNER_GLOW',
-  displayName: 'Inner Glow',
+  displayName: 'HeightMap Glow',
   inputDataTypes: [BitMask],
   outputDataType: HeightMap,
 }
@@ -51,7 +51,7 @@ const config = step.config
 <template>
   <StepCard :step="step">
     <template #header>
-      Height Map Glow
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <div class="form-check">

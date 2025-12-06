@@ -3,7 +3,7 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
   def: 'normal_map_to_lighting',
-  displayName: 'Normal Map -> Texture Lighting',
+  displayName: 'NormalMap -> Texture Lighting',
   inputDataTypes: [NormalMap],
   outputDataType: PixelMap,
 }
@@ -97,7 +97,7 @@ const config = step.config
     :show-dimensions="true"
   >
     <template #header>
-      Normal Lighting
+      {{ STEP_META.displayName }}
     </template>
     <template #footer>
       <h6>
