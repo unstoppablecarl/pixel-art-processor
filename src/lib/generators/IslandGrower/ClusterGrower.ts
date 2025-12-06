@@ -1,11 +1,11 @@
 import type { Point } from '../../step-data-types/BaseDataStructure.ts'
-import type { IslandGrower } from '../IslandGrower.ts'
+import type { IslandIterator } from '../IslandIterator.ts'
 
 /**
  * Cluster Growth - Grows by expanding to nearby similar regions for cohesive blobs
  * Creates smoother shapes by clustering expansion points
  */
-export function clusterGrower(clusterRadius: number = 3): IslandGrower {
+export function clusterGrower(clusterRadius: number = 3): IslandIterator {
 
   return (mask, islands, island, expandable, claim): void => {
 

@@ -97,7 +97,7 @@ const config = step.config
 <template>
   <StepCard :step="step" :footer-tabs="true">
     <template #header>
-      BitMsk Islands Grow
+      {{STEP_META.displayName}}
     </template>
     <template #footer>
       <BTabs
@@ -108,17 +108,6 @@ const config = step.config
           title="Settings"
           id="settings"
         >
-          <div class="row pb-2 gx-1">
-            <div class="col">
-              <label class="form-label">Island Type</label>
-              <RecordSelect :options="ISLAND_TYPES_FILTER_OPTIONS" v-model="config.islandType" />
-            </div>
-            <div class="col">
-              <label class="form-label">Smooth Type</label>
-              <RecordSelect :options="SMOOTH_TYPE_OPTIONS" v-model="config.smoothType" />
-            </div>
-          </div>
-
           <RangeSlider
             :id="`${stepId}-iterations`"
             label="Iterations"
@@ -137,6 +126,17 @@ const config = step.config
             :max="step.inputData?.width"
             :step="1"
           />
+
+          <div class="row pb-2 gx-1">
+            <div class="col">
+              <label class="form-label">Island Type</label>
+              <RecordSelect :options="ISLAND_TYPES_FILTER_OPTIONS" v-model="config.islandType" />
+            </div>
+            <div class="col">
+              <label class="form-label">Smooth Type</label>
+              <RecordSelect :options="SMOOTH_TYPE_OPTIONS" v-model="config.smoothType" />
+            </div>
+          </div>
 
         </BTab>
         <BTab

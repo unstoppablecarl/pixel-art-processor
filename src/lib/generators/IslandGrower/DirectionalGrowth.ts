@@ -1,13 +1,13 @@
 import { ADJACENT_DIRECTIONS } from '../../step-data-types/BaseDataStructure.ts'
 import type { Island } from '../../step-data-types/BitMask/Island.ts'
 import { prng } from '../../util/prng.ts'
-import type { IslandGrower } from '../IslandGrower.ts'
+import type { IslandIterator } from '../IslandIterator.ts'
 
 /**
  * Directional Growth - Grows in preferred directions to create more organic shapes
  * Uses directional bias to create elongated, natural-looking blobs
  */
-export function directionalGrower(): IslandGrower {
+export function directionalGrower(): IslandIterator {
 
   const islandDirections = new Map<Island, [number, number]>()
 

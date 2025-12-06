@@ -76,6 +76,7 @@ export class Island {
   }
 
   claimPoint(x: number, y: number) {
+    this.mask.set(x, y, 1)
     this.expandBounds(x, y)
 
     const id = x + y * this.maskWidth
@@ -91,6 +92,59 @@ export class Island {
     })
 
     this._expandable = null
+  }
+
+  releasePoint(x: number, y: number) {
+    this.mask.set(x, y, 0)
+
+    // Recalculate bounds if this was an edge point
+    if (x === this.bounds.minX || x === this.bounds.maxX - 1 ||
+      y === this.bounds.minY || y === this.bounds.maxY - 1) {
+      this.recalculateBounds()
+      this.updateExpandableBounds()
+    }
+
+    // Add this point to the frontier since it's now empty and adjacent to the island
+    const id = x + y * this.maskWidth
+    this.frontier.add(id)
+
+    // Check adjacent points - remove them from frontier if they're no longer
+    // adjacent to any empty spaces
+    this.mask.eachAdjacent(x, y, (nx, ny, v) => {
+      if (v === 1) {
+        const nid = nx + ny * this.maskWidth
+        // Check if this adjacent point is still next to any empty space
+        const hasEmptyNeighbor = this.mask.hasAdjacent(nx, ny, (ax, ay, av) => {
+          return av === 0 && this.isValidExpansion(ax, ay)
+        })
+        if (!hasEmptyNeighbor) {
+          this.frontier.delete(nid)
+        }
+      }
+    })
+
+    this._expandable = null
+  }
+
+  protected recalculateBounds() {
+    let minX = Infinity, maxX = -Infinity
+    let minY = Infinity, maxY = -Infinity
+
+    this.mask.eachRect(this.bounds, (x, y, v) => {
+      if (v === 1) {
+        minX = Math.min(minX, x)
+        maxX = Math.max(maxX, x + 1)
+        minY = Math.min(minY, y)
+        maxY = Math.max(maxY, y + 1)
+      }
+    })
+
+    if (minX !== Infinity) {
+      this.bounds.minX = minX
+      this.bounds.maxX = maxX
+      this.bounds.minY = minY
+      this.bounds.maxY = maxY
+    }
   }
 
   each(cb: (x: number, y: number, v: number) => void) {

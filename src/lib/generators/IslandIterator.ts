@@ -2,12 +2,13 @@ import type { Point } from '../step-data-types/BaseDataStructure.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { Island, type IslandFilter, type IslandPointFilter } from '../step-data-types/BitMask/Island.ts'
 
-export type IslandGrower = (
+export type IslandIterator = (
   mask: BitMask,
   islands: Island[],
   island: Island,
   expandable: Point[],
   claim: (x: number, y: number) => void,
+  release: (x: number, y: number) => void,
 ) => void
 
 export type GroIslandsOptions = {
@@ -17,7 +18,7 @@ export type GroIslandsOptions = {
   islandFilter?: IslandFilter,
   pointFilter?: IslandPointFilter,
   iterations: number,
-  grower: IslandGrower,
+  iterator: IslandIterator,
 }
 
 export function growIslands(
@@ -28,16 +29,14 @@ export function growIslands(
     islandFilter,
     pointFilter,
     iterations,
-    grower,
+    iterator,
   }: GroIslandsOptions,
 ) {
 
   let island: Island
 
-  const claim = (x: number, y: number) => {
-    mask.set(x, y, 1)
-    island.claimPoint(x, y)
-  }
+  const claim = (x: number, y: number) => island.claimPoint(x, y)
+  const release = (x: number, y: number) => island.releasePoint(x, y)
 
   for (let iter = 0; iter < iterations; iter++) {
     for (let i = 0; i < islands.length; i++) {
@@ -49,7 +48,7 @@ export function growIslands(
 
       if (!expandable.length) continue
 
-      grower(mask, islands, island, expandable, claim)
+      iterator(mask, islands, island, expandable, claim, release)
     }
   }
 }

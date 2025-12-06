@@ -2,13 +2,13 @@ import type { Point } from '../../step-data-types/BaseDataStructure.ts'
 import type { BitMask } from '../../step-data-types/BitMask.ts'
 import { Island } from '../../step-data-types/BitMask/Island.ts'
 import { prng } from '../../util/prng.ts'
-import type { IslandGrower } from '../IslandGrower.ts'
+import type { IslandIterator } from '../IslandIterator.ts'
 
 /**
  * Marching Growth - Each island expands outward with consistent blob-like growth
  * Limits expansion per iteration for controlled growth rate
  */
-export function marchingGrower(pixelsPerIteration: number = 8): IslandGrower {
+export function marchingGrower(pixelsPerIteration: number = 8): IslandIterator {
 
   return (mask, islands, island, expandable, claim): void => {
 
@@ -23,7 +23,7 @@ export function marchingGrower(pixelsPerIteration: number = 8): IslandGrower {
       if (grown >= pixelsPerIteration) break
       const { x, y } = p
       mask.set(x, y, 1)
-      island.claimPoint(x, y)
+      claim(x, y)
       grown++
     }
   }

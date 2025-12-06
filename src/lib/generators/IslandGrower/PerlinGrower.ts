@@ -1,7 +1,7 @@
 import type { BitMask } from '../../step-data-types/BitMask.ts'
-import type { IslandGrower } from '../IslandGrower.ts'
+import type { IslandIterator } from '../IslandIterator.ts'
 
-export function perlinGrower(): IslandGrower {
+export function perlinGrower(): IslandIterator {
 
   return (mask: BitMask, islands, island, expandable, claim): void => {
 

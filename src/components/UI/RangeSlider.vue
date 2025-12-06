@@ -193,7 +193,7 @@ function toggleSettings() {
       </div>
     </div>
 
-    <BCollapse id="collapse-1" v-model="settingsVisible">
+    <BCollapse v-model="settingsVisible">
       <div class="card my-2">
         <div class="card-header text-bg-dark d-flex">
           <div class="flex-grow-1">
@@ -286,6 +286,7 @@ function toggleSettings() {
     </BCollapse>
 
     <input
+      :id="id"
       type="range"
       class="form-range"
       :step="step"
