@@ -1,5 +1,5 @@
-import { BitMask } from '../step-data-types/BitMask.ts'
-import type { Island, IslandPointFilter } from '../step-data-types/BitMask/Island.ts'
+import { BitMask } from '../../step-data-types/BitMask.ts'
+import type { Island, IslandPointFilter } from '../../step-data-types/BitMask/Island.ts'
 
 export function smoothIslandsGaussian(
   islands: Island[],

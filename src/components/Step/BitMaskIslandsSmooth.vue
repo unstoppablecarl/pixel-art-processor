@@ -17,7 +17,7 @@ import {
   ISLAND_FILTERS, ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
-import { smoothIslandsGaussian } from '../../lib/generators/smoothIsland.ts'
+import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
