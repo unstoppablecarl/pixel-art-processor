@@ -1,4 +1,5 @@
 import Alea from 'alea'
+import { sampleMultiple } from './prng/random-array.ts'
 
 export type Prng = ReturnType<typeof makePrng>
 
@@ -141,10 +142,11 @@ export function makePrng() {
     return result
   }
 
-  function weightedArrayTable<T>(
+  function weightedArrayItems<T>(
+    count: number,
     weightedItems: Parameters<typeof createWeightedAliasTable<T>>[1]
-  ): () => T {
-    return createWeightedAliasTable<T>(prng, weightedItems)
+  ): T[] {
+    return sampleMultiple<T>(prng, weightedItems, count)
   }
 
   const extras = {
@@ -156,116 +158,9 @@ export function makePrng() {
     randomFloatRange,
     randomArrayValue,
     generateChunkedBinaryArray,
-    weightedArrayTable,
+    weightedArrayItems,
   }
   Object.assign(Prng, extras)
 
   return Prng as typeof Prng & typeof extras
-}
-/**
- * Creates an alias table for O(1) weighted random sampling.
- * Best for high-frequency sampling scenarios (thousands+ of samples).
- * Uses the Vose's Alias Method for constant-time selection.
- *
- * @param prng
- * @param weightedItems - Array of objects with { item: T, weight: number }
- * @returns A function that samples in O(1) time
- *
- * @example
- * const sampler = createAliasTable([
- *   { item: 'common', weight: 80 },
- *   { item: 'rare', weight: 15 },
- *   { item: 'epic', weight: 5 }
- * ]);
- *
- * // Extremely fast repeated sampling
- * for (let i = 0; i < 100000; i++) {
- *   const result = sampler();
- * }
- */
-export function createWeightedAliasTable<T>(
-  prng: () => number,
-  weightedItems: Array<{ item: T; weight: number }>
-): () => T {
-  if (weightedItems.length === 0) {
-    throw new Error('Items array must not be empty');
-  }
-
-  const n = weightedItems.length;
-  const prob = new Array(n);
-  const alias = new Array(n);
-  const items = new Array(n);
-
-  // Extract items and validate/sum weights
-  let totalWeight = 0;
-  for (let i = 0; i < n; i++) {
-    const { item, weight } = weightedItems[i];
-
-    if (weight < 0) {
-      throw new Error(`Weights must be non-negative. Found negative weight at index ${i}`);
-    }
-
-    items[i] = item;
-    totalWeight += weight;
-  }
-
-  if (totalWeight <= 0) {
-    throw new Error('Total weight must be greater than 0');
-  }
-
-  // Scale weights to average of 1.0 (sum to n)
-  const scaled = new Array(n);
-  for (let i = 0; i < n; i++) {
-    scaled[i] = (weightedItems[i].weight / totalWeight) * n;
-  }
-
-  // Partition indices into small (< 1.0) and large (>= 1.0)
-  const small: number[] = [];
-  const large: number[] = [];
-
-  for (let i = 0; i < n; i++) {
-    if (scaled[i] < 1.0) {
-      small.push(i);
-    } else {
-      large.push(i);
-    }
-  }
-
-  // Build alias table using Vose's algorithm
-  while (small.length > 0 && large.length > 0) {
-    const less = small.pop()!;
-    const more = large.pop()!;
-
-    // Assign probability and alias for the 'less' bucket
-    prob[less] = scaled[less];
-    alias[less] = more;
-
-    // Remove the allocated probability from 'more'
-    scaled[more] = (scaled[more] + scaled[less]) - 1.0;
-
-    // Re-classify 'more' based on its new scaled weight
-    if (scaled[more] < 1.0) {
-      small.push(more);
-    } else {
-      large.push(more);
-    }
-  }
-
-  // Handle remaining items (due to floating point precision)
-  // These should have probability ~1.0
-  while (large.length > 0) {
-    prob[large.pop()!] = 1.0;
-  }
-  while (small.length > 0) {
-    prob[small.pop()!] = 1.0;
-  }
-
-  // Return O(1) sampling function
-  return function sample(): T {
-    // Pick a random bucket
-    const i = Math.floor(prng() * n);
-
-    // Flip a coin weighted by prob[i]
-    return prng() < prob[i] ? items[i] : items[alias[i]];
-  };
 }
