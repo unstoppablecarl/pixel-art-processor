@@ -36,6 +36,8 @@ const CONFIG_DEFAULTS = {
     min: 1,
     max: 30,
   }),
+  minGapSize: 3,
+  maxGapSize: 5,
   minChunkSize: 3,
   maxChunkSize: 5,
   padding: 4,
@@ -58,13 +60,20 @@ const step = useStepHandler(stepId, {
     // mask.setRect(size - 1, 20, 1, 12, 1)
     // mask.setRect(13, size - 1, 18, 1, 1)
 
-    const verticalChunks = prng.generateChunkedBinaryArray(
-      size.value,
-      config.verticalChunks.value,
-      config.minChunkSize,
-      config.maxChunkSize,
-      config.padding,
-    )
+    const options = {
+      length: size.value,
+
+      minGapSize: config.minGapSize,
+      maxGapSize: config.maxGapSize,
+      minChunkSize: config.minChunkSize,
+      maxChunkSize: config.maxChunkSize,
+      padding: config.padding,
+    }
+
+    const verticalChunks = prng.generateChunkedBinaryArray({
+      chunks: config.verticalChunks.value,
+      ...options
+    })
 
     verticalChunks.forEach((v, i) => {
       if (v) {
@@ -73,13 +82,10 @@ const step = useStepHandler(stepId, {
       }
     })
 
-    const horizontalChunks = prng.generateChunkedBinaryArray(
-      size.value,
-      config.horizontalChunks.value,
-      config.minChunkSize,
-      config.maxChunkSize,
-      config.padding,
-    )
+    const horizontalChunks = prng.generateChunkedBinaryArray({
+      chunks: config.horizontalChunks.value,
+      ...options
+    })
 
     horizontalChunks.forEach((v, i) => {
       if (v) {
@@ -137,6 +143,16 @@ const computedSize = computed(() => config.size.value)
         />
 
         <RangeBandSlider
+          :id="`${stepId}-gap-size`"
+          label="Gap Size"
+          :min="0"
+          :max="computedSize"
+          v-model:min-value="config.minGapSize"
+          v-model:max-value="config.maxGapSize"
+        />
+
+        <RangeBandSlider
+          :id="`${stepId}-chunk-size`"
           label="Chunk Size"
           :min="0"
           :max="computedSize"
