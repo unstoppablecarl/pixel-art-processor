@@ -18,7 +18,7 @@ import {
   ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
-import { type GroIslandsOptions, growIslands, type IslandIterator } from '../../lib/generators/IslandIterator.ts'
+import { type MutateIslandsOptions, mutateIslandsExpansion, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
 import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
 import { directionalGrower } from '../../lib/generators/IslandGrower/DirectionalGrowth.ts'
 import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower.ts'
@@ -85,7 +85,7 @@ const step = useStepHandler(stepId, {
     const islands = mask.getIslands()
     const C = config
 
-    const map: Record<GrowType, () => IslandIterator> = {
+    const map: Record<GrowType, () => IslandMutator> = {
       [GrowType.CLUSTER]: () => clusterGrower(C.clusterRadius),
       [GrowType.DIRECTIONAL]: () => directionalGrower(),
       [GrowType.MARCHING]: () => marchingGrower(C.marchingGrowthPixelsPerIteration),
@@ -105,7 +105,7 @@ const step = useStepHandler(stepId, {
       return true
     }
 
-    const options: GroIslandsOptions = {
+    const options: MutateIslandsOptions = {
       mask,
       islands,
       minDistance: C.minDistance,
@@ -115,7 +115,7 @@ const step = useStepHandler(stepId, {
       iterator: grower,
     }
 
-    growIslands(options)
+    mutateIslandsExpansion(options)
 
     const filteredIslands = islands.filter(islandFilter)
     const sketch = sketchIslandVisuals(mask, config, filteredIslands, islands)

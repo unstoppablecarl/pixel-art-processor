@@ -30,12 +30,14 @@ export type IslandFilter = (island: Island, index?: number | undefined) => boole
 
 export class Island {
   readonly frontier: Set<number> = new Set()
+  readonly edge: Set<number> = new Set()
   readonly expandableBounds: Bounds
   readonly bounds: Bounds
   readonly initialBounds: Bounds
 
   private maskWidth: number // cache
   private _expandable: Point[] | null = null // Cache for getExpandable()
+  private _edge: Point[] | null = null // Cache for getEdge()
 
   constructor(
     readonly mask: BitMask,
@@ -58,13 +60,19 @@ export class Island {
   protected initializeFrontier() {
     this.mask.eachRect(this.bounds, (x, y, v) => {
       if (v === 1) {
+        let isEdge = false
         if (this.isValidExpansion(x, y)) {
           this.mask.eachAdjacent(x, y, (ax, ay, av) => {
             if (av === 0) {
               const id = ax + ay * this.maskWidth
               this.frontier.add(id)
+              isEdge = true
             }
           })
+        }
+        if (isEdge) {
+          const id = x + y * this.maskWidth
+          this.edge.add(id)
         }
       }
     })
@@ -82,16 +90,31 @@ export class Island {
     const id = x + y * this.maskWidth
     this.frontier.delete(id)
 
+    // The newly claimed point becomes an edge point
+    this.edge.add(id)
+
     this.mask.eachAdjacent(x, y, (nx, ny, v) => {
       if (v === 0) {
         if (this.isValidExpansion(nx, ny)) {
           const nid = nx + ny * this.maskWidth
           this.frontier.add(nid)
         }
+        return
+      }
+
+      // Existing filled neighbors that were edge points might no longer be edges
+      const nid = nx + ny * this.maskWidth
+      if (this.edge.has(nid)) {
+        // Check if this neighbor is still an edge
+        let stillEdge = this.mask.hasAdjacent(nx, ny, 0)
+        if (!stillEdge) {
+          this.edge.delete(nid)
+        }
       }
     })
 
     this._expandable = null
+    this._edge = null
   }
 
   releasePoint(x: number, y: number) {
@@ -124,6 +147,17 @@ export class Island {
     })
 
     this._expandable = null
+  }
+
+  getEdge(): Point[] {
+    if (this._edge === null) {
+      this._edge = Array.from(this.edge, id => {
+        const x = id % this.maskWidth
+        const y = Math.floor(id / this.maskWidth)
+        return { x, y }
+      })
+    }
+    return this._edge
   }
 
   protected recalculateBounds() {
@@ -230,12 +264,9 @@ export class Island {
   getExpandableRespectingMinDistance(
     otherIslands: Island[],
     minDistance: number,
-    islandFilter?: IslandFilter,
     pointFilter?: IslandPointFilter,
   ): Point[] {
     return this.getExpandable().filter(({ x, y }) => {
-      if (islandFilter && !islandFilter(this)) return
-
       return this.pointRespectsMinDistance(x, y, otherIslands, minDistance, pointFilter)
     })
   }

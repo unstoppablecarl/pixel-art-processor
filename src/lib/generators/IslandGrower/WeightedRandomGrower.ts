@@ -1,12 +1,12 @@
 import type { BitMask } from '../../step-data-types/BitMask.ts'
 import { prng } from '../../util/prng.ts'
-import type { IslandIterator } from '../IslandIterator.ts'
+import type { IslandMutator } from '../IslandMutator.ts'
 
 /**
  * Weighted Random Growth - Grows blobs with preference for expanding in smooth directions
  * Uses Perlin noise-like weighting to create natural flowing shapes
  */
-export function weightedRandomGrower(): IslandIterator {
+export function weightedRandomGrower(): IslandMutator {
 
   return (mask, islands, island, expandable, claim): void => {
 
