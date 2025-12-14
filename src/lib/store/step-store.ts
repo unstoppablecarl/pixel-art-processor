@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { type Component, type Reactive, reactive, ref, type Ref, watch } from 'vue'
+import { type Component, type Reactive, reactive, ref, type Ref, watch, computed } from 'vue'
 import { GenericValidationError, StepValidationError } from '../errors.ts'
 import {
   type AnyStepContext,
@@ -231,7 +231,7 @@ export const useStepStore = defineStore('steps', () => {
 
     function moveAfter(stepId: string, afterStepId: string) {
       const index = getIndex(afterStepId)
-      moveTo(stepId, index+1)
+      moveTo(stepId, index + 1)
     }
 
     function moveTo(stepId: string, newIndex: number): void {
@@ -393,6 +393,14 @@ export const useStepStore = defineStore('steps', () => {
 
     const length = () => stepIdOrder.value.length
 
+    const finalPreview = computed(() => {
+      if(!stepIdOrder.value.length) return ''
+
+      const lastStepId = stepIdOrder.value[stepIdOrder.value.length - 1]
+      const step = stepsById[lastStepId]
+      return step.outputPreview
+    })
+
     return {
       idIncrement,
       stepIdOrder,
@@ -420,6 +428,7 @@ export const useStepStore = defineStore('steps', () => {
       loadPendingInput,
       defToComponent,
       handleStepError,
+      finalPreview,
     }
   },
   {

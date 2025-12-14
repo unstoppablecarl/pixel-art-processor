@@ -4,6 +4,7 @@ import { computed, onMounted, useTemplateRef, watch } from 'vue'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
+import PatternPreview from './Processor/PatternPreview.vue'
 import AddStepButtons from './UI/AddStepButtons.vue'
 
 const store = useStepStore()
@@ -83,5 +84,6 @@ onMounted(() => {
         <AddStepButtons />
       </div>
     </div>
+    <PatternPreview />
   </div>
 </template>
