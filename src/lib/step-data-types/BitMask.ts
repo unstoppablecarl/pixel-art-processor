@@ -152,27 +152,27 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
       }
     }
 
-    const horzCount = Math.max(topCount, bottomCount);
-    const vertCount = Math.max(leftCount, rightCount);
+    const horzCount = Math.max(topCount, bottomCount)
+    const vertCount = Math.max(leftCount, rightCount)
 
     if (horzCount > vertCount) {
       if (topCount > bottomCount) {
-        return IslandType.TOP_EDGE;
+        return IslandType.TOP_EDGE
       } else if (bottomCount > topCount) {
-        return IslandType.BOTTOM_EDGE;
+        return IslandType.BOTTOM_EDGE
       } else {
-        return IslandType.TOP_EDGE | IslandType.BOTTOM_EDGE;
+        return IslandType.TOP_EDGE | IslandType.BOTTOM_EDGE
       }
     } else if (vertCount > horzCount) {
       if (leftCount > rightCount) {
-        return IslandType.LEFT_EDGE;
+        return IslandType.LEFT_EDGE
       } else if (rightCount > leftCount) {
-        return IslandType.RIGHT_EDGE;
+        return IslandType.RIGHT_EDGE
       } else {
-        return IslandType.LEFT_EDGE | IslandType.RIGHT_EDGE;
+        return IslandType.LEFT_EDGE | IslandType.RIGHT_EDGE
       }
     } else {
-      return IslandType.NORMAL;
+      return IslandType.NORMAL
     }
   }
 
@@ -258,6 +258,12 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     borderThickness: number = 1,
   ): Bounds {
     return new Bounds(borderThickness, this.width - borderThickness, borderThickness, this.height - borderThickness)
+  }
+
+  adjacentSum(x: number, y: number): number {
+    let total = 0
+    this.eachAdjacent(x, y, (x, y, v) => total += v)
+    return total
   }
 }
 
