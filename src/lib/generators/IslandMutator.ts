@@ -2,6 +2,10 @@ import type { Point } from '../step-data-types/BaseDataStructure.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { Island, type IslandFilter, type IslandPointFilter } from '../step-data-types/BitMask/Island.ts'
 
+type IslandMutatorResult = {
+  added: Point[],
+  removed: Point[],
+}
 export type IslandMutator = (
   mask: BitMask,
   islands: Island[],
@@ -9,34 +13,40 @@ export type IslandMutator = (
   points: Point[],
   claim: (x: number, y: number) => void,
   release: (x: number, y: number) => void,
-) => void
+) => IslandMutatorResult
 
 export type MutateIslandsOptions = {
   mask: BitMask,
   islands: Island[],
-  minDistance: number,
   islandFilter?: IslandFilter,
-  pointFilter?: IslandPointFilter,
+  getPoints: (i: Island) => Point[],
   iterations: number,
   iterator: IslandMutator,
 }
 
-export function mutateIslandsExpansion(
+export function mutateIslands(
   {
     mask,
     islands,
-    minDistance,
     islandFilter,
-    pointFilter,
+    getPoints,
     iterations,
     iterator,
   }: MutateIslandsOptions,
-) {
+): IslandMutatorResult {
 
   let island: Island
+  const added: Point[] = []
+  const removed: Point[] = []
 
-  const claim = (x: number, y: number) => island.claimPoint(x, y)
-  const release = (x: number, y: number) => island.releasePoint(x, y)
+  const claim = (x: number, y: number) => {
+    added.push({ x, y })
+    island.claimPoint(x, y)
+  }
+  const release = (x: number, y: number) => {
+    removed.push({ x, y })
+    island.releasePoint(x, y)
+  }
 
   for (let iter = 0; iter < iterations; iter++) {
     for (let i = 0; i < islands.length; i++) {
@@ -44,47 +54,16 @@ export function mutateIslandsExpansion(
 
       if (islandFilter?.(island, i) === false) continue
 
-      const points = island.getExpandableRespectingMinDistance(islands, minDistance, pointFilter)
+      const points = getPoints(island)
 
       if (!points.length) continue
 
       iterator(mask, islands, island, points, claim, release)
     }
   }
-}
 
-export function mutateIslandsErosion(
-  {
-    mask,
-    islands,
-    minDistance,
-    islandFilter,
-    pointFilter,
-    iterations,
-    iterator,
-  }: MutateIslandsOptions,
-) {
-
-  let island: Island
-
-  const claim = (x: number, y: number) => island.claimPoint(x, y)
-  const release = (x: number, y: number) => island.releasePoint(x, y)
-
-  for (let iter = 0; iter < iterations; iter++) {
-    for (let i = 0; i < islands.length; i++) {
-      island = islands[i]
-
-      if (islandFilter?.(island, i) === false) continue
-
-      let points = island.getEdge()
-
-      if (pointFilter) {
-        points = points.filter(({ x, y }) => pointFilter(x, y, island))
-      }
-
-      if (!points.length) continue
-
-      iterator(mask, islands, island, points, claim, release)
-    }
+  return {
+    added,
+    removed,
   }
 }

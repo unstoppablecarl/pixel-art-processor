@@ -18,7 +18,7 @@ import {
   ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
-import { type MutateIslandsOptions, mutateIslandsExpansion, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
+import { type MutateIslandsOptions, mutateIslands, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
 import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
 import { directionalGrower } from '../../lib/generators/IslandGrower/DirectionalGrowth.ts'
 import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower.ts'
@@ -26,7 +26,7 @@ import { perlinGrower } from '../../lib/generators/IslandGrower/PerlinGrower.ts'
 import { weightedRandomGrower } from '../../lib/generators/IslandGrower/WeightedRandomGrower.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
-import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
+import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList from '../UI/CheckboxColorList.vue'
 import RecordSelect from '../UI/RecordSelect.vue'
@@ -76,6 +76,7 @@ const step = useStepHandler(stepId, {
 
       activeTabIndex: 0,
       ...DEFAULT_ISLAND_VISIBILITY_CONFIG,
+      showAdded: false,
     })
   },
   run({ config, inputData }) {
@@ -105,20 +106,19 @@ const step = useStepHandler(stepId, {
       return true
     }
 
-    const options: MutateIslandsOptions = {
+    const { added, removed } = mutateIslands({
       mask,
       islands,
-      minDistance: C.minDistance,
       islandFilter,
-      pointFilter,
+      getPoints: (i: Island) => {
+        return i.getExpandableRespectingMinDistance(islands, C.minDistance, pointFilter)
+      },
       iterations: C.iterations.value,
       iterator: grower,
-    }
-
-    mutateIslandsExpansion(options)
+    })
 
     const filteredIslands = islands.filter(islandFilter)
-    const sketch = sketchIslandVisuals(mask, config, filteredIslands, islands)
+    const sketch = sketchIslandVisuals(mask, config, filteredIslands, islands, added, removed)
 
     return {
       output: mask,

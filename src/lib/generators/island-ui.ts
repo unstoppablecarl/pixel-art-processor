@@ -10,6 +10,8 @@ export const DEFAULT_ISLAND_COLORS = {
   showExpandableColor: 'rgba(255, 0, 0, 0.5)',
   showExpandableRespectingDistanceColor: 'rgba(0, 255, 0, 0.5)',
   showIslandColor: 'rgba(255, 255, 255, 1)',
+  showAddedColor: 'rgba(100, 255, 100, 0.5)',
+  showRemovedColor: 'rgba(255, 0, 255, 0.5)',
 }
 
 export const DEFAULT_ISLAND_VISIBILITY_CONFIG = {
@@ -46,7 +48,7 @@ export const ISLAND_TYPES_FILTER_OPTIONS = Object.fromEntries(
 )
 
 export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG>(config: T): CheckboxColorListItem[] {
-  return [
+  const result = [
     {
       label: 'Islands',
       active: toRef(config, 'showIsland'),
@@ -72,6 +74,25 @@ export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_
       defaultColor: DEFAULT_ISLAND_COLORS.showExpandableBoundsColor,
     },
   ]
+
+  if (config.showAdded !== undefined) {
+    result.push({
+      label: 'Added',
+      active: toRef(config, 'showAdded'),
+      color: toRef(config, 'showAddedColor'),
+      defaultColor: DEFAULT_ISLAND_COLORS.showAddedColor,
+    })
+  }
+
+  if (config.showRemoved !== undefined) {
+    result.push({
+      label: 'Removed',
+      active: toRef(config, 'showRemoved'),
+      color: toRef(config, 'showRemovedColor'),
+      defaultColor: DEFAULT_ISLAND_COLORS.showRemovedColor,
+    })
+  }
+  return result
 }
 
 export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG & { minDistance: number }>(
@@ -79,6 +100,8 @@ export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_C
   config: C,
   filteredIslands: Island[],
   islands: Island[],
+  added: Point[],
+  removed: Point[],
 ) {
   const sketch = new Sketch(mask.width, mask.height)
   const islandColor = parseColorData(config.showIslandColor)
@@ -104,5 +127,18 @@ export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_C
       })
     }
   })
+
+  if (config.showAdded) {
+    added.forEach(({ x, y }) => {
+      sketch.setPixel(x, y, config.showAddedColor)
+    })
+  }
+
+  if (config.showRemoved) {
+    removed.forEach(({ x, y }) => {
+      sketch.setPixel(x, y, config.showRemovedColor)
+    })
+  }
+
   return sketch
 }
