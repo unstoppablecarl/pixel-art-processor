@@ -1,6 +1,6 @@
 import Alea from 'alea'
 import { generateChunkedArray, type GenerateChunkedArrayOptions } from './prng/binary-array-chunks.ts'
-import { sampleMultiple } from './prng/random-array.ts'
+import { sampleMultiple } from './prng/random-weighted-array.ts'
 
 export type Prng = ReturnType<typeof makePrng>
 
