@@ -16,6 +16,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import StepCard from '../StepCard.vue'
 import RangeBandSlider from '../UI/RangeBandSlider.vue'
+import RangeSlider from '../UI/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -25,6 +26,7 @@ const step = useStepHandler(stepId, {
     return shallowReactive({
       minDistance: 4,
       maxDistance: 10,
+      borderBuffer: 3,
     })
   },
   run({ config, inputData }) {
@@ -33,7 +35,7 @@ const step = useStepHandler(stepId, {
     const mask = inputData as BitMask
     const C = config
 
-    addRandomInnerPoints(mask, C.minDistance, C.maxDistance)
+    addRandomInnerPoints(mask, C.minDistance, C.maxDistance, C.borderBuffer)
 
     return {
       output: mask,
@@ -60,6 +62,16 @@ const config = step.config
         :step="1"
         :label="`Min/Max Dist: ${config.minDistance}-${config.maxDistance}`"
       />
+
+      <RangeSlider
+        :id="`${stepId}-border-buffer`"
+        label="Border Buffer"
+        v-model:value="config.borderBuffer"
+        :min="0"
+        :max="step.inputData?.width"
+        :step="1"
+      />
+
     </template>
   </StepCard>
 </template>

@@ -32,21 +32,25 @@ export function addRandomInnerPoints(
   minDistance = 15,
   maxDistance = 30,
   tries = 10,
+  borderBuffer = 2,
 ) {
 
   const p = new PoissonDiskSampling({
-    shape: [mask.width, mask.height],
+    shape: [
+      mask.width - (borderBuffer * 2),
+      mask.height - (borderBuffer * 2),
+    ],
     minDistance,
     maxDistance,
     tries,
   }, prng)
 
-  const edgePoints = new PointSet()
+  const existingPoints = new PointSet()
 
   mask.each((x, y, value) => {
     if (value === 1) {
       p.addPoint([x, y])
-      edgePoints.add(x, y)
+      existingPoints.add(x, y)
     }
   })
 
@@ -58,7 +62,9 @@ export function addRandomInnerPoints(
     .forEach(([x, y]) => {
       x = Math.floor(x)
       y = Math.floor(y)
-      if (!edgePoints.contains(x, y)) {
+      if (!existingPoints.contains(x, y)) {
+        x += borderBuffer
+        y += borderBuffer
         points.push({ x, y })
         mask.set(x, y, 1)
       }
