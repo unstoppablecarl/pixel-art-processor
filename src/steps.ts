@@ -4,6 +4,7 @@ import { type DataStructureConstructor } from './lib/step-data-types/BaseDataStr
 import { BitMask } from './lib/step-data-types/BitMask.ts'
 import { HeightMap } from './lib/step-data-types/HeightMap.ts'
 import { NormalMap } from './lib/step-data-types/NormalMap.ts'
+import { PassThrough } from './lib/step-data-types/PassThrough.ts'
 import { PixelMap } from './lib/step-data-types/PixelMap.ts'
 
 const stepModules = import.meta.glob(['./components/Step/**/*.vue'], { eager: true })
@@ -15,6 +16,7 @@ export const STEP_DATA_TYPES: DataStructureConstructor[] = [
   NormalMap as DataStructureConstructor,
   HeightMap as DataStructureConstructor,
   PixelMap as DataStructureConstructor,
+  PassThrough as DataStructureConstructor,
 ]
 
 export type StepDataType =
@@ -22,5 +24,11 @@ export type StepDataType =
   | typeof NormalMap
   | typeof HeightMap
   | typeof PixelMap
+  | typeof PassThrough
 
-export type StepDataTypeInstance = BitMask | NormalMap | HeightMap | PixelMap
+export type StepDataTypeInstance =
+  | BitMask
+  | NormalMap
+  | HeightMap
+  | PixelMap
+  | PassThrough
