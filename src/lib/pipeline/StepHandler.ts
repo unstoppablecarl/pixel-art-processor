@@ -194,7 +194,7 @@ export type StepRunnerOutput<Output> = null |
   validationErrors?: StepValidationError[]
 }
 
-export function parseStepRunnerResult<T extends AnyStepContext>(result: StepRunnerOutput<T>): {
+export function parseStepRunnerResult<T extends AnyStepContext>(step: Step<T>, result: StepRunnerOutput<T>): {
   outputData: T['Output'] | null,
   preview: ImageData | null,
   validationErrors: StepValidationError[],
