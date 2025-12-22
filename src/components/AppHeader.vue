@@ -21,21 +21,6 @@ const steps = computed(() => useStepRegistry().toArray())
       <form class="d-flex align-items-center ms-auto gap-3 flex-nowrap">
 
         <div class="form-group d-flex align-items-center gap-2 mb-0">
-
-          <BDropdown
-            text="Add Step"
-            size="sm"
-          >
-            <BDropdownItem
-              v-for="step in steps"
-              @click="stepStore.add(step.def)"
-            >
-              {{ step.displayName }}
-            </BDropdownItem>
-          </BDropdown>
-        </div>
-
-        <div class="form-group d-flex align-items-center gap-2 mb-0">
           <label class="form-label form-label-sm mb-0 text-nowrap" for="seed">Seed</label>
           <input type="number" id="seed" step="1" v-model.number="stepStore.seed"
                  class="form-control form-control-sm d-inline-block" style="width: 60px" />
