@@ -8,11 +8,11 @@ type SerializedData = {
 
 export const useScaleStore = defineStore('image-scale', () => {
 
-  const scale = ref(3)
+  const scale = ref(4)
   const previewScale = ref(3)
 
   function $reset() {
-    scale.value = 3
+    scale.value = 4
     previewScale.value = 3
   }
 

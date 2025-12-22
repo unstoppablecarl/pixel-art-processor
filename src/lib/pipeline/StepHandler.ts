@@ -1,10 +1,10 @@
-import { reactive, type WatchSource, type Reactive } from 'vue'
+import { reactive, type Reactive, type WatchSource } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import type { AnyStepContext, ReactiveConfigType } from './Step.ts'
+import { type AnyStepContext, type ReactiveConfigType, type Step, STEP_FORK_DEF, StepType } from './Step.ts'
 import { useStepRegistry } from './StepRegistry.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
@@ -86,6 +86,10 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
 
   validateInputDataTypes(def, options.inputDataTypes)
   validateOutputDataTypes(def, options.outputDataType)
+
+  if (def === STEP_FORK_DEF) {
+
+  }
 
   const baseStepHandler = {
     inputDataTypes: options.inputDataTypes,
@@ -194,11 +198,19 @@ export type StepRunnerOutput<Output> = null |
   validationErrors?: StepValidationError[]
 }
 
-export function parseStepRunnerResult<T extends AnyStepContext>(result: StepRunnerOutput<T>): {
+export function parseStepRunnerResult<T extends AnyStepContext>(step: Step<T>, result: StepRunnerOutput<T>): {
   outputData: T['Output'] | null,
   preview: ImageData | null,
   validationErrors: StepValidationError[],
 } {
+
+  if (step.type === StepType.FORK) {
+    return {
+      outputData: step.inputData,
+      preview: null,
+      validationErrors: [],
+    }
+  }
 
   const isEmpty = result === null || result === undefined
   if (isEmpty) {

@@ -1,9 +1,10 @@
 <script lang="ts">
+import { STEP_FORK_DEF } from '../../lib/pipeline/Step.ts'
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'fork_step',
+  def: STEP_FORK_DEF,
   displayName: 'Fork',
   inputDataTypes: [PassThrough],
   outputDataType: PassThrough,
@@ -24,20 +25,16 @@ const CONFIG_DEFAULTS = {
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    console.log(CONFIG_DEFAULTS)
     return reactive({
       ...CONFIG_DEFAULTS,
     })
   },
   run({ config }) {
-    return {
-      controlFlowType: 'FORK',
-      count: config.count,
-    }
+    return null
   },
-  validateInputType(){
+  validateInputType() {
     return []
-  }
+  },
 })
 
 const config = step.config!

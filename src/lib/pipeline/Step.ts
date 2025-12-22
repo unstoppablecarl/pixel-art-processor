@@ -13,6 +13,7 @@ export type AnyStepContext = {
   InputConstructors: any,
   OutputConstructors: any,
 }
+export const STEP_FORK_DEF = 'STEP_FORK'
 
 export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
   // first steps do not have input so convert [] to null
@@ -59,25 +60,47 @@ export type Step<T extends AnyStepContext> = {
   validationErrors: StepValidationError[],
   config: T['RC'] | undefined,
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
-  handler: IStepHandler<T> | undefined
+  handler: IStepHandler<T> | undefined,
+  type: StepType,
+  parentForkId: null | string,
+  branchIndex: null | number,
 }
 
 export type SerializedStep = {
   id: string,
   def: string,
+  type: StepType,
+  parentForkId: string | null,
+  branchIndex: number | null,
   config: Config | undefined,
 }
 
-export type DeSerializedStep<T extends AnyStepContext = AnyStepContext> = Pick<Step<T>, 'id' | 'def' | 'config'> & {}
+export enum StepType {
+  FORK = 'FORK',
+  NORMAL = 'NORMAL',
+}
+
+export type DeSerializedStep<T extends AnyStepContext = AnyStepContext> =
+  Pick<Step<T>, 'id' | 'def' | 'type' | 'parentForkId' | 'branchIndex' | 'config'>
+  & {}
 
 export type StepRef<T extends AnyStepContext = AnyStepContext> = ShallowReactive<Step<T>>
 
-export function createNewStep<T extends AnyStepContext>(def: string, idIncrement: number): StepRef<T> {
+export function createNewStep<T extends AnyStepContext>(
+  def: string,
+  idIncrement: number,
+  type: StepType = StepType.NORMAL,
+  parentForkId: string | null = null,
+  branchIndex: number | null = null,
+): StepRef<T> {
 
   const id = `${def}_id_${idIncrement++}`
   return shallowReactive({
     id,
     def,
+    type,
+    parentForkId,
+    branchIndex,
     inputData: null,
     outputData: null,
     outputPreview: null,
@@ -87,19 +110,25 @@ export function createNewStep<T extends AnyStepContext>(def: string, idIncrement
     config: undefined,
     handler: undefined,
     loadSerialized: null,
-  })
+  } as Step<T>)
 }
 
 export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerializedStep<T>): StepRef<T> {
   const {
     id,
     def,
+    type,
+    parentForkId,
+    branchIndex,
     config,
   } = stepData
 
   return shallowReactive({
     id,
     def,
+    type,
+    parentForkId,
+    branchIndex,
     inputData: null,
     outputData: null,
     pendingInput: null,
@@ -117,14 +146,20 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
   const {
     id,
     def,
+    type,
+    parentForkId,
+    branchIndex,
     config,
   } = step
 
   return {
     id,
     def,
+    type,
+    parentForkId,
+    branchIndex,
     config: step.handler!.serializeConfig(config as Config),
-  }
+  } as SerializedStep
 }
 
 export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Record<string, ShallowReactive<Step<T>>>>) => {

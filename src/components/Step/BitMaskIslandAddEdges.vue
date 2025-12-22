@@ -28,12 +28,12 @@ const CONFIG_DEFAULTS = {
     max: 512,
   }),
   verticalChunks: rangeSliderConfig({
-    value: 3,
+    value: 7,
     min: 0,
     max: 30,
   }),
   horizontalChunks: rangeSliderConfig({
-    value: 3,
+    value: 7,
     min: 1,
     max: 30,
   }),
@@ -42,9 +42,9 @@ const CONFIG_DEFAULTS = {
 
   invert: false,
   minGapSize: 3,
-  maxGapSize: 5,
+  maxGapSize: 13,
   minChunkSize: 3,
-  maxChunkSize: 5,
+  maxChunkSize: 13,
   padding: 4,
 }
 

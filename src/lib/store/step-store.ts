@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { type Component, type Reactive, reactive, ref, type Ref, watch, computed } from 'vue'
+import { type Component, computed, reactive, type Reactive, type Ref, ref, watch } from 'vue'
 import { GenericValidationError, StepValidationError } from '../errors.ts'
 import {
   type AnyStepContext,
@@ -10,6 +10,7 @@ import {
   serializeSteps,
   type Step,
   type StepRef,
+  StepType,
 } from '../pipeline/Step.ts'
 import {
   type Config,
@@ -32,8 +33,10 @@ type SerializedStepData = {
   idIncrement: number,
   stepIdOrder: string[],
   stepsById: Record<string, SerializedStep>,
+  forkBranches: Record<string, string[][]>,
   seed: number,
 }
+
 export const useStepStore = defineStore('steps', () => {
 
     const stepRegistry = useStepRegistry()
@@ -42,11 +45,13 @@ export const useStepStore = defineStore('steps', () => {
     const idIncrement = ref(0)
     const stepIdOrder = ref<string[]>([]) as Ref<string[]>
     const stepsById = reactive({}) as Reactive<Record<string, StepRef>>
+    const forkBranches = reactive({}) as Reactive<Record<string, string[][]>>
 
     function $reset() {
       seed.value = 3
       idIncrement.value = 0
       stepIdOrder.value = []
+      Object.assign(forkBranches, {})
       Object.assign(stepsById, {})
     }
 
@@ -55,6 +60,7 @@ export const useStepStore = defineStore('steps', () => {
         idIncrement: idIncrement.value,
         stepIdOrder: stepIdOrder.value,
         stepsById: serializeSteps(stepsById),
+        forkBranches: deepUnwrap(forkBranches),
         seed: seed.value,
       }
     }
@@ -70,6 +76,8 @@ export const useStepStore = defineStore('steps', () => {
           const step = createLoadedStep(stepData)
           stepsById[step.id] = step
         })
+
+      Object.assign(forkBranches, data.forkBranches ?? {})
     }
 
     watch(seed, () => {
@@ -91,13 +99,165 @@ export const useStepStore = defineStore('steps', () => {
       return step
     }
 
+    function addFork(def: string, branchCount: number = 2, afterStepId?: string): StepRef {
+      stepRegistry.validateDef(def)
+      idIncrement.value += 1
+      const step = createNewStep(def, idIncrement.value, StepType.FORK)
+      stepIdOrder.value.push(step.id)
+      stepsById[step.id] = step
+
+      // Initialize empty branches
+      forkBranches[step.id] = Array.from({ length: branchCount }, () => [])
+
+      if (afterStepId !== undefined) {
+        moveAfter(step.id, afterStepId)
+      }
+
+      return step
+    }
+
+    function addToBranch(forkId: string, branchIndex: number, def: string, afterStepId?: string): StepRef {
+      const fork = get(forkId)
+      if (fork.type !== StepType.FORK) {
+        throw new Error(`Step ${forkId} is not a fork`)
+      }
+
+      const branches = forkBranches[forkId]
+      if (!branches || branchIndex >= branches.length) {
+        throw new Error(`Invalid branch index ${branchIndex} for fork ${forkId}`)
+      }
+
+      stepRegistry.validateDef(def)
+      idIncrement.value += 1
+      const step = createNewStep(def, idIncrement.value, StepType.NORMAL, forkId, branchIndex)
+      stepsById[step.id] = step
+
+      // Add to branch
+      if (afterStepId !== undefined) {
+        const afterIndex = branches[branchIndex].indexOf(afterStepId)
+        if (afterIndex === -1) {
+          throw new Error(`Step ${afterStepId} not found in branch ${branchIndex}`)
+        }
+        branches[branchIndex].splice(afterIndex + 1, 0, step.id)
+      } else {
+        branches[branchIndex].push(step.id)
+      }
+
+      return step
+    }
+
+    function getBranches(forkId: string): string[][] {
+      const fork = get(forkId)
+      if (fork.type !== StepType.FORK) {
+        throw new Error(`Step ${forkId} is not a fork`)
+      }
+      return forkBranches[forkId] ?? []
+    }
+
+    function getAllBranchSteps(forkId: string, branchIndex: number): StepRef[] {
+      const branches = getBranches(forkId)
+      if (branchIndex >= branches.length) {
+        throw new Error(`Invalid branch index ${branchIndex}`)
+      }
+      return branches[branchIndex].map(id => get(id))
+    }
+
+    function removeBranch(forkId: string, branchIndex: number): void {
+      const branches = getBranches(forkId)
+      if (branchIndex >= branches.length) {
+        throw new Error(`Invalid branch index ${branchIndex}`)
+      }
+
+      // Remove all steps in the branch
+      const branchSteps = branches[branchIndex]
+      branchSteps.forEach(stepId => {
+        delete stepsById[stepId]
+      })
+
+      // Remove the branch
+      branches.splice(branchIndex, 1)
+
+      // Update branchIndex for remaining branches
+      for (let i = branchIndex; i < branches.length; i++) {
+        branches[i].forEach(stepId => {
+          get(stepId).branchIndex = i
+        })
+      }
+    }
+
+    function getDescendants(stepId: string): StepRef[] {
+      const step = get(stepId)
+      const descendants: StepRef[] = []
+
+      if (step.type === StepType.FORK) {
+        // Collect all steps from all branches
+        const branches = getBranches(stepId)
+        branches.forEach(branch => {
+          branch.forEach(branchStepId => {
+            descendants.push(get(branchStepId))
+            // Recursively get descendants of each branch step
+            descendants.push(...getDescendants(branchStepId))
+          })
+        })
+      } else {
+        // For normal steps, get the next step
+        const next = getNext(stepId)
+        if (next) {
+          descendants.push(next)
+          descendants.push(...getDescendants(next.id))
+        }
+      }
+
+      return descendants
+    }
+
+    function getAncestors(stepId: string): StepRef[] {
+      const step = get(stepId)
+      const ancestors: StepRef[] = []
+
+      if (step.parentForkId) {
+        // Step is in a branch, get the fork
+        const fork = get(step.parentForkId)
+        ancestors.push(fork)
+        ancestors.push(...getAncestors(fork.id))
+      } else {
+        // Step is in main trunk
+        const prev = getPrev(stepId)
+        if (prev) {
+          ancestors.push(prev)
+          ancestors.push(...getAncestors(prev.id))
+        }
+      }
+
+      return ancestors
+    }
+
     function getIndex(stepId: string) {
+      const step = get(stepId)
+
+      if (step.parentForkId) {
+        // Step is in a branch
+        const branches = getBranches(step.parentForkId)
+        return branches[step.branchIndex!].indexOf(stepId)
+      }
+
+      // Step is in main trunk
       return stepIdOrder.value.indexOf(stepId)
     }
 
     function duplicate(stepId: string) {
       const step = get(stepId)
-      const newStep = add(step.def)
+
+      let newStep: StepRef
+
+      if (step.parentForkId) {
+        // Duplicate within branch
+        newStep = addToBranch(step.parentForkId, step.branchIndex!, step.def)
+      } else {
+        // Duplicate in main trunk
+        newStep = add(step.def)
+      }
+
       const freshConfig = step.handler!.config()
 
       Object.assign(
@@ -107,9 +267,22 @@ export const useStepStore = defineStore('steps', () => {
 
       newStep.config = freshConfig
 
-      if (!isLast(stepId)) {
-        const index = stepIdOrder.value.indexOf(stepId)
-        moveTo(newStep.id, index + 1)
+      if (step.parentForkId) {
+        // Move within branch
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        const index = branch.indexOf(stepId)
+        if (index !== branch.length - 1) {
+          const currentIndex = branch.indexOf(newStep.id)
+          branch.splice(currentIndex, 1)
+          branch.splice(index + 1, 0, newStep.id)
+        }
+      } else {
+        // Move in main trunk
+        if (!isLast(stepId)) {
+          const index = stepIdOrder.value.indexOf(stepId)
+          moveTo(newStep.id, index + 1)
+        }
       }
 
       return newStep
@@ -128,19 +301,62 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function remove(stepId: string): void {
-      validate(stepId)
-
+      const step = get(stepId)
       const prevId = getPrev(stepId)?.id
-      const idx = stepIdOrder.value.indexOf(stepId)
-      stepIdOrder.value.splice(idx, 1)
+
+      if (step.type === StepType.FORK) {
+        // Remove all branch steps
+        const branches = getBranches(stepId)
+        branches.forEach(branch => {
+          branch.forEach(branchStepId => {
+            delete stepsById[branchStepId]
+          })
+        })
+        delete forkBranches[stepId]
+      }
+
+      if (step.parentForkId) {
+        // Remove from branch
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        const idx = branch.indexOf(stepId)
+        branch.splice(idx, 1)
+      } else {
+        // Remove from main trunk
+        const idx = stepIdOrder.value.indexOf(stepId)
+        stepIdOrder.value.splice(idx, 1)
+      }
+
       delete stepsById[stepId]
 
+      // Invalidate from previous step
       if (prevId) {
         _invalidateFromStep(prevId)
+      } else if (step.parentForkId) {
+        // If first step in branch, invalidate from fork
+        _invalidateFromStep(step.parentForkId)
       }
     }
 
     function getPrev(stepId: string): StepRef | null {
+      const step = get(stepId)
+
+      if (step.parentForkId) {
+        // Step is in a branch
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        const currentIndex = branch.indexOf(stepId)
+
+        if (currentIndex === 0) {
+          // First step in branch, return the fork
+          return get(step.parentForkId)
+        }
+
+        const prevStepId = branch[currentIndex - 1]!
+        return get(prevStepId)
+      }
+
+      // Step is in main trunk
       if (isFirst(stepId)) return null
       const currentIndex = stepIdOrder.value.indexOf(stepId)
       const prevStepId = stepIdOrder.value[currentIndex - 1]!
@@ -148,6 +364,29 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function getNext<T extends AnyStepContext>(stepId: string): StepRef<T> | null {
+      const step = get(stepId)
+
+      if (step.type === StepType.FORK) {
+        // Fork steps don't have a single "next" - return null
+        return null
+      }
+
+      if (step.parentForkId) {
+        // Step is in a branch
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        const currentIndex = branch.indexOf(stepId)
+
+        if (currentIndex === branch.length - 1) {
+          // Last step in branch, no next
+          return null
+        }
+
+        const nextStepId = branch[currentIndex + 1]!
+        return get<T>(nextStepId)
+      }
+
+      // Step is in main trunk
       if (isLast(stepId)) return null
       const currentIndex = stepIdOrder.value.indexOf(stepId)
       const nextStepId = stepIdOrder.value[currentIndex + 1]!
@@ -162,15 +401,30 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function syncImageDataToNext(stepId: string) {
-      const nextStep = getNext(stepId)
-      if (!nextStep) return
+      const step = get(stepId)
 
-      _syncImageData(stepId, nextStep.id)
+      if (step.type === StepType.FORK) {
+        // Fork: sync to ALL branch heads
+        const branches = forkBranches[stepId]
+        if (branches) {
+          branches.forEach(branch => {
+            if (branch.length > 0) {
+              _syncImageData(stepId, branch[0])
+            }
+          })
+        }
+      } else {
+        // Normal step: sync to single next
+        const nextStep = getNext(stepId)
+        if (nextStep) {
+          _syncImageData(stepId, nextStep.id)
+        }
+      }
     }
 
     function _syncImageData<T extends AnyStepContext>(stepId: string, nextStepId: string) {
       const currentStep = get<T>(stepId)
-      const nextStep = getNext<AnyStepContext>(stepId)
+      const nextStep = get<AnyStepContext>(nextStepId)
       logStepEvent(stepId, '_syncImageData', stepId, '->', nextStepId)
 
       if (nextStep === null) {
@@ -235,14 +489,30 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function moveTo(stepId: string, newIndex: number): void {
-      validate(stepId)
-      const currentIndex = stepIdOrder.value.indexOf(stepId)
-      stepIdOrder.value.splice(currentIndex, 1)
-      stepIdOrder.value.splice(newIndex, 0, stepId)
+      const step = get(stepId)
 
-      const minIndex = Math.min(currentIndex, newIndex)
-      const minStepId = stepIdOrder.value[minIndex]!
-      _invalidateFromStep(minStepId)
+      if (step.parentForkId) {
+        // Moving within a branch
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        const currentIndex = branch.indexOf(stepId)
+        branch.splice(currentIndex, 1)
+        branch.splice(newIndex, 0, stepId)
+
+        const minIndex = Math.min(currentIndex, newIndex)
+        const minStepId = branch[minIndex]!
+        _invalidateFromStep(minStepId)
+      } else {
+        // Moving in main trunk
+        validate(stepId)
+        const currentIndex = stepIdOrder.value.indexOf(stepId)
+        stepIdOrder.value.splice(currentIndex, 1)
+        stepIdOrder.value.splice(newIndex, 0, stepId)
+
+        const minIndex = Math.min(currentIndex, newIndex)
+        const minStepId = stepIdOrder.value[minIndex]!
+        _invalidateFromStep(minStepId)
+      }
     }
 
     function invalidateAll() {
@@ -257,6 +527,26 @@ export const useStepStore = defineStore('steps', () => {
     function _invalidateFromStep(stepId: string) {
       syncImageDataFromPrev(stepId)
       syncImageDataToNext(stepId)
+
+      const step = get(stepId)
+
+      if (step.type === StepType.FORK) {
+        // Invalidate all branches
+        const branches = forkBranches[stepId]
+        if (branches) {
+          branches.forEach(branch => {
+            if (branch.length > 0) {
+              _invalidateFromStep(branch[0])
+            }
+          })
+        }
+      } else {
+        // Invalidate next step in chain
+        const next = getNext(stepId)
+        if (next) {
+          _invalidateFromStep(next.id)
+        }
+      }
     }
 
     function updateStep(
@@ -284,10 +574,26 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function isLast(stepId: string) {
+      const step = get(stepId)
+
+      if (step.parentForkId) {
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        return branch.indexOf(stepId) === branch.length - 1
+      }
+
       return stepIdOrder.value.indexOf(stepId) === stepIdOrder.value.length - 1
     }
 
     function isFirst(stepId: string) {
+      const step = get(stepId)
+
+      if (step.parentForkId) {
+        const branches = getBranches(step.parentForkId)
+        const branch = branches[step.branchIndex!]
+        return branch.indexOf(stepId) === 0
+      }
+
       return stepIdOrder.value.indexOf(stepId) === 0
     }
 
@@ -330,7 +636,7 @@ export const useStepStore = defineStore('steps', () => {
 
       const result = run({ config: step.config, inputData })
 
-      let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(result)
+      let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(step, result)
 
       logStepEvent(stepId, 'updateStep', { outputData, preview, validationErrors })
       step.outputData = copyStepDataOrNull(outputData)
@@ -372,7 +678,14 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function validateInputDataFromPrev(stepId: string): StepValidationError[] {
-      const prev = getPrev(stepId)
+      let prev = getPrev(stepId)
+      console.log({prev}, prev?.type)
+      if (prev?.type === StepType.FORK) {
+        prev = getPrev(prev.id)
+
+        console.log({prev})
+      }
+
       if (!prev) {
         return []
       }
@@ -385,6 +698,7 @@ export const useStepStore = defineStore('steps', () => {
         return []
       }
 
+      // console.log({prevHandler})
       return [
         ...currentHandler.validateInputType(prevHandler.outputDataType, currentHandler.inputDataTypes),
         ...currentHandler.validateInput(prev.outputData),
@@ -394,7 +708,7 @@ export const useStepStore = defineStore('steps', () => {
     const length = () => stepIdOrder.value.length
 
     const finalPreview = computed((): ImageData | null => {
-      if(!stepIdOrder.value.length) return null
+      if (!stepIdOrder.value.length) return null
 
       const lastStepId = stepIdOrder.value[stepIdOrder.value.length - 1]
       const step = stepsById[lastStepId]
@@ -405,6 +719,7 @@ export const useStepStore = defineStore('steps', () => {
       idIncrement,
       stepIdOrder,
       stepsById,
+      forkBranches,
       seed,
 
       $reset,
@@ -412,6 +727,13 @@ export const useStepStore = defineStore('steps', () => {
       $restoreState,
 
       add,
+      addFork,
+      addToBranch,
+      getBranches,
+      getAllBranchSteps,
+      removeBranch,
+      getDescendants,
+      getAncestors,
       get,
       duplicate,
       remove,
@@ -436,4 +758,3 @@ export const useStepStore = defineStore('steps', () => {
       key: 'steps',
     },
   })
-
