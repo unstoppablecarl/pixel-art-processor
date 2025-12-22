@@ -40,6 +40,7 @@ const CONFIG_DEFAULTS = {
   horizontalShuffleSeed: 0,
   verticalShuffleSeed: 0,
 
+  invert: false,
   minGapSize: 3,
   maxGapSize: 5,
   minChunkSize: 3,
@@ -77,7 +78,7 @@ const step = useStepHandler(stepId, {
     })
 
     verticalChunks.forEach((v, i) => {
-      if (v) {
+      if (!v === config.invert) {
         mask.set(0, i, 1)
         mask.set(size.value - 1, i, 1)
       }
@@ -90,7 +91,7 @@ const step = useStepHandler(stepId, {
     })
 
     horizontalChunks.forEach((v, i) => {
-      if (v) {
+      if (!v === config.invert) {
         mask.set(i, 0, 1)
         mask.set(i, size.value - 1, 1)
       }
@@ -123,6 +124,11 @@ const computedSize = computed(() => config.size.value)
           v-model:max="config.size.max"
           v-model:step="config.size.step"
         />
+
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" v-model="config.invert" />
+          <label class="form-check-label">Invert</label>
+        </div>
 
         <div class="mb-3">
           <RangeSlider

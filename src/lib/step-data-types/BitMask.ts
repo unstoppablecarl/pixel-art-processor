@@ -265,5 +265,25 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     this.eachAdjacent(x, y, (x, y, v) => total += v)
     return total
   }
+
+  invert() {
+    this.data.set(this.invertData(this.data))
+  }
+
+  protected invertData(data: Uint8Array): Uint8Array {
+    for (let i = 0; i < data.length; i++) {
+      // js handles bitwise operations on 32-bit signed integers
+      // you need to use a mask (& 0xFF)
+      // to ensure the result stays within the 0–255 range of a Uint8.
+      // ~ flips the bits, & 0xFF keeps it as a valid byte
+      data[i] = ~data[i] & 0xFF
+    }
+    const remainingBits = (this.width * this.height) % 8
+    if (remainingBits !== 0) {
+      const mask = (0xFF << (8 - remainingBits)) & 0xFF
+      data[data.length - 1] &= mask // Forces trailing bits back to 0
+    }
+    return data
+  }
 }
 
