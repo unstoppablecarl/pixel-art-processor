@@ -14,6 +14,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
+import NumberInput from '../UI/NumberInput.vue'
 import RangeBandSlider from '../UI/RangeBandSlider.vue'
 import { rangeSliderConfig } from '../UI/RangeSlider.ts'
 import RangeSlider from '../UI/RangeSlider.vue'
@@ -36,6 +37,9 @@ const CONFIG_DEFAULTS = {
     min: 1,
     max: 30,
   }),
+  horizontalShuffleSeed: 0,
+  verticalShuffleSeed: 0,
+
   minGapSize: 3,
   maxGapSize: 5,
   minChunkSize: 3,
@@ -46,7 +50,6 @@ const CONFIG_DEFAULTS = {
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-
     console.log(CONFIG_DEFAULTS)
     return reactive({
       ...CONFIG_DEFAULTS,
@@ -68,7 +71,8 @@ const step = useStepHandler(stepId, {
 
     const verticalChunks = prng.generateChunkedBinaryArray({
       chunks: config.verticalChunks.value,
-      ...options
+      shuffleSeed: config.verticalShuffleSeed,
+      ...options,
     })
 
     verticalChunks.forEach((v, i) => {
@@ -80,7 +84,8 @@ const step = useStepHandler(stepId, {
 
     const horizontalChunks = prng.generateChunkedBinaryArray({
       chunks: config.horizontalChunks.value,
-      ...options
+      shuffleSeed: config.horizontalShuffleSeed,
+      ...options,
     })
 
     horizontalChunks.forEach((v, i) => {
@@ -118,25 +123,43 @@ const computedSize = computed(() => config.size.value)
           v-model:step="config.size.step"
         />
 
-        <RangeSlider
-          :id="`${stepId}-horizontal-chunks`"
-          label="Horizontal Chunks"
-          :defaults="CONFIG_DEFAULTS.horizontalChunks"
-          v-model:value="config.horizontalChunks.value"
-          v-model:min="config.horizontalChunks.min"
-          v-model:max="config.horizontalChunks.max"
-          v-model:step="config.horizontalChunks.step"
-        />
+        <div class="mb-3">
+          <RangeSlider
+            :id="`${stepId}-horizontal-chunks`"
+            label="Horizontal Chunks"
+            :defaults="CONFIG_DEFAULTS.horizontalChunks"
+            v-model:value="config.horizontalChunks.value"
+            v-model:min="config.horizontalChunks.min"
+            v-model:max="config.horizontalChunks.max"
+            v-model:step="config.horizontalChunks.step"
+          />
 
-        <RangeSlider
-          :id="`${stepId}-vertical-chunks`"
-          label="Vertical Chunks"
-          :defaults="CONFIG_DEFAULTS.verticalChunks"
-          v-model:value="config.verticalChunks.value"
-          v-model:min="config.verticalChunks.min"
-          v-model:max="config.verticalChunks.max"
-          v-model:step="config.verticalChunks.step"
-        />
+          <NumberInput
+            label="Shuffle Seed"
+            step="1"
+            min="0"
+            v-model="config.horizontalShuffleSeed"
+          />
+        </div>
+
+        <div class="mb-3">
+          <RangeSlider
+            :id="`${stepId}-vertical-chunks`"
+            label="Vertical Chunks"
+            :defaults="CONFIG_DEFAULTS.verticalChunks"
+            v-model:value="config.verticalChunks.value"
+            v-model:min="config.verticalChunks.min"
+            v-model:max="config.verticalChunks.max"
+            v-model:step="config.verticalChunks.step"
+          />
+
+          <NumberInput
+            label="Shuffle Seed"
+            step="1"
+            min="0"
+            v-model="config.verticalShuffleSeed"
+          />
+        </div>
 
         <RangeBandSlider
           :id="`${stepId}-gap-size`"
