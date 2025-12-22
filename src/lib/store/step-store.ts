@@ -393,8 +393,8 @@ export const useStepStore = defineStore('steps', () => {
 
     const length = () => stepIdOrder.value.length
 
-    const finalPreview = computed(() => {
-      if(!stepIdOrder.value.length) return ''
+    const finalPreview = computed((): ImageData | null => {
+      if(!stepIdOrder.value.length) return null
 
       const lastStepId = stepIdOrder.value[stepIdOrder.value.length - 1]
       const step = stepsById[lastStepId]

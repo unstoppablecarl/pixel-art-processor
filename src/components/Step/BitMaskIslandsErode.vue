@@ -19,10 +19,8 @@ import {
   IslandFilterType, sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
 import {
-  type MutateIslandsOptions,
   mutateIslands,
   type IslandMutator,
-  mutateIslandsEdge,
 } from '../../lib/generators/IslandMutator.ts'
 import { islandEroderWeighted } from '../../lib/generators/IslandSmoother/island-eroder-weighted.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'

@@ -10,10 +10,17 @@ const store = useStepStore()
 const cssStyle = computed(() => {
 
   const imgData = store.finalPreview
-  const width = imgData.width * scaleStore.previewScale
-  const height = imgData.height * scaleStore.previewScale
 
-  const encoded = imageDataToUrlImage(imgData)
+  let width = 0
+  let height = 0
+  let encoded = ''
+
+  if (imgData !== null) {
+    width = imgData.width * scaleStore.previewScale
+    height = imgData.height * scaleStore.previewScale
+    encoded = imageDataToUrlImage(imgData)
+  }
+
   return [
     `--step-img-final-preview: url(${encoded});`,
     `--step-img-final-preview-size: ${width}px ${height}px;`,
@@ -23,28 +30,28 @@ const cssStyle = computed(() => {
 <template>
   <div class="" :style="cssStyle">
     <div class="w-100 d-flex flex-nowrap p-3 bg-dark border-top border-bottom">
-    <div class="fw-bold me-3">
-      Pattern Preview
-    </div>
+      <div class="fw-bold me-3">
+        Pattern Preview
+      </div>
 
-    <div class="form-group d-flex align-items-center gap-2 mb-0">
-      <label
-        for="scale"
-        class="form-label form-label-sm mb-0 text-nowrap"
-        style="width: 50px;"
-      >
-        Scale: {{ scaleStore.previewScale }}
-      </label>
-      <input type="range"
-             class="form-range form-range-sm"
-             id="scale"
-             min="1"
-             max="10"
-             step="1"
-             style="width: 150px;"
-             v-model.number="scaleStore.previewScale"
-      >
-    </div>
+      <div class="form-group d-flex align-items-center gap-2 mb-0">
+        <label
+          for="scale"
+          class="form-label form-label-sm mb-0 text-nowrap"
+          style="width: 50px;"
+        >
+          Scale: {{ scaleStore.previewScale }}
+        </label>
+        <input type="range"
+               class="form-range form-range-sm"
+               id="scale"
+               min="1"
+               max="10"
+               step="1"
+               style="width: 150px;"
+               v-model.number="scaleStore.previewScale"
+        >
+      </div>
 
     </div>
     <div

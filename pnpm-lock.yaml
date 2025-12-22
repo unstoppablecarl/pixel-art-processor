@@ -11,9 +11,6 @@ importers:
       '@formkit/drag-and-drop':
         specifier: ^0.5.3
         version: 0.5.3
-      alea:
-        specifier: ^1.0.1
-        version: 1.0.1
       bootstrap-vue-next:
         specifier: ^0.40.9
         version: 0.40.9(@floating-ui/vue@1.1.9(vue@3.5.24(typescript@5.9.3)))(@vueuse/core@14.1.0(vue@3.5.24(typescript@5.9.3)))(vue@3.5.24(typescript@5.9.3))
@@ -704,9 +701,6 @@ packages:
   agent-base@7.1.4:
     resolution: {integrity: sha512-MnA+YT8fwfJPgBx3m60MNqakm30XOkyIoH1y6huTQvC0PwZG7ki8NacLBcrPbNoo8vEZy7Jpuk7+jMO+CUovTQ==}
     engines: {node: '>= 14'}
-
-  alea@1.0.1:
-    resolution: {integrity: sha512-QU+wv+ziDXaMxRdsQg/aH7sVfWdhKps5YP97IIwFkHCsbDZA3k87JXoZ5/iuemf4ntytzIWeScrRpae8+lDrXA==}
 
   alien-signals@3.1.0:
     resolution: {integrity: sha512-yufC6VpSy8tK3I0lO67pjumo5JvDQVQyr38+3OHqe6CHl1t2VZekKZ7EKKZSqk0cRmE7U7tfZbpXiKNzuc+ckg==}
@@ -2213,8 +2207,6 @@ snapshots:
   acorn@8.15.0: {}
 
   agent-base@7.1.4: {}
-
-  alea@1.0.1: {}
 
   alien-signals@3.1.0: {}
 

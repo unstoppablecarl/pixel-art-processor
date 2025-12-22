@@ -56,6 +56,7 @@ const step = useStepHandler(stepId, {
     })
   },
   run({ config }) {
+    console.log('SEED', prng.currentSeed())
     const size = config.size
     const mask = new BitMask(size.value, size.value)
 
@@ -135,9 +136,10 @@ const computedSize = computed(() => config.size.value)
           />
 
           <NumberInput
+            :id="`${stepId}-horizontal-chunks-shuffle`"
             label="Shuffle Seed"
-            step="1"
-            min="0"
+            :step="1"
+            :min="0"
             v-model="config.horizontalShuffleSeed"
           />
         </div>
@@ -154,9 +156,10 @@ const computedSize = computed(() => config.size.value)
           />
 
           <NumberInput
+            :id="`${stepId}-vertical-chunks-shuffle`"
             label="Shuffle Seed"
-            step="1"
-            min="0"
+            :step="1"
+            :min="0"
             v-model="config.verticalShuffleSeed"
           />
         </div>

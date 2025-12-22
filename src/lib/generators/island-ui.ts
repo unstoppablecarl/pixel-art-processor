@@ -1,5 +1,6 @@
-import { toRef } from 'vue'
+import { type Ref, toRef } from 'vue'
 import type { CheckboxColorListItem } from '../../components/UI/CheckboxColorList.vue'
+import type { Point } from '../step-data-types/BaseDataStructure.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { type Island, IslandType } from '../step-data-types/BitMask/Island.ts'
 import { parseColorData } from '../util/color.ts'
@@ -47,7 +48,12 @@ export const ISLAND_TYPES_FILTER_OPTIONS = Object.fromEntries(
   Object.entries(ISLAND_FILTERS).map(([key, val]) => [key, val.label]),
 )
 
-export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG>(config: T): CheckboxColorListItem[] {
+type ShowAddedAndRemoved = {
+  showAdded?: boolean,
+  showRemoved?: boolean,
+}
+
+export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG & ShowAddedAndRemoved>(config: T): CheckboxColorListItem[] {
   const result = [
     {
       label: 'Islands',
@@ -69,7 +75,7 @@ export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_
     },
     {
       label: 'Expandable Bounds',
-      active: toRef(config, 'showExpandableBounds'),
+      active: toRef(config, 'showExpandableBounds') as Ref<boolean>,
       color: toRef(config, 'showExpandableBoundsColor'),
       defaultColor: DEFAULT_ISLAND_COLORS.showExpandableBoundsColor,
     },
@@ -78,7 +84,7 @@ export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_
   if (config.showAdded !== undefined) {
     result.push({
       label: 'Added',
-      active: toRef(config, 'showAdded'),
+      active: toRef(config, 'showAdded') as Ref<boolean>,
       color: toRef(config, 'showAddedColor'),
       defaultColor: DEFAULT_ISLAND_COLORS.showAddedColor,
     })
@@ -87,7 +93,7 @@ export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_
   if (config.showRemoved !== undefined) {
     result.push({
       label: 'Removed',
-      active: toRef(config, 'showRemoved'),
+      active: toRef(config, 'showRemoved') as Ref<boolean>,
       color: toRef(config, 'showRemovedColor'),
       defaultColor: DEFAULT_ISLAND_COLORS.showRemovedColor,
     })
@@ -95,13 +101,15 @@ export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_
   return result
 }
 
-export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG & { minDistance: number }>(
+export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG & {
+  minDistance?: number
+} & ShowAddedAndRemoved>(
   mask: BitMask,
   config: C,
   filteredIslands: Island[],
   islands: Island[],
-  added: Point[],
-  removed: Point[],
+  added?: Point[],
+  removed?: Point[],
 ) {
   const sketch = new Sketch(mask.width, mask.height)
   const islandColor = parseColorData(config.showIslandColor)
@@ -121,21 +129,23 @@ export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_C
       })
     }
 
+    const minDistance = config.minDistance ?? 0
+
     if (config.showExpandableRespectingDistance) {
-      i.getExpandableRespectingMinDistance(islands, config.minDistance).forEach(({ x, y }) => {
+      i.getExpandableRespectingMinDistance(islands, minDistance).forEach(({ x, y }) => {
         sketch.setPixel(x, y, config.showExpandableRespectingDistanceColor)
       })
     }
   })
 
   if (config.showAdded) {
-    added.forEach(({ x, y }) => {
+    added?.forEach(({ x, y }) => {
       sketch.setPixel(x, y, config.showAddedColor)
     })
   }
 
   if (config.showRemoved) {
-    removed.forEach(({ x, y }) => {
+    removed?.forEach(({ x, y }) => {
       sketch.setPixel(x, y, config.showRemovedColor)
     })
   }

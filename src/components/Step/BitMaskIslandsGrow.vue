@@ -18,7 +18,7 @@ import {
   ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
-import { type MutateIslandsOptions, mutateIslands, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
+import { mutateIslands, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
 import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
 import { directionalGrower } from '../../lib/generators/IslandGrower/DirectionalGrowth.ts'
 import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower.ts'
