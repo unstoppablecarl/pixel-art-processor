@@ -679,13 +679,6 @@ export const useStepStore = defineStore('steps', () => {
 
     function validateInputDataFromPrev(stepId: string): StepValidationError[] {
       let prev = getPrev(stepId)
-      console.log({prev}, prev?.type)
-      if (prev?.type === StepType.FORK) {
-        prev = getPrev(prev.id)
-
-        console.log({prev})
-      }
-
       if (!prev) {
         return []
       }
@@ -698,7 +691,6 @@ export const useStepStore = defineStore('steps', () => {
         return []
       }
 
-      // console.log({prevHandler})
       return [
         ...currentHandler.validateInputType(prevHandler.outputDataType, currentHandler.inputDataTypes),
         ...currentHandler.validateInput(prev.outputData),

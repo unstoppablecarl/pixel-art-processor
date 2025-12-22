@@ -5,7 +5,7 @@ import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import { type AnyStepContext, type ReactiveConfigType, type Step, STEP_FORK_DEF, StepType } from './Step.ts'
-import { useStepRegistry } from './StepRegistry.ts'
+import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
 export type Config = Record<string, any>
@@ -145,7 +145,7 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
     },
 
     validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: InputConstructors): StepValidationError[] {
-      if (inputDataTypes.includes(typeFromPrevOutput)) {
+      if (stepOutputTypeCompatibleWithInputTypes(typeFromPrevOutput, inputDataTypes)) {
         return []
       }
 

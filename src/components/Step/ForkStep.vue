@@ -29,8 +29,11 @@ const step = useStepHandler(stepId, {
       ...CONFIG_DEFAULTS,
     })
   },
-  run({ config }) {
-    return null
+  run({ inputData }) {
+    return {
+      preview: null,
+      output: inputData,
+    }
   },
   validateInputType() {
     return []
@@ -40,7 +43,7 @@ const step = useStepHandler(stepId, {
 const config = step.config!
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :step="step" :show-add-step-btn="false">
     <template #header>
       {{ STEP_META.displayName }}
     </template>

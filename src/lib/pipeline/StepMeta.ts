@@ -1,5 +1,4 @@
 import type { Component } from 'vue'
-import { STEP_DEFINITIONS } from '../../steps.ts'
 import type { IStepHandler } from './StepHandler.ts'
 import type { StepDefinition } from './StepRegistry.ts'
 
@@ -81,14 +80,4 @@ function validateModule(path: string, module: any): ComponentError | void {
 type ComponentError = {
   path: string,
   errors: string[]
-}
-
-export function getStepsCompatibleWithOutput(stepDef: string) {
-
-  const currentStep = STEP_DEFINITIONS.find(s => s.def === stepDef)
-  if (!currentStep) {
-    throw new Error('stepDef not found: ' + stepDef)
-  }
-
-  return STEP_DEFINITIONS.filter(s => s.inputDataTypes.includes(currentStep.outputDataType))
 }

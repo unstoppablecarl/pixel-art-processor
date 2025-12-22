@@ -1,6 +1,8 @@
 import { type App, type Component, inject, type InjectionKey } from 'vue'
+import type { StepDataType } from '../../steps.ts'
 
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
+import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import type { IStepHandler } from './StepHandler.ts'
 
@@ -43,6 +45,12 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     get(def)
   }
 
+  function getStepsCompatibleWithOutput(def: string) {
+    const currentStep = get(def)
+
+    return Object.values(STEP_DEFINITIONS).filter(s => stepOutputTypeCompatibleWithInputTypes(currentStep.outputDataType, s.inputDataTypes))
+  }
+
   return {
     defineStep,
     defineSteps,
@@ -50,6 +58,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     has,
     validateDef,
     dataTypeRegistry,
+    getStepsCompatibleWithOutput,
     toArray() {
       return Object.values(STEP_DEFINITIONS)
     },
@@ -68,4 +77,13 @@ export function useStepRegistry(): StepRegistry {
     throw new Error('StepRegistry not provided. Call installStepRegistry() in main.ts')
   }
   return registry
+}
+
+export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType, inputDataTypes: StepDataType[]) {
+
+  if (outputType === PassThrough) {
+    return true
+  }
+
+  return inputDataTypes.includes(outputType)
 }
