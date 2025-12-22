@@ -57,7 +57,6 @@ const step = useStepHandler(stepId, {
     })
   },
   run({ config }) {
-    console.log('SEED', prng.currentSeed())
     const size = config.size
     const mask = new BitMask(size.value, size.value)
 
