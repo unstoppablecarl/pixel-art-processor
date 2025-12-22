@@ -55,10 +55,6 @@ const step = useStepHandler(stepId, {
   run({ config }) {
     const size = config.size
     const mask = new BitMask(size.value, size.value)
-    // mask.setRect(10, 0, 8, 1, 1)
-    // mask.setRect(0, 15, 1, 17, 1)
-    // mask.setRect(size - 1, 20, 1, 12, 1)
-    // mask.setRect(13, size - 1, 18, 1, 1)
 
     const options = {
       length: size.value,
