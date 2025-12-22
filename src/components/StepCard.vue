@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { BButtonGroup, BDropdown, BDropdownItem } from 'bootstrap-vue-next'
+import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
-import { getStepsCompatibleWithOutput } from '../lib/pipeline/StepMeta.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import StepImg, { type StepImage } from './StepImg.vue'
+import AddAfterStepDropDown from './UI/AddAfterStepDropDown.vue'
 
 const store = useStepStore()
 
@@ -14,11 +14,13 @@ const {
   step,
   images,
   footerTabs = false,
+  showAddStepBtn = true,
 } = defineProps<{
   step: AnyConfiguredStep
   showDimensions?: boolean,
   images?: StepImage[],
-  footerTabs?: boolean
+  footerTabs?: boolean,
+  showAddStepBtn: boolean,
 }>()
 
 const dimensions = computed(() => {
@@ -67,14 +69,6 @@ const invalidInputType = computed(() => {
 const validationErrors = computed(() => {
   return step.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
 })
-
-const addableSteps = computed(() => {
-  return getStepsCompatibleWithOutput(step.def).map(({ displayName, def }) => ({ displayName, def }))
-})
-
-function addAfter(def: string) {
-  store.add(def, step.id)
-}
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
@@ -102,21 +96,9 @@ function addAfter(def: string) {
             <span class="material-symbols-outlined">content_copy</span>
           </button>
 
-          <BDropdown
-            v-if="addableSteps.length"
-            no-caret
-          >
-            <template #button-content>
-              <span class="material-symbols-outlined">add</span>
-            </template>
-            <BDropdownItem
-              v-for="item in addableSteps"
-              @click="addAfter(item.def)"
-            >
-              {{ item.displayName }}
-            </BDropdownItem>
-
-          </BDropdown>
+          <slot name="add-step">
+            <AddAfterStepDropDown v-if="showAddStepBtn" :step="step" />
+          </slot>
         </BButtonGroup>
       </div>
       <div class="card-body">
