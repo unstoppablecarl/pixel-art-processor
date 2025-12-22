@@ -330,7 +330,7 @@ export const useStepStore = defineStore('steps', () => {
 
       const result = run({ config: step.config, inputData })
 
-      let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(step, result)
+      let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(result)
 
       logStepEvent(stepId, 'updateStep', { outputData, preview, validationErrors })
       step.outputData = copyStepDataOrNull(outputData)
