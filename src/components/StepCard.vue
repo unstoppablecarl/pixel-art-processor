@@ -54,7 +54,6 @@ const imagesTotalWidth = computed(() => {
 })
 
 const cssStyle = computed(() => {
-
   return [
     `--stem-image-count: ${imageCount.value};`,
     `--step-total-image-width: ${imagesTotalWidth.value}px;`,
@@ -121,12 +120,14 @@ function addAfter(def: string) {
         </BButtonGroup>
       </div>
       <div class="card-body">
-        <StepImg
-          v-for="image in stepImages"
-          :key="image.label"
-          :step="step"
-          :image="image"
-        />
+        <slot name="body">
+          <StepImg
+            v-for="image in stepImages"
+            :key="image.label"
+            :step="step"
+            :image="image"
+          />
+        </slot>
       </div>
 
       <div :class="{'card-footer': true, 'card-footer-tabs': footerTabs}">
