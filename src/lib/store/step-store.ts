@@ -946,6 +946,7 @@ export const useStepStore = defineStore('steps', () => {
 
       add,
       addFork,
+      getFork,
       addToBranch,
       getBranches,
       getAllBranchSteps,
