@@ -81,7 +81,7 @@ export function useStepRegistry(): StepRegistry {
 
 export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType, inputDataTypes: StepDataType[]) {
 
-  if (outputType === PassThrough) {
+  if (outputType === PassThrough || inputDataTypes.includes(PassThrough)) {
     return true
   }
 
