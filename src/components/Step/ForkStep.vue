@@ -51,16 +51,14 @@ const config = step.config!
       FORK
     </template>
     <template #footer>
-      <div>
-        <RangeSlider
-          :id="`${stepId}-count`"
-          label="Count"
-          v-model:value="config.count"
-          :min="0"
-          :max="100"
-          :step="1"
-        />
-      </div>
+      <RangeSlider
+        :id="`${stepId}-count`"
+        label="Count"
+        v-model:value="config.count"
+        :min="0"
+        :max="100"
+        :step="1"
+      />
     </template>
   </StepCard>
 </template>

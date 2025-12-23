@@ -97,12 +97,13 @@ onMounted(() => {
                 :step-id="stepId"
                 class="step"
               />
-
-              <BButtonGroup class="btn-group btn-group-sm">
-                <button role="button" class="btn btn-sm btn-danger" @click="store.removeBranch(id, branchIndex)">
+              <BButtonGroup class="btn-group">
+                <button role="button" class="btn btn-sm btn-danger d-inline-block"
+                        @click="store.removeBranch(id, branchIndex)">
                   <span class="material-symbols-outlined">delete</span>
                 </button>
-                <button role="button" class="btn btn-secondary" @click="store.duplicateBranch(id, branchIndex)">
+                <button role="button" class="btn btn-sm btn-secondary d-inline-block"
+                        @click="store.duplicateBranch(id, branchIndex)">
                   <span class="material-symbols-outlined">content_copy</span>
                 </button>
 

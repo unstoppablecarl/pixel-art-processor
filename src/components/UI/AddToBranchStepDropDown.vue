@@ -29,7 +29,7 @@ function addAfter(def: string) {
 <template>
   <BDropdown
     v-if="addableSteps.length"
-    size="xs"
+    size="sm"
     no-caret
   >
     <template #button-content>
