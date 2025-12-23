@@ -20,7 +20,7 @@ const {
   showDimensions?: boolean,
   images?: StepImage[],
   footerTabs?: boolean,
-  showAddStepBtn: boolean,
+  showAddStepBtn?: boolean,
 }>()
 
 const dimensions = computed(() => {
