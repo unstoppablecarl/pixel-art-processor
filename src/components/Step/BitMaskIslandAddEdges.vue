@@ -51,7 +51,6 @@ const CONFIG_DEFAULTS = {
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    console.log(CONFIG_DEFAULTS)
     return reactive({
       ...CONFIG_DEFAULTS,
     })
