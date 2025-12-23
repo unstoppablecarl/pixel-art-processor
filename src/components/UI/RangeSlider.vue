@@ -302,9 +302,3 @@ function toggleSettings() {
 
   </div>
 </template>
-<style scoped lang="scss">
-.range-label {
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5)
-}
-</style>
