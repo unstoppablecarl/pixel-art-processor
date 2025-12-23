@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 
-const store = useScaleStore()
 const stepStore = useStepStore()
 
 </script>
@@ -28,7 +26,7 @@ const stepStore = useStepStore()
             class="form-label form-label-sm mb-0 text-nowrap"
             style="width: 50px;"
           >
-            Scale: {{ store.scale }}
+            Scale: {{ stepStore.imgScale }}
           </label>
           <input type="range"
                  class="form-range form-range-sm"
@@ -37,7 +35,7 @@ const stepStore = useStepStore()
                  max="10"
                  step="1"
                  style="width: 150px;"
-                 v-model.number="store.scale"
+                 v-model.number="stepStore.imgScale"
           >
         </div>
       </form>

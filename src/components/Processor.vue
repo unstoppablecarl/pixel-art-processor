@@ -3,7 +3,6 @@ import { dragAndDrop } from '@formkit/drag-and-drop'
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, onMounted, useTemplateRef, watch } from 'vue'
 import { StepType } from '../lib/pipeline/Step.ts'
-import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
 import GridPatternPreview from './Processor/GridPatternPreview.vue'
@@ -14,12 +13,9 @@ const store = useStepStore()
 
 const stepContainer = useTemplateRef('stepContainer')
 
-// initialize
-const scaleStore = useScaleStore()
-
-watch(() => scaleStore.scale, () => {
+watch(() => store.imgScale, () => {
   const root = document.documentElement
-  root.style.setProperty('--step-img-scale', '' + scaleStore.scale)
+  root.style.setProperty('--step-img-scale', '' + store.imgScale)
 }, { immediate: true })
 
 type DragResult = {

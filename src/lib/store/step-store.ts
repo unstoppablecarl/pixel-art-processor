@@ -34,6 +34,7 @@ type SerializedStepData = {
   stepIdOrder: string[],
   stepsById: Record<string, SerializedStep>,
   forkBranches: Record<string, string[][]>,
+  imgScale: number,
   seed: number,
 }
 
@@ -48,12 +49,13 @@ export const useStepStore = defineStore('steps', () => {
     // key: stepId (that is a fork)
     // value: array of branches from the fork, each branch is an array of stepIds in order
     const forkBranches = reactive({}) as Reactive<Record<string, string[][]>>
+    const imgScale = ref(4)
 
     function $reset() {
       seed.value = 3
       idIncrement.value = 0
       rootStepIds.value = []
-
+      imgScale.value = 4
       Object.keys(forkBranches).forEach(key => delete forkBranches[key])
       Object.keys(stepsById).forEach(key => delete stepsById[key])
     }
@@ -62,6 +64,7 @@ export const useStepStore = defineStore('steps', () => {
       return {
         idIncrement: idIncrement.value,
         stepIdOrder: rootStepIds.value,
+        imgScale: imgScale.value,
         stepsById: serializeSteps(stepsById),
         forkBranches: deepUnwrap(forkBranches),
         seed: seed.value,
@@ -73,6 +76,7 @@ export const useStepStore = defineStore('steps', () => {
       idIncrement.value = data.idIncrement ?? 0
       rootStepIds.value = data.stepIdOrder
       seed.value = data.seed
+      imgScale.value = data.imgScale
 
       Object.values(data.stepsById)
         .forEach((stepData: DeSerializedStep) => {
@@ -934,6 +938,7 @@ export const useStepStore = defineStore('steps', () => {
       forkBranches,
       seed,
       startStepOutputSize,
+      imgScale,
 
       $reset,
       $serializeState,
