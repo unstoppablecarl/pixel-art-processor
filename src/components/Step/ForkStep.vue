@@ -43,7 +43,12 @@ const step = useStepHandler(stepId, {
 const config = step.config!
 </script>
 <template>
-  <StepCard :step="step" :show-add-step-btn="false">
+  <StepCard
+    :step="step"
+    :show-add-step-btn="false"
+    :copyable="false"
+    :draggable="false"
+  >
     <template #header>
       {{ STEP_META.displayName }}
     </template>

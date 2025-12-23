@@ -15,12 +15,16 @@ const {
   images,
   footerTabs = false,
   showAddStepBtn = true,
+  draggable = true,
+  copyable = true,
 } = defineProps<{
   step: AnyConfiguredStep
   showDimensions?: boolean,
   images?: StepImage[],
   footerTabs?: boolean,
   showAddStepBtn?: boolean,
+  draggable?: boolean,
+  copyable?: boolean,
 }>()
 
 const dimensions = computed(() => {
@@ -81,10 +85,12 @@ const validationErrors = computed(() => {
       'invalid-input-type': invalidInputType,
     }">
       <div class="card-header px-2 d-flex">
-        <span role="button"
-              class="btn btn-sm btn-secondary btn-grab"
-              draggable="false"
-              @pointerdown.stop
+        <span
+          v-if="draggable"
+          role="button"
+          class="btn btn-sm btn-secondary btn-grab"
+          draggable="false"
+          @pointerdown.stop
         >:::
         </span>
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
@@ -92,7 +98,8 @@ const validationErrors = computed(() => {
           <button role="button" class="btn btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>
           </button>
-          <button role="button" class="btn btn-secondary" @click="store.duplicate(step.id)">
+
+          <button v-if="copyable" role="button" class="btn btn-secondary" @click="store.duplicate(step.id)">
             <span class="material-symbols-outlined">content_copy</span>
           </button>
 
