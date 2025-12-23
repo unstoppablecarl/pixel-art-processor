@@ -19,6 +19,7 @@ const addableSteps = computed(() => useStepRegistry().getStepsCompatibleWithOutp
 function addAfter(def: string) {
   if (step.def === STEP_FORK_DEF) {
     store.addFork(STEP_FORK_DEF, 1, step.id)
+    return
   }
   store.add(def, step.id)
 }
