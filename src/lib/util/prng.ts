@@ -1,5 +1,5 @@
-import { Mulberry32 } from './prng/mulberry32-prng.ts'
 import { generateChunkedArray, type GenerateChunkedArrayOptions } from './prng/binary-array-chunks.ts'
+import { Mulberry32 } from './prng/mulberry32-prng.ts'
 import { shuffleArray, shuffleArrayWithPositionOddEvenConstraint } from './prng/random-array.ts'
 import { sampleMultiple } from './prng/random-weighted-array.ts'
 
@@ -34,6 +34,10 @@ export function makePrng(initialSeed = 0) {
   const randomFloat = () => PRNG.next()
   const randomFloatRange = (min: number, max: number) => PRNG.next() * (max - min + 1) + min
 
+  function randomArrayIndex(array: any[]): number {
+    return Math.floor(PRNG.next() * array.length)
+  }
+
   function randomArrayValue<T>(array: T[]): T {
     const randomIndex = Math.floor(PRNG.next() * array.length)
     return array[randomIndex] as T
@@ -59,6 +63,7 @@ export function makePrng(initialSeed = 0) {
     randomIntRange,
     randomFloat,
     randomFloatRange,
+    randomArrayIndex,
     randomArrayValue,
     currentSeed() {
       return PRNG.id
