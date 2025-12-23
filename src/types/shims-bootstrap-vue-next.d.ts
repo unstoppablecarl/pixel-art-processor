@@ -1,6 +1,6 @@
 import 'bootstrap-vue-next'
 
-declare module 'bootstrap-vue-next/dist/src/types' {
+declare module 'bootstrap-vue-next' {
   export interface BaseSize {
     xs: unknown;
   }
