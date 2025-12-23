@@ -1,13 +1,9 @@
 <script setup lang="ts">
-import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
-import { computed } from 'vue'
-import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 
 const store = useScaleStore()
 const stepStore = useStepStore()
-const steps = computed(() => useStepRegistry().toArray())
 
 </script>
 <template>
