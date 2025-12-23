@@ -97,7 +97,7 @@ const validationErrors = computed(() => {
           </button>
 
           <slot name="add-step">
-            <AddAfterStepDropDown v-if="showAddStepBtn" :step="step" />
+            <AddAfterStepDropDown v-if="showAddStepBtn" :step-id="step.id" />
           </slot>
         </BButtonGroup>
       </div>

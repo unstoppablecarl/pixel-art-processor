@@ -3,25 +3,26 @@ import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import { STEP_FORK_DEF } from '../../lib/pipeline/Step.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
-import type { AnyConfiguredStep } from '../../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 
 const store = useStepStore()
 
 const {
-  step,
+  stepId,
 } = defineProps<{
-  step: AnyConfiguredStep,
+  stepId: string,
 }>()
 
-const addableSteps = computed(() => useStepRegistry().getStepsCompatibleWithOutput(step.def))
+const step = computed(() => store.get(stepId))
+
+const addableSteps = computed(() => useStepRegistry().getStepsCompatibleWithOutput(step.value.def))
 
 function addAfter(def: string) {
-  if (step.def === STEP_FORK_DEF) {
-    store.addFork(STEP_FORK_DEF, 1, step.id)
-    return
+  if (def === STEP_FORK_DEF) {
+    store.addFork(STEP_FORK_DEF, 1, stepId)
+  } else {
+    store.add(def, stepId)
   }
-  store.add(def, step.id)
 }
 </script>
 <template>
