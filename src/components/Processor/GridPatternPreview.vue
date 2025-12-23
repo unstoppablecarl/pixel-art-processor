@@ -130,7 +130,7 @@ const grid = computed(() => {
       </div>
 
     </div>
-    <div class="min-vh-100 final-preview">
+    <div class="min-vh-100 final-preview" v-if="steps.length">
       <div v-for="row in grid" class="preview-row">
         <div v-for="{index, cssStyle, step} in row" :style="cssStyle" class="preview-cell">
           <div class="label">
