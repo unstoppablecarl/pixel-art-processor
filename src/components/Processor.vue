@@ -6,8 +6,8 @@ import { StepType } from '../lib/pipeline/Step.ts'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
-import PatternPreview from './Processor/PatternPreview.vue'
-import AddStepButtons from './UI/AddStepButtons.vue'
+import GridPatternPreview from './Processor/GridPatternPreview.vue'
+// import AddStepButtons from './UI/AddStepButtons.vue'
 import AddToBranchStepDropDown from './UI/AddToBranchStepDropDown.vue'
 
 const store = useStepStore()
@@ -121,8 +121,8 @@ onMounted(() => {
       </div>
     </div>
     <div class="after-steps-container">
-      <AddStepButtons />
+
     </div>
-    <PatternPreview />
+    <GridPatternPreview />
   </div>
 </template>
