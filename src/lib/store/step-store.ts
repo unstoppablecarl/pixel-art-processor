@@ -748,9 +748,9 @@ export const useStepStore = defineStore('steps', () => {
       get(stepId).validationErrors = errors
     }
 
-    function rootSteps(): Step<AnyStepContext>[] {
+    const rootSteps = computed((): Step<AnyStepContext>[] => {
       return rootStepIds.value.map(id => get(id))
-    }
+    })
 
     function isLast(stepId: string) {
       const step = get(stepId)

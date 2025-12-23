@@ -27,12 +27,6 @@ function onDrop(dropResult: DragResult) {
   store.moveTo(dropResult.stepId, dropResult.newIndex)
 }
 
-const steps = computed(() => store.rootSteps())
-
-function addStep(def: string) {
-  store.add(def)
-}
-
 function findMoved(newOrder: string[]): DragResult {
   const oldOrder = store.rootStepIds
   for (let i = 0; i < newOrder.length; i++) {
@@ -67,12 +61,12 @@ onMounted(() => {
 </script>
 <template>
 
-  <AppHeader @add-step="addStep" />
+  <AppHeader />
 
   <div class="overflow">
     <div class="processor-container px-3 pb-3 min-vw-100">
       <div ref="stepContainer" class="steps-container">
-        <template v-for="{ def, id, type } in steps" :key="id">
+        <template v-for="{ def, id, type } in store.rootSteps" :key="id">
 
           <component
             :is="store.defToComponent(def)"
@@ -116,7 +110,7 @@ onMounted(() => {
         </template>
       </div>
     </div>
-    <div class="after-steps-container p-4" v-if="!steps.length">
+    <div class="after-steps-container p-4" v-if="!store.rootSteps.length">
       <AddStepButtons/>
     </div>
     <GridPatternPreview />
