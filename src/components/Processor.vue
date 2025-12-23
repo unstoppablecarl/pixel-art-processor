@@ -27,14 +27,14 @@ function onDrop(dropResult: DragResult) {
   store.moveTo(dropResult.stepId, dropResult.newIndex)
 }
 
-const steps = computed(() => store.all())
+const steps = computed(() => store.rootSteps())
 
 function addStep(def: string) {
   store.add(def)
 }
 
 function findMoved(newOrder: string[]): DragResult {
-  const oldOrder = store.stepIdOrder
+  const oldOrder = store.rootStepIds
   for (let i = 0; i < newOrder.length; i++) {
     if (newOrder[i] !== oldOrder[i]) {
       const movedId = newOrder[i]!
@@ -52,7 +52,7 @@ onMounted(() => {
 
   dragAndDrop({
     parent: stepContainer.value,
-    getValues: () => store.stepIdOrder,
+    getValues: () => store.rootStepIds,
     setValues: (newOrder) => {
       onDrop(findMoved(newOrder))
     },
@@ -116,7 +116,7 @@ onMounted(() => {
         </template>
       </div>
     </div>
-    <div class="after-steps-container p-4">
+    <div class="after-steps-container p-4" v-if="!steps.length">
       <AddStepButtons/>
     </div>
     <GridPatternPreview />

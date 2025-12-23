@@ -31,7 +31,7 @@ export type StepStore = ReturnType<typeof useStepStore>
 
 type SerializedStepData = {
   idIncrement: number,
-  stepIdOrder: string[],
+  rootStepIds: string[],
   stepsById: Record<string, SerializedStep>,
   forkBranches: Record<string, string[][]>,
   imgScale: number,
@@ -63,7 +63,7 @@ export const useStepStore = defineStore('steps', () => {
     function $serializeState(): SerializedStepData {
       return {
         idIncrement: idIncrement.value,
-        stepIdOrder: rootStepIds.value,
+        rootStepIds: rootStepIds.value,
         imgScale: imgScale.value,
         stepsById: serializeSteps(stepsById),
         forkBranches: deepUnwrap(forkBranches),
@@ -74,7 +74,7 @@ export const useStepStore = defineStore('steps', () => {
     // Custom restoration method for the plugin
     function $restoreState(data: SerializedStepData) {
       idIncrement.value = data.idIncrement ?? 0
-      rootStepIds.value = data.stepIdOrder
+      rootStepIds.value = data.rootStepIds
       seed.value = data.seed
       imgScale.value = data.imgScale
 
@@ -223,7 +223,7 @@ export const useStepStore = defineStore('steps', () => {
     function removeBranch(forkId: string, branchIndex: number): void {
       const branches = getBranches(forkId)
 
-      // Remove all steps in the branch
+      // Remove rootSteps steps in the branch
       const branchSteps = getBranch(forkId, branchIndex)
       branchSteps.forEach(stepId => {
         delete stepsById[stepId]
@@ -389,7 +389,7 @@ export const useStepStore = defineStore('steps', () => {
       const prevId = getPrev(stepId)?.id
 
       if (step.type === StepType.FORK) {
-        // Remove all branch steps
+        // Remove rootSteps branch steps
         const branches = getBranches(stepId)
         branches.forEach(branch => {
           branch.forEach(branchStepId => {
@@ -710,7 +710,7 @@ export const useStepStore = defineStore('steps', () => {
       const step = get(stepId)
 
       if (step.type === StepType.FORK) {
-        // Invalidate all branches
+        // Invalidate rootSteps branches
         const branches = forkBranches[stepId]
         if (branches) {
           branches.forEach(branch => {
@@ -748,7 +748,7 @@ export const useStepStore = defineStore('steps', () => {
       get(stepId).validationErrors = errors
     }
 
-    function all(): Step<AnyStepContext>[] {
+    function rootSteps(): Step<AnyStepContext>[] {
       return rootStepIds.value.map(id => get(id))
     }
 
@@ -918,7 +918,7 @@ export const useStepStore = defineStore('steps', () => {
       let width = 0
       let height = 0
 
-      const firstId = rootStepIds.value[0]
+      const firstId = rootStepIds.value?.[0]
       if (firstId) {
         const step = get(firstId)
         width = step.outputData?.width ?? width
@@ -933,7 +933,7 @@ export const useStepStore = defineStore('steps', () => {
 
     return {
       idIncrement,
-      stepIdOrder: rootStepIds,
+      rootStepIds,
       stepsById,
       forkBranches,
       seed,
@@ -958,7 +958,7 @@ export const useStepStore = defineStore('steps', () => {
       duplicate,
       remove,
       moveTo,
-      all,
+      rootSteps,
       getIndex,
       loadStepData,
       syncImageDataFromPrev,
