@@ -21,6 +21,25 @@
   padding-right: 20px;
 }
 
+
+.fork-branches {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.branch {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid rgba(255,255,255, 0.09);
+  background: rgba(255,255,255, 0.015);
+  border-radius: 4px;
+}
+
 .step {
   flex-shrink: 0;
   min-width: 150px;

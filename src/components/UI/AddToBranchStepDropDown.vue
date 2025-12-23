@@ -10,22 +10,26 @@ const store = useStepStore()
 
 const {
   step,
+  branchIndex,
 } = defineProps<{
   step: AnyConfiguredStep,
+  branchIndex: number,
 }>()
 
 const addableSteps = computed(() => useStepRegistry().getStepsCompatibleWithOutput(step.def))
 
 function addAfter(def: string) {
-  if (step.def === STEP_FORK_DEF) {
+  if (def === STEP_FORK_DEF) {
     store.addFork(STEP_FORK_DEF, 1, step.id)
+  } else {
+    store.addToBranch(step.id, branchIndex, def)
   }
-  store.add(def, step.id)
 }
 </script>
 <template>
   <BDropdown
     v-if="addableSteps.length"
+    size="sm"
     no-caret
   >
     <template #button-content>

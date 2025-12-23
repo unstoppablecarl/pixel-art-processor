@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { dragAndDrop } from '@formkit/drag-and-drop'
+import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, onMounted, useTemplateRef, watch } from 'vue'
+import { StepType } from '../lib/pipeline/Step.ts'
 import { useScaleStore } from '../lib/store/scale-store.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
 import PatternPreview from './Processor/PatternPreview.vue'
 import AddStepButtons from './UI/AddStepButtons.vue'
+import AddToBranchStepDropDown from './UI/AddToBranchStepDropDown.vue'
 
 const store = useStepStore()
 
@@ -73,16 +76,51 @@ onMounted(() => {
   <div class="overflow">
     <div class="processor-container px-3 pb-3 min-vw-100">
       <div ref="stepContainer" class="steps-container">
-        <component
-          v-for="{ def, id } in steps"
-          :key="id"
-          :is="store.defToComponent(def)"
-          :step-id="id"
-        />
+        <template v-for="{ def, id, type } in steps" :key="id">
+
+          <component
+            :is="store.defToComponent(def)"
+            :step-id="id"
+            class="step"
+          />
+
+          <div v-if="type === StepType.FORK" class="fork-branches">
+            <div
+              v-for="(branchStepIds, branchIndex) in store.getBranches(id)"
+              :key="`${id}-branch-${branchIndex}`"
+              class="branch"
+            >
+              <component
+                v-for="stepId in branchStepIds"
+                :key="stepId"
+                :is="store.defToComponent(store.get(stepId).def)"
+                :step-id="stepId"
+                class="step"
+              />
+
+              <BButtonGroup class="btn-group btn-group-sm">
+                <button role="button" class="btn btn-sm btn-danger" @click="store.removeBranch(id, branchIndex)">
+                  <span class="material-symbols-outlined">delete</span>
+                </button>
+                <button role="button" class="btn btn-secondary" @click="store.duplicateBranch(id, branchIndex)">
+                  <span class="material-symbols-outlined">content_copy</span>
+                </button>
+
+                <template v-if="!branchStepIds.length">
+                  <AddToBranchStepDropDown :step="store.get(id)" :branch-index="branchIndex" />
+                </template>
+              </BButtonGroup>
+            </div>
+
+            <button role="button" class="btn btn-sm btn-secondary" @click="store.addBranch(id)">
+              <span class="material-symbols-outlined">add</span> Branch
+            </button>
+          </div>
+        </template>
       </div>
-      <div class="after-steps-container">
-        <AddStepButtons />
-      </div>
+    </div>
+    <div class="after-steps-container">
+      <AddStepButtons />
     </div>
     <PatternPreview />
   </div>

@@ -117,10 +117,7 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function addToBranch(forkId: string, branchIndex: number, def: string, afterStepId?: string): StepRef {
-      const fork = get(forkId)
-      if (fork.type !== StepType.FORK) {
-        throw new Error(`Step ${forkId} is not a fork`)
-      }
+      validateIsFork(forkId)
 
       const branches = forkBranches[forkId]
       if (!branches || branchIndex >= branches.length) {
@@ -147,29 +144,79 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function getBranches(forkId: string): string[][] {
-      const fork = get(forkId)
-      if (fork.type !== StepType.FORK) {
-        throw new Error(`Step ${forkId} is not a fork`)
-      }
+      validateIsFork(forkId)
       return forkBranches[forkId] ?? []
     }
 
-    function getAllBranchSteps(forkId: string, branchIndex: number): StepRef[] {
+    function getBranch(forkId: string, branchIndex: number): string[] {
       const branches = getBranches(forkId)
       if (branchIndex >= branches.length) {
         throw new Error(`Invalid branch index ${branchIndex}`)
       }
-      return branches[branchIndex].map(id => get(id))
+      return branches[branchIndex]
+    }
+
+    function getAllBranchSteps(forkId: string, branchIndex: number): StepRef[] {
+      return getBranch(forkId, branchIndex).map(id => get(id))
+    }
+
+    function addBranch(forkId: string): void {
+      forkBranches[forkId].push([])
+    }
+
+    function duplicateBranch(forkId: string, branchIndex: number): number {
+      validateIsFork(forkId)
+
+      const branches = getBranches(forkId)
+
+      const sourceBranch = getBranch(forkId, branchIndex)
+      const newBranchIndex = branches.length
+
+      // Add new empty branch
+      branches.push([])
+
+      // Duplicate each step in the source branch
+      const stepIdMap = new Map<string, string>() // old ID -> new ID mapping
+
+      sourceBranch.forEach(sourceStepId => {
+        const sourceStep = get(sourceStepId)
+
+        // Create new step in the new branch
+        idIncrement.value += 1
+        const newStep = createNewStep(
+          sourceStep.def,
+          idIncrement.value,
+          StepType.NORMAL,
+          forkId,
+          newBranchIndex,
+        )
+
+        stepsById[newStep.id] = newStep
+        branches[newBranchIndex].push(newStep.id)
+
+        // Copy config if handler exists
+        if (sourceStep.handler) {
+          const freshConfig = sourceStep.handler.config()
+          Object.assign(freshConfig, deepUnwrap(sourceStep.config))
+          newStep.config = freshConfig
+        }
+
+        stepIdMap.set(sourceStepId, newStep.id)
+      })
+
+      // Invalidate the new branch (starting from first step if exists)
+      if (branches[newBranchIndex].length > 0) {
+        _invalidateFromStep(branches[newBranchIndex][0])
+      }
+
+      return newBranchIndex
     }
 
     function removeBranch(forkId: string, branchIndex: number): void {
       const branches = getBranches(forkId)
-      if (branchIndex >= branches.length) {
-        throw new Error(`Invalid branch index ${branchIndex}`)
-      }
 
       // Remove all steps in the branch
-      const branchSteps = branches[branchIndex]
+      const branchSteps = getBranch(forkId, branchIndex)
       branchSteps.forEach(stepId => {
         delete stepsById[stepId]
       })
@@ -258,21 +305,14 @@ export const useStepStore = defineStore('steps', () => {
         newStep = add(step.def)
       }
 
-      const freshConfig = step.handler!.config()
-
-      Object.assign(
-        freshConfig,
-        deepUnwrap(step.config),
-      )
-
-      newStep.config = freshConfig
+      newStep.config = step.handler!.copyConfig(step.config)
 
       if (step.parentForkId) {
         // Move within branch
-        const branches = getBranches(step.parentForkId)
-        const branch = branches[step.branchIndex!]
+        const branch = getBranch(step.parentForkId, step.branchIndex!)
         const index = branch.indexOf(stepId)
-        if (index !== branch.length - 1) {
+        const isLastBranch = index === branch.length - 1
+        if (!isLastBranch) {
           const currentIndex = branch.indexOf(newStep.id)
           branch.splice(currentIndex, 1)
           branch.splice(index + 1, 0, newStep.id)
@@ -296,8 +336,16 @@ export const useStepStore = defineStore('steps', () => {
       return step
     }
 
-    function validate(stepId: string) {
-      get(stepId)
+    function getFork(forkId: string) {
+      const fork = get(forkId)
+      if (fork.type !== StepType.FORK) {
+        throw new Error(`Step ${forkId} is not a fork`)
+      }
+      return fork
+    }
+
+    function validateIsFork(forkId: string) {
+      getFork(forkId)
     }
 
     function remove(stepId: string): void {
@@ -483,35 +531,103 @@ export const useStepStore = defineStore('steps', () => {
       return step.handler
     }
 
+    function getStepContext(stepId: string): {
+      array: string[],
+      parentForkId: string | null,
+      branchIndex: number | null
+    } {
+      const step = get(stepId)
+
+      if (step.parentForkId) {
+        const branches = getBranches(step.parentForkId)
+        return {
+          array: branches[step.branchIndex!],
+          parentForkId: step.parentForkId,
+          branchIndex: step.branchIndex,
+        }
+      }
+
+      return {
+        array: stepIdOrder.value,
+        parentForkId: null,
+        branchIndex: null,
+      }
+    }
+
     function moveAfter(stepId: string, afterStepId: string) {
-      const index = getIndex(afterStepId)
-      moveTo(stepId, index + 1)
+      const afterContext = getStepContext(afterStepId)
+      const afterIndex = afterContext.array.indexOf(afterStepId)
+
+      if (afterIndex === -1) {
+        throw new Error(`Step ${afterStepId} not found in its context`)
+      }
+
+      moveToContext(stepId, afterContext.parentForkId, afterContext.branchIndex, afterIndex + 1)
     }
 
     function moveTo(stepId: string, newIndex: number): void {
       const step = get(stepId)
+      moveToContext(stepId, step.parentForkId, step.branchIndex, newIndex)
+    }
 
-      if (step.parentForkId) {
-        // Moving within a branch
-        const branches = getBranches(step.parentForkId)
-        const branch = branches[step.branchIndex!]
-        const currentIndex = branch.indexOf(stepId)
-        branch.splice(currentIndex, 1)
-        branch.splice(newIndex, 0, stepId)
+    function moveToContext(
+      stepId: string,
+      targetParentForkId: string | null,
+      targetBranchIndex: number | null,
+      newIndex: number,
+    ): void {
+      const step = get(stepId)
+      const sourceContext = getStepContext(stepId)
 
+      // Determine target context
+      let targetArray: string[]
+      if (targetParentForkId) {
+        const branches = getBranches(targetParentForkId)
+        targetArray = branches[targetBranchIndex!]
+      } else {
+        targetArray = stepIdOrder.value
+      }
+
+      // Remove from source context
+      const currentIndex = sourceContext.array.indexOf(stepId)
+      if (currentIndex === -1) {
+        throw new Error(`Step ${stepId} not found in source context`)
+      }
+      sourceContext.array.splice(currentIndex, 1)
+
+      // Update step metadata if changing contexts
+      if (sourceContext.parentForkId !== targetParentForkId ||
+        sourceContext.branchIndex !== targetBranchIndex) {
+        step.parentForkId = targetParentForkId
+        step.branchIndex = targetBranchIndex
+      }
+
+      // Add to target context
+      targetArray.splice(newIndex, 0, stepId)
+
+      // Determine what needs invalidation
+      const sameContext = sourceContext.array === targetArray
+
+      if (sameContext) {
+        // Moving within same context - invalidate from min index
         const minIndex = Math.min(currentIndex, newIndex)
-        const minStepId = branch[minIndex]!
+        const minStepId = targetArray[minIndex]!
         _invalidateFromStep(minStepId)
       } else {
-        // Moving in main trunk
-        validate(stepId)
-        const currentIndex = stepIdOrder.value.indexOf(stepId)
-        stepIdOrder.value.splice(currentIndex, 1)
-        stepIdOrder.value.splice(newIndex, 0, stepId)
+        // Moving between contexts - invalidate both locations
 
-        const minIndex = Math.min(currentIndex, newIndex)
-        const minStepId = stepIdOrder.value[minIndex]!
-        _invalidateFromStep(minStepId)
+        // Invalidate source context from the position where step was removed
+        if (sourceContext.array.length > 0) {
+          const sourceInvalidateIndex = Math.min(currentIndex, sourceContext.array.length - 1)
+          _invalidateFromStep(sourceContext.array[sourceInvalidateIndex])
+        } else if (sourceContext.parentForkId) {
+          // Branch is now empty, invalidate from the fork
+          _invalidateFromStep(sourceContext.parentForkId)
+        }
+
+        // Invalidate target context from the new position
+        const targetInvalidateIndex = Math.min(newIndex, targetArray.length - 1)
+        _invalidateFromStep(targetArray[targetInvalidateIndex])
       }
     }
 
@@ -723,7 +839,9 @@ export const useStepStore = defineStore('steps', () => {
       addToBranch,
       getBranches,
       getAllBranchSteps,
+      addBranch,
       removeBranch,
+      duplicateBranch,
       getDescendants,
       getAncestors,
       get,
