@@ -20,7 +20,11 @@ watch(() => store.imgScale, () => {
 
   <div class="overflow">
     <div class="processor-container px-3 pb-3 min-vw-100">
-      <PipelineBranch :step-ids="store.rootStepIds" />
+      <PipelineBranch
+        :step-ids="store.rootStepIds"
+        :parent-fork-id="null"
+        :branch-index="null"
+      />
     </div>
     <div class="after-steps-container p-4" v-if="!store.rootSteps.length">
       <AddStepButtons />

@@ -163,6 +163,155 @@ export const useStepStore = defineStore('steps', () => {
       return branches[branchIndex]
     }
 
+    function setBranchStepIds(forkId: string, branchIndex: number, newStepIds: string[]) {
+      const oldStepIds = getBranch(forkId, branchIndex)
+
+      const { movedStepId, oldIndex, newIndex, isTransfer } = _analyzeArrayChange(oldStepIds, newStepIds)
+
+      const branches = getBranches(forkId)
+      branches[branchIndex] = newStepIds
+
+      if (isTransfer) {
+        const step = get(movedStepId)
+
+        // step is leaving this branch (removed from array)
+        if (newIndex === -1) {
+          // Step was removed - it transferred OUT
+          // Invalidate from the old position in the now-modified branch
+          if (newStepIds.length > 0) {
+            // Branch still has steps - invalidate from where the step was removed
+            const invalidateIndex = Math.min(oldIndex, newStepIds.length - 1)
+            _invalidateFromStep(newStepIds[invalidateIndex])
+          } else {
+            // Branch is now empty - invalidate the fork itself
+            _invalidateFromStep(forkId)
+          }
+        } else {
+          // Step came INTO this branch from different context
+          step.parentForkId = forkId
+          step.branchIndex = branchIndex
+
+          // Invalidate from the moved step's new position onward
+          if (newIndex < newStepIds.length) {
+            _invalidateFromStep(newStepIds[newIndex])
+          }
+        }
+
+        return
+      }
+
+      // Reorder within same branch
+      const minAffectedIndex = Math.min(oldIndex, newIndex)
+      if (minAffectedIndex < newStepIds.length) {
+        _invalidateFromStep(newStepIds[minAffectedIndex])
+      }
+    }
+
+    function setRootStepIds(newStepIds: string[]) {
+      const oldStepIds = rootStepIds.value
+
+      const { movedStepId, oldIndex, newIndex, isTransfer } = _analyzeArrayChange(oldStepIds, newStepIds)
+
+      rootStepIds.value = newStepIds
+
+      if (isTransfer) {
+        const step = get(movedStepId)
+
+        // Check if step is leaving root (removed from array)
+        if (newIndex === -1) {
+          // Step was removed - it transferred OUT to a branch
+          // Invalidate from the old position in root
+          if (newStepIds.length > 0) {
+            const invalidateIndex = Math.min(oldIndex, newStepIds.length - 1)
+            _invalidateFromStep(newStepIds[invalidateIndex])
+          }
+          // If root is empty, nothing to invalidate
+        } else {
+          // Step came INTO root from a branch
+          step.parentForkId = null
+          step.branchIndex = null
+
+          // Invalidate from the moved step's new position onward
+          if (newIndex < newStepIds.length) {
+            _invalidateFromStep(newStepIds[newIndex])
+          }
+        }
+        return
+      }
+
+      // Reorder within root
+      const minAffectedIndex = Math.min(oldIndex, newIndex)
+      if (minAffectedIndex < newStepIds.length) {
+        _invalidateFromStep(newStepIds[minAffectedIndex])
+      }
+    }
+
+    function _analyzeArrayChange(
+      oldArray: string[],
+      newArray: string[],
+    ): {
+      movedStepId: string
+      oldIndex: number
+      newIndex: number
+      isTransfer: boolean
+    } {
+      // Find the step that moved
+      let movedStepId: string | null = null
+      let newIndex = -1
+
+      // Check for new item (transfer in)
+      for (let i = 0; i < newArray.length; i++) {
+        if (!oldArray.includes(newArray[i])) {
+          movedStepId = newArray[i]
+          newIndex = i
+          return {
+            movedStepId,
+            oldIndex: -1,
+            newIndex,
+            isTransfer: true,
+          }
+        }
+      }
+
+      // Check for removed item
+      for (let i = 0; i < oldArray.length; i++) {
+        if (!newArray.includes(oldArray[i])) {
+          // Item was removed - it moved elsewhere
+          return {
+            movedStepId: oldArray[i],
+            oldIndex: i,
+            newIndex: -1,
+            isTransfer: true,
+          }
+        }
+      }
+
+      // Find reordered item (same items, different positions)
+      for (let i = 0; i < newArray.length; i++) {
+        if (oldArray[i] !== newArray[i]) {
+          movedStepId = newArray[i]
+          newIndex = i
+          const oldIndex = oldArray.indexOf(movedStepId)
+          return {
+            movedStepId,
+            oldIndex,
+            newIndex,
+            isTransfer: false,
+          }
+        }
+      }
+
+      throw new Error('no array change found')
+      //
+      // // No change (shouldn't happen)
+      // return {
+      //   movedStepId: oldArray[0] ?? '',
+      //   oldIndex: 0,
+      //   newIndex: 0,
+      //   isTransfer: false
+      // }
+    }
+
     function getAllBranchSteps(forkId: string, branchIndex: number): StepRef[] {
       return getBranch(forkId, branchIndex).map(id => get(id))
     }
@@ -611,20 +760,6 @@ export const useStepStore = defineStore('steps', () => {
       moveToContext(stepId, step.parentForkId, step.branchIndex, newIndex)
     }
 
-    // function moveToContext(
-    //   stepId: string,
-    //   targetParentForkId: string,
-    //   targetBranchIndex: number,
-    //   newIndex: number,
-    // ): void
-    //
-    // function moveToContext(
-    //   stepId: string,
-    //   targetParentForkId: null,
-    //   targetBranchIndex: null,
-    //   newIndex: number,
-    // ): void
-
     function moveToContext(
       stepId: string,
       targetParentForkId: string | null,
@@ -950,6 +1085,8 @@ export const useStepStore = defineStore('steps', () => {
       addToBranch,
       getBranches,
       getAllBranchSteps,
+      setRootStepIds,
+      setBranchStepIds,
       addBranch,
       removeBranch,
       duplicateBranch,
@@ -959,6 +1096,7 @@ export const useStepStore = defineStore('steps', () => {
       duplicate,
       remove,
       moveTo,
+      moveAfter,
       rootSteps,
       getIndex,
       loadStepData,

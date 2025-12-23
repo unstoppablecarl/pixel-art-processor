@@ -7,36 +7,18 @@ import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = useStepStore()
 
-type DragResult = {
-  newIndex: number,
-  stepId: string
-}
-
 const {
   stepIds,
+  parentForkId,
+  branchIndex,
 } = defineProps<{
   stepIds: string[],
+  parentForkId: null | string,
+  branchIndex: null | number,
 }>()
 
 const steps = computed(() => stepIds.map(id => store.get(id)))
 const branchDragContainer = useTemplateRef('branchDragContainer')
-
-function onDrop(dropResult: DragResult) {
-  store.moveTo(dropResult.stepId, dropResult.newIndex)
-}
-
-function findMoved(newOrder: string[]): DragResult {
-  for (let i = 0; i < newOrder.length; i++) {
-    if (newOrder[i] !== stepIds[i]) {
-      const movedId = newOrder[i]!
-      return {
-        stepId: movedId,
-        newIndex: i,
-      }
-    }
-  }
-  throw new Error('Moved not found')
-}
 
 onMounted(() => {
   if (!branchDragContainer.value) return
@@ -45,7 +27,11 @@ onMounted(() => {
     parent: branchDragContainer.value,
     getValues: () => stepIds,
     setValues: (newOrder) => {
-      onDrop(findMoved(newOrder))
+      if (parentForkId === null) {
+        store.setRootStepIds(newOrder)
+      } else {
+        store.setBranchStepIds(parentForkId, branchIndex!, newOrder)
+      }
     },
     config: {
       group: 'steps',
@@ -66,7 +52,7 @@ const fork = computed(() => {
 
 </script>
 <template>
-  <div ref="branchDragContainer" class="processor-container">
+  <div ref="branchDragContainer" class="processor-branch">
     <template v-for="{ def, id } in steps" :key="id">
       <component
         :is="store.defToComponent(def)"
@@ -75,8 +61,5 @@ const fork = computed(() => {
       />
     </template>
   </div>
-
-  <template v-if="fork">
-<!--    <PipelineForkBranches :fork-step-id="fork.id" />-->
-  </template>
+  <PipelineForkBranches :fork-step-id="fork.id" v-if="fork" />
 </template>
