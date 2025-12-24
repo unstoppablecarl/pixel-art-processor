@@ -22,11 +22,13 @@
 }
 
 
-.fork-branches {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  flex-shrink: 0;
+.fork-branch {
+  padding: 0.5rem;
+  border: 1px solid rgba(255,255,255, 0.09);
+  background: rgba(255,255,255, 0.015);
+  border-radius: 4px;
+  min-height: 100px;
+  margin-bottom: 1rem;
 }
 
 .branch {
@@ -38,6 +40,7 @@
   border: 1px solid rgba(255,255,255, 0.09);
   background: rgba(255,255,255, 0.015);
   border-radius: 4px;
+  min-height: 100px;
 }
 
 .step {

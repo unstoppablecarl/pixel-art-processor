@@ -533,6 +533,11 @@ export const useStepStore = defineStore('steps', () => {
       getFork(forkId)
     }
 
+    function isFork(stepId: string): boolean {
+      const fork = get(stepId)
+      return fork.type === StepType.FORK
+    }
+
     function remove(stepId: string): void {
       const step = get(stepId)
       const prevId = getPrev(stepId)?.id
@@ -1079,6 +1084,7 @@ export const useStepStore = defineStore('steps', () => {
       $serializeState,
       $restoreState,
 
+      isFork,
       add,
       addFork,
       getFork,

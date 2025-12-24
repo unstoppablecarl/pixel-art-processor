@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { dragAndDrop } from '@formkit/drag-and-drop'
 import { computed, onMounted, useTemplateRef } from 'vue'
-import { StepType } from '../../lib/pipeline/Step.ts'
+import { type StepRef } from '../../lib/pipeline/Step.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
@@ -17,7 +17,33 @@ const {
   branchIndex: null | number,
 }>()
 
-const steps = computed(() => stepIds.map(id => store.get(id)))
+const allSteps = computed(() => {
+  if (!stepIds.length) {
+    return {
+      steps: [],
+      fork: null,
+    }
+  }
+
+  let fork: StepRef | null = null
+
+  const lastId = stepIds[stepIds.length - 1]
+
+  let normalStepIds: string[] = []
+
+  if (store.isFork(lastId)) {
+    fork = store.get(lastId)
+    normalStepIds = stepIds.slice(0, -1)
+  } else {
+    normalStepIds = stepIds
+  }
+
+  return {
+    steps: normalStepIds.map(id => store.get(id)),
+    fork,
+  }
+})
+
 const branchDragContainer = useTemplateRef('branchDragContainer')
 
 onMounted(() => {
@@ -43,17 +69,10 @@ onMounted(() => {
   })
 })
 
-const fork = computed(() => {
-  const last = steps.value[steps.value.length - 1]
-  if (last?.type === StepType.FORK) {
-    return last
-  }
-})
-
 </script>
 <template>
   <div ref="branchDragContainer" class="processor-branch">
-    <template v-for="{ def, id } in steps" :key="id">
+    <template v-for="{ def, id } in allSteps.steps" :key="id">
       <component
         :is="store.defToComponent(def)"
         :step-id="id"
@@ -61,5 +80,12 @@ const fork = computed(() => {
       />
     </template>
   </div>
-  <PipelineForkBranches :fork-step-id="fork.id" v-if="fork" />
+  <template v-if="allSteps.fork">
+    <component
+      :is="store.defToComponent(allSteps.fork.def)"
+      :step-id="allSteps.fork.id"
+      class="step"
+    />
+    <PipelineForkBranches :fork-step-id="allSteps.fork.id" />
+  </template>
 </template>

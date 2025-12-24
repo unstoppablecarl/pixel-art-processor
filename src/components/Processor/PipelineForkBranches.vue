@@ -21,13 +21,8 @@ const fork = computed(() => store.getFork(forkStepId))
     <div
       v-for="(branchStepIds, branchIndex) in store.getBranches(fork.id)"
       :key="`${fork.id}-branch-${branchIndex}`"
-      class="branch"
+      class="fork-branch"
     >
-      <PipelineBranch
-        :parent-fork-id="fork.id"
-        :branch-index="branchIndex"
-        :step-ids="branchStepIds"
-      />
 
       <BButtonGroup class="btn-group">
         <button role="button" class="btn btn-sm btn-danger d-inline-block"
@@ -43,9 +38,17 @@ const fork = computed(() => store.getFork(forkStepId))
           <AddToBranchStepDropDown :step="store.get(fork.id)" :branch-index="branchIndex" />
         </template>
       </BButtonGroup>
+
+      <div class="branch">
+        <PipelineBranch
+          :parent-fork-id="fork.id"
+          :branch-index="branchIndex"
+          :step-ids="branchStepIds"
+        />
+      </div>
     </div>
 
-    <button role="button" class="btn btn-sm btn-secondary" @click="store.addBranch(fork.id)">
+    <button role="button" class="btn btn-sm btn-secondary w-100" @click="store.addBranch(fork.id)">
       <span class="material-symbols-outlined">add</span> Branch
     </button>
   </div>
