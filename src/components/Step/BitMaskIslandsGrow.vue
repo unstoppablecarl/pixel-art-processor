@@ -73,6 +73,7 @@ const step = useStepHandler(stepId, {
 
       clusterRadius: 0,
       marchingGrowthPixelsPerIteration: 1,
+      perlinFactor: 0.2,
 
       activeTabIndex: 0,
       ...DEFAULT_ISLAND_VISIBILITY_CONFIG,
@@ -91,7 +92,7 @@ const step = useStepHandler(stepId, {
       [GrowType.DIRECTIONAL]: () => directionalGrower(),
       [GrowType.MARCHING]: () => marchingGrower(C.marchingGrowthPixelsPerIteration),
       [GrowType.WEIGHTED]: () => weightedRandomGrower(),
-      [GrowType.PERLIN]: () => perlinGrower(),
+      [GrowType.PERLIN]: () => perlinGrower(C.perlinFactor),
     }
     const grower = map[config.growType]()
 
@@ -170,6 +171,14 @@ const config = step.config
               <RecordSelect :options="GROW_TYPE_OPTIONS" v-model="config.growType" />
             </div>
           </div>
+
+          <template v-if="config.growType === GrowType.PERLIN">
+            <div>
+              <label class="form-label">Factor: {{ config.perlinFactor }}</label>
+              <input type="range" min="0" max="1" step="0.01" v-model.number="config.perlinFactor"
+                     class="form-range" />
+            </div>
+          </template>
 
           <template v-if="config.growType === GrowType.CLUSTER">
             <div>

@@ -1,8 +1,7 @@
 import type { BitMask } from '../../step-data-types/BitMask.ts'
 import type { IslandMutator } from '../IslandMutator.ts'
 
-export function perlinGrower(): IslandMutator {
-
+export function perlinGrower(factor = 0.2): IslandMutator {
   return (mask: BitMask, islands, island, expandable, claim): void => {
 
     // Score based on local gradient (smoother transitions grow more)
@@ -12,7 +11,7 @@ export function perlinGrower(): IslandMutator {
     }))
 
     scored.sort((a, b) => b.score - a.score)
-    const toGrow = Math.ceil(scored.length * 0.2)
+    const toGrow = Math.ceil(scored.length * factor)
 
     for (let i = 0; i < toGrow && i < scored.length; i++) {
       const { x, y } = scored[i]!.point
