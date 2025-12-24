@@ -1,0 +1,15 @@
+.popover-seed {
+
+  $color: lighten($border-color-dark, 10%);
+  --bs-popover-border-color: #{$color};
+  --bs-popover-border-radius: calc(var(--bs-border-radius) + 1px);
+
+  .popover-body {
+    --bs-popover-body-padding-x: 0;
+    --bs-popover-body-padding-y: 0;
+  }
+
+  .seed-input {
+    width: 6em;
+  }
+}

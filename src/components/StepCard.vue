@@ -8,6 +8,7 @@ import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import StepImg, { type StepImage } from './StepImg.vue'
 import AddAfterStepDropDown from './UI/AddAfterStepDropDown.vue'
+import SeedPopOver from './UI/SeedPopOver.vue'
 
 const store = useStepStore()
 
@@ -110,8 +111,10 @@ const header = computed(() => registry.get(step.def).displayName)
         >:::
         </span>
 
-        <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
-
+        <span class="btn-py mx-2 flex-grow-1 text-muted">
+          {{ dimensions }}
+        </span>
+        <SeedPopOver class="me-1" />
 
         <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">

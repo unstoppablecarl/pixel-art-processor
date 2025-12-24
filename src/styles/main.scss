@@ -2,7 +2,7 @@ $border-radius: 6px;
 $enable-shadows: true;
 @import '../../node_modules/bootstrap/scss/functions';
 
-$popover-bg: #fff;
+//$popover-bg: #fff;
 $accordion-icon-color-dark: #fff;
 $accordion-icon-active-color-dark: #fff;
 
@@ -33,6 +33,7 @@ $transition-fade: opacity .05s linear;
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/bootstrap-vue-next/src/styles/styles';
 @import 'bootstrap/buttons';
+@import 'bootstrap/popover';
 
 @import 'fonts/icons';
 @import 'step';
