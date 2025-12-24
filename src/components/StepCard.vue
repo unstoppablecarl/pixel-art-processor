@@ -17,6 +17,7 @@ const {
   images,
   footerTabs = false,
   showAddStepBtn = true,
+  showSeed = true,
   draggable = true,
   copyable = true,
 } = defineProps<{
@@ -27,6 +28,7 @@ const {
   showAddStepBtn?: boolean,
   draggable?: boolean,
   copyable?: boolean,
+  showSeed?: boolean,
 }>()
 
 const dimensions = computed(() => {
@@ -114,7 +116,7 @@ const header = computed(() => registry.get(step.def).displayName)
         <span class="btn-py mx-2 flex-grow-1 text-muted">
           {{ dimensions }}
         </span>
-        <SeedPopOver class="me-1" />
+        <SeedPopOver class="me-1" v-if="showSeed" v-model="step.seed" />
 
         <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">

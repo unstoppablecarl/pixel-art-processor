@@ -65,6 +65,7 @@ export type Step<T extends AnyStepContext> = {
   parentForkId: null | string,
   branchIndex: null | number,
   lastExecutionTimeMS: undefined | number,
+  seed: number,
 }
 
 export type SerializedStep = {
@@ -74,6 +75,7 @@ export type SerializedStep = {
   parentForkId: string | null,
   branchIndex: number | null,
   config: Config | undefined,
+  seed: number,
 }
 
 export enum StepType {
@@ -82,7 +84,7 @@ export enum StepType {
 }
 
 export type DeSerializedStep<T extends AnyStepContext = AnyStepContext> =
-  Pick<Step<T>, 'id' | 'def' | 'type' | 'parentForkId' | 'branchIndex' | 'config'>
+  Pick<Step<T>, 'id' | 'def' | 'type' | 'parentForkId' | 'branchIndex' | 'config' | 'seed'>
   & {}
 
 export type StepRef<T extends AnyStepContext = AnyStepContext> = ShallowReactive<Step<T>>
@@ -112,6 +114,7 @@ export function createNewStep<T extends AnyStepContext>(
     handler: undefined,
     loadSerialized: null,
     lastExecutionTimeMS: undefined,
+    seed: 0,
   } as Step<T>)
 }
 
@@ -123,6 +126,7 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
     parentForkId,
     branchIndex,
     config,
+    seed,
   } = stepData
 
   return shallowReactive({
@@ -137,6 +141,7 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
     config: undefined,
     isProcessing: false,
     validationErrors: [] as StepValidationError[],
+    seed,
     loadSerialized: {
       config,
     },
@@ -151,6 +156,7 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
     parentForkId,
     branchIndex,
     config,
+    seed,
   } = step
 
   // config is likely in loadSerialized property and will be loaded later
@@ -166,6 +172,7 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
     parentForkId,
     branchIndex,
     config: _config,
+    seed,
   } as SerializedStep
 }
 

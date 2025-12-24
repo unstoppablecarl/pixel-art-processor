@@ -513,8 +513,8 @@ export const useStepStore = defineStore('steps', () => {
       return newStep
     }
 
-    function get<T extends AnyStepContext>(stepId: string): StepRef<T> {
-      const step = stepsById[stepId] as StepRef<T>
+    function get(stepId: string): StepRef {
+      const step = stepsById[stepId]
       if (step === undefined) {
         throw new Error('Invalid step id: ' + stepId)
       }
@@ -606,7 +606,7 @@ export const useStepStore = defineStore('steps', () => {
       return get(prevStepId)
     }
 
-    function getNext<T extends AnyStepContext>(stepId: string): StepRef<T> | null {
+    function getNext(stepId: string): StepRef | null {
       const step = get(stepId)
 
       if (step.type === StepType.FORK) {
@@ -626,14 +626,14 @@ export const useStepStore = defineStore('steps', () => {
         }
 
         const nextStepId = branch[currentIndex + 1]!
-        return get<T>(nextStepId)
+        return get(nextStepId)
       }
 
       // Step is in main trunk
       if (isLast(stepId)) return null
       const currentIndex = rootStepIds.value.indexOf(stepId)
       const nextStepId = rootStepIds.value[currentIndex + 1]!
-      return get<T>(nextStepId)
+      return get(nextStepId)
     }
 
     function syncImageDataFromPrev(stepId: string) {
@@ -666,8 +666,8 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function _syncImageData<T extends AnyStepContext>(stepId: string, nextStepId: string) {
-      const currentStep = get<T>(stepId)
-      const nextStep = get<AnyStepContext>(nextStepId)
+      const currentStep = get(stepId)
+      const nextStep = get(nextStepId)
       logStepEvent(stepId, '_syncImageData', stepId, '->', nextStepId)
 
       if (nextStep === null) {
@@ -681,11 +681,7 @@ export const useStepStore = defineStore('steps', () => {
         return
       }
 
-      let newInputData = getHandler<T>(nextStep.id).prevOutputToInput(outputData)
-
-      // force refresh even if input is the same
-      nextStep.inputData = null
-      nextStep.inputData = newInputData
+      nextStep.inputData = getHandler<T>(nextStep.id).prevOutputToInput(outputData)
     }
 
     function loadPendingInput(stepId: string) {
@@ -719,7 +715,7 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function getHandler<T extends AnyStepContext>(stepId: string) {
-      const step = get<T>(stepId)
+      const step = get(stepId)
       if (!step.handler) {
         throw new Error('Step does not have handler yet')
       }
@@ -991,7 +987,7 @@ export const useStepStore = defineStore('steps', () => {
       step: Step<T>,
       handler: IStepHandler<T>
     } {
-      const step = get<T>(stepId)
+      const step = get(stepId) as StepRef<T>
 
       const handler = makeStepHandler<T>(step.def, handlerOptions)
       step.handler = handler
