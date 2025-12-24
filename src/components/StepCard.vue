@@ -20,6 +20,7 @@ const {
   showSeed = true,
   draggable = true,
   copyable = true,
+  showDimensions = true,
 } = defineProps<{
   step: AnyConfiguredStep
   showDimensions?: boolean,
@@ -89,11 +90,11 @@ const header = computed(() => registry.get(step.def).displayName)
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
-    <div class="step-header d-flex align-items-center">
-      <div class="flex-grow-1">
+    <div class="step-header hstack gap-1 align-items-center">
+      <div>
         {{ header }}
       </div>
-      <div class="execution-time flex-shrink-1" v-if="executionTime">
+      <div class="execution-time ms-auto" v-if="executionTime">
         <span class="material-symbols-outlined">timer</span>
         {{ executionTime }}s
       </div>
@@ -103,7 +104,7 @@ const header = computed(() => registry.get(step.def).displayName)
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
-      <div class="card-header px-2 d-flex align-items-center">
+      <div class="card-header px-2 hstack gap-1">
         <span
           v-if="draggable"
           role="button"
@@ -113,12 +114,11 @@ const header = computed(() => registry.get(step.def).displayName)
         >:::
         </span>
 
-        <span class="btn-py mx-2 flex-grow-1 text-muted">
+        <span class="btn-py text-muted me-auto ms-1" v-if="showDimensions">
           {{ dimensions }}
         </span>
-        <SeedPopOver class="me-1" v-if="showSeed" v-model="step.seed" />
-
-        <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
+        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="step.seed" />
+        <BButtonGroup size="sm" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>
           </button>

@@ -48,6 +48,7 @@ const config = step.config!
     :show-add-step-btn="false"
     :copyable="false"
     :draggable="false"
+    :show-seed="false"
   >
     <template #body>
       FORK

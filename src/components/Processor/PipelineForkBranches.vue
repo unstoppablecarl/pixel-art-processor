@@ -21,29 +21,34 @@ const fork = computed(() => store.getFork(forkStepId))
     <div
       v-for="(branchStepIds, branchIndex) in store.getBranches(fork.id)"
       :key="`${fork.id}-branch-${branchIndex}`"
-      class="fork-branch"
     >
-      <BButtonGroup class="btn-group px-2">
-        <button role="button" class="btn btn-sm btn-danger d-inline-block"
-                @click="store.removeBranch(fork.id, branchIndex)">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
-        <button role="button" class="btn btn-sm btn-secondary d-inline-block"
-                @click="store.duplicateBranch(fork.id, branchIndex)">
-          <span class="material-symbols-outlined">content_copy</span>
-        </button>
+      <div class="fork-branch-header">
+        Branch {{ branchIndex + 1 }}
+      </div>
 
-        <template v-if="!branchStepIds.length">
-          <AddToBranchStepDropDown :step="store.get(fork.id)" :branch-index="branchIndex" />
-        </template>
-      </BButtonGroup>
+      <div class="fork-branch-body">
+        <BButtonGroup class="fork-branch-controls">
+          <button role="button" class="btn btn-sm btn-danger d-inline-block"
+                  @click="store.removeBranch(fork.id, branchIndex)">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+          <button role="button" class="btn btn-sm btn-secondary d-inline-block"
+                  @click="store.duplicateBranch(fork.id, branchIndex)">
+            <span class="material-symbols-outlined">content_copy</span>
+          </button>
 
-      <div class="branch">
-        <PipelineBranch
-          :parent-fork-id="fork.id"
-          :branch-index="branchIndex"
-          :step-ids="branchStepIds"
-        />
+          <template v-if="!branchStepIds.length">
+            <AddToBranchStepDropDown :step="store.get(fork.id)" :branch-index="branchIndex" />
+          </template>
+        </BButtonGroup>
+
+        <div class="branch">
+          <PipelineBranch
+            :parent-fork-id="fork.id"
+            :branch-index="branchIndex"
+            :step-ids="branchStepIds"
+          />
+        </div>
       </div>
     </div>
 

@@ -22,13 +22,22 @@
 }
 
 
-.fork-branch {
+.fork-branch-header {
+  padding: 5px calc(var(--step-card-margin) + 1rem) 0;
+}
+
+.fork-branch-body {
   padding: 0.5rem;
   border: 1px solid rgba(255, 255, 255, 0.09);
   background: rgba(255, 255, 255, 0.015);
   border-radius: 4px;
   min-height: 100px;
   margin-bottom: 1rem;
+  margin-top: var(--step-card-margin);
+
+  .fork-branch-controls {
+    padding: 5px calc(var(--step-card-margin)) 0;
+  }
 }
 
 .branch {
@@ -99,7 +108,6 @@
     }
   }
 }
-
 
 .card-step {
   margin: var(--step-card-margin);
