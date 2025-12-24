@@ -31,7 +31,7 @@ export function addRandomInnerPoints(
   mask: BitMask,
   minDistance = 15,
   maxDistance = 30,
-  tries = 10,
+  tries = 30,
   borderBuffer = 2,
 ) {
 
@@ -49,6 +49,8 @@ export function addRandomInnerPoints(
 
   mask.each((x, y, value) => {
     if (value === 1) {
+      x -= borderBuffer
+      y -= borderBuffer
       p.addPoint([x, y])
       existingPoints.add(x, y)
     }
@@ -66,7 +68,6 @@ export function addRandomInnerPoints(
         x += borderBuffer
         y += borderBuffer
         points.push({ x, y })
-        mask.set(x, y, 1)
       }
     })
 

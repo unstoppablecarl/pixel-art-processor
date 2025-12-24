@@ -98,34 +98,53 @@ export const useStepStore = defineStore('steps', () => {
       invalidateAll()
     })
 
+    function _insertStep(step: StepRef, afterStepId?: string): void {
+      if (afterStepId === undefined) {
+        // No position specified, add to end of root
+        rootStepIds.value.push(step.id)
+        return
+      }
+
+      const afterStep = get(afterStepId)
+      if (afterStep.parentForkId !== null) {
+        // Insert into branch after afterStep
+        const branch = getBranch(afterStep.parentForkId, afterStep.branchIndex!)
+        const afterIndex = branch.stepIds.indexOf(afterStepId)
+
+        step.parentForkId = afterStep.parentForkId
+        step.branchIndex = afterStep.branchIndex
+        branch.stepIds.splice(afterIndex + 1, 0, step.id)
+      } else {
+        // Insert into root after afterStep
+        const afterIndex = rootStepIds.value.indexOf(afterStepId)
+        rootStepIds.value.splice(afterIndex + 1, 0, step.id)
+      }
+    }
+
     function add(def: string, afterStepId?: string): StepRef {
       stepRegistry.validateDef(def)
       idIncrement.value += 1
+
       const step = createNewStep(def, idIncrement.value)
-      rootStepIds.value.push(step.id)
       stepsById[step.id] = step
 
-      if (afterStepId !== undefined) {
-        moveAfter(step.id, afterStepId)
-      }
+      _insertStep(step, afterStepId)
 
       return step
     }
 
     function addFork(afterStepId?: string): StepRef {
       idIncrement.value += 1
+
       const step = createNewStep(STEP_FORK_DEF, idIncrement.value, StepType.FORK)
-      rootStepIds.value.push(step.id)
       stepsById[step.id] = step
 
-      forkBranches[step.id] = [{
+      forkBranches[step.id].push({
         seed: 0,
         stepIds: [],
-      }]
+      })
 
-      if (afterStepId !== undefined) {
-        moveAfter(step.id, afterStepId)
-      }
+      _insertStep(step, afterStepId)
 
       return step
     }
@@ -1125,7 +1144,6 @@ export const useStepStore = defineStore('steps', () => {
       get,
       duplicate,
       remove,
-      moveTo,
       moveAfter,
       rootSteps,
       getIndex,

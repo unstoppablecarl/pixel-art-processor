@@ -6,104 +6,106 @@ import { type Island, IslandType } from '../step-data-types/BitMask/Island.ts'
 import { parseColorData } from '../util/color.ts'
 import { Sketch } from '../util/Sketch.ts'
 
-export const DEFAULT_ISLAND_COLORS = {
-  showExpandableBoundsColor: 'rgba(0, 0, 255, 0.5)',
-  showExpandableColor: 'rgba(255, 0, 0, 0.5)',
-  showExpandableRespectingDistanceColor: 'rgba(0, 255, 0, 0.5)',
-  showIslandColor: 'rgba(255, 255, 255, 1)',
-  showAddedColor: 'rgba(100, 255, 100, 0.5)',
-  showRemovedColor: 'rgba(255, 0, 255, 0.5)',
+const ALL_FEATURES: FeatureDefinition[] = []
+
+type FeatureDefinition = {
+  label: string,
+  CONFIG: Record<string, unknown>
 }
 
-export const DEFAULT_ISLAND_VISIBILITY_CONFIG = {
-  showExpandableBounds: false,
-  showExpandable: false,
-  showExpandableRespectingDistance: false,
-  showIsland: true,
-  ...DEFAULT_ISLAND_COLORS,
+function create<T extends FeatureDefinition>(obj: T): T {
+  ALL_FEATURES.push(obj)
+  return obj
 }
 
-export enum IslandFilterType {
-  ALL,
-  INNER,
-  EDGE,
-}
-
-export const ISLAND_FILTERS: Record<IslandFilterType, { label: string, filter: (i: Island) => boolean }> = {
-  [IslandFilterType.ALL]: {
-    label: 'All',
-    filter: (i: Island) => true,
+export const DEFAULT_SHOW_ISLANDS = create({
+  label: 'Islands',
+  CONFIG: {
+    showIsland: true,
+    showIslandColor: 'rgba(255, 255, 255, 1)',
   },
-  [IslandFilterType.INNER]: {
-    label: 'Inner',
-    filter: (i: Island) => i.type === IslandType.NORMAL,
+})
+
+export const DEFAULT_EXPANDABLE = create({
+  label: 'Expandable',
+  CONFIG: {
+    showExpandable: false,
+    showExpandableColor: 'rgba(255, 0, 0, 0.5)',
   },
-  [IslandFilterType.EDGE]: {
-    label: 'Edge',
-    filter: (i: Island) => i.type !== IslandType.NORMAL,
+})
+
+export const DEFAULT_EXPANDABLE_BOUNDS = create({
+  label: 'Expandable Bounds',
+  CONFIG: {
+    showExpandableBounds: false,
+    showExpandableBoundsColor: 'rgba(0, 0, 255, 0.5)',
   },
+})
+
+export const DEFAULT_EXPANDABLE_RESPECTING_DISTANCE = create({
+  label: 'Expandable Dist.',
+  CONFIG: {
+    showExpandableRespectingDistance: false,
+    showExpandableRespectingDistanceColor: 'rgba(0, 255, 0, 0.5)',
+  },
+})
+
+export const DEFAULT_SHOW_ADDED = create({
+  label: 'Added',
+  CONFIG: {
+    showAdded: true,
+    showAddedColor: 'rgba(100, 255, 100, 0.5)',
+  },
+})
+
+export const DEFAULT_SHOW_REMOVED = create({
+  label: 'Removed',
+  CONFIG: {
+    showRemoved: true,
+    showRemovedColor: 'rgba(255, 0, 255, 0.5)',
+  },
+})
+
+type FeatureMeta = {
+  label: string
+  flagKey: string
+  colorKey: string
+  defaultColor: string
 }
 
-export const ISLAND_TYPES_FILTER_OPTIONS = Object.fromEntries(
-  Object.entries(ISLAND_FILTERS).map(([key, val]) => [key, val.label]),
-)
+function inferMetaFromFeature(feature: { label: string; CONFIG: Record<string, unknown> }): FeatureMeta {
+  const cfg = feature.CONFIG
+  const [flagKey, colorKey] = Object.keys(cfg)
 
-type ShowAddedAndRemoved = {
-  showAdded?: boolean,
-  showRemoved?: boolean,
-}
+  const defaultColor = String(cfg[colorKey as string])
 
-export function islandCheckboxColors<T extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG & ShowAddedAndRemoved>(config: T): CheckboxColorListItem[] {
-  const result = [
-    {
-      label: 'Islands',
-      active: toRef(config, 'showIsland'),
-      color: toRef(config, 'showIslandColor'),
-      defaultColor: DEFAULT_ISLAND_COLORS.showIslandColor,
-    },
-    {
-      label: 'Expandable',
-      active: toRef(config, 'showExpandable'),
-      color: toRef(config, 'showExpandableColor'),
-      defaultColor: DEFAULT_ISLAND_COLORS.showExpandableColor,
-    },
-    {
-      label: 'Expandable Dist.',
-      active: toRef(config, 'showExpandableRespectingDistance'),
-      color: toRef(config, 'showExpandableRespectingDistanceColor'),
-      defaultColor: DEFAULT_ISLAND_COLORS.showExpandableRespectingDistanceColor,
-    },
-    {
-      label: 'Expandable Bounds',
-      active: toRef(config, 'showExpandableBounds') as Ref<boolean>,
-      color: toRef(config, 'showExpandableBoundsColor'),
-      defaultColor: DEFAULT_ISLAND_COLORS.showExpandableBoundsColor,
-    },
-  ]
-
-  if (config.showAdded !== undefined) {
-    result.push({
-      label: 'Added',
-      active: toRef(config, 'showAdded') as Ref<boolean>,
-      color: toRef(config, 'showAddedColor'),
-      defaultColor: DEFAULT_ISLAND_COLORS.showAddedColor,
-    })
+  return {
+    label: feature.label,
+    flagKey: flagKey as string,
+    colorKey: colorKey as string,
+    defaultColor,
   }
-
-  if (config.showRemoved !== undefined) {
-    result.push({
-      label: 'Removed',
-      active: toRef(config, 'showRemoved') as Ref<boolean>,
-      color: toRef(config, 'showRemovedColor'),
-      defaultColor: DEFAULT_ISLAND_COLORS.showRemovedColor,
-    })
-  }
-  return result
 }
 
-export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_CONFIG & {
+const FEATURE_REGISTRY: FeatureMeta[] = ALL_FEATURES.map(inferMetaFromFeature)
+const DEFAULT_ISLAND_VISIBILITY_CONFIG = Object.assign({}, ...ALL_FEATURES.map((f) => f.CONFIG))
+
+export function islandCheckboxColors<T extends Record<string, unknown>>(
+  config: T,
+): CheckboxColorListItem[] {
+  return FEATURE_REGISTRY
+    .filter((meta) => meta.flagKey in config && meta.colorKey in config)
+    .map((meta) => ({
+      label: meta.label,
+      active: toRef(config as Record<string, any>, meta.flagKey) as Ref<boolean>,
+      color: toRef(config as Record<string, any>, meta.colorKey),
+      defaultColor: meta.defaultColor,
+    }))
+}
+
+export function sketchIslandVisuals<C extends Partial<typeof DEFAULT_ISLAND_VISIBILITY_CONFIG> & {
   minDistance?: number
-} & ShowAddedAndRemoved>(
+}>(
   mask: BitMask,
   config: C,
   filteredIslands: Island[],
@@ -152,3 +154,28 @@ export function sketchIslandVisuals<C extends typeof DEFAULT_ISLAND_VISIBILITY_C
 
   return sketch
 }
+
+export enum IslandFilterType {
+  ALL,
+  INNER,
+  EDGE,
+}
+
+export const ISLAND_FILTERS: Record<IslandFilterType, { label: string, filter: (i: Island) => boolean }> = {
+  [IslandFilterType.ALL]: {
+    label: 'All',
+    filter: (i: Island) => true,
+  },
+  [IslandFilterType.INNER]: {
+    label: 'Inner',
+    filter: (i: Island) => i.type === IslandType.NORMAL,
+  },
+  [IslandFilterType.EDGE]: {
+    label: 'Edge',
+    filter: (i: Island) => i.type !== IslandType.NORMAL,
+  },
+}
+
+export const ISLAND_TYPES_FILTER_OPTIONS = Object.fromEntries(
+  Object.entries(ISLAND_FILTERS).map(([key, val]) => [key, val.label]),
+)

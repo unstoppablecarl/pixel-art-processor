@@ -13,9 +13,14 @@ export const STEP_META: StepMeta = {
 import { BTab, BTabs } from 'bootstrap-vue-next'
 import { reactive } from 'vue'
 import {
-  DEFAULT_ISLAND_VISIBILITY_CONFIG,
-  ISLAND_FILTERS, ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
-  IslandFilterType, sketchIslandVisuals,
+  DEFAULT_SHOW_ADDED,
+  DEFAULT_SHOW_ISLANDS,
+  DEFAULT_SHOW_REMOVED,
+  ISLAND_FILTERS,
+  ISLAND_TYPES_FILTER_OPTIONS,
+  islandCheckboxColors,
+  IslandFilterType,
+  sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
 import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
@@ -63,7 +68,9 @@ const step = useStepHandler(stepId, {
       },
 
       activeTabIndex: 0,
-      ...DEFAULT_ISLAND_VISIBILITY_CONFIG,
+      ...DEFAULT_SHOW_ISLANDS.CONFIG,
+      ...DEFAULT_SHOW_ADDED.CONFIG,
+      ...DEFAULT_SHOW_REMOVED.CONFIG,
     })
   },
   run({ config, inputData }) {

@@ -13,7 +13,7 @@ export const STEP_META: StepMeta = {
 import { BTab, BTabs } from 'bootstrap-vue-next'
 import { reactive } from 'vue'
 import {
-  DEFAULT_ISLAND_VISIBILITY_CONFIG,
+  DEFAULT_SHOW_ISLANDS, DEFAULT_SHOW_REMOVED,
   ISLAND_FILTERS,
   ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
@@ -65,8 +65,9 @@ const step = useStepHandler(stepId, {
       weightedFactor: 1,
 
       activeTabIndex: 0,
-      ...DEFAULT_ISLAND_VISIBILITY_CONFIG,
-      showRemoved: false,
+
+      ...DEFAULT_SHOW_ISLANDS.CONFIG,
+      ...DEFAULT_SHOW_REMOVED.CONFIG,
     })
   },
   run({ config, inputData }) {

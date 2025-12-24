@@ -13,10 +13,16 @@ export const STEP_META: StepMeta = {
 import { BTab, BTabs } from 'bootstrap-vue-next'
 import { reactive } from 'vue'
 import {
-  DEFAULT_ISLAND_VISIBILITY_CONFIG,
+  DEFAULT_EXPANDABLE,
+  DEFAULT_EXPANDABLE_BOUNDS,
+  DEFAULT_EXPANDABLE_RESPECTING_DISTANCE,
+  DEFAULT_SHOW_ADDED,
+  DEFAULT_SHOW_ISLANDS,
   ISLAND_FILTERS,
-  ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
-  IslandFilterType, sketchIslandVisuals,
+  ISLAND_TYPES_FILTER_OPTIONS,
+  islandCheckboxColors,
+  IslandFilterType,
+  sketchIslandVisuals,
 } from '../../lib/generators/island-ui.ts'
 import { mutateIslands, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
 import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
@@ -76,8 +82,11 @@ const step = useStepHandler(stepId, {
       perlinFactor: 0.2,
 
       activeTabIndex: 0,
-      ...DEFAULT_ISLAND_VISIBILITY_CONFIG,
-      showAdded: false,
+      ...DEFAULT_SHOW_ISLANDS.CONFIG,
+      ...DEFAULT_EXPANDABLE.CONFIG,
+      ...DEFAULT_SHOW_ADDED.CONFIG,
+      ...DEFAULT_EXPANDABLE_BOUNDS.CONFIG,
+      ...DEFAULT_EXPANDABLE_RESPECTING_DISTANCE.CONFIG,
     })
   },
   run({ config, inputData }) {
