@@ -87,7 +87,14 @@ const header = computed(() => registry.get(step.def).displayName)
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
     <div class="step-header d-flex align-items-center">
-      {{ header }}
+      <div class="flex-grow-1">
+        {{ header }}
+      </div>
+      <div class="flex-shrink-1">
+        <small class="" v-if="executionTime">
+          {{ executionTime }}s
+        </small>
+      </div>
     </div>
     <div :class="{
       'card card-step': true,
@@ -106,9 +113,7 @@ const header = computed(() => registry.get(step.def).displayName)
 
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
 
-        <span class="badge badge-dark" v-if="executionTime">
-          {{ executionTime }}s
-        </span>
+
         <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>

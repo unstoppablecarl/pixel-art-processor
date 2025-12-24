@@ -71,7 +71,7 @@
 
   // drop preview
   &.drop-zone {
-    border-radius: calc(var(--bs-border-radius) + var(--step-card-margin));
+    border-radius: calc(var(--bs-border-radius));
     background-color: #f0f9ff;
 
     .step-header {
@@ -91,7 +91,7 @@
   }
 
   .step-header {
-    padding: 0 calc(var(--step-card-margin) + 0.5rem)
+    padding: 5px calc(var(--step-card-margin) + 0.5rem) 0;
   }
 }
 
