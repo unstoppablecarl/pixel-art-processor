@@ -29,6 +29,7 @@
   "devDependencies": {
     "@floating-ui/vue": "^1.1.9",
     "@types/node": "^24.10.0",
+    "@types/poisson-disk-sampling": "^2.2.4",
     "@types/tinycolor2": "^1.4.6",
     "@vitejs/plugin-vue": "^6.0.1",
     "@vue/test-utils": "^2.4.6",

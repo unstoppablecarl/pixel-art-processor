@@ -1,4 +1,5 @@
 import type { BoundsLike } from '../data/Bounds.ts'
+import type { Point } from '../step-data-types/BaseDataStructure.ts'
 
 export class Sketch {
   readonly canvas: HTMLCanvasElement
@@ -33,6 +34,13 @@ export class Sketch {
 
   putImageData(imageData: ImageData) {
     this.ctx.putImageData(imageData, 0, 0)
+  }
+
+  setPixels(points: Point[], color: string) {
+    for (let i = 0; i < points.length; i++) {
+      const { x, y } = points[i]
+      this.setPixel(x, y, color)
+    }
   }
 
   setPixel(x: number, y: number, color: string) {
