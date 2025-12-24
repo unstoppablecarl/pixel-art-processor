@@ -133,9 +133,10 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
     },
 
     serializeConfig(config: RC): SerializedConfig {
+      const unwrapped = deepUnwrap(config)
       return {
-        ...config,
-        ...this.serializeConfigKeys(deepUnwrap(config)),
+        ...unwrapped,
+        ...this.serializeConfigKeys(unwrapped),
       } as SerializedConfig
     },
 
