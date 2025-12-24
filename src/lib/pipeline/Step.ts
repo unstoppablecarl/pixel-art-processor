@@ -64,6 +64,7 @@ export type Step<T extends AnyStepContext> = {
   type: StepType,
   parentForkId: null | string,
   branchIndex: null | number,
+  lastExecutionTimeMS: undefined | number,
 }
 
 export type SerializedStep = {
@@ -110,6 +111,7 @@ export function createNewStep<T extends AnyStepContext>(
     config: undefined,
     handler: undefined,
     loadSerialized: null,
+    lastExecutionTimeMS: undefined,
   } as Step<T>)
 }
 

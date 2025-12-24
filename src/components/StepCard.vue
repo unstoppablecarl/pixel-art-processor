@@ -3,6 +3,7 @@ import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
+import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import StepImg, { type StepImage } from './StepImg.vue'
@@ -73,11 +74,20 @@ const invalidInputType = computed(() => {
 const validationErrors = computed(() => {
   return step.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
 })
+
+const executionTime = computed(() => {
+  if (step.lastExecutionTimeMS === undefined) return
+  return (step.lastExecutionTimeMS / 1000).toFixed(2)
+})
+
+const registry = useStepRegistry()
+const header = computed(() => registry.get(step.def).displayName)
+
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
-    <div class="step-header">
-      <slot name="header"></slot>
+    <div class="step-header d-flex align-items-center">
+      {{ header }}
     </div>
     <div :class="{
       'card card-step': true,
@@ -93,7 +103,12 @@ const validationErrors = computed(() => {
           @pointerdown.stop
         >:::
         </span>
+
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
+
+        <span class="badge badge-dark" v-if="executionTime">
+          {{ executionTime }}s
+        </span>
         <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>

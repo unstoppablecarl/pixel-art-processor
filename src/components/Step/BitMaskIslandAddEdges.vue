@@ -108,9 +108,6 @@ const computedSize = computed(() => config.size.value)
 </script>
 <template>
   <StepCard :step="step">
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <div>
         <RangeSlider

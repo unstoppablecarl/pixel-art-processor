@@ -49,9 +49,6 @@ const config = step.config
 </script>
 <template>
   <StepCard :step="step">
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <RangeBandSlider
         v-model:minValue="config.minDistance "

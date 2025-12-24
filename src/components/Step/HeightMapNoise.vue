@@ -74,9 +74,6 @@ const config = step.config
     :step="step"
     :images="images"
   >
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <div>
         <div class="form-check">

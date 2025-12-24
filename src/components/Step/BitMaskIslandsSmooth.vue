@@ -100,9 +100,6 @@ const config = step.config
 </script>
 <template>
   <StepCard :step="step" :footer-tabs="true">
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"

@@ -49,9 +49,6 @@ const config = step.config!
     :copyable="false"
     :draggable="false"
   >
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #body>
       FORK
     </template>

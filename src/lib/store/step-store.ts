@@ -936,37 +936,52 @@ export const useStepStore = defineStore('steps', () => {
       setStepValidationErrors(stepId, errors)
     }
 
-    function resolveStep<T extends AnyStepContext>(stepId: string, inputData: T['Input'] | null, run: StepRunner<T>) {
+    async function resolveStep<T extends AnyStepContext>(stepId: string, inputData: T['Input'] | null, run: StepRunner<T>) {
 
       const step = get(stepId) as Step<T>
       step.isProcessing = true
 
-      inputData ??= null
+      const startTime = performance.now()
 
-      const inputTypeErrors = validateInputDataFromPrev(step.id)
-      if (inputTypeErrors.length) {
-        inputData = null
+      try {
+        inputData ??= null
+
+        const inputTypeErrors = validateInputDataFromPrev(step.id)
+        if (inputTypeErrors.length) {
+          inputData = null
+        }
+        if (inputData) {
+          inputData = inputData.copy()
+        }
+
+        prng.reset()
+
+        // runner can be async or not
+        const result = await run({ config: step.config, inputData })
+
+        const duration = performance.now() - startTime
+
+        let { outputData, preview, validationErrors } = parseStepRunnerResult(step, result)
+
+        logStepEvent(stepId, 'resolveStep', {
+          outputData,
+          preview,
+          validationErrors,
+          durationMs: duration.toFixed(2),
+        })
+
+        step.outputData = copyStepDataOrNull(outputData)
+        step.outputPreview = preview
+        step.validationErrors = [
+          ...inputTypeErrors,
+          ...validationErrors,
+        ]
+        step.lastExecutionTimeMS = duration
+
+        syncImageDataToNext(stepId)
+      } finally {
+        step.isProcessing = false
       }
-      if (inputData) {
-        inputData = inputData.copy()
-      }
-
-      prng.reset()
-
-      const result = run({ config: step.config, inputData })
-
-      let { outputData, preview, validationErrors } = parseStepRunnerResult<T>(step, result)
-
-      logStepEvent(stepId, 'updateStep', { outputData, preview, validationErrors })
-      step.outputData = copyStepDataOrNull(outputData)
-      step.outputPreview = preview
-      step.validationErrors = [
-        ...inputTypeErrors,
-        ...validationErrors,
-      ]
-      step.isProcessing = false
-
-      syncImageDataToNext(stepId)
     }
 
     function registerStep<T extends AnyStepContext>(

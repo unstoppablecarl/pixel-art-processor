@@ -41,9 +41,6 @@ const config = step.config
 </script>
 <template>
   <StepCard :step="step">
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <div>
         <label class="form-label">Strength: {{ config.normalMapStrength.toFixed(1) }}</label>

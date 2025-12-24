@@ -190,7 +190,7 @@ export type StepRunnerRaw<
 > = ({ config, inputData }: {
   config: RC,
   inputData: Input | null
-}) => StepRunnerOutput<Output>
+}) => StepRunnerOutput<Output> | Promise<StepRunnerOutput<Output>>
 
 export type StepRunnerOutput<Output> = null |
   undefined | {

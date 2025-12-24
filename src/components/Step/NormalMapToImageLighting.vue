@@ -96,9 +96,6 @@ const config = step.config
     :images="images"
     :show-dimensions="true"
   >
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <h6>
         Light Direction

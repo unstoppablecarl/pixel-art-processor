@@ -50,9 +50,6 @@ const config = step.config
 </script>
 <template>
   <StepCard :step="step">
-    <template #header>
-      {{ STEP_META.displayName }}
-    </template>
     <template #footer>
       <div class="form-check">
         <input class="form-check-input" type="checkbox" value="" id="fromCenter"
