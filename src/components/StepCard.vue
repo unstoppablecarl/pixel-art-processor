@@ -84,7 +84,7 @@ const validationErrors = computed(() => {
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
-      <div class="card-header px-2 d-flex">
+      <div class="card-header px-2 d-flex align-items-center">
         <span
           v-if="draggable"
           role="button"
@@ -95,16 +95,16 @@ const validationErrors = computed(() => {
         </span>
         <span class="btn-py mx-2 flex-grow-1 text-muted text-end">{{ dimensions }}</span>
         <BButtonGroup size="sm" aria-label="" class="step-header-buttons">
-          <button role="button" class="btn btn-danger" @click="remove">
+          <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>
           </button>
 
-          <button v-if="copyable" role="button" class="btn btn-secondary" @click="store.duplicate(step.id)">
+          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicate(step.id)">
             <span class="material-symbols-outlined">content_copy</span>
           </button>
 
           <slot name="add-step">
-            <AddAfterStepDropDown v-if="showAddStepBtn" :step-id="step.id" />
+            <AddAfterStepDropDown v-if="showAddStepBtn" :step-id="step.id" size="sm" />
           </slot>
         </BButtonGroup>
       </div>
