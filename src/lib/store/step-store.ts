@@ -490,7 +490,7 @@ export const useStepStore = defineStore('steps', () => {
         newStep = add(step.def)
       }
 
-      newStep.config = step.handler!.copyConfig(step.config)
+      newStep.loadSerialized = { config: step.handler!.serializeConfig(step.config) }
 
       if (step.parentForkId) {
         // Move within branch
