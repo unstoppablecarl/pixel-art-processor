@@ -119,7 +119,10 @@ const validationErrors = computed(() => {
         </slot>
       </div>
 
-      <div :class="{'card-footer': true, 'card-footer-tabs': footerTabs}">
+      <div :class="{
+        'card-footer': true,
+        'card-footer-tabs': footerTabs
+      }">
         <div class="pt-2 pb-3 step-validation-errors-container" v-for="error in step.validationErrors">
           <component :is="error.component" :error="error" />
         </div>
