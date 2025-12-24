@@ -66,3 +66,9 @@ export function objectsAreEqual(obj1: any, obj2: any, maxDepth = 400, currentDep
 
   return true
 }
+
+export function arrayRemove<T>(array: T[], value: T): void {
+  const index = array.indexOf(value)
+  if (index === -1) return
+  array.splice(index, 1)
+}

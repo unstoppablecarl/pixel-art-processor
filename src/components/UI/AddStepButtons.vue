@@ -12,7 +12,7 @@ function add(def: string) {
 }
 
 function addFork() {
-  stepStore.addFork(STEP_FORK_DEF, 2)
+  stepStore.addFork()
 }
 </script>
 <template>

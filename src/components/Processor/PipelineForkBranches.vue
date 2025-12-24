@@ -19,7 +19,7 @@ const fork = computed(() => store.getFork(forkStepId))
 <template>
   <div class="fork-branches">
     <div
-      v-for="(branchStepIds, branchIndex) in store.getBranches(fork.id)"
+      v-for="({stepIds: branchStepIds}, branchIndex) in store.getBranches(fork.id)"
       :key="`${fork.id}-branch-${branchIndex}`"
     >
       <div class="fork-branch-header">

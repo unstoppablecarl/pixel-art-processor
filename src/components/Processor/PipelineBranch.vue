@@ -89,7 +89,7 @@ onMounted(() => {
         />
       </template>
     </template>
-    <div v-else class="empty-branch-placeholder">
+    <div v-else-if="parentForkId" class="empty-branch-placeholder">
       Drop Here
     </div>
   </div>

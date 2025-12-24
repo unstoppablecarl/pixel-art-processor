@@ -83,6 +83,7 @@ export function useStepHandler<
   const defaultWatcherTargets = [
     step.config,
     () => step.inputData,
+    () => step.seed,
   ]
 
   const watcherTargets = handler.watcher(step as ConfiguredStep<T>, defaultWatcherTargets)
