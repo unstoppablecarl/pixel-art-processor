@@ -90,10 +90,9 @@ const header = computed(() => registry.get(step.def).displayName)
       <div class="flex-grow-1">
         {{ header }}
       </div>
-      <div class="flex-shrink-1">
-        <small class="" v-if="executionTime">
-          {{ executionTime }}s
-        </small>
+      <div class="execution-time flex-shrink-1" v-if="executionTime">
+        <span class="material-symbols-outlined">timer</span>
+        {{ executionTime }}s
       </div>
     </div>
     <div :class="{

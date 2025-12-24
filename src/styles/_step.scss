@@ -92,6 +92,11 @@
 
   .step-header {
     padding: 5px calc(var(--step-card-margin) + 0.5rem) 0;
+
+    .execution-time {
+      font-size: 0.875em;
+      opacity: 0.6;
+    }
   }
 }
 
