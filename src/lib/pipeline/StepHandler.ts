@@ -25,9 +25,7 @@ type StepHandlerOptional =
   | 'deserializeConfigKeys'
   | 'configKeyAdapters'
 
-type StepHandlerOptionsExclude = 'copyConfig'
-
-export type StepHandlerOptions<T extends AnyStepContext> = Omit<Optional<IStepHandler<T>, StepHandlerOptional>, StepHandlerOptionsExclude>
+export type StepHandlerOptions<T extends AnyStepContext> = Optional<IStepHandler<T>, StepHandlerOptional>
 
 export type ConfigKeyAdapters<
   C extends Config = Config,
@@ -57,9 +55,6 @@ export interface IStepHandler<T extends AnyStepContext> {
 
   // convert config from storage
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
-
-  // make a copy of the config
-  copyConfig(config: T['C']): T['C'],
 
   // prepare input data when changed
   prevOutputToInput(outputData: StepDataTypeInstance | null): T['Input'] | null,
@@ -138,11 +133,6 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
         ...unwrapped,
         ...this.serializeConfigKeys(unwrapped),
       } as SerializedConfig
-    },
-
-    copyConfig(config: RC) {
-      const serialized = this.serializeConfig(config)
-      return this.deserializeConfig(serialized)
     },
 
     loadConfig(config: RC, serializedConfig: SerializedConfig): void {
