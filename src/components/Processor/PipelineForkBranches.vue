@@ -17,14 +17,13 @@ const fork = computed(() => store.getFork(forkStepId))
 
 </script>
 <template>
-  <div>
+  <div class="fork-branches">
     <div
       v-for="(branchStepIds, branchIndex) in store.getBranches(fork.id)"
       :key="`${fork.id}-branch-${branchIndex}`"
       class="fork-branch"
     >
-
-      <BButtonGroup class="btn-group">
+      <BButtonGroup class="btn-group px-2">
         <button role="button" class="btn btn-sm btn-danger d-inline-block"
                 @click="store.removeBranch(fork.id, branchIndex)">
           <span class="material-symbols-outlined">delete</span>
@@ -48,7 +47,7 @@ const fork = computed(() => store.getFork(forkStepId))
       </div>
     </div>
 
-    <button role="button" class="btn btn-sm btn-secondary w-100" @click="store.addBranch(fork.id)">
+    <button role="button" class="btn btn-sm btn-secondary" @click="store.addBranch(fork.id)">
       <span class="material-symbols-outlined">add</span> Branch
     </button>
   </div>

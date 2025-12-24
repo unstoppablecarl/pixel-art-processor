@@ -20,6 +20,7 @@ const {
 const allSteps = computed(() => {
   if (!stepIds.length) {
     return {
+      normalStepIds: [],
       steps: [],
       fork: null,
     }
@@ -39,6 +40,7 @@ const allSteps = computed(() => {
   }
 
   return {
+    normalStepIds,
     steps: normalStepIds.map(id => store.get(id)),
     fork,
   }
@@ -51,8 +53,13 @@ onMounted(() => {
 
   dragAndDrop({
     parent: branchDragContainer.value,
-    getValues: () => stepIds,
+    getValues: () => allSteps.value.normalStepIds,
     setValues: (newOrder) => {
+      const fork = allSteps.value.fork
+      if (fork) {
+        newOrder = [...newOrder, fork.id]
+      }
+
       if (parentForkId === null) {
         store.setRootStepIds(newOrder)
       } else {
@@ -65,6 +72,7 @@ onMounted(() => {
       draggingClass: 'step-dragging',
       dropZoneClass: 'drop-zone',
       dragPlaceholderClass: 'drag-placeholder',
+      dropZoneParentClass: 'drop-zone-parent',
     },
   })
 })
@@ -72,13 +80,18 @@ onMounted(() => {
 </script>
 <template>
   <div ref="branchDragContainer" class="processor-branch">
-    <template v-for="{ def, id } in allSteps.steps" :key="id">
-      <component
-        :is="store.defToComponent(def)"
-        :step-id="id"
-        class="step"
-      />
+    <template v-if="allSteps.steps.length">
+      <template v-for="{ def, id } in allSteps.steps" :key="id">
+        <component
+          :is="store.defToComponent(def)"
+          :step-id="id"
+          class="step"
+        />
+      </template>
     </template>
+    <div v-else class="empty-branch-placeholder">
+      Drop Here
+    </div>
   </div>
   <template v-if="allSteps.fork">
     <component

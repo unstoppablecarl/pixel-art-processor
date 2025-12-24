@@ -142,7 +142,6 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
 }
 
 export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<Step<T>>): SerializedStep => {
-
   const {
     id,
     def,
@@ -152,13 +151,19 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
     config,
   } = step
 
+  // config is likely in loadSerialized property and will be loaded later
+  let _config = config
+  if (_config !== undefined) {
+    _config = step.handler!.serializeConfig(_config as Config)
+  }
+
   return {
     id,
     def,
     type,
     parentForkId,
     branchIndex,
-    config: step.handler!.serializeConfig(config as Config),
+    config: _config,
   } as SerializedStep
 }
 
