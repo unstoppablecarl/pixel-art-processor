@@ -6,6 +6,7 @@
     height: var(--bs-thumb-size);
     display: flex;
     align-items: center;
+    margin-top: 3px;
   }
 
   .track {
@@ -68,4 +69,8 @@
   .min-input, .max-input {
     width: 100px;
   }
+}
+
+.range-label {
+  font-size: $label-font-size;
 }

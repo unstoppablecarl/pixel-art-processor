@@ -30,6 +30,8 @@ $toast-background-color: rgba(var(--bs-body-bg-rgb), 1);
 $navbar-dark-color: #d14d27;
 $transition-fade: opacity .05s linear;
 
+$label-font-size: 0.875em;
+
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/bootstrap-vue-next/src/styles/styles';
 @import 'bootstrap/buttons';
@@ -46,9 +48,8 @@ body {
 }
 
 .form-label, .form-check-label {
-  font-size: 0.875em;
+  font-size: $label-font-size;
 }
-
 
 .overflow {
   overflow-x: auto;

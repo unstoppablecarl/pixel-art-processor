@@ -10,6 +10,8 @@ import {
   watch,
   type WritableComputedRef,
 } from 'vue'
+import OptionalToolTip from './OptionalToolTip.vue'
+import RangeLabel from './Range/RangeLabel.vue'
 import type { RangeSliderConfig } from './RangeSlider.ts'
 
 const {
@@ -25,9 +27,11 @@ const {
   canBeNegative = false,
   canResetDefaults = true,
   defaults,
+  toolTip,
 } = defineProps<{
   id: string,
   label: string,
+  toolTip?: string,
 
   value: number,
   min?: number,
@@ -167,13 +171,19 @@ const settingsVisible = ref(false)
 function toggleSettings() {
   settingsVisible.value = !settingsVisible.value
 }
+
+const preparedValue = computed(() => Number(value.value).toFixed(decimals))
 </script>
 <template>
   <div>
-    <div class="d-flex">
-      <span class="flex-grow-1">{{ label }} {{ Number(value).toFixed(decimals) }}</span>
+    <div class="hstack">
+      <OptionalToolTip :tool-tip="toolTip">
+        <template #target>
+          <RangeLabel :label="label" :value="preparedValue" />
+        </template>
+      </OptionalToolTip>
 
-      <div class="">
+      <div class="ms-auto">
         <div class="badge badge-dark">
           <span class="text-muted text-uppercase">
             range:

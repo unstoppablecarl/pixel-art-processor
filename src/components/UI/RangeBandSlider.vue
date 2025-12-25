@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
+import OptionalToolTip from './OptionalToolTip.vue'
+import RangeLabel from './Range/RangeLabel.vue'
 
 interface DualRangeProps {
   min?: number
@@ -7,12 +9,13 @@ interface DualRangeProps {
   step?: number
   minValue?: number
   maxValue?: number
-  label?: string
+  label: string
   showInputs?: boolean
   showOutput?: boolean
   prefix?: string
   suffix?: string
   id?: string
+  toolTip?: string,
 }
 
 interface RangeChangeEvent {
@@ -32,6 +35,7 @@ const props = withDefaults(defineProps<DualRangeProps>(), {
   prefix: '',
   suffix: '',
   id: 'dual-range',
+  toolTip: '',
 })
 
 const emit = defineEmits<{
@@ -65,8 +69,6 @@ const filledStyle = computed(() => {
   return {
     left: `${minPos.value}%`,
     width: `${maxPos.value - minPos.value}%`,
-    // left: `calc(${minPos.value}% + 0.5rem)`,
-    // width: `calc(${maxPos.value - minPos.value}% - 0.5rem)`,
   }
 })
 
@@ -227,13 +229,20 @@ const onDragEnd = (): void => {
   document.removeEventListener('touchmove', onDrag)
   document.removeEventListener('touchend', onDragEnd)
 }
+const preparedValue = computed(() => `${props.minValue}-${props.maxValue}`)
+
 </script>
 <template>
   <div class="range-container position-relative mb-3">
-    <div class="d-flex">
+    <div class="hstack">
 
-      <label v-if="label" class="form-label flex-grow-1">{{ label }} {{ minValue }}-{{ maxValue }}</label>
-      <div class="">
+      <OptionalToolTip :tool-tip="toolTip">
+        <template #target>
+          <RangeLabel :label="label" :value="preparedValue" />
+        </template>
+      </OptionalToolTip>
+
+      <div class="ms-auto">
         <div class="badge badge-dark">
           <span class="text-muted text-uppercase">
             range:
