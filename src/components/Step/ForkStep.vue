@@ -14,12 +14,10 @@ export const STEP_META: StepMeta = {
 import { reactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
 const CONFIG_DEFAULTS = {
-  count: 1,
 }
 
 const step = useStepHandler(stepId, {
@@ -40,7 +38,6 @@ const step = useStepHandler(stepId, {
   },
 })
 
-const config = step.config!
 </script>
 <template>
   <StepCard
@@ -48,20 +45,12 @@ const config = step.config!
     :show-add-step-btn="false"
     :copyable="false"
     :draggable="false"
-    :show-seed="false"
   >
     <template #body>
       FORK
     </template>
     <template #footer>
-      <RangeSlider
-        :id="`${stepId}-count`"
-        label="Count"
-        v-model:value="config.count"
-        :min="0"
-        :max="100"
-        :step="1"
-      />
+
     </template>
   </StepCard>
 </template>
