@@ -10,6 +10,7 @@ export type PointValue<T> = Point & {
   value: T
 }
 
+export type PointFilter = (x: number, y: number) => boolean
 export type PointValueFilter<T> = (x: number, y: number, value: T) => boolean
 export type PointValueInspector<T> = (x: number, y: number, value: T) => void
 
@@ -94,6 +95,23 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   inBounds(x: number, y: number): boolean {
     return x >= 0 && x < this.width && y >= 0 && y < this.height
+  }
+
+  isWithinBorder(
+    x: number,
+    y: number,
+    borderThickness: number = 1,
+  ): boolean {
+    return (x < borderThickness) ||
+      (x >= this.width - borderThickness) ||
+      (y < borderThickness) ||
+      (y >= this.height - borderThickness)
+  }
+
+  borderToBounds(
+    borderThickness: number = 1,
+  ): Bounds {
+    return new Bounds(borderThickness, this.width - borderThickness, borderThickness, this.height - borderThickness)
   }
 
   generateImageData(valueToColor: (value: T) => RGBA): ImageData {

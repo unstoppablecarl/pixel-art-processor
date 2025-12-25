@@ -1,4 +1,4 @@
-import { Bounds, type BoundsLike } from '../data/Bounds.ts'
+import { type BoundsLike } from '../data/Bounds.ts'
 import { eachImageDataPixel, type RGBA, updateImageData } from '../util/ImageData.ts'
 import { BaseDataStructure, CARDINAL_DIRECTIONS, type Point } from './BaseDataStructure.ts'
 import { Island, IslandType } from './BitMask/Island.ts'
@@ -241,23 +241,6 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     maxX += 1
     maxY += 1
     return { minX, maxX, minY, maxY }
-  }
-
-  isWithinBorder(
-    x: number,
-    y: number,
-    borderThickness: number = 1,
-  ): boolean {
-    return (x < borderThickness) ||
-      (x >= this.width - borderThickness) ||
-      (y < borderThickness) ||
-      (y >= this.height - borderThickness)
-  }
-
-  borderToBounds(
-    borderThickness: number = 1,
-  ): Bounds {
-    return new Bounds(borderThickness, this.width - borderThickness, borderThickness, this.height - borderThickness)
   }
 
   adjacentSum(x: number, y: number): number {
