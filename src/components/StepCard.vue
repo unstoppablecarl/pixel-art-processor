@@ -15,7 +15,6 @@ const store = useStepStore()
 const {
   step,
   images,
-  footerTabs = false,
   showAddStepBtn = true,
   showSeed = true,
   draggable = true,
@@ -25,7 +24,6 @@ const {
   step: AnyConfiguredStep
   showDimensions?: boolean,
   images?: StepImage[],
-  footerTabs?: boolean,
   showAddStepBtn?: boolean,
   draggable?: boolean,
   copyable?: boolean,
@@ -143,11 +141,8 @@ const header = computed(() => registry.get(step.def).displayName)
         </slot>
       </div>
 
-      <div :class="{
-        'card-footer': true,
-        'card-footer-tabs': footerTabs
-      }">
-        <div class="pt-2 pb-3 step-validation-errors-container" v-for="error in step.validationErrors">
+      <div class="card-footer">
+        <div class="section" v-for="error in step.validationErrors">
           <component :is="error.component" :error="error" />
         </div>
         <slot name="footer"></slot>

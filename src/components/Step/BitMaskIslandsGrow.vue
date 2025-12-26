@@ -141,7 +141,7 @@ const config = step.config
 
 </script>
 <template>
-  <StepCard :step="step" :footer-tabs="true">
+  <StepCard :step="step">
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"

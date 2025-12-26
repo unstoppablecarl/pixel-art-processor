@@ -2,8 +2,8 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'mask_image',
-  displayName: 'Mask Image',
+  def: 'bitmask_from_image',
+  displayName: 'BitMask: Image',
   inputDataTypes: [],
   outputDataType: BitMask,
 }
@@ -61,7 +61,7 @@ const step = useStepHandler(stepId, {
   <StepCard
     :step="step"
     :images="[{
-      label: 'Mask Input',
+      label: 'BitMaskFromImage Input',
       imageData: step.config.maskImageData
     }]"
     :show-dimensions="true"

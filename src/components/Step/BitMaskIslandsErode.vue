@@ -62,7 +62,7 @@ const step = useStepHandler(stepId, {
         ...ITERATION_DEFAULTS,
       },
 
-      weightedFactor: 1,
+      weightedFactor: 0.5,
 
       activeTabIndex: 0,
 
@@ -114,7 +114,7 @@ const config = step.config
 
 </script>
 <template>
-  <StepCard :step="step" :footer-tabs="true">
+  <StepCard :step="step">
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"

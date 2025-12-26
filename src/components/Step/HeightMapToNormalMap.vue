@@ -15,6 +15,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import StepCard from '../StepCard.vue'
+import RangeSlider from '../UI/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -42,10 +43,15 @@ const config = step.config
 <template>
   <StepCard :step="step">
     <template #footer>
-      <div>
-        <label class="form-label">Strength: {{ config.normalMapStrength.toFixed(1) }}</label>
-        <input type="range" min="0.1" max="20" step="0.1" v-model.number="config.normalMapStrength"
-               class="form-range" />
+      <div class="section">
+        <RangeSlider
+          :id="`${stepId}-normalMapStrength`"
+          label="Strength"
+          v-model:value="config.normalMapStrength"
+          :min="0"
+          :max="20"
+          :step="0.1"
+        />
       </div>
     </template>
   </StepCard>

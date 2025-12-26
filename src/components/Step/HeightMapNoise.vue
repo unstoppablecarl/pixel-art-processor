@@ -16,6 +16,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import StepCard from '../StepCard.vue'
+import RangeSlider from '../UI/RangeSlider.vue'
 
 const store = useStepStore()
 
@@ -75,42 +76,54 @@ const config = step.config
     :images="images"
   >
     <template #footer>
-      <div>
-        <div class="form-check">
-          <input type="checkbox" class="form-check-input" id="noiseEnabled"
-                 v-model="config.enabled" />
-          <label class="form-check-label" for="noiseEnabled">Enabled</label>
-        </div>
-      </div>
-      <div>
-        <label class="form-label">Seed: {{ config.seed }}</label>
-        <input type="range" min="0" max="100" step="1" v-model.number="config.seed"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Amplitude: {{ config.amplitude.toFixed(1) }}</label>
-        <input type="range" min="0.1" max="2" step="0.1" v-model.number="config.amplitude"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Frequency: {{ config.frequency.toFixed(2) }}</label>
-        <input type="range" min="0.001" max="1" step="0.001" v-model.number="config.frequency"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Octaves: {{ config.octaves }}</label>
-        <input type="range" min="1" max="12" step="1" v-model.number="config.octaves"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Gain: {{ config.gain }}</label>
-        <input type="range" min="0.1" max="1" step="0.05" v-model.number="config.gain"
-               class="form-range" />
-      </div>
-      <div>
-        <label class="form-label">Lacunarity: {{ config.lacunarity }}</label>
-        <input type="range" min="1.5" max="3" step="0.05" v-model.number="config.lacunarity"
-               class="form-range" />
+      <div class="section">
+
+        <RangeSlider
+          :id="`${stepId}-amplitude`"
+          label="Amplitude"
+          :decimals="1"
+          v-model:value="config.amplitude"
+          :min="0.1"
+          :max="2"
+          :step="0.1"
+        />
+
+        <RangeSlider
+          :id="`${stepId}-frequency`"
+          label="Frequency"
+          :decimals="2"
+          v-model:value="config.frequency"
+          :min="0.001"
+          :max="1"
+          :step="0.001"
+        />
+
+        <RangeSlider
+          :id="`${stepId}-octaves`"
+          label="Octaves"
+          v-model:value="config.octaves"
+          :min="1"
+          :max="12"
+          :step="1"
+        />
+
+        <RangeSlider
+          :id="`${stepId}-gain`"
+          label="Gain"
+          v-model:value="config.gain"
+          :min="0.1"
+          :max="12"
+          :step="0.05"
+        />
+
+        <RangeSlider
+          :id="`${stepId}-lacunarity`"
+          label="Lacunarity"
+          v-model:value="config.lacunarity"
+          :min="1.5"
+          :max="3"
+          :step="0.05"
+        />
       </div>
     </template>
   </StepCard>

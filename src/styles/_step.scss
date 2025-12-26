@@ -142,25 +142,23 @@
     // flat version of cap color without alpha
     --bs-card-cap-bg: rgb(39, 43, 47);
 
-    &.card-footer-tabs {
-      padding: 0.5rem 0 0 0;
 
-      .nav-tabs {
-        padding: 0 0.5rem;
+    .nav-tabs {
+      padding: 0.5rem 0.5rem 0;
 
-        --bs-nav-link-padding-y: calc(0.5rem * 0.66);
-        --bs-nav-link-padding-x: calc(1rem * 0.66);
+      --bs-nav-link-padding-y: calc(0.5rem * 0.66);
+      --bs-nav-link-padding-x: calc(1rem * 0.66);
 
-        .nav-link.active,
-        .nav-item.show .nav-link {
-          background: linear-gradient(
-                          0deg,
-                          rgba(var(--bs-primary-rgb), 0) 0%,
-                          rgba(var(--bs-primary-rgb), 0.15) 100%
-          );
-          border-bottom-color: var(--bs-card-cap-bg);
-        }
+      .nav-link.active,
+      .nav-item.show .nav-link {
+        background: linear-gradient(
+                        0deg,
+                        rgba(var(--bs-primary-rgb), 0) 0%,
+                        rgba(var(--bs-primary-rgb), 0.15) 100%
+        );
+        border-bottom-color: var(--bs-card-cap-bg);
       }
+
     }
   }
 

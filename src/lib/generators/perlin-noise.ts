@@ -2,7 +2,6 @@ import { createNoise2D } from 'simplex-noise'
 import { prng } from '../util/prng.ts'
 
 export interface GenerateNoiseOptions {
-  enabled: boolean;
   seed?: number;
   amplitude: number;
   frequency: number;
@@ -12,7 +11,6 @@ export interface GenerateNoiseOptions {
 }
 
 export const GENERATE_NOISE_DEFAULTS = {
-  enabled: true,
   seed: 0,
   amplitude: 1,
   frequency: 0.04,

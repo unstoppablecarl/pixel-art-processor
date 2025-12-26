@@ -175,7 +175,7 @@ function toggleSettings() {
 const preparedValue = computed(() => Number(value.value).toFixed(decimals))
 </script>
 <template>
-  <div>
+  <div class="range-container">
     <div class="hstack">
       <OptionalToolTip :tool-tip="toolTip">
         <template #target>
@@ -295,20 +295,23 @@ const preparedValue = computed(() => Number(value.value).toFixed(decimals))
       </div>
     </BCollapse>
 
-    <input
-      :id="id"
-      type="range"
-      class="form-range"
-      :step="step"
-      :min="min"
-      :max="max"
-      :value="value"
-      @input="handleInput"
-      @mousedown="startDragging"
-      @mouseup="stopDragging"
-      @touchstart="startDragging"
-      @touchend="stopDragging"
-    />
+    <div class="slider-wrapper">
+
+      <input
+        :id="id"
+        type="range"
+        class="form-range"
+        :step="step"
+        :min="min"
+        :max="max"
+        :value="value"
+        @input="handleInput"
+        @mousedown="startDragging"
+        @mouseup="stopDragging"
+        @touchstart="startDragging"
+        @touchend="stopDragging"
+      />
+    </div>
 
   </div>
 </template>

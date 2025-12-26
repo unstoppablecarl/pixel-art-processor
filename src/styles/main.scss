@@ -57,6 +57,10 @@ body {
   font-size: $label-font-size;
 }
 
+.form-check-item {
+  margin-bottom: var(--form-row-margin-bottom);
+}
+
 .overflow {
   overflow-x: auto;
   overflow-y: auto;

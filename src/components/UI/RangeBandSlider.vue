@@ -233,7 +233,7 @@ const preparedValue = computed(() => `${props.minValue}-${props.maxValue}`)
 
 </script>
 <template>
-  <div class="range-container position-relative mb-3">
+  <div class="range-band-container position-relative">
     <div class="hstack">
 
       <OptionalToolTip :tool-tip="toolTip">
@@ -252,33 +252,36 @@ const preparedValue = computed(() => `${props.minValue}-${props.maxValue}`)
       </div>
 
     </div>
-    <div ref="sliderContainer" class="slider-container position-relative w-100">
-      <div ref="track" class="track position-relative">
-        <div
-          ref="filled"
-          class="filled position-absolute"
-          :style="filledStyle"
-          :class="{ 'no-transition': isDragging }"
-        ></div>
-        <div class="thumb-container">
+    <div class="slider-wrapper">
+
+      <div ref="sliderContainer" class="slider-container position-relative w-100">
+        <div ref="track" class="track position-relative">
           <div
-            ref="minThumb"
-            class="thumb min-thumb position-absolute"
-            :style="{ left: `${minPos}%` }"
-            @mousedown="onThumbMousedown($event, true)"
-            @touchstart="onThumbTouchstart($event, true)"
+            ref="filled"
+            class="filled position-absolute"
+            :style="filledStyle"
+            :class="{ 'no-transition': isDragging }"
           ></div>
-          <div
-            ref="maxThumb"
-            class="thumb max-thumb position-absolute"
-            :style="{ left: `${maxPos}%` }"
-            @mousedown="onThumbMousedown($event, false)"
-            @touchstart="onThumbTouchstart($event, false)"
-          ></div>
+          <div class="thumb-container">
+            <div
+              ref="minThumb"
+              class="thumb min-thumb position-absolute"
+              :style="{ left: `${minPos}%` }"
+              @mousedown="onThumbMousedown($event, true)"
+              @touchstart="onThumbTouchstart($event, true)"
+            ></div>
+            <div
+              ref="maxThumb"
+              class="thumb max-thumb position-absolute"
+              :style="{ left: `${maxPos}%` }"
+              @mousedown="onThumbMousedown($event, false)"
+              @touchstart="onThumbTouchstart($event, false)"
+            ></div>
+          </div>
         </div>
       </div>
     </div>
-    <!-- Value display (optional) -->
+
     <div v-if="showInputs" class="row g-2 mt-3">
       <div class="col-md-6">
         <label class="form-label" :for="`${id}-min-input`">Min:</label>

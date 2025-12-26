@@ -18,6 +18,7 @@ import { useStepStore } from '../../lib/store/step-store.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
+import RangeSlider from '../UI/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -97,24 +98,46 @@ const config = step.config
     :show-dimensions="true"
   >
     <template #footer>
-      <h6>
-        Light Direction
-      </h6>
-      <label class="form-label">X: {{ config.lightX.toFixed(1) }}</label>
-      <input type="range" min="-2" max="2" step="0.1" v-model.number="config.lightX" class="form-range" />
+      <div class="section">
+        <input ref="textureInputEl" type="file" accept="image/*" @change="handleTextureUpload" class="form-control" />
+      </div>
 
-      <label class="form-label">Y: {{ config.lightY.toFixed(1) }}</label>
-      <input type="range" min="-2" max="2" step="0.1" v-model.number="config.lightY" class="form-range" />
+      <div class="section">
+        <div class="section-heading">
+          Light Direction
+        </div>
 
-      <label class="form-label">Distance: {{ config.lightZ.toFixed(1) }}</label>
-      <input type="range" min="0.1" max="2" step="0.1" v-model.number="config.lightZ" class="form-range" />
+        <RangeSlider
+          :id="`${stepId}-lightX`"
+          label="X"
+          :decimals="1"
+          v-model:value="config.lightX"
+          :min="-2"
+          :max="2"
+          :step="0.1"
+        />
 
-      <h6>
-        Texture
-      </h6>
 
-      <input ref="textureInputEl" type="file" accept="image/*" @change="handleTextureUpload"
-             class="form-control" />
+        <RangeSlider
+          :id="`${stepId}-lightY`"
+          label="Y"
+          :decimals="1"
+          v-model:value="config.lightY"
+          :min="-2"
+          :max="2"
+          :step="0.1"
+        />
+
+        <RangeSlider
+          :id="`${stepId}-lightZ`"
+          label="Z"
+          :decimals="1"
+          v-model:value="config.lightZ"
+          :min="-2"
+          :max="2"
+          :step="0.1"
+        />
+      </div>
     </template>
   </StepCard>
 </template>
