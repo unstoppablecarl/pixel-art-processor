@@ -175,11 +175,20 @@
       border-top: var(--bs-card-border-width) solid var(--bs-card-border-color);
     }
 
-    .section-heading {
+    .section-heading-container {
+      padding: 0 0 var(--bs-card-cap-padding-y) 0;
+    }
+
+    .section-heading-text {
       color: #{rgba(color.mix($primary, #fff, 50%), 0.75)};
       text-transform: uppercase;
-      padding: 0 0 var(--bs-card-cap-padding-y) 0;
       font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .section-heading {
+      @extend .section-heading-container;
+      @extend .section-heading-text;
     }
   }
 }

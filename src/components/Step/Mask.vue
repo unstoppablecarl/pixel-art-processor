@@ -67,7 +67,9 @@ const step = useStepHandler(stepId, {
     :show-dimensions="true"
   >
     <template #footer>
-      <input ref="maskInputEl" type="file" accept="image/*" @change="handleFileUpload" class="form-control" />
+      <div class="section">
+        <input ref="maskInputEl" type="file" accept="image/*" @change="handleFileUpload" class="form-control" />
+      </div>
     </template>
   </StepCard>
 </template>

@@ -40,7 +40,8 @@ const CONFIG_DEFAULTS = {
   horizontalShuffleSeed: 0,
   verticalShuffleSeed: 0,
 
-  invert: false,
+  invertHorizontal: false,
+  invertVertical: false,
   minGapSize: 3,
   maxGapSize: 13,
   minChunkSize: 3,
@@ -76,7 +77,7 @@ const step = useStepHandler(stepId, {
     })
 
     verticalChunks.forEach((v, i) => {
-      if (!v === config.invert) {
+      if (!v === config.invertVertical) {
         mask.set(0, i, 1)
         mask.set(size.value - 1, i, 1)
       }
@@ -89,7 +90,7 @@ const step = useStepHandler(stepId, {
     })
 
     horizontalChunks.forEach((v, i) => {
-      if (!v === config.invert) {
+      if (!v !== config.invertHorizontal) {
         mask.set(i, 0, 1)
         mask.set(i, size.value - 1, 1)
       }
@@ -110,7 +111,7 @@ const computedSize = computed(() => config.size.value)
   <StepCard :step="step">
     <template #footer>
 
-      <div class="footer-section">
+      <div class="section">
 
         <RangeSlider
           :id="`${stepId}-size`"
@@ -121,56 +122,6 @@ const computedSize = computed(() => config.size.value)
           v-model:max="config.size.max"
           v-model:step="config.size.step"
         />
-
-      </div>
-      <div class="footer-section">
-        <div class="footer-section-heading">
-          Horizontal
-        </div>
-        <div class="form-check">
-          <input type="checkbox" class="form-check-input" v-model="config.invert" />
-          <label class="form-check-label">Invert</label>
-        </div>
-
-        <div class="mb-3">
-          <RangeSlider
-            :id="`${stepId}-horizontal-chunks`"
-            label="Horizontal Chunks"
-            :defaults="CONFIG_DEFAULTS.horizontalChunks"
-            v-model:value="config.horizontalChunks.value"
-            v-model:min="config.horizontalChunks.min"
-            v-model:max="config.horizontalChunks.max"
-            v-model:step="config.horizontalChunks.step"
-          />
-
-          <NumberInput
-            :id="`${stepId}-horizontal-chunks-shuffle`"
-            label="Shuffle Seed"
-            :step="1"
-            :min="0"
-            v-model="config.horizontalShuffleSeed"
-          />
-        </div>
-
-        <div class="mb-3">
-          <RangeSlider
-            :id="`${stepId}-vertical-chunks`"
-            label="Vertical Chunks"
-            :defaults="CONFIG_DEFAULTS.verticalChunks"
-            v-model:value="config.verticalChunks.value"
-            v-model:min="config.verticalChunks.min"
-            v-model:max="config.verticalChunks.max"
-            v-model:step="config.verticalChunks.step"
-          />
-
-          <NumberInput
-            :id="`${stepId}-vertical-chunks-shuffle`"
-            label="Shuffle Seed"
-            :step="1"
-            :min="0"
-            v-model="config.verticalShuffleSeed"
-          />
-        </div>
 
         <RangeBandSlider
           :id="`${stepId}-gap-size`"
@@ -199,6 +150,67 @@ const computedSize = computed(() => config.size.value)
           :step="1"
         />
 
+      </div>
+      <div class="section">
+        <div class="section-heading-container hstack">
+          <div class="section-heading-text">
+            Horizontal
+          </div>
+          <div class="form-check ms-auto">
+            <input type="checkbox" class="form-check-input" v-model="config.invertHorizontal" />
+            <label class="form-check-label">Invert</label>
+          </div>
+        </div>
+
+        <RangeSlider
+          :id="`${stepId}-horizontal-chunks`"
+          label="Horizontal Chunks"
+          :defaults="CONFIG_DEFAULTS.horizontalChunks"
+          v-model:value="config.horizontalChunks.value"
+          v-model:min="config.horizontalChunks.min"
+          v-model:max="config.horizontalChunks.max"
+          v-model:step="config.horizontalChunks.step"
+        />
+
+        <NumberInput
+          :id="`${stepId}-horizontal-chunks-shuffle`"
+          label="Shuffle Seed"
+          :step="1"
+          :min="0"
+          v-model="config.horizontalShuffleSeed"
+          input-width="50%"
+        />
+      </div>
+      <div class="section">
+        <div class="section-heading-container hstack">
+          <div class="section-heading-text">
+            Vertical
+          </div>
+          <div class="form-check ms-auto">
+            <input type="checkbox" class="form-check-input" v-model="config.invertVertical" />
+            <label class="form-check-label">Invert</label>
+          </div>
+        </div>
+
+        <RangeSlider
+          :id="`${stepId}-vertical-chunks`"
+          label="Vertical Chunks"
+          :defaults="CONFIG_DEFAULTS.verticalChunks"
+          v-model:value="config.verticalChunks.value"
+          v-model:min="config.verticalChunks.min"
+          v-model:max="config.verticalChunks.max"
+          v-model:step="config.verticalChunks.step"
+        />
+
+        <NumberInput
+          :id="`${stepId}-vertical-chunks-shuffle`"
+          label="Shuffle Seed"
+          :step="1"
+          :min="0"
+          v-model="config.verticalShuffleSeed"
+          input-width="50%"
+
+        />
       </div>
     </template>
   </StepCard>
