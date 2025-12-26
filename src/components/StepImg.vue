@@ -22,12 +22,12 @@ const {
 }>()
 
 const width = computed(() => {
-  const width = image.imageData?.width ?? image.placeholderWidth ?? 100
+  const width = image.imageData?.width ?? image.placeholderWidth ?? store.startStepOutputSize.width
   return width * store.imgScale
 })
 
 const height = computed(() => {
-  const height = image.imageData?.height ?? image.placeholderHeight ?? 100
+  const height = image.imageData?.height ?? image.placeholderHeight ?? store.startStepOutputSize.height
   return height * store.imgScale
 })
 
