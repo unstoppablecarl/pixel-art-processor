@@ -53,7 +53,7 @@ export const DEFAULT_EXPANDABLE_RESPECTING_DISTANCE = create({
 export const DEFAULT_SHOW_ADDED = create({
   label: 'Added',
   CONFIG: {
-    showAdded: true,
+    showAdded: false,
     showAddedColor: 'rgba(100, 255, 100, 0.5)',
   },
 })
@@ -61,7 +61,7 @@ export const DEFAULT_SHOW_ADDED = create({
 export const DEFAULT_SHOW_REMOVED = create({
   label: 'Removed',
   CONFIG: {
-    showRemoved: true,
+    showRemoved: false,
     showRemovedColor: 'rgba(255, 0, 255, 0.5)',
   },
 })
