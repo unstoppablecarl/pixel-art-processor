@@ -145,7 +145,7 @@
     }
 
     // flat version of cap color without alpha
-    --bs-card-cap-bg: $card-cap-bg-flat;
+    --bs-card-cap-bg: #{$card-cap-bg-flat};
 
     .nav-tabs {
       padding: 0.5rem 0.5rem 0;
@@ -162,7 +162,6 @@
         );
         border-bottom-color: var(--bs-card-cap-bg);
       }
-
     }
   }
 
