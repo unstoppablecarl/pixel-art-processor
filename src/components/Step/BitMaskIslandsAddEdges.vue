@@ -90,7 +90,7 @@ const step = useStepHandler(stepId, {
     })
 
     horizontalChunks.forEach((v, i) => {
-      if (!v !== config.invertHorizontal) {
+      if (!v === config.invertHorizontal) {
         mask.set(i, 0, 1)
         mask.set(i, size.value - 1, 1)
       }
