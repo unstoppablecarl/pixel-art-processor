@@ -2,8 +2,8 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'INNER_GLOW',
-  displayName: 'HeightMap Glow',
+  def: 'height_map_glow',
+  displayName: 'HeightMap: Glow',
   inputDataTypes: [BitMask],
   outputDataType: HeightMap,
 }

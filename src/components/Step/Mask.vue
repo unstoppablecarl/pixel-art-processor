@@ -2,8 +2,8 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'INPUT_MASK',
-  displayName: 'Input Mask Image',
+  def: 'mask_image',
+  displayName: 'Mask Image',
   inputDataTypes: [],
   outputDataType: BitMask,
 }

@@ -2,7 +2,7 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'normal_map_to_lighting',
+  def: 'normal_map_to_texture_lighting',
   displayName: 'NormalMap -> Texture Lighting',
   inputDataTypes: [NormalMap],
   outputDataType: PixelMap,

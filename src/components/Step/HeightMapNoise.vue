@@ -2,8 +2,8 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'SIMPLEX_NOISE',
-  displayName: 'HeightMap Noise',
+  def: 'height_map_noise',
+  displayName: 'HeightMap: Noise',
   inputDataTypes: [HeightMap],
   outputDataType: HeightMap,
 }
