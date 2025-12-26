@@ -51,6 +51,10 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     return Object.values(STEP_DEFINITIONS).filter(s => stepOutputTypeCompatibleWithInputTypes(currentStep.outputDataType, s.inputDataTypes))
   }
 
+  function toArray() {
+    return Object.values(STEP_DEFINITIONS)
+  }
+
   return {
     defineStep,
     defineSteps,
@@ -59,9 +63,8 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     validateDef,
     dataTypeRegistry,
     getStepsCompatibleWithOutput,
-    toArray() {
-      return Object.values(STEP_DEFINITIONS)
-    },
+    rootSteps: () => toArray().filter(s => s.inputDataTypes.length === 0),
+    toArray,
   }
 }
 

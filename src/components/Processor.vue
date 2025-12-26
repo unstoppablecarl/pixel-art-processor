@@ -4,7 +4,7 @@ import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
 import GridPatternPreview from './Processor/GridPatternPreview.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
-import AddStepButtons from './UI/AddStepButtons.vue'
+import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 
 const store = useStepStore()
 
@@ -27,7 +27,7 @@ watch(() => store.imgScale, () => {
       />
     </div>
     <div class="after-steps-container p-4" v-if="!store.rootSteps.length">
-      <AddStepButtons />
+      <AddRootStepButtons />
     </div>
     <GridPatternPreview />
   </div>
