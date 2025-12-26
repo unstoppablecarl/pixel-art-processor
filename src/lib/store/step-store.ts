@@ -47,7 +47,7 @@ type Branch = {
 export const useStepStore = defineStore('steps', () => {
 
     const stepRegistry = useStepRegistry()
-    const seed = ref(3)
+    const globalSeed = ref(3)
 
     const idIncrement = ref(0)
     const stepsById = reactive({}) as Reactive<Record<string, StepRef>>
@@ -57,8 +57,12 @@ export const useStepStore = defineStore('steps', () => {
     const forkBranches = reactive({}) as Reactive<Record<string, Branch[]>>
     const imgScale = ref(4)
 
+    // key: stepId
+    // value: effective seed (globalSeed + step.seed + fork.seed + branch.seed)
+    const stepSeeds = reactive({}) as Reactive<Record<string, number>>
+
     function $reset() {
-      seed.value = 3
+      globalSeed.value = 3
       idIncrement.value = 0
       rootStepIds.value = []
       imgScale.value = 4
@@ -73,7 +77,7 @@ export const useStepStore = defineStore('steps', () => {
         imgScale: imgScale.value,
         stepsById: serializeSteps(stepsById),
         forkBranches: deepUnwrap(forkBranches),
-        seed: seed.value,
+        seed: globalSeed.value,
       }
     }
 
@@ -81,7 +85,7 @@ export const useStepStore = defineStore('steps', () => {
     function $restoreState(data: SerializedStepData) {
       idIncrement.value = data.idIncrement ?? 0
       rootStepIds.value = data.rootStepIds
-      seed.value = data.seed
+      globalSeed.value = data.seed
       imgScale.value = data.imgScale
 
       Object.values(data.stepsById)
@@ -93,8 +97,8 @@ export const useStepStore = defineStore('steps', () => {
       Object.assign(forkBranches, data.forkBranches ?? {})
     }
 
-    watch(seed, () => {
-      prng.setSeed(seed.value)
+    watch(globalSeed, () => {
+      prng.setSeed(globalSeed.value)
       invalidateAll()
     })
 
@@ -189,6 +193,20 @@ export const useStepStore = defineStore('steps', () => {
         throw new Error(`Invalid branch index: ${branchIndex} for forkId: ${forkId}`)
       }
       return branch
+    }
+
+    function setStepSeed(stepId: string, seed: number): void {
+      const step = get(stepId)
+      step.seed = seed
+      _invalidateFromStep(stepId)
+    }
+
+    function setBranchSeed(forkId: string, branchIndex: number, seed: number): void {
+      const branch = getBranch(forkId, branchIndex)
+      branch.seed = seed
+
+      if (!branch.stepIds.length) return
+      _invalidateFromStep(branch.stepIds[0])
     }
 
     function setBranchStepIds(forkId: string, branchIndex: number, newStepIds: string[]) {
@@ -362,7 +380,7 @@ export const useStepStore = defineStore('steps', () => {
 
       // Add new empty branch
       branches.push({
-        seed: 0,
+        seed: sourceBranch.seed,
         stepIds: [],
       })
 
@@ -871,6 +889,7 @@ export const useStepStore = defineStore('steps', () => {
     function _invalidateFromStep(stepId: string) {
       syncImageDataFromPrev(stepId)
       syncImageDataToNext(stepId)
+      invalidateStepFinalSeed(stepId)
 
       const step = get(stepId)
 
@@ -986,10 +1005,7 @@ export const useStepStore = defineStore('steps', () => {
           step.validationErrors = []
           step.lastExecutionTimeMS = 0
         } else {
-          let runnerSeed: number = seed.value + step.seed
-          if (step.parentForkId) {
-            runnerSeed += get(step.parentForkId).seed
-          }
+          let runnerSeed = stepSeeds[step.id]
           prng.setSeed(runnerSeed)
 
           // runner can be async or not
@@ -1133,6 +1149,24 @@ export const useStepStore = defineStore('steps', () => {
       }
     })
 
+    function invalidateStepFinalSeed(stepId: string) {
+      stepSeeds[stepId] = calculateSeed(stepId)
+    }
+
+    function calculateSeed(stepId: string) {
+      const step = get(stepId)
+
+      const stepSeed = step.seed
+      let forkSeed = 0
+      let branchSeed = 0
+
+      if (step.parentForkId) {
+        forkSeed = get(step.parentForkId).seed
+        branchSeed = getBranch(step.parentForkId, step.branchIndex!).seed
+      }
+      return globalSeed.value + stepSeed + forkSeed + branchSeed
+    }
+
     function getStepsAddableAfter(stepId: string) {
       const step = get(stepId)
       const steps = stepRegistry.getStepsCompatibleWithOutput(step.def)
@@ -1147,7 +1181,7 @@ export const useStepStore = defineStore('steps', () => {
       rootStepIds,
       stepsById,
       forkBranches,
-      seed,
+      globalSeed,
       startStepOutputSize,
       imgScale,
 
@@ -1162,8 +1196,11 @@ export const useStepStore = defineStore('steps', () => {
       getFork,
       addToBranch,
       getBranches,
+      getBranch,
+      setBranchSeed,
       getStepsAddableAfter,
       getAllBranchSteps,
+      setStepSeed,
       setRootStepIds,
       setBranchStepIds,
       addBranch,

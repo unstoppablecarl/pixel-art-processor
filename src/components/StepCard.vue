@@ -90,6 +90,13 @@ const header = computed(() => registry.get(step.def).displayName)
 function toggleMute() {
   step.muted = !step.muted
 }
+
+const stepSeed = computed({
+  get: () => step.seed,
+  set(value: number) {
+    store.setStepSeed(step.id, value)
+  },
+})
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
@@ -119,7 +126,7 @@ function toggleMute() {
         >:::
         </span>
 
-        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="step.seed" />
+        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="stepSeed" />
         <BButtonGroup size="sm" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>

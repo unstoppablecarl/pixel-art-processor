@@ -15,8 +15,8 @@ const stepStore = useStepStore()
       <form class="d-flex align-items-center ms-auto gap-3 flex-nowrap">
 
         <div class="form-group d-flex align-items-center gap-2 mb-0">
-          <label class="form-label form-label-sm mb-0 text-nowrap" for="seed">Global Seed</label>
-          <input type="number" id="seed" step="1" v-model.number="stepStore.seed"
+          <label class="form-label form-label-sm mb-0 text-nowrap" for="globalSeed">Global Seed</label>
+          <input type="number" id="globalSeed" step="1" v-model.number="stepStore.globalSeed"
                  class="form-control form-control-sm d-inline-block" style="width: 60px" />
 
         </div>
