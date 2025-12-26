@@ -18,16 +18,23 @@ const fork = computed(() => store.getFork(forkStepId))
 </script>
 <template>
   <div class="fork-branches">
+    <div class="fork-branch-header-spacer">
+      &nbsp;
+    </div>
+
     <div
       v-for="({stepIds: branchStepIds}, branchIndex) in store.getBranches(fork.id)"
       :key="`${fork.id}-branch-${branchIndex}`"
+      class="card card-fork-branch"
     >
-      <div class="fork-branch-header">
-        Branch {{ branchIndex + 1 }}
-      </div>
 
-      <div class="fork-branch-body">
+      <div class="card-header hstack">
+        <div class="me-auto pe-2">
+          Branch {{ branchIndex + 1 }}
+        </div>
+
         <BButtonGroup class="fork-branch-controls">
+
           <button role="button" class="btn btn-sm btn-danger d-inline-block"
                   @click="store.removeBranch(fork.id, branchIndex)">
             <span class="material-symbols-outlined">delete</span>
@@ -41,6 +48,9 @@ const fork = computed(() => store.getFork(forkStepId))
             <AddToBranchStepDropDown :step="store.get(fork.id)" :branch-index="branchIndex" />
           </template>
         </BButtonGroup>
+      </div>
+
+      <div class="card-body">
 
         <div class="branch">
           <PipelineBranch

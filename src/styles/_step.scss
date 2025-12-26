@@ -23,22 +23,24 @@
   padding-right: 20px;
 }
 
-
-.fork-branch-header {
-  padding: 5px calc(var(--step-card-margin) + 1rem) 0;
+.fork-branch-header-spacer {
+  padding: 5px 0 0 0;
 }
 
-.fork-branch-body {
-  padding: 0.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.015);
-  border-radius: 4px;
-  min-height: 100px;
-  margin-bottom: 1rem;
-  margin-top: var(--step-card-margin);
+.card {
+  --bs-card-border-color: rgba(255, 255, 255, 0.09);
 
-  .fork-branch-controls {
-    padding: 5px calc(var(--step-card-margin)) 0;
+  &.card-fork-branch {
+    background: rgba(255, 255, 255, 0.015);
+    margin-bottom: 1rem;
+
+    > .card-header {
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    > .card-body {
+      padding: var(--step-card-margin);
+    }
   }
 }
 
@@ -47,8 +49,11 @@
   flex-direction: row;
   align-items: flex-start;
   gap: 0.5rem;
-  padding: 0.5rem 0;
   min-height: 100px;
+
+  > .processor-branch {
+    width: 100%;
+  }
 }
 
 .empty-branch-placeholder {
@@ -56,8 +61,8 @@
   background: rgba(255, 255, 255, 0.015);
   border-radius: 4px;
   padding: 0.5rem;
-  margin-left: 0.5rem;
   min-height: 100px;
+  width: 100%;
 }
 
 .step {
@@ -140,8 +145,7 @@
     }
 
     // flat version of cap color without alpha
-    --bs-card-cap-bg: rgb(39, 43, 47);
-
+    --bs-card-cap-bg: $card-cap-bg-flat;
 
     .nav-tabs {
       padding: 0.5rem 0.5rem 0;
@@ -195,10 +199,3 @@
   margin: 0 calc(var(--step-padding) * 0.5);
   display: inline-block;
 }
-
-.step-header-buttons .dropdown > .btn {
-  // no idea why this dropdown doesn't set padding correctly for sm
-  --bs-btn-padding-x: 0.5rem;
-}
-
-

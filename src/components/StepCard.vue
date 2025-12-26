@@ -102,7 +102,8 @@ const header = computed(() => registry.get(step.def).displayName)
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
-      <div class="card-header px-2 hstack gap-1">
+
+      <div class="card-header hstack gap-1">
         <span
           v-if="draggable"
           role="button"
@@ -130,6 +131,7 @@ const header = computed(() => registry.get(step.def).displayName)
           </slot>
         </BButtonGroup>
       </div>
+
       <div class="card-body">
         <slot name="body">
           <StepImg

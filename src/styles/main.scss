@@ -32,6 +32,8 @@ $transition-fade: opacity .05s linear;
 
 $label-font-size: 0.875em;
 
+$card-cap-bg-flat: rgb(39, 43, 47);
+
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/bootstrap-vue-next/src/styles/styles';
 @import 'bootstrap/buttons';
