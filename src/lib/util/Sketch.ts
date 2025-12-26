@@ -23,6 +23,13 @@ export class Sketch {
     this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D
   }
 
+  fillRect(x: number, y: number, width: number, height: number, color: string) {
+    this.ctx.save()
+    this.ctx.fillStyle = color
+    this.ctx.fillRect(x, y, width, height)
+    this.ctx.restore()
+  }
+
   fillRectBounds(bounds: BoundsLike, color: string) {
     this.ctx.save()
     this.ctx.fillStyle = color
