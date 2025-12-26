@@ -58,7 +58,7 @@ const GROW_TYPE_OPTIONS: Record<GrowType, string> = {
 }
 
 const ITERATION_DEFAULTS = rangeSliderConfig({
-  min: 1,
+  min: 0,
   max: 50,
   value: 1,
 })

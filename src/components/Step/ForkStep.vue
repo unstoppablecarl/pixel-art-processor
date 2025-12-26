@@ -17,14 +17,10 @@ import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
-const CONFIG_DEFAULTS = {
-}
-
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
     return reactive({
-      ...CONFIG_DEFAULTS,
     })
   },
   run({ inputData }) {
@@ -45,6 +41,7 @@ const step = useStepHandler(stepId, {
     :show-add-step-btn="false"
     :copyable="false"
     :draggable="false"
+    :mutable="false"
   >
     <template #body>
       FORK

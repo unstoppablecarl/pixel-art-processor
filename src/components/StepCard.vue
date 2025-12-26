@@ -6,8 +6,8 @@ import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
-import StepImg, { type StepImage } from './StepImg.vue'
 import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
+import StepImg, { type StepImage } from './StepImg.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
 
 const store = useStepStore()
@@ -20,6 +20,7 @@ const {
   draggable = true,
   copyable = true,
   showDimensions = true,
+  mutable = true,
 } = defineProps<{
   step: AnyConfiguredStep
   showDimensions?: boolean,
@@ -28,6 +29,7 @@ const {
   draggable?: boolean,
   copyable?: boolean,
   showSeed?: boolean,
+  mutable?: boolean,
 }>()
 
 const dimensions = computed(() => {
@@ -85,6 +87,9 @@ const executionTime = computed(() => {
 const registry = useStepRegistry()
 const header = computed(() => registry.get(step.def).displayName)
 
+function toggleMute() {
+  step.muted = !step.muted
+}
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
@@ -120,6 +125,20 @@ const header = computed(() => registry.get(step.def).displayName)
         <BButtonGroup size="sm" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>
+          </button>
+
+          <button
+            v-if="mutable"
+            role="button"
+            :class="{
+              'btn btn-sm': true,
+              'active': step.muted,
+              'btn-secondary': !step.muted,
+              'btn-danger': step.muted
+            }"
+            @click="toggleMute"
+          >
+            <span class="material-symbols-outlined">{{ step.muted ? 'visibility_off' : 'visibility' }}</span>
           </button>
 
           <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicate(step.id)">

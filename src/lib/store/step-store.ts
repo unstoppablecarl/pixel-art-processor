@@ -979,33 +979,40 @@ export const useStepStore = defineStore('steps', () => {
           inputData = inputData.copy()
         }
 
-        let runnerSeed: number = seed.value + step.seed
-        if (step.parentForkId) {
-          runnerSeed += get(step.parentForkId).seed
+        if (step.muted) {
+          step.outputData = inputData
+          step.outputPreview = null
+          step.validationErrors = []
+          step.lastExecutionTimeMS = 0
+        } else {
+          let runnerSeed: number = seed.value + step.seed
+          if (step.parentForkId) {
+            runnerSeed += get(step.parentForkId).seed
+          }
+          prng.setSeed(runnerSeed)
+
+          // runner can be async or not
+          const result = await run({ config: step.config, inputData })
+
+          const duration = performance.now() - startTime
+
+          let { outputData, preview, validationErrors } = parseStepRunnerResult(step, result)
+
+          logStepEvent(stepId, 'resolveStep', {
+            outputData,
+            preview,
+            validationErrors,
+            durationMs: duration.toFixed(2),
+          })
+
+          step.outputData = copyStepDataOrNull(outputData)
+          step.outputPreview = preview
+          step.validationErrors = [
+            ...inputTypeErrors,
+            ...validationErrors,
+          ]
+          step.lastExecutionTimeMS = duration
         }
-        prng.setSeed(runnerSeed)
-
-        // runner can be async or not
-        const result = await run({ config: step.config, inputData })
-
-        const duration = performance.now() - startTime
-
-        let { outputData, preview, validationErrors } = parseStepRunnerResult(step, result)
-
-        logStepEvent(stepId, 'resolveStep', {
-          outputData,
-          preview,
-          validationErrors,
-          durationMs: duration.toFixed(2),
-        })
-
-        step.outputData = copyStepDataOrNull(outputData)
-        step.outputPreview = preview
-        step.validationErrors = [
-          ...inputTypeErrors,
-          ...validationErrors,
-        ]
-        step.lastExecutionTimeMS = duration
 
         syncImageDataToNext(stepId)
       } finally {
