@@ -12,7 +12,7 @@ function add(def: string) {
 
 </script>
 <template>
-  <h5>Add Step</h5>
+  <h5>Set Root Step</h5>
   <div v-for="step in steps" :key="step.def" class="pb-1">
     <button role="button" class="btn btn-secondary" @click="add(step.def)">{{ step.displayName }}</button>
   </div>

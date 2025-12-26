@@ -2,8 +2,8 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'bitmask_add_islands',
-  displayName: 'BitMask Add Islands',
+  def: 'bitmask_islands_add',
+  displayName: 'BitMask Islands: Add',
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
 }

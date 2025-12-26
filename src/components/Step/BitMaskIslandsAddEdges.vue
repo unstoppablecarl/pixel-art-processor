@@ -2,8 +2,8 @@
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
-  def: 'bitmask_island_edges',
-  displayName: 'BitMask Add Island Edges',
+  def: 'bitmask_islands_add_edges',
+  displayName: 'BitMask Islands: Add Edges',
   inputDataTypes: [],
   outputDataType: BitMask,
 }
@@ -109,7 +109,9 @@ const computedSize = computed(() => config.size.value)
 <template>
   <StepCard :step="step">
     <template #footer>
-      <div>
+
+      <div class="footer-section">
+
         <RangeSlider
           :id="`${stepId}-size`"
           label="Size"
@@ -120,6 +122,11 @@ const computedSize = computed(() => config.size.value)
           v-model:step="config.size.step"
         />
 
+      </div>
+      <div class="footer-section">
+        <div class="footer-section-heading">
+          Horizontal
+        </div>
         <div class="form-check">
           <input type="checkbox" class="form-check-input" v-model="config.invert" />
           <label class="form-check-label">Invert</label>
