@@ -1,7 +1,9 @@
 <script lang="ts">
+import { StepType } from '../../lib/pipeline/Step.ts'
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: StepMeta = {
+  type: StepType.NORMAL,
   def: 'bitmask_islands_smooth',
   displayName: 'BitMask Islands: Smooth',
   inputDataTypes: [BitMask],

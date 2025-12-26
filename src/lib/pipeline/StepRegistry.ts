@@ -4,10 +4,12 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
+import { StepType } from './Step.ts'
 import type { IStepHandler } from './StepHandler.ts'
 
 export type StepDefinition = {
   readonly def: string,
+  readonly type: StepType,
   readonly displayName: string,
   readonly component: Component,
 } & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
@@ -45,10 +47,20 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     get(def)
   }
 
+  function validateDefIsFork(def: string) {
+    if (!isFork(def)) {
+      throw new Error(`Def ${def} is not a fork`)
+    }
+  }
+
   function getStepsCompatibleWithOutput(def: string) {
     const currentStep = get(def)
 
     return Object.values(STEP_DEFINITIONS).filter(s => stepOutputTypeCompatibleWithInputTypes(currentStep.outputDataType, s.inputDataTypes))
+  }
+
+  function isFork(def: string): boolean {
+    return get(def).type === StepType.FORK
   }
 
   function toArray() {
@@ -60,6 +72,8 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     defineSteps,
     get,
     has,
+    isFork,
+    validateDefIsFork,
     validateDef,
     dataTypeRegistry,
     getStepsCompatibleWithOutput,

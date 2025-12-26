@@ -1,9 +1,10 @@
 <script lang="ts">
-import { STEP_FORK_DEF } from '../../lib/pipeline/Step.ts'
+import { STEP_FORK_DEF, StepType } from '../../lib/pipeline/Step.ts'
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 
 export const STEP_META: StepMeta = {
+  type: StepType.NORMAL,
   def: STEP_FORK_DEF,
   displayName: 'Fork',
   inputDataTypes: [PassThrough],

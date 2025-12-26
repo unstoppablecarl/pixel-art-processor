@@ -1,9 +1,11 @@
 import type { Component } from 'vue'
+import { StepType } from './Step.ts'
 import type { IStepHandler } from './StepHandler.ts'
 import type { StepDefinition } from './StepRegistry.ts'
 
 
 export type StepMeta = {
+  type: StepType,
   def: string,
   displayName: string,
 } & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
@@ -24,10 +26,11 @@ export function loadStepComponentsMetaData(globResults: Record<string, any>): St
   }
 
   return Object.entries(globResults).map(([path, module]) => {
-    const { def, displayName, inputDataTypes, outputDataType } = (module as any).STEP_META as StepDefinition
+    const { def, type, displayName, inputDataTypes, outputDataType } = (module as any).STEP_META as StepMeta
 
     return {
       def,
+      type,
       displayName,
       component: (module as any).default as Component,
       inputDataTypes,
@@ -53,6 +56,11 @@ function validateModule(path: string, module: any): ComponentError | void {
   if (!STEP_META.def) {
     errors.push(`STEP_META.def not set`)
   }
+
+  if (!STEP_META.type) {
+    errors.push(`STEP_META.type not set`)
+  }
+
   if (!STEP_META.displayName) {
     errors.push(`STEP_META.displayName not set`)
   }
