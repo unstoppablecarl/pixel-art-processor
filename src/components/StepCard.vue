@@ -104,6 +104,7 @@ function toggleMute() {
     </div>
     <div :class="{
       'card card-step': true,
+      'border-warning': step.muted,
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
@@ -129,9 +130,8 @@ function toggleMute() {
             role="button"
             :class="{
               'btn btn-sm': true,
-              'active': step.muted,
+              'active btn-warning': step.muted,
               'btn-secondary': !step.muted,
-              'btn-danger': step.muted
             }"
             @click="toggleMute"
           >
