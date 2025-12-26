@@ -37,6 +37,12 @@ $label-font-size: 0.875em;
 @import 'bootstrap/buttons';
 @import 'bootstrap/popover';
 
+
+[data-bs-theme='dark'],
+:root {
+  --form-row-margin-bottom: #{$card-cap-padding-y};
+}
+
 @import 'fonts/icons';
 @import 'step';
 @import 'color-indicator';

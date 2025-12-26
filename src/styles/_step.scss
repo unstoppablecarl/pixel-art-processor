@@ -1,3 +1,5 @@
+@use 'sass:color';
+
 [data-bs-theme='dark'],
 :root {
   --step-padding: 10px;
@@ -131,6 +133,8 @@
   }
 
   .card-footer {
+    padding: 0;
+
     .form-label {
       display: block;
     }
@@ -157,10 +161,25 @@
           border-bottom-color: var(--bs-card-cap-bg);
         }
       }
+    }
+  }
 
-      .step-validation-errors-container {
-        padding: 0.5rem;
-      }
+  .section {
+    padding: var(--bs-card-cap-padding-y) var(--bs-card-cap-padding-x);
+
+    &:last-child {
+      padding-bottom: var(--bs-card-cap-padding-y);
+    }
+
+    &:not(:first-child) {
+      border-top: var(--bs-card-border-width) solid var(--bs-card-border-color);
+    }
+
+    .section-heading {
+      color: #{rgba(color.mix($primary, #fff, 50%), 0.75)};
+      text-transform: uppercase;
+      padding: 0 0 var(--bs-card-cap-padding-y) 0;
+      font-size: 0.75rem;
     }
   }
 }

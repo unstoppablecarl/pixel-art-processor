@@ -1,4 +1,4 @@
-.range-container {
+.range-band-container {
   --bs-track-height: #{$form-range-track-height}; // 0.25rem
   --bs-thumb-size: #{$form-range-thumb-width}; // 1rem (matches Bootstrap default)
 
@@ -12,7 +12,7 @@
   .track {
     flex: 1;
     height: var(--bs-track-height);
-    background-color: $body-secondary-bg; // Light gray unfilled track
+    background-color: $form-range-track-bg;
     border-radius: var(--bs-track-height);
     position: relative;
   }
@@ -73,4 +73,15 @@
 
 .range-label {
   font-size: $label-font-size;
+}
+
+.slider-wrapper {
+  height: 1.5rem;
+}
+
+.range-band-container,
+.range-container {
+  &:not(:last-child) {
+    margin-bottom: var(--form-row-margin-bottom);
+  }
 }
