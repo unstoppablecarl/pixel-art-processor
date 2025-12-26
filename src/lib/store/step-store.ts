@@ -139,6 +139,7 @@ export const useStepStore = defineStore('steps', () => {
       const step = createNewStep(STEP_FORK_DEF, idIncrement.value, StepType.FORK)
       stepsById[step.id] = step
 
+      forkBranches[step.id] ??= []
       forkBranches[step.id].push({
         seed: 0,
         stepIds: [],
