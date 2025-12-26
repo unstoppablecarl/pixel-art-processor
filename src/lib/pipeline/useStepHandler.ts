@@ -81,7 +81,7 @@ export function useStepHandler<
   }
 
   const defaultWatcherTargets = [
-    () => step.config,
+    step.config,
     () => step.inputData,
     () => step.seed,
     () => step.muted,
