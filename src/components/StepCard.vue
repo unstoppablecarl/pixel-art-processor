@@ -7,8 +7,8 @@ import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import StepImg, { type StepImage } from './StepImg.vue'
-import AddAfterStepDropDown from './UIForms/AddAfterStepDropDown.vue'
-import SeedPopOver from './UIForms/SeedPopOver.vue'
+import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
+import SeedPopOver from './UI/SeedPopOver.vue'
 
 const store = useStepStore()
 

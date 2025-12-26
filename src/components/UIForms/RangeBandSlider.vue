@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import OptionalToolTip from './OptionalToolTip.vue'
+import OptionalToolTip from '../UI/OptionalToolTip.vue'
 import RangeLabel from './Range/RangeLabel.vue'
 
 interface DualRangeProps {

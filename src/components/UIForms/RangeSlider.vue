@@ -10,7 +10,7 @@ import {
   watch,
   type WritableComputedRef,
 } from 'vue'
-import OptionalToolTip from './OptionalToolTip.vue'
+import OptionalToolTip from '../UI/OptionalToolTip.vue'
 import RangeLabel from './Range/RangeLabel.vue'
 import type { RangeSliderConfig } from './RangeSlider.ts'
 

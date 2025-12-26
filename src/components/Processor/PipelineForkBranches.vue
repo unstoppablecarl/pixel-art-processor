@@ -2,7 +2,7 @@
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import { useStepStore } from '../../lib/store/step-store.ts'
-import AddToBranchStepDropDown from '../UIForms/AddToBranchStepDropDown.vue'
+import AddToBranchStepDropDown from './AddToBranchStepDropDown.vue'
 import PipelineBranch from './PipelineBranch.vue'
 
 const store = useStepStore()
