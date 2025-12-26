@@ -36,15 +36,13 @@ const step = useStepHandler(stepId, {
 
     noiseImageData.value = generateNoise(inputData.width, inputData.height, config)
 
-    if (config.enabled) {
-      const preview = mergeHeightMaps(inputData.toImageData(), noiseImageData.value, (a, b) => {
-        return (a + b) / 2
-      })
-      const output = HeightMap.fromImageData(preview)
-      return {
-        preview,
-        output,
-      }
+    const preview = mergeHeightMaps(inputData.toImageData(), noiseImageData.value, (a, b) => {
+      return (a + b) / 2
+    })
+    const output = HeightMap.fromImageData(preview)
+    return {
+      preview,
+      output,
     }
   },
 })
