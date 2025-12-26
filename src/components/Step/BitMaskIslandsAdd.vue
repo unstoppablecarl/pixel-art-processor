@@ -11,7 +11,7 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { shallowReactive } from 'vue'
-import { addRandomInnerPoints } from '../../lib/data/PointSet.ts'
+import { addPointsPoissonDisk } from '../../lib/generators/addPointsPoissonDisk.ts'
 import {
   DEFAULT_SHOW_ADDED,
   DEFAULT_SHOW_ISLANDS,
@@ -20,6 +20,7 @@ import {
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { parseColorData } from '../../lib/util/color.ts'
+import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList from '../UI/CheckboxColorList.vue'
@@ -38,6 +39,7 @@ const step = useStepHandler(stepId, {
       borderBuffer: 3,
       tries: 30,
       activeTabIndex: 0,
+      populationFactor: 1,
       ...DEFAULT_SHOW_ISLANDS.CONFIG,
       ...DEFAULT_SHOW_ADDED.CONFIG,
     })
@@ -48,17 +50,17 @@ const step = useStepHandler(stepId, {
     const mask = inputData as BitMask
     const C = config
 
-    const points = addRandomInnerPoints(
+    const points = addPointsPoissonDisk(
       mask,
       C.minDistance,
       C.maxDistance,
       C.tries,
-      C.borderBuffer,
-    )
-
-    points.forEach(({ x, y }) => {
-      mask.set(x, y, 1)
+    ).filter(({ x, y }) => {
+      if (mask.isWithinBorder(x, y, C.borderBuffer)) return false
+      return prng() <= C.populationFactor
     })
+
+    points.forEach(({ x, y }) => mask.set(x, y, 1))
 
     const sketch = new Sketch(mask.width, mask.height)
     const islandColor = parseColorData(C.showIslandColor)
@@ -120,6 +122,17 @@ const config = step.config
             :min="1"
             :max="100"
             :step="1"
+          />
+
+          <RangeSlider
+            :id="`${stepId}-population-factor`"
+            label="Pop Factor"
+            tool-tip="Percentage of points to keep"
+            v-model:value="config.populationFactor"
+            :decimals="2"
+            :min="0"
+            :max="1"
+            :step="0.01"
           />
 
         </BTab>
