@@ -1133,6 +1133,15 @@ export const useStepStore = defineStore('steps', () => {
       }
     })
 
+    function getStepsAddableAfter(stepId: string) {
+      const step = get(stepId)
+      const steps = stepRegistry.getStepsCompatibleWithOutput(step.def)
+      if (!isLast(stepId)) {
+        return steps.filter(s => s.def !== STEP_FORK_DEF)
+      }
+      return steps
+    }
+
     return {
       idIncrement,
       rootStepIds,
@@ -1146,12 +1155,14 @@ export const useStepStore = defineStore('steps', () => {
       $serializeState,
       $restoreState,
 
+      isLast,
       isFork,
       add,
       addFork,
       getFork,
       addToBranch,
       getBranches,
+      getStepsAddableAfter,
       getAllBranchSteps,
       setRootStepIds,
       setBranchStepIds,
