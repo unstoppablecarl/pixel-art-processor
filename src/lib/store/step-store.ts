@@ -1023,6 +1023,15 @@ export const useStepStore = defineStore('steps', () => {
       const step = get(stepId) as StepRef<T>
 
       const handler = makeStepHandler<T>(step.def, handlerOptions)
+
+      if (step.def === STEP_FORK_DEF) {
+        const prev = getPrev(step.id)
+        if (!prev) {
+          throw new Error('No prev step before fork')
+        }
+        handler.outputDataType = prev.handler!.outputDataType
+      }
+
       step.handler = handler
       if (step.config === undefined) {
         step.config = handler.config()

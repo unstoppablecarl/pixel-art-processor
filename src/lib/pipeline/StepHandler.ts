@@ -4,7 +4,7 @@ import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import { type AnyStepContext, type ReactiveConfigType, type Step, STEP_FORK_DEF, StepType } from './Step.ts'
+import { type AnyStepContext, type ReactiveConfigType, type Step, StepType } from './Step.ts'
 import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
@@ -86,10 +86,6 @@ export function makeStepHandler<T extends AnyStepContext>(def: string, options: 
 
   validateInputDataTypes(def, options.inputDataTypes)
   validateOutputDataTypes(def, options.outputDataType)
-
-  if (def === STEP_FORK_DEF) {
-
-  }
 
   const baseStepHandler = {
     inputDataTypes: options.inputDataTypes,
