@@ -19,7 +19,7 @@ const {
   showSeed = true,
   draggable = true,
   copyable = true,
-  showDimensions = true,
+  showDimensions = false,
   mutable = true,
 } = defineProps<{
   step: AnyConfiguredStep
@@ -118,9 +118,6 @@ function toggleMute() {
         >:::
         </span>
 
-        <span class="btn-py text-muted me-auto ms-1" v-if="showDimensions">
-          {{ dimensions }}
-        </span>
         <SeedPopOver class="ms-auto" v-if="showSeed" v-model="step.seed" />
         <BButtonGroup size="sm" class="step-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
@@ -163,6 +160,12 @@ function toggleMute() {
       </div>
 
       <div class="card-footer">
+
+        <div class="section" v-if="showDimensions && dimensions">
+          <span class="btn-sm-py text-muted me-auto ms-1">
+            Image Size: {{ dimensions }}
+          </span>
+        </div>
         <div class="section" v-for="error in step.validationErrors">
           <component :is="error.component" :error="error" />
         </div>

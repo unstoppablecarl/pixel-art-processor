@@ -108,7 +108,7 @@ const config = step.config!
 const computedSize = computed(() => config.size.value)
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :step="step" show-dimensions>
     <template #footer>
 
       <div class="section">
@@ -146,7 +146,7 @@ const computedSize = computed(() => config.size.value)
           label="Padding"
           v-model:value="config.padding"
           :min="0"
-          :max="config.size.value * 0.4"
+          :max="Math.floor(config.size.value * 0.4)"
           :step="1"
         />
 

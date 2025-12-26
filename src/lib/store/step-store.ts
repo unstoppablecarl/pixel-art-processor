@@ -980,6 +980,7 @@ export const useStepStore = defineStore('steps', () => {
         }
 
         if (step.muted) {
+          step.outputData = null
           step.outputData = inputData
           step.outputPreview = null
           step.validationErrors = []
@@ -1005,6 +1006,7 @@ export const useStepStore = defineStore('steps', () => {
             durationMs: duration.toFixed(2),
           })
 
+          step.outputData = null
           step.outputData = copyStepDataOrNull(outputData)
           step.outputPreview = preview
           step.validationErrors = [

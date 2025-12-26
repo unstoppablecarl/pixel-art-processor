@@ -64,7 +64,7 @@ const step = useStepHandler(stepId, {
       label: 'BitMaskFromImage Input',
       imageData: step.config.maskImageData
     }]"
-    :show-dimensions="true"
+    show-dimensions
   >
     <template #footer>
       <div class="section">
