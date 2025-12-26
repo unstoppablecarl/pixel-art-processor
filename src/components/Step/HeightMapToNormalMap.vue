@@ -15,7 +15,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import StepCard from '../StepCard.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
+import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 

@@ -16,10 +16,10 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
-import CheckBoxInput from '../UI/CheckBoxInput.vue'
-import RangeBandSlider from '../UI/RangeBandSlider.vue'
+import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
+import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import StepCard from '../StepCard.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
+import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 

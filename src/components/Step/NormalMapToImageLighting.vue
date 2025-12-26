@@ -18,7 +18,7 @@ import { useStepStore } from '../../lib/store/step-store.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
+import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 

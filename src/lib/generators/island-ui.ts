@@ -1,5 +1,5 @@
 import { type Ref, toRef } from 'vue'
-import type { CheckboxColorListItem } from '../../components/UI/CheckboxColorList.vue'
+import type { CheckboxColorListItem } from '../../components/UIForms/CheckboxColorList.vue'
 import type { Point } from '../step-data-types/BaseDataStructure.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { type Island, IslandType } from '../step-data-types/BitMask/Island.ts'

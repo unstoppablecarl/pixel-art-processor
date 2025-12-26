@@ -14,10 +14,10 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
-import NumberInput from '../UI/NumberInput.vue'
-import RangeBandSlider from '../UI/RangeBandSlider.vue'
-import { rangeSliderConfig } from '../UI/RangeSlider.ts'
-import RangeSlider from '../UI/RangeSlider.vue'
+import NumberInput from '../UIForms/NumberInput.vue'
+import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
+import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
+import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 

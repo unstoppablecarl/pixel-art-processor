@@ -34,10 +34,10 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
-import CheckboxColorList from '../UI/CheckboxColorList.vue'
-import RecordSelect from '../UI/RecordSelect.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
-import { rangeSliderConfig } from '../UI/RangeSlider.ts'
+import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
+import RecordSelect from '../UIForms/RecordSelect.vue'
+import RangeSlider from '../UIForms/RangeSlider.vue'
+import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 
 const { stepId } = defineProps<{ stepId: string }>()
 

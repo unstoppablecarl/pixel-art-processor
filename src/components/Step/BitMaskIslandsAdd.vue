@@ -23,9 +23,9 @@ import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
 import StepCard from '../StepCard.vue'
-import CheckboxColorList from '../UI/CheckboxColorList.vue'
-import RangeBandSlider from '../UI/RangeBandSlider.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
+import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
+import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
+import RangeSlider from '../UIForms/RangeSlider.vue'
 import { BTab, BTabs } from 'bootstrap-vue-next'
 
 const { stepId } = defineProps<{ stepId: string }>()

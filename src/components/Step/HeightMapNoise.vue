@@ -16,7 +16,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import StepCard from '../StepCard.vue'
-import RangeSlider from '../UI/RangeSlider.vue'
+import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const store = useStepStore()
 
