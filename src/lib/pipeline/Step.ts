@@ -51,6 +51,7 @@ export type StepLoaderSerialized<
 export type Step<T extends AnyStepContext> = {
   readonly id: string,
   readonly def: string,
+  readonly type: StepType,
   inputData: T['Input'] extends null ? null : T['Input'] | null,
   outputData: T['Output'] | null,
   // displayed to user
@@ -61,7 +62,6 @@ export type Step<T extends AnyStepContext> = {
   config: T['RC'] | undefined,
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
   handler: IStepHandler<T> | undefined,
-  type: StepType,
   parentForkId: null | string,
   branchIndex: null | number,
   lastExecutionTimeMS: undefined | number,
