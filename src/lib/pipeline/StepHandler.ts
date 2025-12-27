@@ -5,7 +5,7 @@ import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import { type AnyStepContext, type ReactiveConfigType } from './Step.ts'
+import { type AnyStepContext, type ReactiveConfigType, type StepInputTypesToInstances } from './Step.ts'
 import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
@@ -27,7 +27,7 @@ export type StepHandlerOptional =
   | 'configKeyAdapters'
 
 export type StepHandlerOptions<T extends AnyStepContext, Runner = StepRunner<T>> =
-  Optional<Omit<IStepHandler<T>, 'run'>, StepHandlerOptional> & {
+  Optional<Omit<IStepHandler<T, Runner>, 'run'>, StepHandlerOptional> & {
   run: Runner,
 }
 
@@ -80,7 +80,10 @@ export interface IStepHandler<T extends AnyStepContext, Runner = StepRunner<T>> 
   configKeyAdapters?: ConfigKeyAdapters<T['C'], T['SerializedConfig']>,
 }
 
-export function makeStepHandler<T extends AnyStepContext, Runner = StepRunner<T>>(def: string, options: StepHandlerOptions<T, Runner>) {
+export function makeStepHandler<
+  T extends AnyStepContext,
+  Runner = StepRunner<T>
+>(def: string, options: StepHandlerOptions<T, Runner>) {
 
   type RC = T['RC']
   type SerializedConfig = T['SerializedConfig']
@@ -88,8 +91,7 @@ export function makeStepHandler<T extends AnyStepContext, Runner = StepRunner<T>
   type Input = T['Input']
   type InputConstructors = T['InputConstructors']
 
-  validateInputDataTypes(def, options.inputDataTypes)
-  validateOutputDataTypes(def, options.outputDataType)
+  useStepRegistry().validateDefRegistration(def, options)
 
   const baseStepHandler = {
     inputDataTypes: options.inputDataTypes,
@@ -159,7 +161,7 @@ export function makeStepHandler<T extends AnyStepContext, Runner = StepRunner<T>
       return []
     },
 
-    run(_config: RC, _inputData: ImageData | null): StepRunnerOutput<T> {
+    run() {
       throw new Error('Step handler must implement the run() method')
     },
   } as IStepHandler<T>
@@ -170,43 +172,35 @@ export function makeStepHandler<T extends AnyStepContext, Runner = StepRunner<T>
   } as IStepHandler<T>
 }
 
-export type StepRunner<T extends AnyStepContext> = StepRunnerRaw<T['RC'], T['Input'], T['Output']>
+export type StepRunner<T extends AnyStepContext> = StepRunnerRaw<T['C'], T['RC'], T['InputConstructors'], T['OutputConstructors']>
+export type ForkStepRunner<T extends AnyStepContext> = ForkStepRunnerRaw<T['C'], T['RC'], T['InputConstructors'], T['OutputConstructors']>
 
-export type AnyStepRunner = (args: any) => StepRunnerOutput<any> | Promise<StepRunnerOutput<any>>;
-
-export type StepRunnerOptions<
+export type ForkStepRunnerRaw<
   C extends Config,
   RC extends ReactiveConfigType<C>,
-  Input extends readonly StepDataType[],
-  Output extends StepDataType,
-> = StepRunnerRaw<
-  RC,
-  InstanceType<Input[number]>,
-  InstanceType<Output>
->
-
-export type ForkStepRunner<
-  RC,
-  Input extends readonly StepDataType[],
-  Output extends StepDataTypeInstance
+  I extends readonly StepDataType[],
+  O extends StepDataType,
 > = ({
        config,
        inputData,
-       forBranchIndex,
+       branchCount,
      }: {
   config: RC,
-  inputData: InstanceType<Input[number]> | null,
-  forBranchIndex: number
-}) => StepRunnerOutput<Output> | Promise<StepRunnerOutput<Output>>
+  inputData: StepInputTypesToInstances<I> | null,
+  branchCount: number,
+}) => ForkStepRunnerOutput<InstanceType<O>>
+  | Promise<ForkStepRunnerOutput<InstanceType<O>>>
 
 export type StepRunnerRaw<
-  RC,
-  Input extends StepDataTypeInstance,
-  Output extends StepDataTypeInstance
+  C extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
 > = ({ config, inputData }: {
   config: RC,
-  inputData: Input | null
-}) => StepRunnerOutput<Output> | Promise<StepRunnerOutput<Output>>
+  inputData: StepInputTypesToInstances<I> | null
+}) => StepRunnerOutput<InstanceType<O>>
+  | Promise<StepRunnerOutput<InstanceType<O>>>
 
 export type StepRunnerOutput<Output> = null |
   undefined | {
@@ -233,13 +227,15 @@ export function parseForkStepRunnerResult<T extends AnyStepContext>(result: Fork
   }
 }
 
-export function parseStepRunnerResult<T extends AnyStepContext>(result: StepRunnerOutput<T>): {
+export function parseStepRunnerResult<Output extends StepDataTypeInstance>(
+  result: StepRunnerOutput<Output>,
+): {
   preview: ImageData | null,
   validationErrors: StepValidationError[],
-  outputData: T['Output'] | null,
+  outputData: Output | null,
 } {
   return {
-    outputData: copyStepDataOrNull<T['Output']>(result?.output) ?? null,
+    outputData: copyStepDataOrNull(result?.output ?? null) ?? null,
     preview: result?.preview ?? null,
     validationErrors: result?.validationErrors ?? [],
   }

@@ -2,7 +2,7 @@ import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
-import type { Config, IStepHandler } from './StepHandler.ts'
+import type { Config, ForkStepRunner, IStepHandler, StepRunner } from './StepHandler.ts'
 
 export type AnyStepContext = {
   C: any,
@@ -48,26 +48,40 @@ export type StepLoaderSerialized<
   config: SerializedConfig
 }
 
-export type Step<T extends AnyStepContext> = {
+export type BaseStep<
+  T extends AnyStepContext,
+  Runner extends StepRunner<T> | ForkStepRunner<T> = StepRunner<T> | ForkStepRunner<T>
+> = {
   readonly id: string,
   readonly def: string,
   readonly type: StepType,
   inputData: T['Input'] extends null ? null : T['Input'] | null,
   outputData: T['Output'] | T['Output'][] | null,
-  // displayed to user
   outputPreview: ImageData | ImageData[] | null,
   pendingInput: StepDataTypeInstance | null,
   isProcessing: boolean,
   validationErrors: StepValidationError[],
   config: T['RC'] | undefined,
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
-  handler: IStepHandler<T> | undefined,
+  handler: IStepHandler<T, Runner> | undefined,
   parentForkId: null | string,
   branchIndex: null | number,
   lastExecutionTimeMS: undefined | number,
   seed: number,
   muted: boolean,
 }
+
+export type NormalStep<T extends AnyStepContext> = BaseStep<T> & {
+  readonly type: StepType.NORMAL,
+  handler: IStepHandler<T, StepRunner<T>> | undefined,
+}
+
+export type ForkStep<T extends AnyStepContext> = BaseStep<T> & {
+  readonly type: StepType.FORK,
+  handler: IStepHandler<T, ForkStepRunner<T>> | undefined,
+}
+
+export type Step<T extends AnyStepContext> = NormalStep<T> | ForkStep<T>
 
 export type SerializedStep = {
   id: string,
@@ -186,3 +200,11 @@ export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Rec
 
   return output
 }
+
+export const isNormalStep = <T extends AnyStepContext>(
+  step: Step<T>,
+): step is NormalStep<T> => step.type === StepType.NORMAL
+
+export const isForkStep = <T extends AnyStepContext>(
+  step: Step<T>,
+): step is ForkStep<T> => step.type === StepType.FORK

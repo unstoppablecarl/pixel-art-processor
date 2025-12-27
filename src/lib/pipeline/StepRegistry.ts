@@ -4,8 +4,10 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
+import { objectsAreEqual } from '../util/misc.ts'
 import { StepType } from './Step.ts'
 import type { IStepHandler } from './StepHandler.ts'
+import type { StepMeta } from './StepMeta.ts'
 
 export type StepDefinition = {
   readonly def: string,
@@ -26,6 +28,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
       throw new Error('cannot define step that already exists: ' + definition.def)
     }
     STEP_DEFINITIONS[definition.def] = { ...definition }
+    return STEP_DEFINITIONS[definition.def]
   }
 
   const defineSteps = (stepDefinitions: StepDefinition[]) => stepDefinitions.forEach(defineStep)
@@ -67,6 +70,28 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     return Object.values(STEP_DEFINITIONS)
   }
 
+  function validateDefRegistration(
+    def: string,
+    {
+      inputDataTypes,
+      outputDataType,
+    }: Pick<StepMeta, 'inputDataTypes' | 'outputDataType'>) {
+
+    const definition = get(def)
+
+    console.log({definition}, 'zxc')
+
+    if (!objectsAreEqual(inputDataTypes, definition.inputDataTypes)) {
+      console.error({ registeredInputDataTypes: inputDataTypes, moduleInputDataTypes: definition.inputDataTypes })
+      throw new Error(`step def: ${def} registered inputDataTypes do not match module inputDataTypes`)
+    }
+
+    if (!objectsAreEqual(outputDataType, definition.outputDataType)) {
+      console.error({ registeredInputDataTypes: outputDataType, moduleInputDataTypes: definition.outputDataType })
+      throw new Error(`step def: ${def} registered outputDataType do not match module outputDataType`)
+    }
+  }
+
   return {
     defineStep,
     defineSteps,
@@ -77,6 +102,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     validateDef,
     dataTypeRegistry,
     getStepsCompatibleWithOutput,
+    validateDefRegistration,
     rootSteps: () => toArray().filter(s => s.inputDataTypes.length === 0),
     toArray,
   }

@@ -51,6 +51,7 @@ const step = useStepHandler(stepId, {
 
 const images = computed(() => {
   const step = store.get(stepId)
+  const outputPreview = step.outputPreview as ImageData | null
   return [
     {
       label: 'Noise',
@@ -60,9 +61,9 @@ const images = computed(() => {
     },
     {
       label: 'Output',
-      imageData: step.outputPreview,
-      placeholderWidth: step.outputPreview?.width,
-      placeholderHeight: step.outputPreview?.height,
+      imageData: outputPreview,
+      placeholderWidth: outputPreview?.width,
+      placeholderHeight: outputPreview?.height,
     },
   ]
 })
