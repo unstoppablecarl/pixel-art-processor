@@ -72,3 +72,9 @@ export function arrayRemove<T>(array: T[], value: T): void {
   if (index === -1) return
   array.splice(index, 1)
 }
+
+export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
+  if (value === null) return []
+  if (Array.isArray(value)) return value
+  return [value]
+}
