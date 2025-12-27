@@ -6,6 +6,7 @@ import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
+import { normalizeValueToArray } from '../lib/util/misc.ts'
 import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
 import StepImg, { type StepImage } from './StepImg.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
@@ -43,13 +44,13 @@ function remove() {
 }
 
 const stepImages = computed(() => {
-  if (!images?.length) {
-    return [{
+  if (images?.length) return images
+
+  return normalizeValueToArray(step.outputPreview)
+    .map(i => ({
       label: '',
-      imageData: step.outputPreview,
-    }]
-  }
-  return images
+      imageData: i,
+    }))
 })
 
 const imageCount = computed(() => images?.length ?? 1)

@@ -53,9 +53,9 @@ export type Step<T extends AnyStepContext> = {
   readonly def: string,
   readonly type: StepType,
   inputData: T['Input'] extends null ? null : T['Input'] | null,
-  outputData: T['Output'] | null,
+  outputData: T['Output'] | T['Output'][] | null,
   // displayed to user
-  outputPreview: ImageData | null,
+  outputPreview: ImageData | ImageData[] | null,
   pendingInput: StepDataTypeInstance | null,
   isProcessing: boolean,
   validationErrors: StepValidationError[],
