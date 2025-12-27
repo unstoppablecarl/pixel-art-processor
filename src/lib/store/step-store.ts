@@ -1202,7 +1202,7 @@ export const useStepStore = defineStore('steps', () => {
       const step = get(stepId)
       const steps = stepRegistry.getStepsCompatibleWithOutput(step.def)
       if (!isLast(stepId)) {
-        return steps.filter(s => s.def !== STEP_FORK_DEF)
+        return steps.filter(s => stepRegistry.isFork(s.def))
       }
       return steps
     }
