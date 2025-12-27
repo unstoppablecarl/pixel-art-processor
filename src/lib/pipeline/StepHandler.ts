@@ -244,22 +244,3 @@ export function parseStepRunnerResult<T extends AnyStepContext>(result: StepRunn
     validationErrors: result?.validationErrors ?? [],
   }
 }
-
-function validateInputDataTypes(def: string, inputDataTypes: any[]) {
-  const dataTypeRegistry = useStepRegistry().dataTypeRegistry
-  const invalid = inputDataTypes.filter(t => !dataTypeRegistry.isValidType(t))
-  if (invalid.length) {
-    const message = `Step "${def}" has invalid Input Data Type(s). Step Data Types must be registered in main.ts with installStepRegistry() `
-    console.error(message, invalid)
-    throw new Error(message)
-  }
-}
-
-function validateOutputDataTypes(def: string, outputDataType: any) {
-  const dataTypeRegistry = useStepRegistry().dataTypeRegistry
-  if (!dataTypeRegistry.isValidType(outputDataType)) {
-    const message = `Step "${def}" has an invalid Output Data Type. Step Data Types must be registered in main.ts with installStepRegistry() `
-    console.error(message, outputDataType)
-    throw new Error(message)
-  }
-}

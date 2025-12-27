@@ -7,9 +7,6 @@ import { NormalMap } from './lib/step-data-types/NormalMap.ts'
 import { PassThrough } from './lib/step-data-types/PassThrough.ts'
 import { PixelMap } from './lib/step-data-types/PixelMap.ts'
 
-const stepModules = import.meta.glob(['./components/Step/**/*.vue'], { eager: true })
-
-export const STEP_DEFINITIONS: StepDefinition[] = loadStepComponentsMetaData(stepModules as Record<string, any>)
 
 export const STEP_DATA_TYPES: DataStructureConstructor[] = [
   BitMask as DataStructureConstructor,
@@ -18,6 +15,10 @@ export const STEP_DATA_TYPES: DataStructureConstructor[] = [
   PixelMap as DataStructureConstructor,
   PassThrough as DataStructureConstructor,
 ]
+
+const stepModules = import.meta.glob(['./components/Step/**/*.vue'], { eager: true })
+
+export const STEP_DEFINITIONS: StepDefinition[] = loadStepComponentsMetaData(stepModules as Record<string, any>, STEP_DATA_TYPES)
 
 export type StepDataType =
   | typeof BitMask
