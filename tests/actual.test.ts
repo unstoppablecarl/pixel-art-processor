@@ -5,7 +5,7 @@ import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import { type AnyStepContext, type Step, type StepContext, type StepRef, StepType } from '../src/lib/pipeline/Step'
 import type { Config, ForkStepRunner, StepRunner, StepRunnerRaw } from '../src/lib/pipeline/StepHandler'
 import { makeStepRegistry, STEP_REGISTRY_INJECT_KEY, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
-import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
+import { useForkStepHandler, useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
@@ -199,4 +199,69 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).toExtend<Step<AnyStepContext>>()
     })
   })
+
+  // it('useForkStepHandler with 1 input type', () => {
+  //   makeAppContext(() => {
+  //
+  //     const inputDataTypes = [HeightMap] as const
+  //     const outputDataType = NormalMap
+  //     const configRaw = {
+  //       normalMapStrength: 9,
+  //     } satisfies Config
+  //
+  //     type InputInstance = HeightMap
+  //
+  //     type C = typeof configRaw
+  //     type RC = ShallowReactive<C>
+  //     type I = typeof inputDataTypes
+  //     type O = typeof outputDataType
+  //     type T = StepContext<C, C, RC, I, O>
+  //
+  //     const stepDef = defineStep({
+  //       def: 'bar',
+  //       inputDataTypes,
+  //       outputDataType,
+  //       type: StepType.FORK,
+  //     })
+  //
+  //     const store = useStepStore()
+  //     const newStep = store.add(stepDef.def)
+  //
+  //     const step = useForkStepHandler(newStep.id, {
+  //       inputDataTypes,
+  //       outputDataType: NormalMap,
+  //       config() {
+  //         return shallowReactive({
+  //           normalMapStrength: 1.5,
+  //         })
+  //       },
+  //       run({ config, inputData }) {
+  //         if (!inputData) return
+  //
+  //         expect(config.normalMapStrength).toEqual(1.5)
+  //         return {
+  //           output: inputData.toNormalMap(config.normalMapStrength),
+  //           preview: inputData.toImageData(),
+  //         }
+  //       },
+  //     })
+  //
+  //     step.handler.run satisfies StepRunner<T>
+  //     step.handler.run satisfies StepRunnerRaw<C, RC, I, O>
+  //
+  //     expectTypeOf(step.handler.run).toExtend<StepRunner<T>>()
+  //     expectTypeOf(step.handler.run).toExtend<StepRunnerRaw<C, RC, I, O>>()
+  //
+  //     expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<(outputData: StepDataTypeInstance | null) => InputInstance | null>()
+  //     expectTypeOf(step.handler.config()).toEqualTypeOf<ShallowReactive<{
+  //       normalMapStrength: number,
+  //     }>>()
+  //
+  //     expectTypeOf(step.config).toEqualTypeOf<ShallowReactive<{
+  //       normalMapStrength: number,
+  //     }>>()
+  //
+  //     expectTypeOf(step).toExtend<Step<AnyStepContext>>()
+  //   })
+  // })
 })

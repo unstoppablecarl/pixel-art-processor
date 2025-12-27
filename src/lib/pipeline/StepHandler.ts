@@ -5,9 +5,13 @@ import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import { type AnyStepContext, type ReactiveConfigType, type StepInputTypesToInstances } from './Step.ts'
+import {
+  type AnyStepContext,
+  type ConfiguredStep,
+  type ReactiveConfigType,
+  type StepInputTypesToInstances,
+} from './Step.ts'
 import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
-import type { ConfiguredStep } from './useStepHandler.ts'
 
 export type Config = Record<string, any>
 
@@ -49,7 +53,7 @@ export interface IStepHandler<T extends AnyStepContext, Runner = StepRunner<T>> 
   config(): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(step: ConfiguredStep<T, Runner>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -82,7 +86,7 @@ export interface IStepHandler<T extends AnyStepContext, Runner = StepRunner<T>> 
 
 export function makeStepHandler<
   T extends AnyStepContext,
-  Runner = StepRunner<T>
+  Runner extends StepRunner<T> | ForkStepRunner<T> = StepRunner<T>,
 >(def: string, options: StepHandlerOptions<T, Runner>) {
 
   type RC = T['RC']
@@ -102,7 +106,7 @@ export function makeStepHandler<
       return reactive({}) as RC
     },
 
-    watcher(_step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    watcher(_step: ConfiguredStep<T, Runner>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]
@@ -161,15 +165,14 @@ export function makeStepHandler<
       return []
     },
 
-    run() {
-      throw new Error('Step handler must implement the run() method')
-    },
-  } as IStepHandler<T>
+    run: options.run as Runner,
+
+  } as IStepHandler<T, Runner>
 
   return {
     ...baseStepHandler,
     ...options,
-  } as IStepHandler<T>
+  } as IStepHandler<T, Runner>
 }
 
 export type StepRunner<T extends AnyStepContext> = StepRunnerRaw<T['C'], T['RC'], T['InputConstructors'], T['OutputConstructors']>
