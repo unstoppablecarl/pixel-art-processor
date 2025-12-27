@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 
 const store = useStepStore()
@@ -13,14 +12,9 @@ const {
 }>()
 
 const addableSteps = computed(() => store.getStepsAddableAfter(stepId))
-const stepRegistry = useStepRegistry()
 
 function addAfter(def: string) {
-  if (stepRegistry.isFork(def)) {
-    store.addFork(def, stepId)
-  } else {
-    store.add(def, stepId)
-  }
+  store.add(def, stepId)
 }
 </script>
 <template>

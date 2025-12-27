@@ -11,6 +11,7 @@ import {
   serializeSteps,
   type Step,
   STEP_FORK_DEF,
+  stepIsFork,
   type StepRef,
   StepType,
 } from '../pipeline/Step.ts'
@@ -127,30 +128,41 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    function add(def: string, afterStepId?: string): StepRef {
+    function _createNewStepOrFork(
+      def: string,
+    ): StepRef
+
+    function _createNewStepOrFork(
+      def: string,
+      parentForkId: string,
+      branchIndex: number,
+    ): StepRef
+
+    function _createNewStepOrFork(
+      def: string,
+      parentForkId?: string,
+      branchIndex?: number,
+    ): StepRef {
       stepRegistry.validateDef(def)
       idIncrement.value += 1
 
-      const step = createNewStep(def, idIncrement.value)
+      let type = stepRegistry.getStepType(def)
+
+      const step = createNewStep(def, idIncrement.value, type, parentForkId, branchIndex)
       stepsById[step.id] = step
 
-      _insertStep(step, afterStepId)
-
+      if (stepIsFork(step)) {
+        forkBranches[step.id] = [{
+          seed: 0,
+          stepIds: [],
+          inputData: null,
+        }]
+      }
       return step
     }
 
-    function addFork(def: string, afterStepId?: string): StepRef {
-      idIncrement.value += 1
-      stepRegistry.validateDefIsFork(def)
-      const step = createNewStep(def, idIncrement.value, StepType.FORK)
-      stepsById[step.id] = step
-
-      forkBranches[step.id] = [{
-        seed: 0,
-        stepIds: [],
-        inputData: null,
-      }]
-
+    function add(def: string, afterStepId?: string): StepRef {
+      const step = _createNewStepOrFork(def)
       _insertStep(step, afterStepId)
 
       return step
@@ -164,12 +176,8 @@ export const useStepStore = defineStore('steps', () => {
         throw new Error(`Invalid branch index ${branchIndex} for fork ${forkId}`)
       }
 
-      stepRegistry.validateDef(def)
-      idIncrement.value += 1
-      const step = createNewStep(def, idIncrement.value, StepType.NORMAL, forkId, branchIndex)
-      stepsById[step.id] = step
+      const step = _createNewStepOrFork(def, forkId, branchIndex)
 
-      // Add to branch
       if (afterStepId !== undefined) {
         const afterIndex = branches[branchIndex].stepIds.indexOf(afterStepId)
         if (afterIndex === -1) {
@@ -350,27 +358,25 @@ export const useStepStore = defineStore('steps', () => {
       }
 
       throw new Error('no array change found')
-      //
-      // // No change (shouldn't happen)
-      // return {
-      //   movedStepId: oldArray[0] ?? '',
-      //   oldIndex: 0,
-      //   newIndex: 0,
-      //   isTransfer: false
-      // }
     }
 
     function getAllBranchSteps(forkId: string, branchIndex: number): StepRef[] {
       return getBranch(forkId, branchIndex).stepIds.map(id => get(id))
     }
 
-    function addBranch(forkId: string): void {
+    async function addBranch(forkId: string) {
       validateIsFork(forkId)
       forkBranches[forkId].push({
         seed: 0,
         stepIds: [],
         inputData: null,
       })
+      return _forkBranchChanged(forkId)
+    }
+
+    async function _forkBranchChanged(forkId: string) {
+      syncImageDataFromPrev(forkId)
+      return resolveStep(forkId)
     }
 
     function duplicateBranch(forkId: string, branchIndex: number): number {
@@ -399,7 +405,7 @@ export const useStepStore = defineStore('steps', () => {
         const newStep = createNewStep(
           sourceStep.def,
           idIncrement.value,
-          StepType.NORMAL,
+          sourceStep.type,
           forkId,
           newBranchIndex,
         )
@@ -425,7 +431,7 @@ export const useStepStore = defineStore('steps', () => {
       return newBranchIndex
     }
 
-    function removeBranch(forkId: string, branchIndex: number): void {
+    async function removeBranch(forkId: string, branchIndex: number) {
       const branches = getBranches(forkId)
 
       // Remove rootSteps steps in the branch
@@ -443,6 +449,8 @@ export const useStepStore = defineStore('steps', () => {
           get(stepId).branchIndex = i
         })
       }
+
+      return _forkBranchChanged(forkId)
     }
 
     function getDescendants(stepId: string): StepRef[] {
@@ -898,13 +906,13 @@ export const useStepStore = defineStore('steps', () => {
 
     function _invalidateFromStep(stepId: string) {
       syncImageDataFromPrev(stepId)
+      // resolveStep triggers here
       syncImageDataToNext(stepId)
       invalidateStepFinalSeed(stepId)
 
       const step = get(stepId)
 
       if (step.type === StepType.FORK) {
-        // Invalidate rootSteps branches
         const branches = forkBranches[stepId]
         if (branches) {
           branches.forEach(branch => {
@@ -990,12 +998,10 @@ export const useStepStore = defineStore('steps', () => {
       setStepValidationErrors(stepId, errors)
     }
 
-    async function resolveStep<T extends AnyStepContext>(
-      stepId: string,
-      inputData: T['Input'] | null,
-    ) {
-
+    async function resolveStep<T extends AnyStepContext>(stepId: string) {
       const step = get(stepId) as Step<T>
+      let inputData = step.inputData
+
       step.isProcessing = true
 
       const startTime = performance.now()
@@ -1021,7 +1027,6 @@ export const useStepStore = defineStore('steps', () => {
           let runnerSeed = stepSeeds[step.id]
           prng.setSeed(runnerSeed)
 
-          // runner can be async or not
           const duration = performance.now() - startTime
 
           let preview: ImageData | ImageData[] | null
@@ -1032,27 +1037,23 @@ export const useStepStore = defineStore('steps', () => {
             throw new Error(`Step ${stepId} has no config`)
           }
 
-          if (step.type === StepType.FORK) {
-            // now ts knows: step is ForkStep<T>
+          if (stepIsFork(step)) {
+            // step is ForkStep<T>
             const result = await step.handler!.run({
               config: step.config,
               inputData,
               branchCount: getBranches(stepId).length,
-            })
-            const x = parseForkStepRunnerResult<T>(result)
-            preview = x.preview
-            outputData = x.outputData
-            validationErrors = x.validationErrors
+            });
+
+            ({ preview, outputData, validationErrors } = parseForkStepRunnerResult<T['Output']>(result))
           } else {
-            // now ts knows: step is NormalStep<T>
+            // step is NormalStep<T>
             const result = await step.handler!.run({
               config: step.config,
               inputData,
-            })
-            const x = parseStepRunnerResult<T['Output']>(result)
-            preview = x.preview
-            outputData = x.outputData
-            validationErrors = x.validationErrors
+            });
+
+            ({ preview, outputData, validationErrors } = parseStepRunnerResult<T['Output']>(result))
           }
 
           logStepEvent(stepId, 'resolveStep', {
@@ -1062,7 +1063,6 @@ export const useStepStore = defineStore('steps', () => {
             durationMs: duration.toFixed(2),
           })
 
-          // step.outputData = null
           step.outputData = outputData
           step.outputPreview = preview
           step.validationErrors = [
@@ -1088,14 +1088,6 @@ export const useStepStore = defineStore('steps', () => {
       const step = get(stepId) as StepRef<T>
 
       const handler = makeStepHandler<T>(step.def, handlerOptions)
-
-      if (step.type === StepType.FORK) {
-        const prev = getPrev(step.id)
-        if (!prev) {
-          throw new Error('No prev step before fork')
-        }
-        handler.outputDataType = prev.handler!.outputDataType
-      }
 
       step.handler = handler
       if (step.config === undefined) {
@@ -1140,7 +1132,7 @@ export const useStepStore = defineStore('steps', () => {
       const step = get(stepId)
       const leaves: StepRef[] = []
 
-      if (step.type === StepType.FORK) {
+      if (stepIsFork(step)) {
         const branches = getBranches(stepId)
         branches.forEach(branch => {
           if (branch.stepIds.length === 0) {
@@ -1232,7 +1224,6 @@ export const useStepStore = defineStore('steps', () => {
       isLast,
       isFork,
       add,
-      addFork,
       getFork,
       addToBranch,
       getBranches,

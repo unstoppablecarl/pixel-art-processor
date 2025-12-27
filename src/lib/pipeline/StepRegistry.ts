@@ -62,6 +62,10 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     return Object.values(STEP_DEFINITIONS).filter(s => stepOutputTypeCompatibleWithInputTypes(currentStep.outputDataType, s.inputDataTypes))
   }
 
+  function getStepType(def: string) {
+    return get(def).type
+  }
+
   function isFork(def: string): boolean {
     return get(def).type === StepType.FORK
   }
@@ -79,7 +83,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
 
     const definition = get(def)
 
-    console.log({definition}, 'zxc')
+    console.log({ definition }, 'zxc')
 
     if (!objectsAreEqual(inputDataTypes, definition.inputDataTypes)) {
       console.error({ registeredInputDataTypes: inputDataTypes, moduleInputDataTypes: definition.inputDataTypes })
@@ -97,6 +101,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     defineSteps,
     get,
     has,
+    getStepType,
     isFork,
     validateDefIsFork,
     validateDef,

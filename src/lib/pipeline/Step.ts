@@ -201,10 +201,10 @@ export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Rec
   return output
 }
 
-export const isNormalStep = <T extends AnyStepContext>(
+export const stepIsNormal = <T extends AnyStepContext>(
   step: Step<T>,
 ): step is NormalStep<T> => step.type === StepType.NORMAL
 
-export const isForkStep = <T extends AnyStepContext>(
+export const stepIsFork = <T extends AnyStepContext>(
   step: Step<T>,
 ): step is ForkStep<T> => step.type === StepType.FORK

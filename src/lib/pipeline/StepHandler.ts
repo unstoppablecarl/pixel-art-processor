@@ -215,10 +215,10 @@ export type ForkStepRunnerOutput<Output> = null | undefined | {
   validationErrors?: StepValidationError[]
 }
 
-export function parseForkStepRunnerResult<T extends AnyStepContext>(result: ForkStepRunnerOutput<T['Output']>): {
+export function parseForkStepRunnerResult<Output extends StepDataTypeInstance>(result: ForkStepRunnerOutput<Output>): {
   preview: ImageData | ImageData[] | null,
   validationErrors: StepValidationError[],
-  outputData: T['Output'][],
+  outputData: Output[],
 } {
   return {
     outputData: result?.branchesOutput?.map(copyStepDataOrNull) ?? [],

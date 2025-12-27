@@ -19,11 +19,7 @@ const stepRegistry = useStepRegistry()
 const addableSteps = computed(() => stepRegistry.getStepsCompatibleWithOutput(step.def))
 
 function addAfter(def: string) {
-  if (stepRegistry.isFork(def)) {
-    store.addFork(step.id)
-  } else {
-    store.addToBranch(step.id, branchIndex, def)
-  }
+  store.addToBranch(step.id, branchIndex, def)
 }
 </script>
 <template>

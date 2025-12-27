@@ -1,5 +1,5 @@
 import { expectTypeOf } from 'expect-type'
-import { toValue, watch, type WatchSource } from 'vue'
+import { watch, type WatchSource } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { StepValidationError } from '../errors.ts'
 import { useStepStore } from '../store/step-store.ts'
@@ -83,10 +83,7 @@ function setupStepHandlerCore<
 
   store.loadPendingInput(stepId)
 
-  const process = () => {
-    const inputData = toValue(step.inputData)
-    store.resolveStep<T>(stepId, inputData)
-  }
+  const process = () => store.resolveStep<T>(stepId)
 
   const defaultWatcherTargets = [
     step.config,
