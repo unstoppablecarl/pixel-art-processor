@@ -34,7 +34,7 @@ export class InvalidInputTypeError extends StepValidationError {
   component = InvalidInputType
 
   constructor(
-    public expectedTypes: StepDataType[],
+    public expectedTypes: readonly StepDataType[],
     public receivedType: StepDataType,
   ) {
     super('Invalid Input Data Type', `Accepted: ${expectedTypes.join('/')}, Received: ${receivedType}`)

@@ -127,7 +127,7 @@ export function useStepRegistry(): StepRegistry {
   return registry
 }
 
-export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType, inputDataTypes: StepDataType[]) {
+export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType, inputDataTypes: readonly StepDataType[]) {
 
   if (outputType === PassThrough || inputDataTypes.includes(PassThrough)) {
     return true
