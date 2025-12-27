@@ -4,15 +4,22 @@ import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { StepValidationError } from '../errors.ts'
 import { useStepStore } from '../store/step-store.ts'
 import { logStepWatch } from '../util/misc.ts'
-import type {
-  AnyStepContext,
-  ReactiveConfigType,
-  Step,
-  StepContext,
-  StepInputTypesToInstances,
-  StepLoaderSerialized,
+import {
+  type AnyStepContext,
+  type ReactiveConfigType,
+  type Step,
+  type StepContext,
+  type StepInputTypesToInstances,
+  type StepLoaderSerialized,
 } from './Step.ts'
-import type { Config, ConfigKeyAdapters, StepHandlerOptions, StepRunnerOptions } from './StepHandler.ts'
+import type {
+  Config,
+  ConfigKeyAdapters,
+  ForkStepRunnerOutput,
+  StepHandlerOptions,
+  StepRunnerOutput,
+} from './StepHandler.ts'
+import { useStepRegistry } from './StepRegistry.ts'
 
 export type ConfiguredStep<T extends StepContext> =
   Required<Omit<Step<T>, 'config' | 'handler'>>
@@ -28,55 +35,52 @@ export type AnyConfiguredStep =
   handler: any,
 }
 
-export function useStepHandler<
+// Shared options type - just the structure without the run method
+type BaseOptions<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+  RC extends ReactiveConfigType<C>,
+  C extends Config,
+  SC extends Config
+> = {
+  inputDataTypes: I,
+  outputDataType: O,
+  config: () => RC,
+  serializeConfig?: (config: C) => SC,
+  deserializeConfig?: (config: SC) => C,
+  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatchSource[]) => WatchSource[],
+  loadConfig?: (config: RC, serializedConfig: SC) => void,
+  prevOutputToInput?: (outputData: StepDataTypeInstance | null) => StepInputTypesToInstances<I> | null,
+  validateInputType?: (typeFromPrevOutput: StepDataType, inputDataTypes: I) => StepValidationError[],
+  validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[],
+  configKeyAdapters?: ConfigKeyAdapters<C, SC>
+}
+
+// Core setup function
+function setupStepHandlerCore<
   I extends readonly StepDataType[],
   O extends StepDataType,
   RC extends ReactiveConfigType<C>,
   C extends Config = RC extends ReactiveConfigType<infer U> ? U : never,
   SC extends Config = C,
-  // A extends Record<string, ConfigKeyAdapter<any, any>> = Record<string, never>,
+  Runner extends (args: any) => any = (args: any) => any,
 >(
   stepId: string,
-  options: {
-    inputDataTypes: I,
-    outputDataType: O,
-    config: () => RC,
-    serializeConfig?: (config: C) => SC,
-    deserializeConfig?: (config: SC) => C,
-    run: StepRunnerOptions<C, RC, I, O>,
-    watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatchSource[]) => WatchSource[],
-    loadConfig?: (config: RC, serializedConfig: SC) => void,
-    prevOutputToInput?: (outputData: StepDataTypeInstance | null) => StepInputTypesToInstances<I> | null,
-    validateInputType?: (typeFromPrevOutput: StepDataType, inputDataTypes: I) => StepValidationError[],
-    validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[],
-    configKeyAdapters?: ConfigKeyAdapters<C, SC>
-  },
+  options: BaseOptions<I, O, RC, C, SC> & { run: Runner },
 ) {
   type T = StepContext<C, SC, RC, I, O>;
 
   if (__DEV__) {
-    expectTypeOf(options.config).toExtend<StepHandlerOptions<T>['config']>()
-    expectTypeOf(options.run).toExtend<StepHandlerOptions<T>['run']>()
-    expectTypeOf(options.watcher).toExtend<StepHandlerOptions<T>['watcher']>()
-    expectTypeOf(options.loadConfig).toExtend<StepHandlerOptions<T>['loadConfig']>()
-    expectTypeOf(options.prevOutputToInput).toExtend<StepHandlerOptions<T>['prevOutputToInput']>()
-    expectTypeOf(options.serializeConfig).toExtend<StepHandlerOptions<T>['serializeConfig']>()
-    expectTypeOf(options.deserializeConfig).toExtend<StepHandlerOptions<T>['deserializeConfig']>()
-    expectTypeOf(options.validateInputType).toExtend<StepHandlerOptions<T>['validateInputType']>()
-    expectTypeOf(options.validateInput).toExtend<StepHandlerOptions<T>['validateInput']>()
-
-    expectTypeOf(options).toExtend<StepHandlerOptions<T>>()
+    expectTypeOf(options).toExtend<StepHandlerOptions<T, Runner>>()
   }
 
   const store = useStepStore()
-  const { step, handler } = store.registerStep<T>(stepId, options)
+  const { step, handler } = store.registerStep<T, Runner>(stepId, options as StepHandlerOptions<T, Runner>)
 
-  // if input was handed off by an existing step before this step handler was loaded
   store.loadPendingInput(stepId)
 
   const process = () => {
     const inputData = toValue(step.inputData)
-
     store.resolveStep<T>(stepId, inputData, handler.run)
   }
 
@@ -88,27 +92,74 @@ export function useStepHandler<
   ]
 
   const watcherTargets = handler.watcher(step as ConfiguredStep<T>, defaultWatcherTargets)
-  watch(
-    watcherTargets,
-    () => {
-      logStepWatch(step.id)
-      process()
-    },
-    { immediate: true },
-  )
+
+  watch(watcherTargets, () => {
+    logStepWatch(step.id)
+    process()
+  }, { immediate: true })
 
   if (__DEV__) {
     const s = step as ConfiguredStep<T>
-
-    expectTypeOf(s.id).toExtend<string>()
-    expectTypeOf(s.def).toExtend<string>()
-    // expectTypeOf(s.inputData).toExtend<T['Input']>()
-    // expectTypeOf(s.outputData).toExtend<T['Output'] | null>()
     expectTypeOf(s.loadSerialized).toExtend<StepLoaderSerialized<T['SerializedConfig']>>()
-
-    // expectTypeOf(s.config).toExtend<RC>()
   }
 
   return step as ConfiguredStep<T>
 }
 
+export type StepRunnerOptions<
+  C extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = ({
+       config,
+       inputData,
+     }: {
+  config: RC,
+  inputData: StepInputTypesToInstances<I> | null,
+}) => StepRunnerOutput<InstanceType<O>> | Promise<StepRunnerOutput<InstanceType<O>>>
+
+export function useStepHandler<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+  RC extends ReactiveConfigType<C>,
+  C extends Config = RC extends ReactiveConfigType<infer U> ? U : never,
+  SC extends Config = C,
+>(
+  stepId: string,
+  options: BaseOptions<I, O, RC, C, SC> & { run: StepRunnerOptions<C, RC, I, O> },
+) {
+  return setupStepHandlerCore(stepId, options)
+}
+
+export type ForkStepRunnerOptions<
+  C extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = ({
+       config,
+       inputData,
+       branchCount,
+     }: {
+  config: RC,
+  inputData: StepInputTypesToInstances<I> | null,
+  branchCount: number,
+}) => ForkStepRunnerOutput<InstanceType<O>> | Promise<ForkStepRunnerOutput<InstanceType<O>>>
+
+export function useForkStepHandler<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+  RC extends ReactiveConfigType<C>,
+  C extends Config = RC extends ReactiveConfigType<infer U> ? U : never,
+  SC extends Config = C,
+>(
+  stepId: string,
+  options: BaseOptions<I, O, RC, C, SC> & { run: ForkStepRunnerOptions<C, RC, I, O> },
+) {
+  const store = useStepStore()
+  const def = store.get(stepId).def
+  useStepRegistry().validateDefIsFork(def)
+
+  return setupStepHandlerCore(stepId, options)
+}
