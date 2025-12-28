@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { toValue, watch, type WatchSource } from 'vue'
-import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
+import type { StepDataType } from '../../steps.ts'
 import { StepValidationError } from '../errors.ts'
 import { useStepStore } from '../store/step-store.ts'
 import { logStepWatch } from '../util/misc.ts'
@@ -46,7 +46,7 @@ type BaseOptions<
   deserializeConfig?: (config: SC) => C,
   watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatchSource[]) => WatchSource[],
   loadConfig?: (config: RC, serializedConfig: SC) => void,
-  prevOutputToInput?: (outputData: StepDataTypeInstance | null) => StepInputTypesToInstances<I> | null,
+  prevOutputToInput?: (outputData: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null,
   validateInputType?: (typeFromPrevOutput: StepDataType, inputDataTypes: I) => StepValidationError[],
   validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[],
   configKeyAdapters?: ConfigKeyAdapters<C, SC>
