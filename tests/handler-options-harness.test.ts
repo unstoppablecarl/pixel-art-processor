@@ -128,34 +128,37 @@ export type StepContext<
   Output extends StepDataType,
 > = StepContextStrict<C, SerializedConfig, RC, Input, Output>
 
-type StepHandlerOptions<T extends AnyStepContext> = {
-  inputDataTypes: T['InputConstructors']
-  outputDataType: T['OutputConstructors']
+// THIS ALSO WORKS!
+type StepHandlerOptions<T extends AnyStepContext> = IStepHandler<T>
 
-  config: () => T['RC']
-
-  serializeConfig: (config: T['C']) => T['SerializedConfig']
-  deserializeConfig: (config: T['SerializedConfig']) => T['C']
-
-  watcher: (
-    step: ConfiguredStep<T>,
-  ) => void
-
-  loadConfig: (config: T['RC'], serialized: T['SerializedConfig']) => void
-
-  prevOutputToInput: (
-    output: T['Input'] | null,
-  ) => T['Input'] | null
-
-  validateInputType: (
-    typeFromPrev: T['Input'],
-    inputTypes: T['InputConstructors'],
-  ) => StepValidationError[],
-
-  validateInput(inputData: T['Input']): StepValidationError[],
-
-  run: StepRunner<T>
-}
+// type StepHandlerOptions2<T extends AnyStepContext> = {
+//   inputDataTypes: T['InputConstructors']
+//   outputDataType: T['OutputConstructors']
+//
+//   config: () => T['RC']
+//
+//   serializeConfig: (config: T['C']) => T['SerializedConfig']
+//   deserializeConfig: (config: T['SerializedConfig']) => T['C']
+//
+//   watcher: (
+//     step: ConfiguredStep<T>,
+//   ) => void
+//
+//   loadConfig: (config: T['RC'], serialized: T['SerializedConfig']) => void
+//
+//   prevOutputToInput: (
+//     output: T['Input'] | null,
+//   ) => T['Input'] | null
+//
+//   validateInputType: (
+//     typeFromPrev: T['Input'],
+//     inputTypes: T['InputConstructors'],
+//   ) => StepValidationError[],
+//
+//   validateInput(inputData: T['Input']): StepValidationError[],
+//
+//   run: StepRunner<T>
+// }
 
 // --- 2. useGenericHandler rewritten to expose TInferred -----------------------
 
