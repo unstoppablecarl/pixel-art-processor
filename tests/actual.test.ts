@@ -209,7 +209,7 @@ describe('step handler type testing', async () => {
         >()
 
         expectTypeOf(step.handler.config()).toEqualTypeOf<RC>()
-        expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<(outputData: StepDataTypeInstance | null) => InputInstance | null>()
+        expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<(outputData: InputInstance | null) => InputInstance | null>()
         expectTypeOf(step.handler.serializeConfig).returns.toEqualTypeOf<SC>()
         expectTypeOf(step.handler.deserializeConfig).returns.toEqualTypeOf<C>()
       })
