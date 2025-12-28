@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
+import type { StepValidationError } from '../src/lib/errors.ts'
 import {
   type AnyStepContext,
   type ReactiveConfigType,
@@ -16,6 +17,7 @@ import {
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
+import type { StepDataType } from '../src/steps.ts'
 
 // ---------------------------------------------------------------------------
 // Test setup types
@@ -83,13 +85,13 @@ describe('StepHandlerOptional', () => {
 })
 
 // ---------------------------------------------------------------------------
-// StepHandlerOptions<T, Runner>
+// StepHandlerOptions<T>
 // ---------------------------------------------------------------------------
 
-describe('StepHandlerOptions<T, Runner>', () => {
+describe('StepHandlerOptions<T>', () => {
   it('requires non-optional IStepHandler fields and run, while making StepHandlerOptional keys optional', () => {
     // Minimal valid options: only required fields + run()
-    const minimalOptions: StepHandlerOptions<T, Runner> = {
+    const minimalOptions: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
       run(args) {
@@ -108,7 +110,7 @@ describe('StepHandlerOptions<T, Runner>', () => {
     expectTypeOf(minimalOptions.config).toEqualTypeOf<(() => RC) | undefined>()
 
     // Now a "maximal" options object using all optional fields
-    const fullOptions: StepHandlerOptions<T, Runner> = {
+    const fullOptions: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as readonly [typeof A, typeof B],
       outputDataType: COut,
 
@@ -127,35 +129,51 @@ describe('StepHandlerOptions<T, Runner>', () => {
         return defaults
       },
 
-      prevOutputToInput(output) {
+      prevOutputToInput(output): A | B | null {
+        expectTypeOf(output).toEqualTypeOf<A | B | null>()
+
         return output as any
       },
 
-      validateInputType(type, allowed) {
+      validateInputType(type, allowed): StepValidationError[] {
+        expectTypeOf(type).toEqualTypeOf<StepDataType>()
+        expectTypeOf(allowed).toEqualTypeOf<readonly [typeof A, typeof B]>()
+
         return []
       },
 
-      validateInput(input) {
+      validateInput(input): StepValidationError[] {
+        expectTypeOf(input).toEqualTypeOf<A | B>()
+
         return []
       },
 
-      serializeConfig(config) {
+      serializeConfig(config): SerializedConfig {
+        expectTypeOf(config).toEqualTypeOf<RawConfig>()
+
         return {} as SerializedConfig
       },
 
       deserializeConfig(serializedConfig) {
+        expectTypeOf(serializedConfig).toEqualTypeOf<SerializedConfig>()
+
         return {} as RawConfig
       },
 
       loadConfig(config, serializedConfig) {
+        expectTypeOf(config).toEqualTypeOf<RC>()
+        expectTypeOf(serializedConfig).toEqualTypeOf<SerializedConfig>()
         // no-op
       },
 
       serializeConfigKeys(config) {
+        expectTypeOf(config).toEqualTypeOf<RC>()
         return {}
       },
 
       deserializeConfigKeys(serialized) {
+        expectTypeOf(serialized).toEqualTypeOf<Record<string, any>>()
+
         return {}
       },
 
@@ -179,7 +197,7 @@ describe('StepHandlerOptions<T, Runner>', () => {
   it('does not allow omitting required core properties', () => {
     // Omitting inputDataTypes should fail
     // @ts-expect-error missing required inputDataTypes
-    const bad1: StepHandlerOptions<T, Runner> = {
+    const bad1: StepHandlerOptions<T> = {
       outputDataType: COut,
       run() {
         return { output: {} as InstanceType<typeof COut> }
@@ -188,7 +206,7 @@ describe('StepHandlerOptions<T, Runner>', () => {
 
     // Omitting outputDataType should fail
     // @ts-expect-error missing required outputDataType
-    const bad2: StepHandlerOptions<T, Runner> = {
+    const bad2: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       run() {
         return { output: {} as InstanceType<typeof COut> }
@@ -197,7 +215,7 @@ describe('StepHandlerOptions<T, Runner>', () => {
 
     // Omitting run should fail
     // @ts-expect-error missing required run
-    const bad3: StepHandlerOptions<T, Runner> = {
+    const bad3: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
     }
@@ -210,12 +228,12 @@ describe('StepHandlerOptions<T, Runner>', () => {
 })
 
 // ---------------------------------------------------------------------------
-// makeStepHandler<T, Runner>
+// makeStepHandler<T>
 // ---------------------------------------------------------------------------
 
-describe('makeStepHandler<T, Runner>', () => {
-  it('returns an IStepHandler<T, Runner>-compatible object merging defaults and options', () => {
-    const options: StepHandlerOptions<T, Runner> = {
+describe('makeStepHandler<T>', () => {
+  it('returns an IStepHandler<T>-compatible object merging defaults and options', () => {
+    const options: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
 
@@ -248,10 +266,10 @@ describe('makeStepHandler<T, Runner>', () => {
       },
     }
 
-    const handler = makeStepHandler<T, Runner>(DEF, options)
+    const handler = makeStepHandler<T>(DEF, options)
 
-    // Shape of handler: must be a full IStepHandler<T, Runner>
-    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T, Runner>>()
+    // Shape of handler: must be a full IStepHandler<T>
+    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
 
     // validate core fields
     expectTypeOf(handler.inputDataTypes).toEqualTypeOf<readonly [typeof A, typeof B]>()
@@ -265,34 +283,34 @@ describe('makeStepHandler<T, Runner>', () => {
 
     // ensure defaulted methods have the right types even if not provided in options
     expectTypeOf(handler.watcher).toEqualTypeOf<
-      IStepHandler<T, Runner>['watcher']
+      IStepHandler<T>['watcher']
     >()
     expectTypeOf(handler.serializeConfig).toEqualTypeOf<
-      IStepHandler<T, Runner>['serializeConfig']
+      IStepHandler<T>['serializeConfig']
     >()
     expectTypeOf(handler.deserializeConfig).toEqualTypeOf<
-      IStepHandler<T, Runner>['deserializeConfig']
+      IStepHandler<T>['deserializeConfig']
     >()
     expectTypeOf(handler.loadConfig).toEqualTypeOf<
-      IStepHandler<T, Runner>['loadConfig']
+      IStepHandler<T>['loadConfig']
     >()
     expectTypeOf(handler.prevOutputToInput).toEqualTypeOf<
-      IStepHandler<T, Runner>['prevOutputToInput']
+      IStepHandler<T>['prevOutputToInput']
     >()
     expectTypeOf(handler.validateInputType).toEqualTypeOf<
-      IStepHandler<T, Runner>['validateInputType']
+      IStepHandler<T>['validateInputType']
     >()
     expectTypeOf(handler.validateInput).toEqualTypeOf<
-      IStepHandler<T, Runner>['validateInput']
+      IStepHandler<T>['validateInput']
     >()
     expectTypeOf(handler.serializeConfigKeys).toEqualTypeOf<
-      IStepHandler<T, Runner>['serializeConfigKeys']
+      IStepHandler<T>['serializeConfigKeys']
     >()
     expectTypeOf(handler.deserializeConfigKeys).toEqualTypeOf<
-      IStepHandler<T, Runner>['deserializeConfigKeys']
+      IStepHandler<T>['deserializeConfigKeys']
     >()
     expectTypeOf(handler.configKeyAdapters).toEqualTypeOf<
-      IStepHandler<T, Runner>['configKeyAdapters']
+      IStepHandler<T>['configKeyAdapters']
     >()
   })
 
@@ -314,9 +332,9 @@ describe('makeStepHandler<T, Runner>', () => {
 
     // This checks that makeStepHandler doesn’t destroy inference when used with a
     // generic AnyStepContext T, and that the result still conforms to IStepHandler.
-    const handler = makeStepHandler<AnyT, unknown>(DEF, options as any)
+    const handler = makeStepHandler<AnyT>(DEF, options as any)
 
-    expectTypeOf(handler).toExtend<IStepHandler<AnyT, unknown>>()
+    expectTypeOf(handler).toExtend<IStepHandler<AnyT>>()
   })
 
   it('produces a StepRunnerOutput-compatible run return type by default', () => {
