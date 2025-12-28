@@ -2,17 +2,8 @@ import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
-import type { Config, ForkStepRunner, IStepHandler, StepRunner } from './StepHandler.ts'
+import type { Config, IStepHandler } from './StepHandler.ts'
 
-export type AnyStepContext = {
-  C: any,
-  Output: any,
-  Input: any,
-  RC: any,
-  SerializedConfig: any,
-  InputConstructors: any,
-  OutputConstructors: any,
-}
 export const STEP_FORK_DEF = 'STEP_FORK'
 
 export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
@@ -22,6 +13,8 @@ export type StepInputTypesToInstances<Input extends readonly StepDataType[] = re
     // convert array of constructors to union of instances
     ? InstanceType<Input[number]>
     : never
+
+export type AnyStepContext = StepContext<any, any, any, any, any>
 
 export type StepContext<
   C extends Config = Config,
@@ -48,9 +41,9 @@ export type StepLoaderSerialized<
   config: SerializedConfig
 }
 
-export type BaseStep<
+export type Step<
   T extends AnyStepContext,
-  Runner extends StepRunner<T> | ForkStepRunner<T> = StepRunner<T> | ForkStepRunner<T>
+  Runner
 > = {
   readonly id: string,
   readonly def: string,
@@ -71,17 +64,17 @@ export type BaseStep<
   muted: boolean,
 }
 
-export type NormalStep<T extends AnyStepContext> = BaseStep<T> & {
-  readonly type: StepType.NORMAL,
-  handler: IStepHandler<T, StepRunner<T>> | undefined,
-}
+// export type NormalStep<T extends AnyStepContext> = BaseStep<T> & {
+//   // readonly type: StepType.NORMAL,
+//   handler: IStepHandler<T, StepRunner<T>> | undefined,
+// }
 
-export type ForkStep<T extends AnyStepContext> = BaseStep<T> & {
-  readonly type: StepType.FORK,
-  handler: IStepHandler<T, ForkStepRunner<T>> | undefined,
-}
+// export type ForkStep<T extends AnyStepContext> = BaseStep<T> & {
+//   readonly type: StepType.FORK,
+//   handler: IStepHandler<T, ForkStepRunner<T>> | undefined,
+// }
 
-export type Step<T extends AnyStepContext> = NormalStep<T> | ForkStep<T>
+// export type Step<T extends AnyStepContext> = NormalStep<T>
 
 export type SerializedStep = {
   id: string,
@@ -98,19 +91,24 @@ export enum StepType {
   NORMAL = 'NORMAL',
 }
 
-export type DeSerializedStep<T extends AnyStepContext = AnyStepContext> =
-  Pick<Step<T>, 'id' | 'def' | 'type' | 'parentForkId' | 'branchIndex' | 'config' | 'seed'>
+export type DeSerializedStep<T extends AnyStepContext, Runner> =
+  Pick<Step<T, Runner>, 'id' | 'def' | 'type' | 'parentForkId' | 'branchIndex' | 'config' | 'seed'>
   & {}
 
-export type StepRef<T extends AnyStepContext = AnyStepContext> = ShallowReactive<Step<T>>
+export type StepRef<
+  T extends AnyStepContext,
+  Runner
+> = ShallowReactive<Step<T, Runner>>
 
-export function createNewStep<T extends AnyStepContext>(
+export type AnyStepRef = StepRef<AnyStepContext, any>
+
+export function createNewStep<T extends AnyStepContext, Runner>(
   def: string,
   idIncrement: number,
   type: StepType = StepType.NORMAL,
   parentForkId: string | null = null,
   branchIndex: number | null = null,
-): StepRef<T> {
+): StepRef<T, Runner> {
 
   const id = `${def}_id_${idIncrement++}`
   return shallowReactive({
@@ -131,10 +129,10 @@ export function createNewStep<T extends AnyStepContext>(
     lastExecutionTimeMS: undefined,
     seed: 0,
     muted: false,
-  } as Step<T>)
+  } as Step<T, Runner>)
 }
 
-export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerializedStep<T>): StepRef<T> {
+export function createLoadedStep<T extends AnyStepContext, Runner>(stepData: DeSerializedStep<T, Runner>): StepRef<T, Runner> {
   const {
     id,
     def,
@@ -161,10 +159,10 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
     loadSerialized: {
       config,
     },
-  } as Step<T>)
+  } as Step<T, Runner>)
 }
 
-export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<Step<T>>): SerializedStep => {
+export const serializeStep = <T extends AnyStepContext, Runner>(step: ShallowReactive<Step<T, Runner>>): SerializedStep => {
   const {
     id,
     def,
@@ -192,7 +190,7 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
   } as SerializedStep
 }
 
-export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Record<string, ShallowReactive<Step<T>>>>) => {
+export const serializeSteps = <T extends AnyStepContext, Runner>(stepsById: Reactive<Record<string, ShallowReactive<Step<T, Runner>>>>) => {
   const output: Record<string, SerializedStep> = {}
   Object.values(stepsById).forEach(step => {
     output[step.id] = serializeStep(step)
@@ -201,10 +199,10 @@ export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Rec
   return output
 }
 
-export const isNormalStep = <T extends AnyStepContext>(
-  step: Step<T>,
-): step is NormalStep<T> => step.type === StepType.NORMAL
+// export const isNormalStep = <T extends AnyStepContext>(
+//   step: Step<T>,
+// ): step is NormalStep<T> => step.type === StepType.NORMAL
 
-export const isForkStep = <T extends AnyStepContext>(
-  step: Step<T>,
-): step is ForkStep<T> => step.type === StepType.FORK
+// export const isForkStep = <T extends AnyStepContext>(
+//   step: Step<T>,
+// ): step is ForkStep<T> => step.type === StepType.FORK

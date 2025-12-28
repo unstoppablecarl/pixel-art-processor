@@ -4,6 +4,7 @@ import type { StepDataTypeInstance } from '../../steps.ts'
 import { GenericValidationError, StepValidationError } from '../errors.ts'
 import {
   type AnyStepContext,
+  type AnyStepRef,
   createLoadedStep,
   createNewStep,
   type DeSerializedStep,
@@ -18,9 +19,10 @@ import {
   type Config,
   type IStepHandler,
   makeStepHandler,
-  parseForkStepRunnerResult,
+  // parseForkStepRunnerResult,
   parseStepRunnerResult,
   type StepHandlerOptions,
+  type StepRunner,
 } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
@@ -52,7 +54,7 @@ export const useStepStore = defineStore('steps', () => {
     const globalSeed = ref(3)
 
     const idIncrement = ref(0)
-    const stepsById = reactive({}) as Reactive<Record<string, StepRef>>
+    const stepsById = reactive({}) as Reactive<Record<string, AnyStepRef>>
     const rootStepIds = ref<string[]>([]) as Ref<string[]>
     // key: stepId (that is a fork)
     // value: array of branches from the fork, each branch is an array of stepIds in order
@@ -91,7 +93,7 @@ export const useStepStore = defineStore('steps', () => {
       imgScale.value = data.imgScale
 
       Object.values(data.stepsById)
-        .forEach((stepData: DeSerializedStep) => {
+        .forEach((stepData: DeSerializedStep<any, any>) => {
           const step = createLoadedStep(stepData)
           stepsById[step.id] = step
         })
@@ -104,7 +106,7 @@ export const useStepStore = defineStore('steps', () => {
       invalidateAll()
     })
 
-    function _insertStep(step: StepRef, afterStepId?: string): void {
+    function _insertStep(step: AnyStepRef, afterStepId?: string): void {
       if (afterStepId === undefined) {
         // No position specified, add to end of root
         rootStepIds.value.push(step.id)
@@ -127,7 +129,7 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    function add(def: string, afterStepId?: string): StepRef {
+    function add(def: string, afterStepId?: string): AnyStepRef {
       stepRegistry.validateDef(def)
       idIncrement.value += 1
 
@@ -139,7 +141,7 @@ export const useStepStore = defineStore('steps', () => {
       return step
     }
 
-    function addFork(def: string, afterStepId?: string): StepRef {
+    function addFork(def: string, afterStepId?: string): AnyStepRef {
       idIncrement.value += 1
       stepRegistry.validateDefIsFork(def)
       const step = createNewStep(def, idIncrement.value, StepType.FORK)
@@ -156,7 +158,7 @@ export const useStepStore = defineStore('steps', () => {
       return step
     }
 
-    function addToBranch(forkId: string, branchIndex: number, def: string, afterStepId?: string): StepRef {
+    function addToBranch(forkId: string, branchIndex: number, def: string, afterStepId?: string): AnyStepRef {
       validateIsFork(forkId)
 
       const branches = forkBranches[forkId]
@@ -360,7 +362,7 @@ export const useStepStore = defineStore('steps', () => {
       // }
     }
 
-    function getAllBranchSteps(forkId: string, branchIndex: number): StepRef[] {
+    function getAllBranchSteps(forkId: string, branchIndex: number): AnyStepRef[] {
       return getBranch(forkId, branchIndex).stepIds.map(id => get(id))
     }
 
@@ -445,12 +447,12 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    function getDescendants(stepId: string): StepRef[] {
-      const descendants: StepRef[] = []
+    function getDescendants(stepId: string): AnyStepRef[] {
+      const descendants: AnyStepRef[] = []
       const visited = new Set<string>([stepId]) // Mark root as visited
       const stack: string[] = []
 
-      const rootStep: StepRef = get(stepId)
+      const rootStep: AnyStepRef = get(stepId)
 
       // Initialize stack with root's children
       if (rootStep.type === StepType.FORK) {
@@ -470,7 +472,7 @@ export const useStepStore = defineStore('steps', () => {
         if (visited.has(currentId)) continue
         visited.add(currentId)
 
-        const step: StepRef = get(currentId)
+        const step: AnyStepRef = get(currentId)
         descendants.push(step)
 
         if (step.type === StepType.FORK) {
@@ -493,17 +495,17 @@ export const useStepStore = defineStore('steps', () => {
       return descendants
     }
 
-    function getAncestors(stepId: string): StepRef[] {
-      const ancestors: StepRef[] = []
+    function getAncestors(stepId: string): AnyStepRef[] {
+      const ancestors: AnyStepRef[] = []
       let currentId: string | null = stepId
       const visited = new Set<string>()
 
       while (currentId && !visited.has(currentId)) {
         visited.add(currentId)
-        const step: StepRef = get(currentId)
+        const step: AnyStepRef = get(currentId)
 
         if (step.parentForkId) {
-          const fork = get(step.parentForkId)
+          const fork = get(step.parentForkId) as AnyStepRef
           ancestors.push(fork)
           currentId = fork.id
         } else {
@@ -536,7 +538,7 @@ export const useStepStore = defineStore('steps', () => {
     function duplicate(stepId: string) {
       const step = get(stepId)
 
-      let newStep: StepRef
+      let newStep: AnyStepRef
 
       if (step.parentForkId) {
         // Duplicate within branch
@@ -569,12 +571,12 @@ export const useStepStore = defineStore('steps', () => {
       return newStep
     }
 
-    function get(stepId: string): StepRef {
+    function get<T extends AnyStepContext>(stepId: string): StepRef<T, any> {
       const step = stepsById[stepId]
       if (step === undefined) {
         throw new Error('Invalid step id: ' + stepId)
       }
-      return step
+      return step as StepRef<T, any>
     }
 
     function getFork(forkId: string) {
@@ -632,7 +634,7 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    function getPrev(stepId: string): StepRef | null {
+    function getPrev(stepId: string): AnyStepRef | null {
       const step = get(stepId)
 
       if (step.parentForkId) {
@@ -657,7 +659,7 @@ export const useStepStore = defineStore('steps', () => {
       return get(prevStepId)
     }
 
-    function getNext(stepId: string): StepRef | null {
+    function getNext(stepId: string): AnyStepRef | null {
       const step = get(stepId)
 
       if (step.type === StepType.FORK) {
@@ -942,7 +944,7 @@ export const useStepStore = defineStore('steps', () => {
       get(stepId).validationErrors = errors
     }
 
-    const rootSteps = computed((): Step<AnyStepContext>[] => {
+    const rootSteps = computed((): Step<AnyStepContext, any>[] => {
       return rootStepIds.value.map(id => get(id))
     })
 
@@ -995,7 +997,7 @@ export const useStepStore = defineStore('steps', () => {
       inputData: T['Input'] | null,
     ) {
 
-      const step = get(stepId) as Step<T>
+      const step = get(stepId) as Step<T, any>
       step.isProcessing = true
 
       const startTime = performance.now()
@@ -1032,18 +1034,18 @@ export const useStepStore = defineStore('steps', () => {
             throw new Error(`Step ${stepId} has no config`)
           }
 
-          if (step.type === StepType.FORK) {
-            // now ts knows: step is ForkStep<T>
-            const result = await step.handler!.run({
-              config: step.config,
-              inputData,
-              branchCount: getBranches(stepId).length,
-            })
-            const x = parseForkStepRunnerResult<T>(result)
-            preview = x.preview
-            outputData = x.outputData
-            validationErrors = x.validationErrors
-          } else {
+          // if (step.type === StepType.FORK) {
+          //   // now ts knows: step is ForkStep<T>
+          //   const result = await step.handler!.run({
+          //     config: step.config,
+          //     inputData,
+          //     branchCount: getBranches(stepId).length,
+          //   })
+          //   const x = parseForkStepRunnerResult<T>(result)
+          //   preview = x.preview
+          //   outputData = x.outputData
+          //   validationErrors = x.validationErrors
+          // } else {
             // now ts knows: step is NormalStep<T>
             const result = await step.handler!.run({
               config: step.config,
@@ -1053,7 +1055,7 @@ export const useStepStore = defineStore('steps', () => {
             preview = x.preview
             outputData = x.outputData
             validationErrors = x.validationErrors
-          }
+          // }
 
           logStepEvent(stepId, 'resolveStep', {
             outputData,
@@ -1078,16 +1080,19 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    function registerStep<T extends AnyStepContext>(
+    function registerStep<
+      T extends AnyStepContext,
+      Runner = StepRunner<T>
+    >(
       stepId: string,
-      handlerOptions: StepHandlerOptions<T>,
+      handlerOptions: StepHandlerOptions<T, Runner>,
     ): {
-      step: Step<T>,
-      handler: IStepHandler<T>
+      step: Step<T, Runner>,
+      handler: IStepHandler<T, Runner>
     } {
-      const step = get(stepId) as StepRef<T>
+      const step = get<T>(stepId)
 
-      const handler = makeStepHandler<T>(step.def, handlerOptions)
+      const handler = makeStepHandler<T, Runner>(step.def, handlerOptions)
 
       if (step.def === STEP_FORK_DEF) {
         const prev = getPrev(step.id)
@@ -1107,6 +1112,11 @@ export const useStepStore = defineStore('steps', () => {
       }
 
       syncImageDataFromPrev(step.id)
+
+      if (__DEV__) {
+        expectTypeOf(handler).toExtend<IStepHandler<T, Runner>>()
+        expectTypeOf(step).toExtend<Step<T, Runner>>()
+      }
 
       return {
         step,
@@ -1136,9 +1146,9 @@ export const useStepStore = defineStore('steps', () => {
 
     const length = () => rootStepIds.value.length
 
-    function getAllLeafSteps(stepId: string): StepRef[] {
+    function getAllLeafSteps(stepId: string): AnyStepRef[] {
       const step = get(stepId)
-      const leaves: StepRef[] = []
+      const leaves: AnyStepRef[] = []
 
       if (step.type === StepType.FORK) {
         const branches = getBranches(stepId)
@@ -1159,8 +1169,8 @@ export const useStepStore = defineStore('steps', () => {
       return leaves
     }
 
-    function getAllPipelineLeaves(): StepRef[] {
-      const leaves: StepRef[] = []
+    function getAllPipelineLeaves(): AnyStepRef[] {
+      const leaves: AnyStepRef[] = []
 
       if (rootStepIds.value.length === 0) {
         return leaves
@@ -1170,7 +1180,7 @@ export const useStepStore = defineStore('steps', () => {
       return getAllLeafSteps(lastMainStepId)
     }
 
-    const stepLeaves = computed((): StepRef[] => getAllPipelineLeaves())
+    const stepLeaves = computed((): AnyStepRef[] => getAllPipelineLeaves())
 
     const startStepOutputSize = computed(() => {
       let width = 0

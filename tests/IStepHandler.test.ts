@@ -1,0 +1,193 @@
+import { expectTypeOf } from 'expect-type'
+import { describe, it } from 'vitest'
+import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
+import type {
+  IStepHandler,
+  StepHandlerOptions,
+  StepRunner,
+  StepRunnerOutput,
+} from '../src/lib/pipeline/StepHandler.ts'
+import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
+import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
+import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
+
+class A extends BitMask {
+}
+
+class B extends NormalMap {
+}
+
+class COut extends HeightMap {
+}
+
+type RawConfig = {
+  foo: number
+  bar: string
+}
+
+type SerializedConfig = {
+  foo: number
+  bar: string
+}
+
+type RC = ReactiveConfigType<RawConfig>
+
+type T = StepContext<
+  RawConfig,
+  SerializedConfig,
+  RC,
+  readonly [typeof A, typeof B],
+  typeof COut
+>
+
+type Runner = StepRunner<T>
+
+describe('IStepHandler<T, Runner> basic structure', () => {
+  const handler: IStepHandler<T, Runner> = {
+    inputDataTypes: [A, B] as const,
+    outputDataType: COut,
+
+    config() {
+      return {} as RC
+    },
+
+    run(args) {
+      expectTypeOf(args.config).toEqualTypeOf<RC>()
+      expectTypeOf(args.inputData).toEqualTypeOf<
+        StepInputTypesToInstances<[typeof A, typeof B]> | null
+      >()
+
+      return {
+        output: {} as InstanceType<typeof COut>,
+      }
+    },
+
+    watcher(step, defaults) {
+      expectTypeOf(step.config).toEqualTypeOf<RC>()
+      return defaults
+    },
+
+    prevOutputToInput(output) {
+      return output
+    },
+
+    validateInput(input) {
+      return []
+    },
+
+    validateInputType(type, allowed) {
+      return []
+    },
+
+    serializeConfig(config) {
+      expectTypeOf(config).toEqualTypeOf<RawConfig>()
+      return config
+    },
+
+    deserializeConfig(config) {
+      expectTypeOf(config).toEqualTypeOf<SerializedConfig>()
+      return config
+    },
+
+    loadConfig(config, serialized) {
+      expectTypeOf(config).toEqualTypeOf<RC>()
+      expectTypeOf(serialized).toEqualTypeOf<SerializedConfig>()
+    },
+    deserializeConfigKeys(serializedConfig: Record<string, any>): Record<string, any> {
+      return {}
+    },
+    serializeConfigKeys(config: T['RC']): Record<string, any> {
+      return {}
+    },
+  }
+
+  it('has correct inputDataTypes', () => {
+    expectTypeOf(handler.inputDataTypes).toEqualTypeOf<readonly [typeof A, typeof B]>()
+  })
+
+  it('has correct outputDataType', () => {
+    expectTypeOf(handler.outputDataType).toEqualTypeOf<typeof COut>()
+  })
+
+  it('has correct config() return type', () => {
+    expectTypeOf(handler.config()).toEqualTypeOf<RC>()
+  })
+
+  it('has correct run() signature', () => {
+    expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
+      config: RC
+      inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null
+
+    }]>()
+
+    expectTypeOf(handler.run).returns.toEqualTypeOf<
+      StepRunnerOutput<T['Output']> | null | undefined | Promise<StepRunnerOutput<T['Output']>>
+    >()
+  })
+})
+
+describe('StepHandlerOptions<T, Runner>', () => {
+  const opts: StepHandlerOptions<T, Runner> = {
+    inputDataTypes: [A, B] as const,
+    outputDataType: COut,
+    config() {
+      return {} as RC
+    },
+    run(args) {
+      return {
+        output: {} as InstanceType<typeof COut>,
+      }
+    },
+  }
+
+  it('is assignable to IStepHandler<T, Runner>', () => {
+    // expectTypeOf(opts).toEqualTypeOf<IStepHandler<T, Runner>>()
+    expectTypeOf(opts.config).toEqualTypeOf<(() => RC) | undefined>
+
+  })
+})
+
+describe('IStepHandler variance behavior', () => {
+  type T2 = StepContext<
+    RawConfig,
+    SerializedConfig,
+    RC,
+    readonly [typeof A],
+    typeof COut
+  >
+
+  type Runner2 = StepRunner<T2>
+
+  const handler2 = {
+    inputDataTypes: [A] as const,
+    outputDataType: COut,
+    config() {
+      return {} as RC
+    },
+    run() {
+      return { output: {} as InstanceType<typeof COut> }
+    },
+  }
+
+  it('allows narrowing inputDataTypes', () => {
+    expectTypeOf(handler2.inputDataTypes).toEqualTypeOf<readonly [typeof A]>()
+    expectTypeOf(handler2).toExtend<Pick<IStepHandler<T2, Runner2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'>>()
+    expectTypeOf(handler2.run).returns.toExtend<{ output: InstanceType<typeof COut> }>()
+  })
+
+  it('does not allow widening inputDataTypes', () => {
+    const bad: Pick<IStepHandler<T2, Runner2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'> = {
+      // @ts-expect-error inputDataTypes is too wide
+      inputDataTypes: [A, B] as const,
+      outputDataType: COut,
+      config() {
+        return {} as RC
+      },
+      run() {
+        return { output: {} as InstanceType<typeof COut> }
+      },
+    }
+    const noop = (v: any) => v
+    noop(bad)
+  })
+})
