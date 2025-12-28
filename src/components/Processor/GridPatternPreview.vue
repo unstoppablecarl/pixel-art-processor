@@ -5,13 +5,46 @@ import type { StepRef } from '../../lib/pipeline/Step.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
+import { normalizeValueToArray } from '../../lib/util/misc.ts'
 import { makePrng } from '../../lib/util/prng.ts'
 
 const previewStore = usePreviewStore()
 const store = useStepStore()
 
 const prng = computed(() => makePrng(previewStore.seed))
-const steps = computed(() => store.stepLeaves.filter(s => s.outputPreview))
+
+type ImageOutput = {
+  index: number,
+  step: StepRef,
+  image: ImageData
+  key: string,
+  encoded: string,
+}
+
+function make(step: StepRef, outputIndex: number, outputPreview: ImageData): ImageOutput {
+  const key = makeImgVar(step, outputIndex)
+  const encoded = imageDataToUrlImage(outputPreview)
+  return {
+    step,
+    key,
+    index: outputIndex,
+    image: outputPreview,
+    encoded: `${key}: url(${encoded});`,
+  }
+}
+
+const stepOutputImages = computed(() => {
+  let result: ImageOutput[] = []
+  store.stepLeaves.forEach(step => {
+    if (!step.outputPreview) return
+
+    normalizeValueToArray(step.outputPreview)
+      .forEach((p, index) => {
+        result.push(make(step, index, p))
+      })
+  })
+  return result
+})
 
 const size = computed(() => {
   let { width, height } = store.startStepOutputSize
@@ -32,11 +65,11 @@ const cssStyle = computed(() => {
 })
 
 const IMAGE_VAR_PREFIX = `--preview-img-list-`
-const makeImgVar = (index: number) => IMAGE_VAR_PREFIX + index
+const makeImgVar = (step: StepRef, index: number) => IMAGE_VAR_PREFIX + step.id + index
 
-const cssImageVars = computed(() => steps.value.map((s, i) => {
-    const encoded = imageDataToUrlImage(s.outputPreview!)
-    const key = makeImgVar(i)
+const cssImageVars = computed(() => stepOutputImages.value.map(({ step, image }, i) => {
+    const encoded = imageDataToUrlImage(image)
+    const key = makeImgVar(step, i)
     return `${key}: url(${encoded});`
   },
 ))
@@ -47,12 +80,13 @@ const grid = computed(() => {
       result[i] = []
       for (let j = 0; j < previewStore.gridWidth; j++) {
 
-        const index = prng.value.randomArrayIndex(steps.value)
+        const index = prng.value.randomArrayIndex(stepOutputImages.value)
+        const step = stepOutputImages.value[index].step
 
         result[i][j] = {
           index,
-          cssStyle: `--step-img-final-preview: var(${makeImgVar(index)});`,
-          step: steps.value[index],
+          cssStyle: `--step-img-final-preview: var(${makeImgVar(step, index)});`,
+          step: step,
         }
       }
     }
@@ -130,7 +164,7 @@ const grid = computed(() => {
       </div>
 
     </div>
-    <div class="min-vh-100 final-preview" v-if="steps.length">
+    <div class="min-vh-100 final-preview" v-if="stepOutputImages.length">
       <div v-for="row in grid" class="preview-row">
         <div v-for="{index, cssStyle, step} in row" :style="cssStyle" class="preview-cell">
           <div class="label">
