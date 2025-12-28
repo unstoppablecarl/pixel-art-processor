@@ -82,7 +82,7 @@ const images = computed(() => [
   },
   {
     label: 'Output',
-    imageData: step.outputPreview,
+    imageData: step.outputPreview as ImageData | null,
     placeholderWidth: config.textureImageData?.width,
     placeholderHeight: config.textureImageData?.height,
   },
