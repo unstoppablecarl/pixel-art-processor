@@ -4,7 +4,7 @@ import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 
 export const STEP_META: StepMeta = {
-  type: StepType.NORMAL,
+  type: StepType.FORK,
   def: STEP_FORK_DEF,
   displayName: 'Fork',
   inputDataTypes: [PassThrough],
@@ -13,21 +13,19 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useForkStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
-const step = useStepHandler(stepId, {
+const step = useForkStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return reactive({
-    })
+    return reactive({})
   },
-  run({ inputData }) {
+  run({ inputData, branchCount }) {
     return {
-      preview: null,
-      output: inputData,
+      branchesOutput: Array(branchCount).fill(inputData),
     }
   },
   validateInputType() {

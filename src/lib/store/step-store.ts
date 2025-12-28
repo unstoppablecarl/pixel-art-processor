@@ -1013,7 +1013,7 @@ export const useStepStore = defineStore('steps', () => {
 
           const duration = performance.now() - startTime
 
-          let { outputData, preview, validationErrors } = parseStepRunnerResult(step, result)
+          let { outputData, preview, validationErrors } = parseStepRunnerResult(result)
 
           logStepEvent(stepId, 'resolveStep', {
             outputData,

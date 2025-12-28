@@ -17,7 +17,7 @@ const stepRegistry = useStepRegistry()
 
 function addAfter(def: string) {
   if (stepRegistry.isFork(def)) {
-    store.addFork(stepId)
+    store.addFork(def)
   } else {
     store.add(def, stepId)
   }
