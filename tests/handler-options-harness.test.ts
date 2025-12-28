@@ -161,7 +161,7 @@ type StepHandlerOptions<T extends AnyStepContext> = {
   validateInputType: (
     typeFromPrev: T['Input'],
     inputTypes: T['InputConstructors'],
-  ) => void
+  ) => StepValidationError[],
 
   run: StepRunner<T>
 }
@@ -256,6 +256,7 @@ assertHandlerOptions<C, SC, RC, I, O>(
       return output
     },
     validateInputType() {
+      return []
     },
     run({ config, inputData }) {
       return { output: new TypeC() }
@@ -295,6 +296,7 @@ const step = useGenericHandler('testing', {
     return output
   },
   validateInputType() {
+    return []
   },
   run({ config, inputData }) {
     return { output: new TypeC() }
@@ -329,7 +331,9 @@ const handlerOptions: Options = {
   watcher(step) {},
   loadConfig(config, serialized) {},
   prevOutputToInput(output) { return output },
-  validateInputType() {},
+  validateInputType() {
+    return []
+  },
   run({ config, inputData }) {
     return { output: new TypeC() }
   },
