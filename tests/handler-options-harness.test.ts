@@ -1,0 +1,339 @@
+import { expectTypeOf } from 'vitest'
+import { Reactive, shallowReactive, type ShallowReactive } from 'vue'
+
+class TypeA {
+}
+
+class TypeB {
+}
+
+class TypeC {
+}
+
+export type StepDataType =
+  | typeof TypeA
+  | typeof TypeB
+  | typeof TypeC
+
+export type SerializedImageData = {
+  width: number,
+  height: number,
+  data: number[],
+}
+
+export function deserializeImageData(obj: SerializedImageData | null): ImageData | null {
+  if (obj === null) return null
+
+  return new ImageData(
+    new Uint8ClampedArray(obj.data),
+    obj.width,
+    obj.height,
+  )
+}
+
+export function serializeImageData(imageData: ImageData | null): SerializedImageData | null {
+  if (imageData === null) return null
+
+  return {
+    width: imageData.width,
+    height: imageData.height,
+    data: Array.from(imageData.data),
+  }
+}
+
+type StepValidationError = {}
+
+export type ConfiguredStep<T extends AnyStepContext> =
+  Required<Omit<Step<T>, 'config' | 'handler'>>
+  & {
+  config: NonNullable<Step<T>['config']>,
+  handler: NonNullable<Step<T>['handler']>,
+}
+
+type WatcherTarget = {}
+export type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
+  config: T['RC'],
+  inputData: T['Input'] | null,
+}) => StepRunnerOutput<T['Output']>
+  | Promise<StepRunnerOutput<T['Output']>>
+
+export type StepRunnerOutput<Output> = null |
+  undefined | {
+  output: Output | null | undefined,
+}
+
+export type Config = Record<string, any>
+
+export type Step<T extends AnyStepContext> = {
+  readonly id: string,
+  readonly def: string,
+  inputData: T['Input'] extends null ? null : T['Input'] | null,
+  outputData: T['Output'] | T['Output'][] | null,
+  config: T['RC'] | undefined,
+  handler: IStepHandler<T> | undefined,
+}
+
+export interface IStepHandler<T extends AnyStepContext> {
+  inputDataTypes: T['InputConstructors'],
+  outputDataType: T['OutputConstructors'],
+
+  // getter for config
+  config(): T['RC'],
+
+  // watch config and trigger updates
+  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): void,
+
+  // apply loaded config to internal reactive config
+  loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
+
+  // convert config to storage
+  serializeConfig(config: T['C']): T['SerializedConfig'],
+
+  // convert config from storage
+  deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
+
+  // prepare input data when changed
+  prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
+
+  // validate the prevStep.outputDataType against currentStep.inputDataType
+  validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: T['InputConstructors']): StepValidationError[],
+
+  run: StepRunner<T>,
+}
+
+export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
+  // first steps do not have input so convert [] to null
+  ? null
+  : Input[number] extends StepDataType
+    // convert array of constructors to union of instances
+    ? InstanceType<Input[number]>
+    : never
+
+export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;
+
+export type AnyStepContext = StepContext<any, any, any, any, any>
+
+// Strict version for this harness (no defaults)
+export type StepContextStrict<
+  C extends Config,
+  SerializedConfig extends Config,
+  RC extends ReactiveConfigType<C>,
+  Input extends readonly StepDataType[],
+  Output extends StepDataType,
+> = {
+  C: C,
+  OutputConstructors: Output,
+  Output: InstanceType<Output>,
+  InputConstructors: Input,
+  Input: StepInputTypesToInstances<Input>,
+  RC: RC,
+  SerializedConfig: SerializedConfig,
+}
+
+// And for this file, alias StepContext to the strict one
+export type StepContext<
+  C extends Config,
+  SerializedConfig extends Config,
+  RC extends ReactiveConfigType<C>,
+  Input extends readonly StepDataType[],
+  Output extends StepDataType,
+> = StepContextStrict<C, SerializedConfig, RC, Input, Output>
+
+type StepHandlerOptions<T extends AnyStepContext> = {
+  inputDataTypes: T['InputConstructors']
+  outputDataType: T['OutputConstructors']
+
+  config: () => T['RC']
+
+  serializeConfig: (config: T['C']) => T['SerializedConfig']
+  deserializeConfig: (config: T['SerializedConfig']) => T['C']
+
+  watcher: (
+    step: ConfiguredStep<T>,
+  ) => void
+
+  loadConfig: (config: T['RC'], serialized: T['SerializedConfig']) => void
+
+  prevOutputToInput: (
+    output: T['Input'] | null,
+  ) => T['Input'] | null
+
+  validateInputType: (
+    typeFromPrev: T['Input'],
+    inputTypes: T['InputConstructors'],
+  ) => void
+
+  run: StepRunner<T>
+}
+
+// --- 2. useGenericHandler rewritten to expose TInferred -----------------------
+
+function useGenericHandler<
+  T extends AnyStepContext
+>(
+  stepId: string,
+  options: StepHandlerOptions<T>,
+) {
+  return {} as ConfiguredStep<T>
+}
+
+// --- 3. Concrete expected types ----------------------------------------------
+
+const inputDataTypes = [TypeB, TypeA] as const
+const outputDataType = TypeC
+
+const configRaw = {
+  maskImageData: null as ImageData | null,
+} satisfies Config
+
+type C = typeof configRaw
+type SC = { maskImageData: SerializedImageData | null }
+type RC = ShallowReactive<C>
+type I = typeof inputDataTypes
+type O = typeof outputDataType
+
+// type TExpected = StepContext<C, SC, RC, I, O>
+
+// --- 4. Call site ------------------------------------------------------------
+
+function assertHandlerOptions<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+>(
+  options: StepHandlerOptions<StepContext<C, SC, RC, I, O>>,
+  _configExample: C,
+  _serializedConfigExample: SC,
+  _inputExample: I,
+  _outputExample: O,
+) {
+  type T = StepContext<C, SC, RC, I, O>
+
+  // 1) Core identity: the options *are* handler options for T
+  expectTypeOf(options).toExtend<StepHandlerOptions<T>>()
+
+  // 2) Input/output constructors
+
+  // 3) Config relationships
+  expectTypeOf<StepHandlerOptions<T>['serializeConfig']>()
+    .toEqualTypeOf<(config: C) => SC>()
+  expectTypeOf<StepHandlerOptions<T>['deserializeConfig']>()
+    .toEqualTypeOf<(config: SC) => C>()
+
+  // 4) Run signature
+  expectTypeOf<StepHandlerOptions<T>['run']>()
+    .toEqualTypeOf<StepRunner<T>>()
+}
+
+assertHandlerOptions<C, SC, RC, I, O>(
+  {
+    inputDataTypes,
+    outputDataType,
+
+    config() {
+      return shallowReactive(configRaw)
+    },
+
+    serializeConfig(config) {
+      return {
+        maskImageData: serializeImageData(config.maskImageData),
+      }
+    },
+
+    deserializeConfig(config) {
+      return {
+        maskImageData: deserializeImageData(config.maskImageData),
+      }
+    },
+
+    watcher(step) {
+    },
+    loadConfig(config, serialized) {
+    },
+    prevOutputToInput(output) {
+      return output
+    },
+    validateInputType() {
+    },
+    run({ config, inputData }) {
+      return { output: new TypeC() }
+    },
+  },
+  configRaw,
+  { maskImageData: null },
+  inputDataTypes,
+  outputDataType,
+)
+
+const step = useGenericHandler('testing', {
+  inputDataTypes,
+  outputDataType,
+
+  config() {
+    return shallowReactive(configRaw)
+  },
+
+  serializeConfig(config) {
+    return {
+      maskImageData: serializeImageData(config.maskImageData),
+    }
+  },
+
+  deserializeConfig(config) {
+    return {
+      maskImageData: deserializeImageData(config.maskImageData),
+    }
+  },
+
+  watcher(step) {
+  },
+  loadConfig(config, serialized) {
+  },
+  prevOutputToInput(output) {
+    return output
+  },
+  validateInputType() {
+  },
+  run({ config, inputData }) {
+    return { output: new TypeC() }
+  },
+})
+
+expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+
+type T = StepContext<C, SC, RC, I, O>
+type Options = StepHandlerOptions<T>
+
+const handlerOptions: Options = {
+  inputDataTypes,
+  outputDataType,
+
+  config() {
+    return shallowReactive(configRaw)
+  },
+
+  serializeConfig(config) {
+    return {
+      maskImageData: serializeImageData(config.maskImageData),
+    }
+  },
+
+  deserializeConfig(config) {
+    return {
+      maskImageData: deserializeImageData(config.maskImageData),
+    }
+  },
+
+  watcher(step) {},
+  loadConfig(config, serialized) {},
+  prevOutputToInput(output) { return output },
+  validateInputType() {},
+  run({ config, inputData }) {
+    return { output: new TypeC() }
+  },
+}
+expectTypeOf<typeof handlerOptions>().toEqualTypeOf<Options>()
+expectTypeOf<typeof handlerOptions.inputDataTypes>().toEqualTypeOf<I>()
+expectTypeOf<typeof handlerOptions.outputDataType>().toEqualTypeOf<O>()
