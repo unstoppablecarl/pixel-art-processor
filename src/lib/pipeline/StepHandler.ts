@@ -38,7 +38,7 @@ export type ConfigKeyAdapters<
   [K in keyof C & keyof SerializedConfig]: ConfigKeyAdapter<SerializedConfig[K], C[K]>
 }>
 
-type WatcherTarget = WatchSource | Reactive<any>
+export type WatcherTarget = WatchSource | Reactive<any>
 
 export interface IStepHandler<T extends AnyStepContext, Runner = StepRunner<T>> {
   inputDataTypes: T['InputConstructors'],
