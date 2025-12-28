@@ -96,7 +96,7 @@ export interface IStepHandler<T extends AnyStepContext> {
   prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
 
   // validate the prevStep.outputDataType against currentStep.inputDataType
-  validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: T['InputConstructors']): StepValidationError[],
+  validateInputType(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   run: StepRunner<T>,
 }
@@ -341,3 +341,75 @@ const handlerOptions: Options = {
 expectTypeOf<typeof handlerOptions>().toEqualTypeOf<Options>()
 expectTypeOf<typeof handlerOptions.inputDataTypes>().toEqualTypeOf<I>()
 expectTypeOf<typeof handlerOptions.outputDataType>().toEqualTypeOf<O>()
+
+
+export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+export type StepHandlerOptional =
+  | 'watcher'
+  | 'serializeConfig'
+  | 'deserializeConfig'
+  | 'config'
+  | 'loadConfig'
+  | 'prevOutputToInput'
+  | 'validateInputType'
+
+export type StepHandlerOptionsOptional<T extends AnyStepContext> =
+  Optional<IStepHandler<T>, StepHandlerOptional>
+
+
+type T2 = StepContext<C, SC, RC, I, O>
+type Options2 = StepHandlerOptionsOptional<T2>
+
+
+const minimalOptions: Options2 = {
+  inputDataTypes,
+  outputDataType,
+  run({ config, inputData }) {
+    return { output: new TypeC() }
+  },
+}
+
+const fullOptions: Options = {
+  inputDataTypes,
+  outputDataType,
+
+  config() {
+    return shallowReactive(configRaw)
+  },
+
+  serializeConfig(config) {
+    return {
+      maskImageData: serializeImageData(config.maskImageData),
+    }
+  },
+
+  deserializeConfig(config) {
+    return {
+      maskImageData: deserializeImageData(config.maskImageData),
+    }
+  },
+
+  watcher(step) {},
+  loadConfig(config, serialized) {},
+  prevOutputToInput(output) { return output },
+  validateInputType() { return [] },
+
+  run({ config, inputData }) {
+    return { output: new TypeC() }
+  },
+}
+
+expectTypeOf(fullOptions).toExtend<Options2>()
+expectTypeOf(minimalOptions).toExtend<Options2>()
+expectTypeOf<Options2['serializeConfig']>()
+  .toEqualTypeOf<((config: C) => SC) | undefined>()
+
+expectTypeOf<Options2['deserializeConfig']>()
+  .toEqualTypeOf<((config: SC) => C) | undefined>()
+
+expectTypeOf<Options2['prevOutputToInput']>()
+  .toEqualTypeOf<((output: T['Input'] | null) => T['Input'] | null) | undefined>()
+
+expectTypeOf<Options2['validateInputType']>()
+  .toEqualTypeOf<((typeFromPrev: T['Input'], inputTypes: I) => StepValidationError[]) | undefined>()
