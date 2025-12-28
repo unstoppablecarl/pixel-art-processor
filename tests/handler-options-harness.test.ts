@@ -79,7 +79,7 @@ export interface IStepHandler<T extends AnyStepContext> {
 
   // getter for config
   config(): T['RC'],
-  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): void,
+  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]):  WatcherTarget[],
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
   serializeConfig(config: T['C']): T['SerializedConfig'],
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
@@ -243,6 +243,7 @@ assertHandlerOptions<C, SC, RC, I, O>(
     },
 
     watcher(step) {
+      return []
     },
     loadConfig(config, serialized) {
     },
@@ -287,6 +288,7 @@ const step = useGenericHandler('testing', {
   },
 
   watcher(step) {
+    return []
   },
   loadConfig(config, serialized) {
   },
@@ -330,6 +332,7 @@ const handlerOptions: Options = {
   },
 
   watcher(step) {
+    return []
   },
   loadConfig(config, serialized) {
   },
@@ -397,6 +400,7 @@ const fullOptions: Options = {
   },
 
   watcher(step) {
+    return []
   },
   loadConfig(config, serialized) {
   },
@@ -423,7 +427,8 @@ expectTypeOf<Options2['deserializeConfig']>()
   .toEqualTypeOf<((config: SC) => C) | undefined>()
 
 expectTypeOf<Options2['prevOutputToInput']>()
-  .toEqualTypeOf<((output: T['Input'] | null) => T['Input'] | null) | undefined>()
+  .toEqualTypeOf<((output: T2['Input'] | null) => T2['Input'] | null) | undefined>()
 
 expectTypeOf<Options2['validateInputType']>()
-  .toEqualTypeOf<((typeFromPrev: T['Input'], inputTypes: I) => StepValidationError[]) | undefined>()
+  .toExtend<((typeFromPrevOutput: T2["Input"], inputDataTypes: T2["InputConstructors"]) => StepValidationError[]) | undefined>()
+
