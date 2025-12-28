@@ -1,12 +1,7 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
-import type {
-  IStepHandler,
-  StepHandlerOptions,
-  StepRunner,
-  StepRunnerOutput,
-} from '../src/lib/pipeline/StepHandler.ts'
+import type { IStepHandler, StepHandlerOptions, StepRunnerOutput } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -40,10 +35,8 @@ type T = StepContext<
   typeof COut
 >
 
-type Runner = StepRunner<T>
-
-describe('IStepHandler<T, Runner> basic structure', () => {
-  const handler: IStepHandler<T, Runner> = {
+describe('IStepHandler<T> basic structure', () => {
+  const handler: IStepHandler<T> = {
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
 
@@ -126,8 +119,8 @@ describe('IStepHandler<T, Runner> basic structure', () => {
   })
 })
 
-describe('StepHandlerOptions<T, Runner>', () => {
-  const opts: StepHandlerOptions<T, Runner> = {
+describe('StepHandlerOptions<T>', () => {
+  const opts: StepHandlerOptions<T> = {
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
     config() {
@@ -140,8 +133,8 @@ describe('StepHandlerOptions<T, Runner>', () => {
     },
   }
 
-  it('is assignable to IStepHandler<T, Runner>', () => {
-    // expectTypeOf(opts).toEqualTypeOf<IStepHandler<T, Runner>>()
+  it('is assignable to IStepHandler<T>', () => {
+    // expectTypeOf(opts).toEqualTypeOf<IStepHandler<T>>()
     expectTypeOf(opts.config).toEqualTypeOf<(() => RC) | undefined>
 
   })
@@ -156,8 +149,6 @@ describe('IStepHandler variance behavior', () => {
     typeof COut
   >
 
-  type Runner2 = StepRunner<T2>
-
   const handler2 = {
     inputDataTypes: [A] as const,
     outputDataType: COut,
@@ -171,12 +162,12 @@ describe('IStepHandler variance behavior', () => {
 
   it('allows narrowing inputDataTypes', () => {
     expectTypeOf(handler2.inputDataTypes).toEqualTypeOf<readonly [typeof A]>()
-    expectTypeOf(handler2).toExtend<Pick<IStepHandler<T2, Runner2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'>>()
+    expectTypeOf(handler2).toExtend<Pick<IStepHandler<T2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'>>()
     expectTypeOf(handler2.run).returns.toExtend<{ output: InstanceType<typeof COut> }>()
   })
 
   it('does not allow widening inputDataTypes', () => {
-    const bad: Pick<IStepHandler<T2, Runner2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'> = {
+    const bad: Pick<IStepHandler<T2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'> = {
       // @ts-expect-error inputDataTypes is too wide
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
