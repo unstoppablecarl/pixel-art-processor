@@ -29,10 +29,8 @@ export type StepHandlerOptional =
   | 'deserializeConfigKeys'
   | 'configKeyAdapters'
 
-export type StepHandlerOptions<T extends AnyStepContext, Runner> =
-  Optional<Omit<IStepHandler<T, Runner>, 'run'>, StepHandlerOptional> & {
-  run: Runner,
-}
+export type StepHandlerOptions<T extends AnyStepContext> =
+  Optional<IStepHandler<T>, StepHandlerOptional>
 
 export type ConfigKeyAdapters<
   C extends Config = Config,
@@ -43,16 +41,29 @@ export type ConfigKeyAdapters<
 
 export type WatcherTarget = WatchSource | Reactive<any>
 
-export interface IStepHandler<T extends AnyStepContext, Runner> {
+export type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
+  config: T['RC'],
+  inputData: T['Input'] | null,
+}) => StepRunnerOutput<T['Output']>
+  | Promise<StepRunnerOutput<T['Output']>>
+
+export type StepRunnerOutput<Output> = null |
+  undefined | {
+  preview?: ImageData | null | undefined,
+  output: Output | null | undefined,
+  validationErrors?: StepValidationError[]
+}
+
+
+export interface IStepHandler<T extends AnyStepContext> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
-  run: Runner,
 
   // getter for config
   config(): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: ConfiguredStep<T, Runner>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -80,13 +91,15 @@ export interface IStepHandler<T extends AnyStepContext, Runner> {
     config: T['RC'],
   ): Record<string, any>
 
+  run: StepRunner<T>,
+
   configKeyAdapters?: ConfigKeyAdapters<T['C'], T['SerializedConfig']>,
 }
 
-export function makeStepHandler<
-  T extends AnyStepContext,
-  Runner
->(def: string, options: StepHandlerOptions<T, Runner>): IStepHandler<T, Runner> {
+export function makeStepHandler<T extends AnyStepContext>(
+  def: string,
+  options: StepHandlerOptions<T>,
+): IStepHandler<T> {
 
   type RC = T['RC']
   type SerializedConfig = T['SerializedConfig']
@@ -105,7 +118,7 @@ export function makeStepHandler<
       return reactive({}) as RC
     },
 
-    watcher(_step: ConfiguredStep<T, Runner>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    watcher(_step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]
@@ -168,33 +181,9 @@ export function makeStepHandler<
   return {
     ...baseStepHandler,
     ...options,
-  } as IStepHandler<T, Runner>
+  } as IStepHandler<T>
 }
 
-// export type ForkStepRunner<T extends AnyStepContext> = (
-//   {
-//     config,
-//     inputData,
-//     branchCount,
-//   }: {
-//     config: T['RC'],
-//     inputData: T['Input'] | null,
-//     branchCount: number,
-//   }) => ForkStepRunnerOutput<T['Output']>
-//   | Promise<ForkStepRunnerOutput<T['Output']>>
-
-export type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
-  config: T['RC'],
-  inputData: T['Input'] | null,
-}) => StepRunnerOutput<T['Output']>
-  | Promise<StepRunnerOutput<T['Output']>>
-
-export type StepRunnerOutput<Output> = null |
-  undefined | {
-  preview?: ImageData | null | undefined,
-  output: Output | null | undefined,
-  validationErrors?: StepValidationError[]
-}
 
 // export type ForkStepRunnerOutput<Output> = null | undefined | {
 //   preview?: ImageData | ImageData[] | null | undefined,

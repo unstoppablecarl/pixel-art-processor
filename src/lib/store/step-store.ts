@@ -19,10 +19,8 @@ import {
   type Config,
   type IStepHandler,
   makeStepHandler,
-  // parseForkStepRunnerResult,
   parseStepRunnerResult,
   type StepHandlerOptions,
-  type StepRunner,
 } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
@@ -93,7 +91,7 @@ export const useStepStore = defineStore('steps', () => {
       imgScale.value = data.imgScale
 
       Object.values(data.stepsById)
-        .forEach((stepData: DeSerializedStep<any, any>) => {
+        .forEach((stepData: DeSerializedStep<AnyStepContext>) => {
           const step = createLoadedStep(stepData)
           stepsById[step.id] = step
         })
@@ -571,12 +569,12 @@ export const useStepStore = defineStore('steps', () => {
       return newStep
     }
 
-    function get<T extends AnyStepContext>(stepId: string): StepRef<T, any> {
+    function get<T extends AnyStepContext>(stepId: string): StepRef<T> {
       const step = stepsById[stepId]
       if (step === undefined) {
         throw new Error('Invalid step id: ' + stepId)
       }
-      return step as StepRef<T, any>
+      return step as StepRef<T>
     }
 
     function getFork(forkId: string) {
@@ -944,7 +942,7 @@ export const useStepStore = defineStore('steps', () => {
       get(stepId).validationErrors = errors
     }
 
-    const rootSteps = computed((): Step<AnyStepContext, any>[] => {
+    const rootSteps = computed((): Step<AnyStepContext>[] => {
       return rootStepIds.value.map(id => get(id))
     })
 
@@ -997,7 +995,7 @@ export const useStepStore = defineStore('steps', () => {
       inputData: T['Input'] | null,
     ) {
 
-      const step = get(stepId) as Step<T, any>
+      const step = get(stepId)
       step.isProcessing = true
 
       const startTime = performance.now()
@@ -1046,15 +1044,15 @@ export const useStepStore = defineStore('steps', () => {
           //   outputData = x.outputData
           //   validationErrors = x.validationErrors
           // } else {
-            // now ts knows: step is NormalStep<T>
-            const result = await step.handler!.run({
-              config: step.config,
-              inputData,
-            })
-            const x = parseStepRunnerResult<T['Output']>(result)
-            preview = x.preview
-            outputData = x.outputData
-            validationErrors = x.validationErrors
+          // now ts knows: step is NormalStep<T>
+          const result = await step.handler!.run({
+            config: step.config,
+            inputData,
+          })
+          const x = parseStepRunnerResult<T['Output']>(result)
+          preview = x.preview
+          outputData = x.outputData
+          validationErrors = x.validationErrors
           // }
 
           logStepEvent(stepId, 'resolveStep', {
@@ -1080,27 +1078,24 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    function registerStep<
-      T extends AnyStepContext,
-      Runner = StepRunner<T>
-    >(
+    function registerStep<T extends AnyStepContext>(
       stepId: string,
-      handlerOptions: StepHandlerOptions<T, Runner>,
+      handlerOptions: StepHandlerOptions<T>,
     ): {
-      step: Step<T, Runner>,
-      handler: IStepHandler<T, Runner>
+      step: Step<T>,
+      handler: IStepHandler<T>
     } {
       const step = get<T>(stepId)
 
-      const handler = makeStepHandler<T, Runner>(step.def, handlerOptions)
-
-      if (step.def === STEP_FORK_DEF) {
-        const prev = getPrev(step.id)
-        if (!prev) {
-          throw new Error('No prev step before fork')
-        }
-        handler.outputDataType = prev.handler!.outputDataType
-      }
+      const handler = makeStepHandler<T>(step.def, handlerOptions)
+      //
+      // if (step.def === STEP_FORK_DEF) {
+      //   const prev = getPrev(step.id)
+      //   if (!prev) {
+      //     throw new Error('No prev step before fork')
+      //   }
+      //   handler.outputDataType = prev.handler!.outputDataType
+      // }
 
       step.handler = handler
       if (step.config === undefined) {
@@ -1114,8 +1109,8 @@ export const useStepStore = defineStore('steps', () => {
       syncImageDataFromPrev(step.id)
 
       if (__DEV__) {
-        expectTypeOf(handler).toExtend<IStepHandler<T, Runner>>()
-        expectTypeOf(step).toExtend<Step<T, Runner>>()
+        expectTypeOf(handler).toExtend<IStepHandler<T>>()
+        expectTypeOf(step).toExtend<Step<T>>()
       }
 
       return {
