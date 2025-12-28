@@ -79,24 +79,13 @@ export interface IStepHandler<T extends AnyStepContext> {
 
   // getter for config
   config(): T['RC'],
-
-  // watch config and trigger updates
   watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): void,
-
-  // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
-
-  // convert config to storage
   serializeConfig(config: T['C']): T['SerializedConfig'],
-
-  // convert config from storage
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
-
-  // prepare input data when changed
   prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
-
-  // validate the prevStep.outputDataType against currentStep.inputDataType
   validateInputType(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
+  validateInput(inputData: T['Input']): StepValidationError[],
 
   run: StepRunner<T>,
 }
@@ -162,6 +151,8 @@ type StepHandlerOptions<T extends AnyStepContext> = {
     typeFromPrev: T['Input'],
     inputTypes: T['InputConstructors'],
   ) => StepValidationError[],
+
+  validateInput(inputData: T['Input']): StepValidationError[],
 
   run: StepRunner<T>
 }
@@ -255,6 +246,10 @@ assertHandlerOptions<C, SC, RC, I, O>(
     prevOutputToInput(output) {
       return output
     },
+    validateInput(inputData) {
+      return []
+    },
+
     validateInputType() {
       return []
     },
@@ -298,6 +293,9 @@ const step = useGenericHandler('testing', {
   validateInputType() {
     return []
   },
+  validateInput(inputData) {
+    return []
+  },
   run({ config, inputData }) {
     return { output: new TypeC() }
   },
@@ -328,10 +326,17 @@ const handlerOptions: Options = {
     }
   },
 
-  watcher(step) {},
-  loadConfig(config, serialized) {},
-  prevOutputToInput(output) { return output },
+  watcher(step) {
+  },
+  loadConfig(config, serialized) {
+  },
+  prevOutputToInput(output) {
+    return output
+  },
   validateInputType() {
+    return []
+  },
+  validateInput(inputData) {
     return []
   },
   run({ config, inputData }) {
@@ -341,7 +346,6 @@ const handlerOptions: Options = {
 expectTypeOf<typeof handlerOptions>().toEqualTypeOf<Options>()
 expectTypeOf<typeof handlerOptions.inputDataTypes>().toEqualTypeOf<I>()
 expectTypeOf<typeof handlerOptions.outputDataType>().toEqualTypeOf<O>()
-
 
 export type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
@@ -353,14 +357,13 @@ export type StepHandlerOptional =
   | 'loadConfig'
   | 'prevOutputToInput'
   | 'validateInputType'
+  | 'validateInput'
 
 export type StepHandlerOptionsOptional<T extends AnyStepContext> =
   Optional<IStepHandler<T>, StepHandlerOptional>
 
-
 type T2 = StepContext<C, SC, RC, I, O>
 type Options2 = StepHandlerOptionsOptional<T2>
-
 
 const minimalOptions: Options2 = {
   inputDataTypes,
@@ -390,11 +393,19 @@ const fullOptions: Options = {
     }
   },
 
-  watcher(step) {},
-  loadConfig(config, serialized) {},
-  prevOutputToInput(output) { return output },
-  validateInputType() { return [] },
-
+  watcher(step) {
+  },
+  loadConfig(config, serialized) {
+  },
+  prevOutputToInput(output) {
+    return output
+  },
+  validateInputType() {
+    return []
+  },
+  validateInput(inputData) {
+    return []
+  },
   run({ config, inputData }) {
     return { output: new TypeC() }
   },
