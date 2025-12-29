@@ -298,10 +298,13 @@ function registerStep<T extends AnyStepContext>(
   step: Step<T>,
   handler: IStepHandler<T>
 } {
+  const step = {} as ConfiguredStep<T>
 
   const handler = makeStepHandler<T>('test', handlerOptions)
+  step.handler = handler
+
   return {
-    step: {} as ConfiguredStep<T>,
+    step,
     handler,
   }
 }
@@ -659,7 +662,7 @@ describe('handler harness tests', () => {
       stepId: string,
       options: StepHandlerOptionsInfer<C, SC, RC, I, O>,
     ) {
-      return {} as ConfiguredStep<T>
+      return {} as ConfiguredStep<StepContext<C, SC, RC, I, O>>
     }
 
     const step = useGenericHandler('testing', {
@@ -727,7 +730,8 @@ describe('handler harness tests', () => {
 
       type T = StepContext<C, SC, RC, I, O>
       const { step, handler } = registerStep<T>(stepId, options)
-      step.handler = handler
+
+      expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
 
       return step as ConfiguredStep<T>
     }
@@ -796,6 +800,13 @@ describe('handler harness tests', () => {
 
     expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
     expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+
+    expectTypeOf(step.handler.run).toEqualTypeOf<
+      IStepHandler<T>['run']
+    >()
+    expectTypeOf(step.handler.run).toEqualTypeOf<
+      StepRunner<T>
+    >()
 
     expectTypeOf(step.handler.config).toEqualTypeOf<
       IStepHandler<T>['config']
