@@ -82,11 +82,3 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
 export type MaybePromise<T> =
   | T
   | Promise<T>
-
-
-// Ensures Actual extends Expected
-// Ensures Actual has no extra keys
-export type Narrows<Expected, Actual extends Expected> =
-  Exclude<keyof Actual, keyof Expected> extends never
-    ? Actual
-    : never
