@@ -81,7 +81,7 @@ export function useStepForkHandler<
   stepId: string,
   options: StepHandlerOptionsInfer<
     C, SC, RC, I, O,
-    NormalStepRunner<StepContext<C, SC, RC, I, O>>
+    ForkStepRunner<StepContext<C, SC, RC, I, O>>
   >,
 ) {
 
