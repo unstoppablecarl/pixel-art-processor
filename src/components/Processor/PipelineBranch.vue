@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { dragAndDrop } from '@formkit/drag-and-drop'
 import { computed, onMounted, useTemplateRef } from 'vue'
-import { type StepRef } from '../../lib/pipeline/Step.ts'
+import { type AnyStepRef } from '../../lib/pipeline/Step.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
@@ -26,7 +26,7 @@ const allSteps = computed(() => {
     }
   }
 
-  let fork: StepRef | null = null
+  let fork: AnyStepRef | null = null
 
   const lastId = stepIds[stepIds.length - 1]
 

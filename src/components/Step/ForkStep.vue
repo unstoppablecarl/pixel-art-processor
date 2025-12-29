@@ -13,20 +13,23 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { useForkStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
-const step = useForkStepHandler(stepId, {
+const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
     return reactive({})
   },
-  run({ inputData, branchCount }) {
-    return {
-      branchesOutput: Array(branchCount).fill(inputData),
-    }
+  run({ inputData }) {
+
+    return null
+    //
+    // return {
+    //   branchesOutput: Array(branchCount).fill(inputData),
+    // }
   },
   validateInputType() {
     return []

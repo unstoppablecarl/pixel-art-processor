@@ -34,6 +34,18 @@ const step = useStepHandler(stepId, {
       textureImageData: null as null | ImageData,
     })
   },
+  serializeConfig(config) {
+    return {
+      ...config,
+      textureImageData: serializeImageData(config.textureImageData),
+    }
+  },
+  deserializeConfig(config) {
+    return {
+      ...config,
+      textureImageData: deserializeImageData(config.textureImageData),
+    }
+  },
   run({ config, inputData }) {
     if (!inputData) return
     if (!config.textureImageData) return
@@ -48,18 +60,6 @@ const step = useStepHandler(stepId, {
     return {
       output: result,
       preview: result.toImageData(),
-    }
-  },
-  serializeConfig(config) {
-    return {
-      ...config,
-      textureImageData: serializeImageData(config.textureImageData),
-    }
-  },
-  deserializeConfig(config) {
-    return {
-      ...config,
-      textureImageData: deserializeImageData(config.textureImageData),
     }
   },
 })
