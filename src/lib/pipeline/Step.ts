@@ -24,12 +24,12 @@ export type StepContext<
   Output extends StepDataType,
 > = {
   C: C,
+  SerializedConfig: SerializedConfig,
+  RC: RC,
+  InputConstructors: Input,
   OutputConstructors: Output,
   Output: InstanceType<Output>,
-  InputConstructors: Input,
   Input: StepInputTypesToInstances<Input>,
-  RC: RC,
-  SerializedConfig: SerializedConfig,
 }
 
 export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;

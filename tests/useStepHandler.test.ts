@@ -3,10 +3,20 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
-import { type AnyStepContext, type StepContext, StepType } from '../src/lib/pipeline/Step'
-import type { IStepHandler, WatcherTarget } from '../src/lib/pipeline/StepHandler'
+import {
+  type AnyStepContext,
+  type StepContext,
+  type StepInputTypesToInstances,
+  StepType,
+} from '../src/lib/pipeline/Step'
+import type {
+  IStepHandler,
+  StepHandlerOptions,
+  StepHandlerOptionsInfer,
+  WatcherTarget,
+} from '../src/lib/pipeline/StepHandler'
 import { makeStepRegistry, STEP_REGISTRY_INJECT_KEY, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
-import type { StepRunner, StepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { NormalStepRunner, NormalStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { type ConfiguredStep, useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
@@ -162,7 +172,7 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
       expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
 
-      expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
+      expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T, NormalStepRunner<T>>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | ImageData[] | null>()
       expectTypeOf(step.inputData).toEqualTypeOf<InputInstances | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | OutputInstance[] | null>()
@@ -172,22 +182,22 @@ describe('step handler type testing', async () => {
       expect(step.handler).to.not.eq(undefined)
 
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        IStepHandler<T>['run']
+        IStepHandler<T, NormalStepRunner<T>>['run']
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        StepRunner<T>
+        NormalStepRunner<T>
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<
         ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null
-        }) => MaybePromise<StepRunnerOutput<OutputInstance>>
+        }) => MaybePromise<NormalStepRunnerOutput<OutputInstance>>
       >()
       expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
         { config: RC, inputData: InputInstances | null }
       ]>()
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
-        MaybePromise<StepRunnerOutput<OutputInstance>>
+        MaybePromise<NormalStepRunnerOutput<OutputInstance>>
       >()
 
       expectTypeOf(step.handler.config).toEqualTypeOf<
@@ -205,10 +215,10 @@ describe('step handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        IStepHandler<T>['watcher']
+        IStepHandler<T, NormalStepRunner<T>>['watcher']
       >()
       expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        (step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+        (step: ConfiguredStep<T, NormalStepRunner<T>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
@@ -257,4 +267,52 @@ describe('step handler type testing', async () => {
       expectTypeOf(step.handler.outputDataType).toEqualTypeOf<IStepHandler<T>['outputDataType']>()
     })
   })
+})
+
+describe('StepHandlerOptionsInfer inference', () => {
+  type RawConfig = { foo: number }
+  type SerializedConfig = { foo: number }
+  type RC = { foo: number }
+  type A = typeof BitMask
+  type B = typeof NormalMap
+  type C = typeof HeightMap
+
+  type T = StepContext<
+    RawConfig,
+    SerializedConfig,
+    RC,
+    readonly [A, B],
+    C
+  >
+
+  type Infer = StepHandlerOptionsInfer<
+    RawConfig,
+    SerializedConfig,
+    RC,
+    readonly [A, B],
+    C,
+    NormalStepRunner<T>
+  >
+
+  it('preserves the generic parameters', () => {
+    expectTypeOf<Infer>().toExtend<
+      StepHandlerOptions<T, NormalStepRunner<T>>
+    >()
+
+    expectTypeOf<Infer['config']>().returns.toEqualTypeOf<RawConfig>()
+    expectTypeOf<Infer['reactiveConfig']>().returns.toEqualTypeOf<RC>()
+    expectTypeOf<Infer['run']>().toEqualTypeOf<NormalStepRunner<T>>
+
+    expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
+      config: RC
+      inputData: StepInputTypesToInstances<[A, B]> | null
+    }]>()
+
+    expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
+      config: T['RC']
+      inputData: StepInputTypesToInstances<T['InputConstructors']> | null
+    }]>()
+
+  })
+
 })

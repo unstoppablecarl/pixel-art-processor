@@ -3,7 +3,7 @@ import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions } from '../src/lib/pipeline/StepHandler.ts'
-import type { StepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { NormalStepRunner, NormalStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -38,7 +38,7 @@ type T = StepContext<
 >
 
 describe('IStepHandler<T> basic structure', () => {
-  const handler: IStepHandler<T> = {
+  const handler: IStepHandler<T, NormalStepRunner<T>> = {
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
 
@@ -118,17 +118,16 @@ describe('IStepHandler<T> basic structure', () => {
     expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null
-
     }]>()
 
     expectTypeOf(handler.run).returns.toEqualTypeOf<
-      StepRunnerOutput<T['Output']> | null | undefined | Promise<StepRunnerOutput<T['Output']>>
+      NormalStepRunnerOutput<T['Output']> | null | undefined | Promise<NormalStepRunnerOutput<T['Output']>>
     >()
   })
 })
 
 describe('StepHandlerOptions<T>', () => {
-  const opts: StepHandlerOptions<T> = {
+  const opts: StepHandlerOptions<T, NormalStepRunner<T>> = {
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
     config() {

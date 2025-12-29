@@ -30,8 +30,11 @@ export type StepHandlerOptional =
   | 'validateInputType'
   | 'validateInput'
 
-export type StepHandlerOptions<T extends AnyStepContext> =
-  Optional<IStepHandler<T>, StepHandlerOptional>
+export type StepHandlerOptions<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
+  Optional<IStepHandler<T, R>, StepHandlerOptional>
 
 // ⚠️ property order matters here ⚠️
 // anything that references SC must come after serializeConfig()
@@ -41,6 +44,7 @@ export type StepHandlerOptionsInfer<
   RC extends ReactiveConfigType<C>,
   I extends readonly StepDataType[],
   O extends StepDataType,
+  R extends StepRunner<StepContext<C, SC, RC, I, O>>,
 > = {
   inputDataTypes: I
   outputDataType: O
@@ -53,7 +57,7 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
   prevOutputToInput?: (output: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null
 
@@ -64,10 +68,13 @@ export type StepHandlerOptionsInfer<
 
   validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[]
 
-  run: StepRunner<StepContext<C, SC, RC, I, O>>
+  run: R
 }
 
-export interface IStepHandler<T extends AnyStepContext> {
+export interface IStepHandler<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
 
@@ -78,7 +85,7 @@ export interface IStepHandler<T extends AnyStepContext> {
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -98,14 +105,17 @@ export interface IStepHandler<T extends AnyStepContext> {
   // further validate input after determining it is the correct type
   validateInput(inputData: T['Input']): StepValidationError[],
 
-  run: StepRunner<T>,
+  run: R,
 }
 
-export function makeStepHandler<T extends AnyStepContext>(
+export function makeStepHandler<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+>(
   def: string,
-  options: StepHandlerOptions<T>,
+  options: StepHandlerOptions<T, R>,
   stepRegistry: StepRegistry = useStepRegistry(),
-): IStepHandler<T> {
+): IStepHandler<T, R> {
 
   type RC = T['RC']
   type SerializedConfig = T['SerializedConfig']
@@ -115,7 +125,7 @@ export function makeStepHandler<T extends AnyStepContext>(
 
   stepRegistry.validateDefRegistration(def, options)
 
-  const baseStepHandler: Omit<IStepHandler<T>, 'run'> = {
+  const baseStepHandler: Omit<IStepHandler<T, R>, 'run'> = {
     inputDataTypes: options.inputDataTypes,
     outputDataType: options.outputDataType,
 
@@ -127,7 +137,7 @@ export function makeStepHandler<T extends AnyStepContext>(
       return reactive(defaults) as RC
     },
 
-    watcher(_step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    watcher(_step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]
@@ -173,6 +183,6 @@ export function makeStepHandler<T extends AnyStepContext>(
   return {
     ...baseStepHandler,
     ...options,
-  } as IStepHandler<T>
+  } as IStepHandler<T, R>
 }
 

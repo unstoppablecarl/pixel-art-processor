@@ -14,14 +14,11 @@ import {
   type StepHandlerOptions,
 } from '../src/lib/pipeline/StepHandler.ts'
 import type { StepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import type { StepRunner, StepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { NormalStepRunner, NormalStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
-
-// ---------------------------------------------------------------------------
-// Test setup types
-// ---------------------------------------------------------------------------
+import type { MaybePromise } from '../src/lib/util/misc.ts'
 
 class A extends BitMask {
 }
@@ -52,14 +49,8 @@ type T = StepContext<
   typeof COut
 >
 
-type Runner = StepRunner<T>
-
 // Helper def string
 const DEF = 'test/handler'
-
-// ---------------------------------------------------------------------------
-// StepHandlerOptional
-// ---------------------------------------------------------------------------
 
 describe('StepHandlerOptional', () => {
   it('lists the optional keys of IStepHandler', () => {
@@ -82,14 +73,10 @@ describe('StepHandlerOptional', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// StepHandlerOptions<T>
-// ---------------------------------------------------------------------------
-
 describe('StepHandlerOptions<T>', () => {
   it('requires non-optional IStepHandler fields and run, while making StepHandlerOptional keys optional', () => {
     // Minimal valid options: only required fields + run()
-    const minimalOptions: StepHandlerOptions<T> = {
+    const minimalOptions: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
       run(args) {
@@ -108,7 +95,7 @@ describe('StepHandlerOptions<T>', () => {
     expectTypeOf(minimalOptions.config).toEqualTypeOf<(() => RawConfig) | undefined>()
 
     // Now a "maximal" options object using all optional fields
-    const fullOptions: StepHandlerOptions<T> = {
+    const fullOptions: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as readonly [typeof A, typeof B],
       outputDataType: COut,
 
@@ -175,7 +162,7 @@ describe('StepHandlerOptions<T>', () => {
       .toEqualTypeOf<(() => RawConfig) | undefined>()
 
     expectTypeOf(fullOptions.run)
-      .toEqualTypeOf<Runner>()
+      .toEqualTypeOf<NormalStepRunner<T>>()
 
   })
 
@@ -212,10 +199,6 @@ describe('StepHandlerOptions<T>', () => {
   })
 })
 
-// ---------------------------------------------------------------------------
-// makeStepHandler<T>
-// ---------------------------------------------------------------------------
-
 const fakeStepRegistry = {
   validateDefRegistration: () => {
   },
@@ -223,7 +206,7 @@ const fakeStepRegistry = {
 
 describe('makeStepHandler<T>', () => {
   it('returns an IStepHandler<T>-compatible object merging defaults and options', () => {
-    const options: StepHandlerOptions<T> = {
+    const options: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
 
@@ -256,10 +239,10 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler<T>(DEF, options, fakeStepRegistry)
+    const handler = makeStepHandler<T, NormalStepRunner<T>>(DEF, options, fakeStepRegistry)
 
     // Shape of handler: must be a full IStepHandler<T>
-    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
+    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T, NormalStepRunner<T>>>()
 
     // validate core fields
     expectTypeOf(handler.inputDataTypes).toEqualTypeOf<readonly [typeof A, typeof B]>()
@@ -269,11 +252,11 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler.config).toEqualTypeOf<() => RawConfig>()
 
     // run has the correct StepRunner signature
-    expectTypeOf(handler.run).toEqualTypeOf<Runner>()
+    expectTypeOf(handler.run).toEqualTypeOf<NormalStepRunner<T>>()
 
     // ensure defaulted methods have the right types even if not provided in options
     expectTypeOf(handler.watcher).toEqualTypeOf<
-      IStepHandler<T>['watcher']
+      IStepHandler<T, NormalStepRunner<T>>['watcher']
     >()
     expectTypeOf(handler.serializeConfig).toEqualTypeOf<
       IStepHandler<T>['serializeConfig']
@@ -318,8 +301,8 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler).toExtend<IStepHandler<AnyT>>()
   })
 
-  it('produces a StepRunnerOutput-compatible run return type by default', () => {
-    const options: StepHandlerOptions<T> = {
+  it('produces a run return type by default', () => {
+    const options: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
       run(args) {
@@ -329,10 +312,16 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler<T>(DEF, options, fakeStepRegistry)
+    const handler = makeStepHandler<T, NormalStepRunner<T>>(DEF, options, fakeStepRegistry)
+
+    expectTypeOf(handler.run).toEqualTypeOf<
+      NormalStepRunner<T>
+    >()
 
     expectTypeOf(handler.run).returns.toEqualTypeOf<
-      StepRunnerOutput<T['Output']> | null | undefined | Promise<StepRunnerOutput<T['Output']>>
+      MaybePromise<
+        NormalStepRunnerOutput<T['Output']>
+      >
     >()
   })
 })

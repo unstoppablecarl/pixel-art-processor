@@ -3,20 +3,18 @@ import { watch } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { useStepStore } from '../store/step-store.ts'
 import { logStepWatch } from '../util/misc.ts'
-import {
-  type AnyStepContext,
-  type ReactiveConfigType,
-  type Step,
-  type StepContext,
-  type StepLoaderSerialized,
-} from './Step.ts'
-import type { Config, IStepHandler, StepHandlerOptionsInfer } from './StepHandler.ts'
+import { type AnyStepContext, type ReactiveConfigType, type Step, type StepContext } from './Step.ts'
+import type { Config, IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
+import type { NormalStepRunner, StepRunner } from './StepRunner.ts'
 
-export type ConfiguredStep<T extends AnyStepContext> =
+export type ConfiguredStep<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
   Required<Omit<Step<T>, 'config' | 'handler'>>
   & {
   config: NonNullable<Step<T>['config']>,
-  handler: NonNullable<Step<T>['handler']>,
+  handler: IStepHandler<T, R>,
 }
 
 export type AnyConfiguredStep =
@@ -32,16 +30,19 @@ export function useStepHandler<
   SC extends Config,
   RC extends ReactiveConfigType<C>,
   I extends readonly StepDataType[],
-  O extends StepDataType,
+  O extends StepDataType
 >(
   stepId: string,
-  options: StepHandlerOptionsInfer<C, SC, RC, I, O>,
+  options: StepHandlerOptionsInfer<
+    C, SC, RC, I, O,
+    NormalStepRunner<StepContext<C, SC, RC, I, O>>
+  >,
 ) {
 
   type T = StepContext<C, SC, RC, I, O>
 
   const store = useStepStore()
-  const { step, handler } = store.registerStep<T>(stepId, options)
+  const { step, handler } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
 
   expectTypeOf(handler).toExtend<IStepHandler<T>>()
 
@@ -65,10 +66,5 @@ export function useStepHandler<
     process()
   }, { immediate: true })
 
-  if (__DEV__) {
-    const s = step as ConfiguredStep<T>
-    expectTypeOf(s.loadSerialized).toExtend<StepLoaderSerialized<T['SerializedConfig']>>()
-  }
-
-  return step as ConfiguredStep<T>
+  return step as ConfiguredStep<T, NormalStepRunner<T>>
 }

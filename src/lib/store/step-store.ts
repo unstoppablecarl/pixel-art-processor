@@ -13,14 +13,17 @@ import {
   type Step,
   type StepRef,
 } from '../pipeline/Step.ts'
+import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
+import { stepIsFork, useStepRegistry } from '../pipeline/StepRegistry.ts'
 import {
-  type Config,
-  type IStepHandler,
-  makeStepHandler,
-  type StepHandlerOptions,
-} from '../pipeline/StepHandler.ts'
-import { useStepRegistry } from '../pipeline/StepRegistry.ts'
-import { parseStepRunnerResult } from '../pipeline/StepRunner.ts'
+  type ForkStepRunner,
+  type ForkStepRunnerOutput,
+  type NormalStepRunner,
+  type NormalStepRunnerOutput,
+  type StepRunnerResult,
+  toForkStepRunnerResult,
+  toNormalStepRunnerResult,
+} from '../pipeline/StepRunner.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { copyImageDataOrNull } from '../util/ImageData.ts'
 import { arrayRemove, logStepEvent } from '../util/misc.ts'
@@ -101,11 +104,6 @@ export const useStepStore = defineStore('steps', () => {
       prng.setSeed(globalSeed.value)
       invalidateAll()
     })
-    const stepIsFork = <T extends AnyStepContext>(
-      step: Step<T>,
-    ) => stepRegistry.isFork(step.def)
-
-    // ): step is ForkStep<T> => stepRegistry.isFork(step.def)
 
     function _insertStep(step: AnyStepRef, afterStepId?: string): void {
       if (afterStepId === undefined) {
@@ -1024,46 +1022,42 @@ export const useStepStore = defineStore('steps', () => {
           // runner can be async or not
           const duration = performance.now() - startTime
 
-          let preview: ImageData | ImageData[] | null
-          let outputData: StepDataTypeInstance | StepDataTypeInstance[] | null
-          let validationErrors: StepValidationError[]
-
           if (!step.config) {
             throw new Error(`Step ${stepId} has no config`)
           }
 
-          // if (stepIsFork(step)) {
-          //   // now ts knows: step is ForkStep<T>
-          //   const result = await step.handler!.run({
-          //     config: step.config,
-          //     inputData,
-          //     branchCount: getBranches(stepId).length,
-          //   })
-          //   const x = parseForkStepRunnerResult<T>(result)
-          //   preview = x.preview
-          //   outputData = x.outputData
-          //   validationErrors = x.validationErrors
-          // } else {
-          // now ts knows: step is NormalStep<T>
-          const result = await step.handler!.run({
-            config: step.config,
-            inputData,
-          })
-          const x = parseStepRunnerResult<T['Output']>(result)
-          preview = x.preview
-          outputData = x.outputData
-          validationErrors = x.validationErrors
-          // }
+          let result: StepRunnerResult
+
+          if (stepIsFork(step)) {
+            const runner = step.handler!.run as ForkStepRunner<T>
+
+            const output = runner({
+              config: step.config,
+              inputData: inputData,
+              branchCount: getBranches(stepId).length,
+            }) as ForkStepRunnerOutput<T['Input']>
+
+            result = toForkStepRunnerResult(output)
+
+          } else {
+            const runner = step.handler!.run as NormalStepRunner<T>
+            const output = runner({
+              config: step.config,
+              inputData: inputData,
+            }) as NormalStepRunnerOutput<T['Input']>
+            result = toNormalStepRunnerResult(output)
+          }
+
+          const { output, preview, validationErrors } = result
 
           logStepEvent(stepId, 'resolveStep', {
-            outputData,
+            output,
             preview,
             validationErrors,
             durationMs: duration.toFixed(2),
           })
 
-          // step.outputData = null
-          step.outputData = outputData
+          step.outputData = output
           step.outputPreview = preview
           step.validationErrors = [
             ...inputTypeErrors,

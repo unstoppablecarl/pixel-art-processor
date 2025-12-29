@@ -132,12 +132,12 @@ type StepContext<
   Output extends StepDataType,
 > = {
   C: C,
-  OutputConstructors: Output,
-  Output: InstanceType<Output>,
-  InputConstructors: Input,
-  Input: StepInputTypesToInstances<Input>,
-  RC: RC,
   SerializedConfig: SerializedConfig,
+  RC: RC,
+  OutputConstructors: Output,
+  InputConstructors: Input,
+  Output: InstanceType<Output>,
+  Input: StepInputTypesToInstances<Input>,
 }
 
 type StepHandlerOptions<T extends AnyStepContext> = {
