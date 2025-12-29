@@ -29,11 +29,12 @@ const allSteps = computed(() => {
   let fork: AnyStepRef | null = null
 
   const lastId = stepIds[stepIds.length - 1]
+  const lastStep = store.get(lastId)
 
   let normalStepIds: string[] = []
 
-  if (store.isFork(lastId)) {
-    fork = store.get(lastId)
+  if (store.stepIsFork(lastStep)) {
+    fork = lastStep
     normalStepIds = stepIds.slice(0, -1)
   } else {
     normalStepIds = stepIds

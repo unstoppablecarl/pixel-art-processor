@@ -44,7 +44,6 @@ export type StepLoaderSerialized<
 export type Step<T extends AnyStepContext> = {
   readonly id: string,
   readonly def: string,
-  readonly type: StepType,
   inputData: T['Input'] extends null ? null : T['Input'] | null,
   outputData: T['Output'] | T['Output'][] | null,
   outputPreview: ImageData | ImageData[] | null,
@@ -77,7 +76,7 @@ export enum StepType {
 }
 
 export type DeSerializedStep<T extends AnyStepContext> =
-  Pick<Step<T>, 'id' | 'def' | 'type' | 'parentForkId' | 'branchIndex' | 'config' | 'seed'>
+  Pick<Step<T>, 'id' | 'def' | 'parentForkId' | 'branchIndex' | 'config' | 'seed'>
   & {}
 
 export type StepRef<T extends AnyStepContext> = ShallowReactive<Step<T>>
@@ -87,7 +86,6 @@ export type AnyStepRef = StepRef<AnyStepContext>
 export function createNewStep<T extends AnyStepContext>(
   def: string,
   idIncrement: number,
-  type: StepType = StepType.NORMAL,
   parentForkId: string | null = null,
   branchIndex: number | null = null,
 ): StepRef<T> {
@@ -96,7 +94,6 @@ export function createNewStep<T extends AnyStepContext>(
   return shallowReactive({
     id,
     def,
-    type,
     parentForkId,
     branchIndex,
     inputData: null,
@@ -118,7 +115,6 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
   const {
     id,
     def,
-    type,
     parentForkId,
     branchIndex,
     config,
@@ -128,7 +124,6 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
   return shallowReactive({
     id,
     def,
-    type,
     parentForkId,
     branchIndex,
     inputData: null,
@@ -148,7 +143,6 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
   const {
     id,
     def,
-    type,
     parentForkId,
     branchIndex,
     config,
@@ -164,7 +158,6 @@ export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<St
   return {
     id,
     def,
-    type,
     parentForkId,
     branchIndex,
     config: _config,
@@ -180,11 +173,3 @@ export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Rec
 
   return output
 }
-
-// export const isNormalStep = <T extends AnyStepContext>(
-//   step: Step<T>,
-// ): step is NormalStep<T> => step.type === StepType.NORMAL
-
-// export const isForkStep = <T extends AnyStepContext>(
-//   step: Step<T>,
-// ): step is ForkStep<T> => step.type === StepType.FORK
