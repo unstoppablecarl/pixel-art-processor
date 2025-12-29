@@ -14,8 +14,8 @@ const {
 const addableSteps = computed(() => store.getStepsAddableAfter(stepId))
 
 function addAfter(def: string) {
-    store.add(def, stepId)
-  }
+  store.add(def, stepId)
+}
 </script>
 <template>
   <BDropdown

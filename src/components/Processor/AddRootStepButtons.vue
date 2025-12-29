@@ -4,7 +4,8 @@ import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 
 const stepStore = useStepStore()
-const steps = computed(() => useStepRegistry().rootSteps())
+const stepRegistry = useStepRegistry()
+const steps = computed(() => stepRegistry.rootSteps())
 
 function add(def: string) {
   stepStore.add(def)
