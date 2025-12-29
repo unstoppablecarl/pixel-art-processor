@@ -3,16 +3,13 @@ import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
-import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
+import { type ConfigKeyAdapter } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import { type AnyStepContext } from './Step.ts'
 import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
 export type Config = Record<string, any>
-declare const CONFIG_SERIALIZED: unique symbol
-
-export type ConfigSerialized = Record<string, any> & { [CONFIG_SERIALIZED]: true }
 
 export const INVALID_INPUT_TYPE = 'INVALID_INPUT_TYPE'
 
@@ -25,9 +22,6 @@ export type StepHandlerOptional =
   | 'prevOutputToInput'
   | 'validateInputType'
   | 'validateInput'
-  | 'serializeConfigKeys'
-  | 'deserializeConfigKeys'
-  | 'configKeyAdapters'
 
 export type StepHandlerOptions<T extends AnyStepContext> =
   Optional<IStepHandler<T>, StepHandlerOptional>
@@ -54,7 +48,6 @@ export type StepRunnerOutput<Output> = null |
   validationErrors?: StepValidationError[]
 }
 
-
 export interface IStepHandler<T extends AnyStepContext> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
@@ -78,22 +71,12 @@ export interface IStepHandler<T extends AnyStepContext> {
   prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
 
   // validate the prevStep.outputDataType against currentStep.inputDataType
-  validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: T['InputConstructors']): StepValidationError[],
+  validateInputType(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   // further validate input after determining it is the correct type
   validateInput(inputData: T['Input']): StepValidationError[],
 
-  deserializeConfigKeys(
-    serializedConfig: Record<string, any>,
-  ): Record<string, any>
-
-  serializeConfigKeys(
-    config: T['RC'],
-  ): Record<string, any>
-
   run: StepRunner<T>,
-
-  configKeyAdapters?: ConfigKeyAdapters<T['C'], T['SerializedConfig']>,
 }
 
 export function makeStepHandler<T extends AnyStepContext>(
@@ -109,10 +92,9 @@ export function makeStepHandler<T extends AnyStepContext>(
 
   useStepRegistry().validateDefRegistration(def, options)
 
-  const baseStepHandler = {
+  const baseStepHandler: Omit<IStepHandler<T>, 'run'> = {
     inputDataTypes: options.inputDataTypes,
     outputDataType: options.outputDataType,
-    configKeyAdapters: options.configKeyAdapters ?? undefined,
 
     config(): RC {
       return reactive({}) as RC
@@ -124,24 +106,9 @@ export function makeStepHandler<T extends AnyStepContext>(
       ]
     },
 
-    deserializeConfigKeys(
-      serializedConfig: SerializedConfig,
-    ): C {
-      if (!this.configKeyAdapters) return {} as C
-      return deserializeObjectKeys<C, SerializedConfig>(this.configKeyAdapters, serializedConfig)
-    },
-
-    serializeConfigKeys(
-      config: RC,
-    ): Record<string, any> {
-      if (!this.configKeyAdapters) return {}
-      return serializeObjectKeys(this.configKeyAdapters, config)
-    },
-
     deserializeConfig(serializedConfig: SerializedConfig): C {
       return {
         ...serializedConfig,
-        ...this.deserializeConfigKeys(serializedConfig),
       } as C
     },
 
@@ -149,7 +116,6 @@ export function makeStepHandler<T extends AnyStepContext>(
       const unwrapped = deepUnwrap(config)
       return {
         ...unwrapped,
-        ...this.serializeConfigKeys(unwrapped),
       } as SerializedConfig
     },
 
@@ -158,12 +124,12 @@ export function makeStepHandler<T extends AnyStepContext>(
       Object.assign(config, deserialized)
     },
 
-    prevOutputToInput(outputData: StepDataTypeInstance): Input {
+    prevOutputToInput(outputData: Input): Input {
       // pass through by default
       return outputData as unknown as Input
     },
 
-    validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: InputConstructors): StepValidationError[] {
+    validateInputType(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
       if (stepOutputTypeCompatibleWithInputTypes(typeFromPrevOutput, inputDataTypes)) {
         return []
       }
@@ -173,7 +139,7 @@ export function makeStepHandler<T extends AnyStepContext>(
       ]
     },
 
-    validateInput(_inputData: Input): StepValidationError[] {
+    validateInput(_inputData: StepDataType): StepValidationError[] {
       return []
     },
   }
@@ -181,9 +147,8 @@ export function makeStepHandler<T extends AnyStepContext>(
   return {
     ...baseStepHandler,
     ...options,
-  } as IStepHandler<T>
+  } as unknown as IStepHandler<T>
 }
-
 
 // export type ForkStepRunnerOutput<Output> = null | undefined | {
 //   preview?: ImageData | ImageData[] | null | undefined,

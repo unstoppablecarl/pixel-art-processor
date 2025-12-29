@@ -86,12 +86,6 @@ describe('IStepHandler<T> basic structure', () => {
       expectTypeOf(config).toEqualTypeOf<RC>()
       expectTypeOf(serialized).toEqualTypeOf<SerializedConfig>()
     },
-    deserializeConfigKeys(serializedConfig: Record<string, any>): Record<string, any> {
-      return {}
-    },
-    serializeConfigKeys(config: T['RC']): Record<string, any> {
-      return {}
-    },
   }
 
   it('has correct inputDataTypes', () => {

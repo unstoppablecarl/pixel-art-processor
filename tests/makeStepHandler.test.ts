@@ -17,7 +17,6 @@ import {
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
-import type { StepDataType } from '../src/steps.ts'
 
 // ---------------------------------------------------------------------------
 // Test setup types
@@ -76,9 +75,6 @@ describe('StepHandlerOptional', () => {
       | 'prevOutputToInput'
       | 'validateInputType'
       | 'validateInput'
-      | 'serializeConfigKeys'
-      | 'deserializeConfigKeys'
-      | 'configKeyAdapters'
 
     expectTypeOf<OptionalKeys>().toEqualTypeOf<Expected>()
   })
@@ -136,7 +132,7 @@ describe('StepHandlerOptions<T>', () => {
       },
 
       validateInputType(type, allowed): StepValidationError[] {
-        expectTypeOf(type).toEqualTypeOf<StepDataType>()
+        expectTypeOf(type).toEqualTypeOf<A | B>()
         expectTypeOf(allowed).toEqualTypeOf<readonly [typeof A, typeof B]>()
 
         return []
@@ -165,19 +161,6 @@ describe('StepHandlerOptions<T>', () => {
         expectTypeOf(serializedConfig).toEqualTypeOf<SerializedConfig>()
         // no-op
       },
-
-      serializeConfigKeys(config) {
-        expectTypeOf(config).toEqualTypeOf<RC>()
-        return {}
-      },
-
-      deserializeConfigKeys(serialized) {
-        expectTypeOf(serialized).toEqualTypeOf<Record<string, any>>()
-
-        return {}
-      },
-
-      configKeyAdapters: {} as any,
     }
 
     expectTypeOf(fullOptions.inputDataTypes)
@@ -302,15 +285,6 @@ describe('makeStepHandler<T>', () => {
     >()
     expectTypeOf(handler.validateInput).toEqualTypeOf<
       IStepHandler<T>['validateInput']
-    >()
-    expectTypeOf(handler.serializeConfigKeys).toEqualTypeOf<
-      IStepHandler<T>['serializeConfigKeys']
-    >()
-    expectTypeOf(handler.deserializeConfigKeys).toEqualTypeOf<
-      IStepHandler<T>['deserializeConfigKeys']
-    >()
-    expectTypeOf(handler.configKeyAdapters).toEqualTypeOf<
-      IStepHandler<T>['configKeyAdapters']
     >()
   })
 

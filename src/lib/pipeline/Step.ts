@@ -17,11 +17,11 @@ export type StepInputTypesToInstances<Input extends readonly StepDataType[] = re
 export type AnyStepContext = StepContext<any, any, any, any, any>
 
 export type StepContext<
-  C extends Config = Config,
-  SerializedConfig extends Config = C,
-  RC extends ReactiveConfigType<C> = ReactiveConfigType<C>,
-  Input extends readonly StepDataType[] = readonly StepDataType[],
-  Output extends StepDataType = StepDataType,
+  C extends Config,
+  SerializedConfig extends Config,
+  RC extends ReactiveConfigType<C>,
+  Input extends readonly StepDataType[],
+  Output extends StepDataType,
 > = {
   C: C,
   OutputConstructors: Output,
