@@ -66,10 +66,9 @@ const config = step.config
           label="Size"
           v-model:value="config.size"
           :min="0"
-          :max="Math.floor(step.inputData?.width * 0.5)"
+          :max="Math.floor((step.inputData?.width ?? 0) * 0.5)"
           :step="1"
         />
-
 
         <RangeSlider
           :id="`${stepId}-choke`"
