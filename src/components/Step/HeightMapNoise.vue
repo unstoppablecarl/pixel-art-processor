@@ -12,7 +12,7 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { computed, shallowReactive, shallowRef } from 'vue'
+import { computed, shallowRef } from 'vue'
 import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../lib/generators/perlin-noise.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
@@ -29,9 +29,9 @@ const noiseImageData = shallowRef<ImageData | null>(null)
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return shallowReactive({
+    return {
       ...GENERATE_NOISE_DEFAULTS,
-    })
+    }
   },
   run({ config, inputData }) {
     if (!inputData) return

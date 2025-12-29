@@ -1,6 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
+import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 
 export const STEP_META: StepMeta = {
   type: StepType.NORMAL,
@@ -12,10 +14,8 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { computed, ref, shallowReactive } from 'vue'
+import { computed, ref } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
-import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
@@ -27,12 +27,12 @@ const { stepId } = defineProps<{ stepId: string }>()
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return shallowReactive({
+    return {
       lightX: 0.5,
       lightY: -0.5,
       lightZ: 1,
       textureImageData: null as null | ImageData,
-    })
+    }
   },
   serializeConfig(config) {
     return {

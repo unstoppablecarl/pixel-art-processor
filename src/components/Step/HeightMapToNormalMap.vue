@@ -1,6 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
+import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 
 export const STEP_META: StepMeta = {
   type: StepType.NORMAL,
@@ -12,10 +14,7 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { shallowReactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
-import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import StepCard from '../StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
@@ -24,9 +23,9 @@ const { stepId } = defineProps<{ stepId: string }>()
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return shallowReactive({
+    return {
       normalMapStrength: 1.5,
-    })
+    }
   },
   run({ config, inputData }) {
     if (!inputData) return

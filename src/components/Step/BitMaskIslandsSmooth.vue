@@ -13,7 +13,6 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { reactive } from 'vue'
 import {
   DEFAULT_SHOW_ADDED,
   DEFAULT_SHOW_ISLANDS,
@@ -58,7 +57,7 @@ const step = useStepHandler(stepId, {
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
   config() {
-    return reactive({
+    return {
       minDistance: 4,
       islandType: IslandFilterType.ALL as IslandFilterType,
       smoothType: SmoothType.GAUSSIAN as SmoothType,
@@ -73,7 +72,7 @@ const step = useStepHandler(stepId, {
       ...DEFAULT_SHOW_ISLANDS.CONFIG,
       ...DEFAULT_SHOW_ADDED.CONFIG,
       ...DEFAULT_SHOW_REMOVED.CONFIG,
-    })
+    }
   },
   run({ config, inputData }) {
     if (!inputData) return

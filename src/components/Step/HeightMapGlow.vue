@@ -12,7 +12,6 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { reactive } from 'vue'
 import { applyInnerGlow, INNER_GLOW_DEFAULTS } from '../../lib/generators/inner-glow.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
@@ -28,9 +27,9 @@ const { stepId } = defineProps<{ stepId: string }>()
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return reactive({
+    return {
       ...INNER_GLOW_DEFAULTS,
-    })
+    }
   },
   run({ config, inputData }) {
     if (inputData === null) return

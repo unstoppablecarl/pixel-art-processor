@@ -12,7 +12,6 @@ export const STEP_META: StepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { reactive } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
@@ -21,7 +20,7 @@ const { stepId } = defineProps<{ stepId: string }>()
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return reactive({})
+    return {}
   },
   run({ inputData }) {
 

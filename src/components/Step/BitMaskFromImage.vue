@@ -12,7 +12,7 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { ref, shallowReactive } from 'vue'
+import { ref } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
@@ -36,9 +36,9 @@ const handleFileUpload = (event: Event) => {
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return shallowReactive({
+    return {
       maskImageData: null as null | ImageData,
-    })
+    }
   },
   serializeConfig(config) {
     return {
