@@ -66,7 +66,7 @@ describe('StepHandlerOptional', () => {
       | 'config'
       | 'loadConfig'
       | 'prevOutputToInput'
-      | 'validateInputType'
+      | 'validateInputTypeStatic'
       | 'validateInput'
 
     expectTypeOf<OptionalKeys>().toEqualTypeOf<Expected>()
@@ -120,7 +120,7 @@ describe('StepHandlerOptions<T>', () => {
         return output as any
       },
 
-      validateInputType(type, allowed): StepValidationError[] {
+      validateInputTypeStatic(type, allowed): StepValidationError[] {
         expectTypeOf(type).toEqualTypeOf<A | B>()
         expectTypeOf(allowed).toEqualTypeOf<readonly [typeof A, typeof B]>()
 
@@ -270,8 +270,8 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler.prevOutputToInput).toEqualTypeOf<
       IStepHandler<T>['prevOutputToInput']
     >()
-    expectTypeOf(handler.validateInputType).toEqualTypeOf<
-      IStepHandler<T>['validateInputType']
+    expectTypeOf(handler.validateInputTypeStatic).toEqualTypeOf<
+      IStepHandler<T>['validateInputTypeStatic']
     >()
     expectTypeOf(handler.validateInput).toEqualTypeOf<
       IStepHandler<T>['validateInput']

@@ -580,7 +580,7 @@ describe('handler harness tests', () => {
   //       expectTypeOf(output).toEqualTypeOf<TypeA | TypeB | null>()
   //       return output
   //     },
-  //     validateInputType() {
+  //     validateInputTypeStatic() {
   //       return []
   //     },
   //     validateInput(inputData): StepValidationError[] {

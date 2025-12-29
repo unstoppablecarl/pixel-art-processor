@@ -249,10 +249,10 @@ describe('step handler type testing', async () => {
         ((output: InputInstances | null) => InputInstances | null)
       >()
 
-      expectTypeOf(step.handler.validateInputType).toEqualTypeOf<
-        IStepHandler<T>['validateInputType']
+      expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
+        IStepHandler<T>['validateInputTypeStatic']
       >()
-      expectTypeOf(step.handler.validateInputType).toEqualTypeOf<
+      expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
         ((typeFromPrevOutput: InputInstances, inputDataTypes: T['InputConstructors']) => StepValidationError[])
       >()
 

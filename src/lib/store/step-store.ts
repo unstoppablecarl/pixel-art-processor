@@ -1117,7 +1117,7 @@ export const useStepStore = defineStore('steps', () => {
       }
 
       return [
-        ...currentHandler.validateInputType(prevHandler.outputDataType, currentHandler.inputDataTypes),
+        ...currentHandler.validateInputTypeStatic(prevHandler.outputDataType, currentHandler.inputDataTypes),
         ...currentHandler.validateInput(prev.outputData),
       ]
     }

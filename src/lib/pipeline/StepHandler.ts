@@ -27,7 +27,7 @@ export type StepHandlerOptional =
   | 'reactiveConfig'
   | 'loadConfig'
   | 'prevOutputToInput'
-  | 'validateInputType'
+  | 'validateInputTypeStatic'
   | 'validateInput'
 
 export type StepHandlerOptions<
@@ -100,7 +100,8 @@ export interface IStepHandler<
   prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
 
   // validate the prevStep.outputDataType against currentStep.inputDataType
-  validateInputType(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
+  // static check if the output type is in the list of input types (or is a Passthrough)
+  validateInputTypeStatic(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   // further validate input after determining it is the correct type
   validateInput(inputData: T['Input']): StepValidationError[],
@@ -165,7 +166,7 @@ export function makeStepHandler<
       return outputData
     },
 
-    validateInputType(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
+    validateInputTypeStatic(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
       if (stepOutputTypeCompatibleWithInputTypes(typeFromPrevOutput, inputDataTypes)) {
         return []
       }

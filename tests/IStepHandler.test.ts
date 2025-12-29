@@ -75,7 +75,7 @@ describe('IStepHandler<T> basic structure', () => {
       return []
     },
 
-    validateInputType(type, allowed) {
+    validateInputTypeStatic(type, allowed) {
       return []
     },
 
