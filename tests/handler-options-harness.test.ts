@@ -55,8 +55,11 @@ type WatcherTarget = {}
 type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
   config: T['RC'],
   inputData: T['Input'] | null,
-}) => StepRunnerOutput<T['Output']>
-  | Promise<StepRunnerOutput<T['Output']>>
+}) => StepRunnerOutputMaybePromise<T['Output']>
+
+export type StepRunnerOutputMaybePromise<Output> =
+  | StepRunnerOutput<Output>
+  | Promise<StepRunnerOutput<Output>>
 
 type StepRunnerOutput<Output> = null |
   undefined | {
@@ -181,6 +184,7 @@ type I = typeof inputDataTypes
 type O = typeof outputDataType
 
 type InputInstances = TypeA | TypeB
+type OutputInstance = TypeC
 
 type StepHandlerOptionsInfer<
   C extends Config,
@@ -760,6 +764,7 @@ describe('handler harness tests', () => {
       },
 
       deserializeConfig(config) {
+        expectTypeOf(config).toEqualTypeOf<SC>()
         return {
           maskImageData: deserializeImageData(config.maskImageData),
         } as C
@@ -796,8 +801,10 @@ describe('handler harness tests', () => {
       },
     })
 
-    expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+    // should work with the prev declared T as well
+    type T = typeof step extends ConfiguredStep<infer U> ? U : never
 
+    expectTypeOf<T>().toEqualTypeOf<StepContext<C, SC, RC, I, O>>()
     expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
     expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
 
@@ -806,6 +813,18 @@ describe('handler harness tests', () => {
     >()
     expectTypeOf(step.handler.run).toEqualTypeOf<
       StepRunner<T>
+    >()
+    expectTypeOf(step.handler.run).toEqualTypeOf<
+      ({ config, inputData }: {
+        config: RC,
+        inputData: InputInstances | null
+      }) => StepRunnerOutputMaybePromise<OutputInstance>
+    >()
+    expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
+      { config: RC, inputData: InputInstances | null }
+    ]>()
+    expectTypeOf(step.handler.run).returns.toEqualTypeOf<
+      StepRunnerOutputMaybePromise<OutputInstance>
     >()
 
     expectTypeOf(step.handler.config).toEqualTypeOf<
