@@ -57,7 +57,7 @@ type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
   inputData: T['Input'] | null,
 }) => StepRunnerOutputMaybePromise<T['Output']>
 
-export type StepRunnerOutputMaybePromise<Output> =
+type StepRunnerOutputMaybePromise<Output> =
   | StepRunnerOutput<Output>
   | Promise<StepRunnerOutput<Output>>
 
@@ -816,6 +816,10 @@ describe('handler harness tests', () => {
     expectTypeOf<T>().toEqualTypeOf<StepContext<C, SC, RC, I, O>>()
     expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
     expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+    expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
+
+    expectTypeOf(step.inputData).toEqualTypeOf<InputInstances | null>()
+    expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | OutputInstance[] | null>()
 
     expectTypeOf(step.handler.run).toEqualTypeOf<
       IStepHandler<T>['run']

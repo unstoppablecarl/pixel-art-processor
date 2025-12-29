@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
+import { shallowReactive } from 'vue'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions, StepRunnerOutput } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
@@ -42,6 +43,11 @@ describe('IStepHandler<T> basic structure', () => {
 
     config() {
       return {} as RC
+    },
+    reactiveConfig(defaults: RawConfig): RC {
+      return shallowReactive({
+        ...defaults,
+      })
     },
 
     run(args) {
@@ -97,7 +103,14 @@ describe('IStepHandler<T> basic structure', () => {
   })
 
   it('has correct config() return type', () => {
-    expectTypeOf(handler.config()).toEqualTypeOf<RC>()
+    expectTypeOf(handler.config()).toEqualTypeOf<RawConfig>()
+  })
+
+  it('has correct config() return type', () => {
+    expectTypeOf(handler.reactiveConfig({
+      foo: 1,
+      bar: 'a'
+    })).toEqualTypeOf<RC>()
   })
 
   it('has correct run() signature', () => {
@@ -128,8 +141,7 @@ describe('StepHandlerOptions<T>', () => {
   }
 
   it('is assignable to IStepHandler<T>', () => {
-    // expectTypeOf(opts).toEqualTypeOf<IStepHandler<T>>()
-    expectTypeOf(opts.config).toEqualTypeOf<(() => RC) | undefined>
+    expectTypeOf(opts.config).toEqualTypeOf<(() => RawConfig) | undefined>
 
   })
 })

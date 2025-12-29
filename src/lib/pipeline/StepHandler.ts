@@ -3,9 +3,13 @@ import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
-import { type ConfigKeyAdapter } from '../util/object-key-serialization.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import { type AnyStepContext } from './Step.ts'
+import {
+  type AnyStepContext,
+  type ReactiveConfigType,
+  type StepContext,
+  type StepInputTypesToInstances,
+} from './Step.ts'
 import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
@@ -18,6 +22,7 @@ export type StepHandlerOptional =
   | 'serializeConfig'
   | 'deserializeConfig'
   | 'config'
+  | 'reactiveConfig'
   | 'loadConfig'
   | 'prevOutputToInput'
   | 'validateInputType'
@@ -26,20 +31,50 @@ export type StepHandlerOptional =
 export type StepHandlerOptions<T extends AnyStepContext> =
   Optional<IStepHandler<T>, StepHandlerOptional>
 
-export type ConfigKeyAdapters<
-  C extends Config = Config,
-  SerializedConfig extends Config = C
-> = Partial<{
-  [K in keyof C & keyof SerializedConfig]: ConfigKeyAdapter<SerializedConfig[K], C[K]>
-}>
+// ⚠️ property order matters here ⚠️
+// anything that references SC must come after serializeConfig()
+export type StepHandlerOptionsInfer<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = {
+  inputDataTypes: I
+  outputDataType: O
+
+  config?: () => C,
+  reactiveConfig?: (defaults: C) => RC
+
+  serializeConfig?: (config: C) => SC
+  deserializeConfig?: (config: SC) => C
+
+  loadConfig?: (config: RC, serialized: SC) => void
+
+  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+
+  prevOutputToInput?: (output: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null
+
+  validateInputType?: (
+    typeFromPrev: StepInputTypesToInstances<I>,
+    inputTypes: I,
+  ) => StepValidationError[]
+
+  validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[]
+
+  run: StepRunner<StepContext<C, SC, RC, I, O>>
+}
 
 export type WatcherTarget = WatchSource | Reactive<any>
 
 export type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
   config: T['RC'],
   inputData: T['Input'] | null,
-}) => StepRunnerOutput<T['Output']>
-  | Promise<StepRunnerOutput<T['Output']>>
+}) => StepRunnerOutputMaybePromise<T['Output']>
+
+export type StepRunnerOutputMaybePromise<Output> =
+  | StepRunnerOutput<Output>
+  | Promise<StepRunnerOutput<Output>>
 
 export type StepRunnerOutput<Output> = null |
   undefined | {
@@ -52,8 +87,11 @@ export interface IStepHandler<T extends AnyStepContext> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
 
-  // getter for config
-  config(): T['RC'],
+  // fresh default config instance
+  config(): T['C']
+
+  // wraps default config in reactivity
+  reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
   watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
@@ -96,8 +134,12 @@ export function makeStepHandler<T extends AnyStepContext>(
     inputDataTypes: options.inputDataTypes,
     outputDataType: options.outputDataType,
 
-    config(): RC {
-      return reactive({}) as RC
+    config(): C {
+      return {}
+    },
+
+    reactiveConfig(defaults: C): RC {
+      return reactive(defaults) as RC
     },
 
     watcher(_step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
@@ -125,8 +167,7 @@ export function makeStepHandler<T extends AnyStepContext>(
     },
 
     prevOutputToInput(outputData: Input): Input {
-      // pass through by default
-      return outputData as unknown as Input
+      return outputData
     },
 
     validateInputType(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
@@ -147,26 +188,8 @@ export function makeStepHandler<T extends AnyStepContext>(
   return {
     ...baseStepHandler,
     ...options,
-  } as unknown as IStepHandler<T>
+  } as IStepHandler<T>
 }
-
-// export type ForkStepRunnerOutput<Output> = null | undefined | {
-//   preview?: ImageData | ImageData[] | null | undefined,
-//   branchesOutput: Output[] | null | undefined,
-//   validationErrors?: StepValidationError[]
-// }
-
-// export function parseForkStepRunnerResult<T extends AnyStepContext>(result: ForkStepRunnerOutput<T['Output']>): {
-//   preview: ImageData | ImageData[] | null,
-//   validationErrors: StepValidationError[],
-//   outputData: T['Output'][],
-// } {
-//   return {
-//     outputData: result?.branchesOutput?.map(copyStepDataOrNull) ?? [],
-//     preview: result?.preview ?? null,
-//     validationErrors: result?.validationErrors ?? [],
-//   }
-// }
 
 export function parseStepRunnerResult<Output extends StepDataTypeInstance>(
   result: StepRunnerOutput<Output>,

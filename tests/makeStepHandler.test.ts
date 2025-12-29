@@ -13,6 +13,7 @@ import {
   type StepHandlerOptional,
   type StepHandlerOptions,
   type StepRunner,
+  type StepRunnerOutput,
 } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
@@ -70,6 +71,7 @@ describe('StepHandlerOptional', () => {
       | 'watcher'
       | 'serializeConfig'
       | 'deserializeConfig'
+      | 'reactiveConfig'
       | 'config'
       | 'loadConfig'
       | 'prevOutputToInput'
@@ -103,7 +105,7 @@ describe('StepHandlerOptions<T>', () => {
     }
 
     // `config` is optional
-    expectTypeOf(minimalOptions.config).toEqualTypeOf<(() => RC) | undefined>()
+    expectTypeOf(minimalOptions.config).toEqualTypeOf<(() => RawConfig) | undefined>()
 
     // Now a "maximal" options object using all optional fields
     const fullOptions: StepHandlerOptions<T> = {
@@ -170,7 +172,7 @@ describe('StepHandlerOptions<T>', () => {
       .toEqualTypeOf<typeof COut>()
 
     expectTypeOf(fullOptions.config)
-      .toEqualTypeOf<(() => RC) | undefined>()
+      .toEqualTypeOf<(() => RawConfig) | undefined>()
 
     expectTypeOf(fullOptions.run)
       .toEqualTypeOf<Runner>()
@@ -259,7 +261,7 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler.outputDataType).toEqualTypeOf<typeof COut>()
 
     // defaulted config() is overridden by options.config()
-    expectTypeOf(handler.config).toEqualTypeOf<() => RC>()
+    expectTypeOf(handler.config).toEqualTypeOf<() => RawConfig>()
 
     // run has the correct StepRunner signature
     expectTypeOf(handler.run).toEqualTypeOf<Runner>()
@@ -312,20 +314,20 @@ describe('makeStepHandler<T>', () => {
   })
 
   it('produces a StepRunnerOutput-compatible run return type by default', () => {
-    // const options: StepHandlerOptions<T, unknown> = {
-    //   inputDataTypes: [A, B] as const,
-    //   outputDataType: COut,
-    //   run(args) {
-    //     return {
-    //       output: {} as InstanceType<typeof COut>,
-    //     }
-    //   },
-    // }
+    const options: StepHandlerOptions<T> = {
+      inputDataTypes: [A, B] as const,
+      outputDataType: COut,
+      run(args) {
+        return {
+          output: {} as InstanceType<typeof COut>,
+        }
+      },
+    }
 
-    // const handler = makeStepHandler<T, unknown>(DEF, options)
+    const handler = makeStepHandler<T>(DEF, options)
 
-    // expectTypeOf(handler.run).returns.toEqualTypeOf<
-    //   StepRunnerOutput<T['Output']> | null | undefined | Promise<StepRunnerOutput<T['Output']>>
-    // >()
+    expectTypeOf(handler.run).returns.toEqualTypeOf<
+      StepRunnerOutput<T['Output']> | null | undefined | Promise<StepRunnerOutput<T['Output']>>
+    >()
   })
 })
