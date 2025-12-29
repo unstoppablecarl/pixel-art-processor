@@ -14,7 +14,7 @@ import {
   type StepRef,
 } from '../pipeline/Step.ts'
 import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
-import { stepIsFork, useStepRegistry } from '../pipeline/StepRegistry.ts'
+import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import {
   type ForkStepRunner,
   type ForkStepRunnerOutput,
@@ -158,6 +158,8 @@ export const useStepStore = defineStore('steps', () => {
       }
       return step
     }
+
+    const stepIsFork = stepRegistry.stepIsFork
 
     function add(def: string, afterStepId?: string): AnyStepRef {
       const step = _createNewStepOrFork(def)

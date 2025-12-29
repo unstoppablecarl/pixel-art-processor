@@ -12,12 +12,12 @@ export const STEP_META: StepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useStepForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
-const step = useStepHandler(stepId, {
+const step = useStepForkHandler(stepId, {
   ...STEP_META,
   config() {
     return {}

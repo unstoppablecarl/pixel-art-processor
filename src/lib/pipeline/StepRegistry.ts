@@ -98,6 +98,9 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     get,
     has,
     isFork,
+    stepIsFork: <T extends AnyStepContext>(
+      step: Step<T>,
+    ) => isFork(step.def),
     validateDefIsFork,
     validateDef,
     dataTypeRegistry,
@@ -130,7 +133,3 @@ export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType,
 
   return inputDataTypes.includes(outputType)
 }
-
-export const stepIsFork = <T extends AnyStepContext>(
-  step: Step<T>,
-) => useStepRegistry().isFork(step.def)
