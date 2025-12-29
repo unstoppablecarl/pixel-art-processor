@@ -177,10 +177,6 @@ type RC = ShallowReactive<C>
 type I = typeof inputDataTypes
 type O = typeof outputDataType
 
-// type TExpected = StepContext<C, SC, RC, I, O>
-
-// --- 4. Call site ------------------------------------------------------------
-
 function assertHandlerOptions<
   C extends Config,
   SC extends Config,
