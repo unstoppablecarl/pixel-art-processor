@@ -203,7 +203,7 @@ type StepHandlerOptionsInfer<
   serializeConfig: (config: C) => SC
   deserializeConfig: (config: SC) => C
 
-  watcher: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>) => WatcherTarget[]
+  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
   loadConfig: (config: RC, serialized: SC) => void
 
   prevOutputToInput: (output: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null
@@ -772,11 +772,15 @@ describe('handler harness tests', () => {
         } as C
       },
 
-      watcher(step) {
+      watcher(step, defaultWatcherTargets) {
         expectTypeOf(step).toExtend<ConfiguredStep<T>>()
         expectTypeOf(step.config).toExtend<ConfiguredStep<T>['config']>()
 
-        return [] as WatcherTarget[]
+        expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
+
+        return [
+          ...defaultWatcherTargets,
+        ]
       },
       loadConfig(config, serialized) {
         expectTypeOf(config).toExtend<RC>()
@@ -799,7 +803,10 @@ describe('handler harness tests', () => {
         expectTypeOf(config).toEqualTypeOf<RC>()
         expectTypeOf(inputData).toEqualTypeOf<InputInstances | null>()
 
-        return { output: new TypeC() }
+        return {
+          preview: config.maskImageData,
+          output: new TypeC()
+        }
       },
     })
 
@@ -891,5 +898,8 @@ describe('handler harness tests', () => {
     expectTypeOf(step.handler.validateInput).toEqualTypeOf<
       (inputData: InputInstances) => StepValidationError[]
     >()
+
+    expectTypeOf(step.handler.inputDataTypes).toEqualTypeOf<IStepHandler<T>['inputDataTypes']>()
+    expectTypeOf(step.handler.outputDataType).toEqualTypeOf<IStepHandler<T>['outputDataType']>()
   })
 })
