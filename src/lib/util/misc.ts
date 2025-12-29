@@ -78,3 +78,7 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
   if (Array.isArray(value)) return value
   return [value]
 }
+
+export type MaybePromise<T> =
+  | T
+  | Promise<T>

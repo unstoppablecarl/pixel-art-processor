@@ -1,4 +1,4 @@
-import { expectTypeOf } from 'vitest'
+import { describe, expectTypeOf, it } from 'vitest'
 import { Reactive, reactive, type ShallowReactive, shallowReactive } from 'vue'
 import { deepUnwrap } from '../src/lib/util/vue-util.ts'
 
@@ -805,7 +805,7 @@ describe('handler harness tests', () => {
 
         return {
           preview: config.maskImageData,
-          output: new TypeC()
+          output: new TypeC(),
         }
       },
     })

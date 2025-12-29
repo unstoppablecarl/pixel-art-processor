@@ -17,10 +17,10 @@ import {
   type Config,
   type IStepHandler,
   makeStepHandler,
-  parseStepRunnerResult,
   type StepHandlerOptions,
 } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
+import { parseStepRunnerResult } from '../pipeline/StepRunner.ts'
 import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { copyImageDataOrNull } from '../util/ImageData.ts'
 import { arrayRemove, logStepEvent } from '../util/misc.ts'

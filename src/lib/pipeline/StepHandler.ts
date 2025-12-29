@@ -1,8 +1,7 @@
 import { reactive, type Reactive, type WatchSource } from 'vue'
-import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
+import type { StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
-import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type AnyStepContext,
@@ -10,10 +9,13 @@ import {
   type StepContext,
   type StepInputTypesToInstances,
 } from './Step.ts'
-import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
+import { stepOutputTypeCompatibleWithInputTypes, type StepRegistry, useStepRegistry } from './StepRegistry.ts'
+import type { StepRunner } from './StepRunner.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
 export type Config = Record<string, any>
+
+export type WatcherTarget = WatchSource | Reactive<any>
 
 export const INVALID_INPUT_TYPE = 'INVALID_INPUT_TYPE'
 
@@ -65,24 +67,6 @@ export type StepHandlerOptionsInfer<
   run: StepRunner<StepContext<C, SC, RC, I, O>>
 }
 
-export type WatcherTarget = WatchSource | Reactive<any>
-
-export type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
-  config: T['RC'],
-  inputData: T['Input'] | null,
-}) => StepRunnerOutputMaybePromise<T['Output']>
-
-export type StepRunnerOutputMaybePromise<Output> =
-  | StepRunnerOutput<Output>
-  | Promise<StepRunnerOutput<Output>>
-
-export type StepRunnerOutput<Output> = null |
-  undefined | {
-  preview?: ImageData | null | undefined,
-  output: Output | null | undefined,
-  validationErrors?: StepValidationError[]
-}
-
 export interface IStepHandler<T extends AnyStepContext> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
@@ -120,6 +104,7 @@ export interface IStepHandler<T extends AnyStepContext> {
 export function makeStepHandler<T extends AnyStepContext>(
   def: string,
   options: StepHandlerOptions<T>,
+  stepRegistry: StepRegistry = useStepRegistry(),
 ): IStepHandler<T> {
 
   type RC = T['RC']
@@ -128,7 +113,7 @@ export function makeStepHandler<T extends AnyStepContext>(
   type Input = T['Input']
   type InputConstructors = T['InputConstructors']
 
-  useStepRegistry().validateDefRegistration(def, options)
+  stepRegistry.validateDefRegistration(def, options)
 
   const baseStepHandler: Omit<IStepHandler<T>, 'run'> = {
     inputDataTypes: options.inputDataTypes,
@@ -191,16 +176,3 @@ export function makeStepHandler<T extends AnyStepContext>(
   } as IStepHandler<T>
 }
 
-export function parseStepRunnerResult<Output extends StepDataTypeInstance>(
-  result: StepRunnerOutput<Output>,
-): {
-  preview: ImageData | null,
-  validationErrors: StepValidationError[],
-  outputData: Output | null,
-} {
-  return {
-    outputData: copyStepDataOrNull(result?.output ?? null) ?? null,
-    preview: result?.preview ?? null,
-    validationErrors: result?.validationErrors ?? [],
-  }
-}

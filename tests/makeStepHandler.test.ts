@@ -12,9 +12,9 @@ import {
   makeStepHandler,
   type StepHandlerOptional,
   type StepHandlerOptions,
-  type StepRunner,
-  type StepRunnerOutput,
 } from '../src/lib/pipeline/StepHandler.ts'
+import type { StepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import type { StepRunner, StepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -216,6 +216,11 @@ describe('StepHandlerOptions<T>', () => {
 // makeStepHandler<T>
 // ---------------------------------------------------------------------------
 
+const fakeStepRegistry = {
+  validateDefRegistration: () => {
+  },
+} as unknown as StepRegistry
+
 describe('makeStepHandler<T>', () => {
   it('returns an IStepHandler<T>-compatible object merging defaults and options', () => {
     const options: StepHandlerOptions<T> = {
@@ -251,7 +256,7 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler<T>(DEF, options)
+    const handler = makeStepHandler<T>(DEF, options, fakeStepRegistry)
 
     // Shape of handler: must be a full IStepHandler<T>
     expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
@@ -308,7 +313,7 @@ describe('makeStepHandler<T>', () => {
 
     // This checks that makeStepHandler doesn’t destroy inference when used with a
     // generic AnyStepContext T, and that the result still conforms to IStepHandler.
-    const handler = makeStepHandler<AnyT>(DEF, options as any)
+    const handler = makeStepHandler<AnyT>(DEF, options as any, fakeStepRegistry)
 
     expectTypeOf(handler).toExtend<IStepHandler<AnyT>>()
   })
@@ -324,7 +329,7 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler<T>(DEF, options)
+    const handler = makeStepHandler<T>(DEF, options, fakeStepRegistry)
 
     expectTypeOf(handler.run).returns.toEqualTypeOf<
       StepRunnerOutput<T['Output']> | null | undefined | Promise<StepRunnerOutput<T['Output']>>
