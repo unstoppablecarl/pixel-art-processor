@@ -8,8 +8,8 @@ export type ConfigKeyAdapter<Serialized = any, Deserialized = any> = {
 }
 
 export type ConfigKeyAdapters<
-  C extends Config = Config,
-  SerializedConfig extends Config = C
+  C extends Config,
+  SerializedConfig extends Config
 > = Partial<{
   [K in keyof C & keyof SerializedConfig]: ConfigKeyAdapter<SerializedConfig[K], C[K]>
 }>
