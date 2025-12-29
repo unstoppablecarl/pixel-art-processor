@@ -103,7 +103,7 @@ export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive
 export type AnyStepContext = StepContext<any, any, any, any, any>
 
 // Strict version for this harness (no defaults)
-export type StepContextStrict<
+export type StepContext<
   C extends Config,
   SerializedConfig extends Config,
   RC extends ReactiveConfigType<C>,
@@ -119,19 +119,10 @@ export type StepContextStrict<
   SerializedConfig: SerializedConfig,
 }
 
-// And for this file, alias StepContext to the strict one
-export type StepContext<
-  C extends Config,
-  SerializedConfig extends Config,
-  RC extends ReactiveConfigType<C>,
-  Input extends readonly StepDataType[],
-  Output extends StepDataType,
-> = StepContextStrict<C, SerializedConfig, RC, Input, Output>
-
 // THIS ALSO WORKS!
 type StepHandlerOptions<T extends AnyStepContext> = IStepHandler<T>
 
-// type StepHandlerOptions2<T extends AnyStepContext> = {
+// type StepHandlerOptions<T extends AnyStepContext> = {
 //   inputDataTypes: T['InputConstructors']
 //   outputDataType: T['OutputConstructors']
 //
