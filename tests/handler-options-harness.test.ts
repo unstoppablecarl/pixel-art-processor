@@ -759,6 +759,7 @@ describe('handler harness tests', () => {
       serializeConfig(config) {
         expectTypeOf(config).toEqualTypeOf<C>()
         return {
+          ...config,
           maskImageData: serializeImageData(config.maskImageData),
         } as SC
       },
@@ -766,6 +767,7 @@ describe('handler harness tests', () => {
       deserializeConfig(config) {
         expectTypeOf(config).toEqualTypeOf<SC>()
         return {
+          ...config,
           maskImageData: deserializeImageData(config.maskImageData),
         } as C
       },
