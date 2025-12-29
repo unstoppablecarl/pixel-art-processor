@@ -5,7 +5,7 @@ import type { DataStructureConstructor } from '../step-data-types/BaseDataStruct
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { StepType } from './Step.ts'
+import { type AnyStepContext, type Step, StepType } from './Step.ts'
 import type { IStepHandler } from './StepHandler.ts'
 import type { StepMeta } from './StepMeta.ts'
 
@@ -79,7 +79,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
 
     const definition = get(def)
 
-    console.log({definition}, 'zxc')
+    console.log({ definition }, 'zxc')
 
     if (!objectsAreEqual(inputDataTypes, definition.inputDataTypes)) {
       console.error({ registeredInputDataTypes: inputDataTypes, moduleInputDataTypes: definition.inputDataTypes })
@@ -130,3 +130,7 @@ export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType,
 
   return inputDataTypes.includes(outputType)
 }
+
+export const stepIsFork = <T extends AnyStepContext>(
+  step: Step<T>,
+) => useStepRegistry().isFork(step.def)
