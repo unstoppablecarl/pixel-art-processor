@@ -41,6 +41,8 @@ export type StepLoaderSerialized<
   config: SerializedConfig
 }
 
+export type AnyStep = Step<AnyStepContext>
+
 export type Step<T extends AnyStepContext> = {
   readonly id: string,
   readonly def: string,
