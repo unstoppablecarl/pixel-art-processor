@@ -523,3 +523,24 @@ const step = useGenericHandler('test', {
 
 expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
 expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+expectTypeOf(step.handler.watcher).toEqualTypeOf<
+  IStepHandler<T>['watcher']
+>()
+expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
+  IStepHandler<T>['serializeConfig']
+>()
+expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
+  IStepHandler<T>['deserializeConfig']
+>()
+expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
+  IStepHandler<T>['loadConfig']
+>()
+expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<
+  IStepHandler<T>['prevOutputToInput']
+>()
+expectTypeOf(step.handler.validateInputType).toEqualTypeOf<
+  IStepHandler<T>['validateInputType']
+>()
+expectTypeOf(step.handler.validateInput).toEqualTypeOf<
+  IStepHandler<T>['validateInput']
+>()
