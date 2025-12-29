@@ -1108,11 +1108,6 @@ export const useStepStore = defineStore('steps', () => {
 
       syncImageDataFromPrev(step.id)
 
-      if (__DEV__) {
-        expectTypeOf(handler).toExtend<IStepHandler<T>>()
-        expectTypeOf(step).toExtend<Step<T>>()
-      }
-
       return {
         step,
         handler,
