@@ -24,23 +24,13 @@ export type AnyConfiguredStep =
   handler: any,
 }
 
-// ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
-export function useStepHandler<
-  C extends Config,
-  SC extends Config,
-  RC extends ReactiveConfigType<C>,
-  I extends readonly StepDataType[],
-  O extends StepDataType
+function useCoreStepHandler<
+  T extends AnyStepContext,
+  R extends StepRunner<T>
 >(
   stepId: string,
-  options: StepHandlerOptionsInfer<
-    C, SC, RC, I, O,
-    NormalStepRunner<StepContext<C, SC, RC, I, O>>
-  >,
+  options: StepHandlerOptions<T, R>,
 ) {
-
-  type T = StepContext<C, SC, RC, I, O>
-
   const store = useStepStore()
   const { step, handler } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
 
@@ -66,9 +56,27 @@ export function useStepHandler<
     process()
   }, { immediate: true })
 
-  return step as ConfiguredStep<T, NormalStepRunner<T>>
+  return step as ConfiguredStep<T, R>
 }
 
+// ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
+export function useStepHandler<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType
+>(
+  stepId: string,
+  options: StepHandlerOptionsInfer<
+    C, SC, RC, I, O,
+    NormalStepRunner<StepContext<C, SC, RC, I, O>>
+  >,
+) {
+
+  type T = StepContext<C, SC, RC, I, O>
+  return useCoreStepHandler<T, NormalStepRunner<T>>(stepId, options)
+}
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
 export function useStepForkHandler<
@@ -86,31 +94,5 @@ export function useStepForkHandler<
 ) {
 
   type T = StepContext<C, SC, RC, I, O>
-
-  const store = useStepStore()
-  const { step, handler } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
-
-  expectTypeOf(handler).toExtend<IStepHandler<T>>()
-
-  store.loadPendingInput(stepId)
-
-  const process = () => {
-    store.resolveStep<T>(stepId)
-  }
-
-  const defaultWatcherTargets = [
-    step.config,
-    () => step.inputData,
-    () => step.seed,
-    () => step.muted,
-  ]
-
-  const watcherTargets = handler.watcher(step as ConfiguredStep<T>, defaultWatcherTargets)
-
-  watch(watcherTargets, () => {
-    logStepWatch(step.id)
-    process()
-  }, { immediate: true })
-
-  return step as ConfiguredStep<T, ForkStepRunner<T>>
+  return useCoreStepHandler<T, ForkStepRunner<T>>(stepId, options)
 }
