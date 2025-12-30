@@ -5,9 +5,6 @@ import type { StepValidationError } from '../errors.ts'
 import type { Config, IStepHandler } from './StepHandler.ts'
 import type { StepRunner } from './StepRunner.ts'
 
-export const STEP_FORK_DEF = 'STEP_FORK'
-
-
 export type ConfiguredStep<
   T extends AnyStepContext,
   R extends StepRunner<T> = StepRunner<T>

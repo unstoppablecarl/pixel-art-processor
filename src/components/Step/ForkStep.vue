@@ -1,10 +1,10 @@
 <script lang="ts">
-import { STEP_FORK_DEF, StepType } from '../../lib/pipeline/Step.ts'
+import { StepType } from '../../lib/pipeline/Step.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: StepType.FORK,
-  def: STEP_FORK_DEF,
+  def: 'fork_step',
   displayName: 'Fork',
   passthrough: true,
 }
