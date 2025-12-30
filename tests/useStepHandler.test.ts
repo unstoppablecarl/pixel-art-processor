@@ -239,10 +239,10 @@ describe('step handler type testing', async () => {
         (config: RC, serializedConfig: SC) => void
       >()
 
-      expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
-        IStepHandler<T>['validateInputTypeStatic']
+      expectTypeOf(step.handler.validateInput).toEqualTypeOf<
+        IStepHandler<T>['validateInput']
       >()
-      expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
+      expectTypeOf(step.handler.validateInput).toEqualTypeOf<
         ((inputData: T['Input'], inputDataTypes: T['InputConstructors']) => StepValidationError[])
       >()
 

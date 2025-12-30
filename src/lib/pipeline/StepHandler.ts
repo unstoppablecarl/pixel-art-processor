@@ -30,7 +30,7 @@ export type StepHandlerOptional =
   | 'config'
   | 'reactiveConfig'
   | 'loadConfig'
-  | 'validateInputTypeStatic'
+  | 'validateInput'
 
 export type StepHandlerOptions<
   T extends AnyStepContext,
@@ -63,7 +63,7 @@ export type StepHandlerOptionsInfer<
 
   watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
-  validateInputTypeStatic?: (
+  validateInput?: (
     inputData: StepInputTypesToInstances<I>,
     inputTypes: I,
   ) => StepValidationError[]
@@ -104,7 +104,7 @@ export interface IStepHandler<
   // convert config from storage
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
 
-  validateInputTypeStatic(inputData: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
+  validateInput(inputData: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   run: R,
 
@@ -167,7 +167,7 @@ export function makeStepHandler<
       Object.assign(config, deserialized)
     },
 
-    validateInputTypeStatic(
+    validateInput(
       inputData: Input | null,
       inputDataTypes: InputConstructors,
     ): StepValidationError[] {
