@@ -3,9 +3,11 @@ import type { StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
+import type { Require } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
-  type AnyStepContext, type ConfiguredStep,
+  type AnyStepContext,
+  type ConfiguredStep,
   type ReactiveConfigType,
   type StepContext,
   type StepInputTypesToInstances,
@@ -122,12 +124,11 @@ export interface IStepHandler<
   setPassThroughDataType?: (passthroughType: StepDataType) => void,
 }
 
-export interface IStepHandlerPassthrough<
+export type PassthroughHandler<
   T extends AnyStepContext,
   R extends StepRunner<T> = StepRunner<T>
-> extends IStepHandler<T, R> {
-  setPassThroughDataType?: (dataType: StepDataType) => void,
-}
+> =
+  Require<IStepHandler<T, R>, 'setPassThroughDataType'>
 
 export function makeStepHandler<
   T extends AnyStepContext,
@@ -229,31 +230,6 @@ export function makeStepHandler<
     ...baseStepHandler,
     ...options,
   } as IStepHandler<T, R>
-}
-
-export function makePassthroughHandler<
-  T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
->(
-  handler: IStepHandler<T, R>,
-): StepHandlerOptions<T, R> {
-  let resolvedType: StepDataType | undefined
-
-  return {
-    ...handler,
-    passthrough: true,
-    setPassThroughDataType(type: StepDataType) {
-      resolvedType = type
-    },
-
-    get inputDataTypes() {
-      return resolvedType ? [resolvedType] : [PassThrough]
-    },
-
-    get outputDataType() {
-      return resolvedType ?? PassThrough
-    },
-  } as IStepHandlerPassthrough<T, R>
 }
 
 

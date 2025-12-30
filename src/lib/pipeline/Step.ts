@@ -2,7 +2,7 @@ import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
-import type { Config, IStepHandler } from './StepHandler.ts'
+import type { Config, IStepHandler, PassthroughHandler } from './StepHandler.ts'
 import type { StepRunner } from './StepRunner.ts'
 
 export type ConfiguredStep<
@@ -19,6 +19,20 @@ export type AnyConfiguredStep =
   & {
   config: any,
   handler: any,
+}
+
+export type ConfiguredPassthroughStep<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
+  Omit<ConfiguredStep<T, R>, "handler"> & {
+  handler: PassthroughHandler<T, R>
+}
+
+
+export function assertConfiguredStep<T extends AnyStepContext>(step: Step<T> | StepRef<T>): asserts step is ConfiguredStep<T> {
+  if (!step.config) throw new Error(`Step is not configured: ${step.id} has no config`)
+  if (!step.handler) throw new Error(`Step is not configured: ${step.id} has no handler`)
 }
 
 export type AnyStepContext = StepContext<any, any, any, any, any>

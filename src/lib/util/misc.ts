@@ -82,3 +82,5 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
 export type MaybePromise<T> =
   | T
   | Promise<T>
+
+export type Require<T, K extends keyof T> = T & { [P in K]-?: T[P] }

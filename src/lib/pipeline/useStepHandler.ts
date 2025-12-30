@@ -15,28 +15,15 @@ function useCoreStepHandler<
   options: StepHandlerOptions<T, R>,
 ) {
   const store = useStepStore()
-  const { step, handler } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
+  const { step, handler, watcherTargets } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
 
   expectTypeOf(handler).toExtend<IStepHandler<T>>()
 
   store.loadPendingInput(stepId)
 
-  const process = () => {
-    store.resolveStep<T>(stepId)
-  }
-
-  const defaultWatcherTargets = [
-    step.config,
-    () => step.inputData,
-    () => step.seed,
-    () => step.muted,
-  ]
-
-  const watcherTargets = handler.watcher(step as ConfiguredStep<T>, defaultWatcherTargets)
-
   watch(watcherTargets, () => {
     logStepWatch(step.id)
-    process()
+    store.resolveStep<T>(stepId)
   }, { immediate: true })
 
   return step as ConfiguredStep<T, R>
@@ -56,7 +43,6 @@ export function useStepHandler<
     NormalStepRunner<StepContext<C, SC, RC, I, O>>
   >,
 ) {
-
   type T = StepContext<C, SC, RC, I, O>
   return useCoreStepHandler<T, NormalStepRunner<T>>(stepId, options)
 }
@@ -75,7 +61,21 @@ export function useStepForkHandler<
     ForkStepRunner<StepContext<C, SC, RC, I, O>>
   >,
 ) {
-
   type T = StepContext<C, SC, RC, I, O>
   return useCoreStepHandler<T, ForkStepRunner<T>>(stepId, options)
+}
+
+export function useBranchHandler(forkId: string, branchIndex: number) {
+  const store = useStepStore()
+
+  const fork = store.getFork(forkId)
+  const branch = store.getBranch(forkId, branchIndex)
+
+  watch([
+    () => fork.seed,
+    () => branch.seed,
+    () => branch.inputData,
+  ], () => {
+    store.resolveBranch(forkId, branchIndex)
+  })
 }
