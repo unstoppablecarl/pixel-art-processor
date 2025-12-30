@@ -1,35 +1,31 @@
 <script lang="ts">
-import { STEP_FORK_DEF, StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
-import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
+import { StepType } from '../../lib/pipeline/Step.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.FORK,
-  def: STEP_FORK_DEF,
+  def: 'fork_step',
   displayName: 'Fork',
-  inputDataTypes: [PassThrough],
-  outputDataType: PassThrough,
+  passthrough: true,
 }
 </script>
 <script setup lang="ts">
-import { reactive } from 'vue'
-import { useForkStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useStepForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
 const { stepId } = defineProps<{ stepId: string }>()
 
-const step = useForkStepHandler(stepId, {
+const step = useStepForkHandler(stepId, {
   ...STEP_META,
   config() {
-    return reactive({})
+    return {}
   },
   run({ inputData, branchCount }) {
+
     return {
       branchesOutput: Array(branchCount).fill(inputData),
+      preview: inputData?.toImageData(),
     }
-  },
-  validateInputType() {
-    return []
   },
 })
 
@@ -42,9 +38,6 @@ const step = useForkStepHandler(stepId, {
     :draggable="false"
     :mutable="false"
   >
-    <template #body>
-      FORK
-    </template>
     <template #footer>
 
     </template>

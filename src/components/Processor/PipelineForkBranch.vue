@@ -18,13 +18,6 @@ const {
 
 const branch = computed(() => store.getBranch(forkStepId, branchIndex))
 
-const branchSeed = computed({
-  get: () => branch.value.seed,
-  set(value: number) {
-    store.setBranchSeed(forkStepId, branchIndex, value)
-  },
-})
-
 </script>
 <template>
 
@@ -33,7 +26,7 @@ const branchSeed = computed({
       Branch {{ branchIndex + 1 }}
     </div>
 
-    <SeedPopOver class="ms-auto me-1" v-model="branchSeed" />
+    <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
     <BButtonGroup class="fork-branch-controls">
       <button role="button" class="btn btn-sm btn-danger d-inline-block"
               @click="store.removeBranch(forkStepId, branchIndex)">

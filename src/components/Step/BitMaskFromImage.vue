@@ -1,8 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'bitmask_from_image',
   displayName: 'BitMask: Image',
@@ -12,12 +12,12 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { ref, shallowReactive } from 'vue'
+import { ref } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
-import { configImageDataAdapter } from '../../lib/util/object-key-serialization.ts'
+import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
 
 const store = useStepStore()
@@ -36,9 +36,21 @@ const handleFileUpload = (event: Event) => {
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return shallowReactive({
+    return {
       maskImageData: null as null | ImageData,
-    })
+    }
+  },
+  serializeConfig(config) {
+    return {
+      ...config,
+      maskImageData: serializeImageData(config.maskImageData),
+    }
+  },
+  deserializeConfig(config) {
+    return {
+      ...config,
+      maskImageData: deserializeImageData(config.maskImageData),
+    }
   },
   run({ config }) {
     if (!config.maskImageData) return
@@ -53,9 +65,6 @@ const step = useStepHandler(stepId, {
   // never accept input
   prevOutputToInput(_input) {
     return null
-  },
-  configKeyAdapters: {
-    maskImageData: configImageDataAdapter,
   },
 })
 </script>

@@ -1,8 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'bitmask_islands_add',
   displayName: 'BitMask Islands: Add',
@@ -12,7 +12,6 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { shallowReactive } from 'vue'
 import { addPointsPoissonDisk } from '../../lib/generators/addPointsPoissonDisk.ts'
 import {
   DEFAULT_SHOW_ADDED,
@@ -35,7 +34,7 @@ const { stepId } = defineProps<{ stepId: string }>()
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return shallowReactive({
+    return {
       minDistance: 4,
       maxDistance: 10,
       borderBuffer: 3,
@@ -44,7 +43,7 @@ const step = useStepHandler(stepId, {
       populationFactor: 1,
       ...DEFAULT_SHOW_ISLANDS.CONFIG,
       ...DEFAULT_SHOW_ADDED.CONFIG,
-    })
+    }
   },
   run({ config, inputData }) {
     if (!inputData) return

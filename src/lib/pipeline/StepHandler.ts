@@ -1,19 +1,24 @@
 import { reactive, type Reactive, type WatchSource } from 'vue'
-import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
+import type { StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
-import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
-import { type ConfigKeyAdapter, deserializeObjectKeys, serializeObjectKeys } from '../util/object-key-serialization.ts'
+import { PassThrough } from '../step-data-types/PassThrough.ts'
+import type { Require } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type AnyStepContext,
   type ConfiguredStep,
   type ReactiveConfigType,
+  type StepContext,
   type StepInputTypesToInstances,
 } from './Step.ts'
-import { stepOutputTypeCompatibleWithInputTypes, useStepRegistry } from './StepRegistry.ts'
+import type { StepDataConfig } from './StepMeta.ts'
+import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
+import type { StepRunner } from './StepRunner.ts'
 
 export type Config = Record<string, any>
+
+export type WatcherTarget = WatchSource | Reactive<any>
 
 export const INVALID_INPUT_TYPE = 'INVALID_INPUT_TYPE'
 
@@ -22,38 +27,78 @@ export type StepHandlerOptional =
   | 'serializeConfig'
   | 'deserializeConfig'
   | 'config'
+  | 'reactiveConfig'
   | 'loadConfig'
   | 'prevOutputToInput'
-  | 'validateInputType'
+  | 'validateInputTypeStatic'
   | 'validateInput'
-  | 'serializeConfigKeys'
-  | 'deserializeConfigKeys'
-  | 'configKeyAdapters'
 
-export type StepHandlerOptions<T extends AnyStepContext, Runner = StepRunner<T>> =
-  Optional<Omit<IStepHandler<T, Runner>, 'run'>, StepHandlerOptional> & {
-  run: Runner,
-}
+export type StepHandlerOptions<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> = Omit<
+  Optional<
+    IStepHandler<T, R>, StepHandlerOptional
+  >,
+  | 'inputDataTypes'
+  | 'outputDataType'
+> & StepDataConfig<T['InputConstructors'], T['OutputConstructors']>
 
-export type ConfigKeyAdapters<
-  C extends Config = Config,
-  SerializedConfig extends Config = C
-> = Partial<{
-  [K in keyof C & keyof SerializedConfig]: ConfigKeyAdapter<SerializedConfig[K], C[K]>
-}>
+// ⚠️ property order matters here ⚠️
+// anything that references SC must come after serializeConfig()
+export type StepHandlerOptionsInfer<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+  R extends StepRunner<StepContext<C, SC, RC, I, O>>,
+> = {
+  config?: () => C,
+  reactiveConfig?: (defaults: C) => RC
 
-type WatcherTarget = WatchSource | Reactive<any>
+  serializeConfig?: (config: C) => SC
+  deserializeConfig?: (config: SC) => C
 
-export interface IStepHandler<T extends AnyStepContext, Runner = StepRunner<T>> {
+  loadConfig?: (config: RC, serialized: SC) => void
+
+  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+
+  prevOutputToInput?: (output: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null
+
+  validateInputType?: (
+    typeFromPrev: StepInputTypesToInstances<I>,
+    inputTypes: I,
+  ) => StepValidationError[]
+
+  validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[]
+
+  run: R
+} & ({
+  passthrough?: false,
+  inputDataTypes: I
+  outputDataType: O
+} | {
+  passthrough: true,
+  inputDataTypes?: undefined,
+  outputDataType?: undefined,
+})
+
+export interface IStepHandler<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
-  run: Runner,
 
-  // getter for config
-  config(): T['RC'],
+  // fresh default config instance
+  config(): T['C']
+
+  // wraps default config in reactivity
+  reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: ConfiguredStep<T, Runner>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -65,29 +110,34 @@ export interface IStepHandler<T extends AnyStepContext, Runner = StepRunner<T>> 
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
 
   // prepare input data when changed
-  prevOutputToInput(outputData: StepDataTypeInstance | null): T['Input'] | null,
+  prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
 
   // validate the prevStep.outputDataType against currentStep.inputDataType
-  validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: T['InputConstructors']): StepValidationError[],
+  // static check if the output type is in the list of input types (or is a Passthrough)
+  validateInputTypeStatic(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   // further validate input after determining it is the correct type
   validateInput(inputData: T['Input']): StepValidationError[],
 
-  deserializeConfigKeys(
-    serializedConfig: Record<string, any>,
-  ): Record<string, any>
+  run: R,
 
-  serializeConfigKeys(
-    config: T['RC'],
-  ): Record<string, any>
-
-  configKeyAdapters?: ConfigKeyAdapters<T['C'], T['SerializedConfig']>,
+  setPassThroughDataType?: (passthroughType: StepDataType) => void,
 }
+
+export type PassthroughHandler<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
+  Require<IStepHandler<T, R>, 'setPassThroughDataType'>
 
 export function makeStepHandler<
   T extends AnyStepContext,
-  Runner extends StepRunner<T> | ForkStepRunner<T> = StepRunner<T>,
->(def: string, options: StepHandlerOptions<T, Runner>) {
+  R extends StepRunner<T> = StepRunner<T>
+>(
+  def: string,
+  options: StepHandlerOptions<T, R>,
+  stepRegistry: StepRegistry = useStepRegistry(),
+): IStepHandler<T, R> {
 
   type RC = T['RC']
   type SerializedConfig = T['SerializedConfig']
@@ -95,41 +145,26 @@ export function makeStepHandler<
   type Input = T['Input']
   type InputConstructors = T['InputConstructors']
 
-  useStepRegistry().validateDefRegistration(def, options)
+  stepRegistry.validateDefRegistration(def, options)
 
-  const baseStepHandler = {
-    inputDataTypes: options.inputDataTypes,
-    outputDataType: options.outputDataType,
-    configKeyAdapters: options.configKeyAdapters ?? undefined,
-
-    config(): RC {
-      return reactive({}) as RC
+  const baseStepHandler: Omit<IStepHandler<T, R>, 'run' | 'inputDataTypes' | 'outputDataType' | 'setPassThroughDataType'> = {
+    config(): C {
+      return {}
     },
 
-    watcher(_step: ConfiguredStep<T, Runner>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    reactiveConfig(defaults: C): RC {
+      return reactive(defaults) as RC
+    },
+
+    watcher(_step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]
     },
 
-    deserializeConfigKeys(
-      serializedConfig: SerializedConfig,
-    ): C {
-      if (!this.configKeyAdapters) return {} as C
-      return deserializeObjectKeys<C, SerializedConfig>(this.configKeyAdapters, serializedConfig)
-    },
-
-    serializeConfigKeys(
-      config: RC,
-    ): Record<string, any> {
-      if (!this.configKeyAdapters) return {}
-      return serializeObjectKeys(this.configKeyAdapters, config)
-    },
-
     deserializeConfig(serializedConfig: SerializedConfig): C {
       return {
         ...serializedConfig,
-        ...this.deserializeConfigKeys(serializedConfig),
       } as C
     },
 
@@ -137,7 +172,6 @@ export function makeStepHandler<
       const unwrapped = deepUnwrap(config)
       return {
         ...unwrapped,
-        ...this.serializeConfigKeys(unwrapped),
       } as SerializedConfig
     },
 
@@ -146,13 +180,12 @@ export function makeStepHandler<
       Object.assign(config, deserialized)
     },
 
-    prevOutputToInput(outputData: StepDataTypeInstance): Input {
-      // pass through by default
-      return outputData as unknown as Input
+    prevOutputToInput(outputData: Input): Input {
+      return outputData
     },
 
-    validateInputType(typeFromPrevOutput: StepDataType, inputDataTypes: InputConstructors): StepValidationError[] {
-      if (stepOutputTypeCompatibleWithInputTypes(typeFromPrevOutput, inputDataTypes)) {
+    validateInputTypeStatic(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
+      if (inputDataTypes.includes(typeFromPrevOutput)) {
         return []
       }
 
@@ -161,85 +194,35 @@ export function makeStepHandler<
       ]
     },
 
-    validateInput(_inputData: Input): StepValidationError[] {
+    validateInput(_inputData: StepDataType): StepValidationError[] {
       return []
     },
+  }
 
-    run: options.run as Runner,
+  if (!options.passthrough) {
+    return {
+      ...baseStepHandler,
+      ...options,
+    } as IStepHandler<T, R>
+  }
 
-  } as IStepHandler<T, Runner>
+  let passthroughType: StepDataType | undefined = undefined
 
   return {
     ...baseStepHandler,
     ...options,
-  } as IStepHandler<T, Runner>
+    get inputDataTypes() {
+      return passthroughType ? [passthroughType] : [PassThrough]
+    },
+
+    get outputDataType() {
+      return passthroughType ?? PassThrough
+    },
+
+    setPassThroughDataType(type: StepDataType) {
+      passthroughType = type
+    },
+  } as IStepHandler<T, R>
 }
 
-export type StepRunner<T extends AnyStepContext> = StepRunnerRaw<T['C'], T['RC'], T['InputConstructors'], T['OutputConstructors']>
-export type ForkStepRunner<T extends AnyStepContext> = ForkStepRunnerRaw<T['C'], T['RC'], T['InputConstructors'], T['OutputConstructors']>
 
-export type ForkStepRunnerRaw<
-  C extends Config,
-  RC extends ReactiveConfigType<C>,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = ({
-       config,
-       inputData,
-       branchCount,
-     }: {
-  config: RC,
-  inputData: StepInputTypesToInstances<I> | null,
-  branchCount: number,
-}) => ForkStepRunnerOutput<InstanceType<O>>
-  | Promise<ForkStepRunnerOutput<InstanceType<O>>>
-
-export type StepRunnerRaw<
-  C extends Config,
-  RC extends ReactiveConfigType<C>,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = ({ config, inputData }: {
-  config: RC,
-  inputData: StepInputTypesToInstances<I> | null
-}) => StepRunnerOutput<InstanceType<O>>
-  | Promise<StepRunnerOutput<InstanceType<O>>>
-
-export type StepRunnerOutput<Output> = null |
-  undefined | {
-  preview?: ImageData | null | undefined,
-  output: Output | null | undefined,
-  validationErrors?: StepValidationError[]
-}
-
-export type ForkStepRunnerOutput<Output> = null | undefined | {
-  preview?: ImageData | ImageData[] | null | undefined,
-  branchesOutput: Output[] | null | undefined,
-  validationErrors?: StepValidationError[]
-}
-
-export function parseForkStepRunnerResult<Output extends StepDataTypeInstance>(result: ForkStepRunnerOutput<Output>): {
-  preview: ImageData | ImageData[] | null,
-  validationErrors: StepValidationError[],
-  outputData: Output[],
-} {
-  return {
-    outputData: result?.branchesOutput?.map(copyStepDataOrNull) ?? [],
-    preview: result?.preview ?? null,
-    validationErrors: result?.validationErrors ?? [],
-  }
-}
-
-export function parseStepRunnerResult<Output extends StepDataTypeInstance>(
-  result: StepRunnerOutput<Output>,
-): {
-  preview: ImageData | null,
-  validationErrors: StepValidationError[],
-  outputData: Output | null,
-} {
-  return {
-    outputData: copyStepDataOrNull(result?.output ?? null) ?? null,
-    preview: result?.preview ?? null,
-    validationErrors: result?.validationErrors ?? [],
-  }
-}

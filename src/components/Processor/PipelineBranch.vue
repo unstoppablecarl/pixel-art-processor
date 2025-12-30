@@ -1,21 +1,33 @@
 <script setup lang="ts">
 import { dragAndDrop } from '@formkit/drag-and-drop'
 import { computed, onMounted, useTemplateRef } from 'vue'
-import { type StepRef } from '../../lib/pipeline/Step.ts'
+import { type AnyStepRef } from '../../lib/pipeline/Step.ts'
+import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = useStepStore()
 
+type Props = {
+  stepIds: string[],
+} & (
+  {
+    parentForkId: null,
+    branchIndex: null,
+  } | {
+  parentForkId: string,
+  branchIndex: number,
+})
+
 const {
   stepIds,
   parentForkId,
   branchIndex,
-} = defineProps<{
-  stepIds: string[],
-  parentForkId: null | string,
-  branchIndex: null | number,
-}>()
+} = defineProps<Props>()
+
+if (parentForkId) {
+  useBranchHandler(parentForkId, branchIndex)
+}
 
 const allSteps = computed(() => {
   if (!stepIds.length) {
@@ -26,7 +38,7 @@ const allSteps = computed(() => {
     }
   }
 
-  let fork: StepRef | null = null
+  let fork: AnyStepRef | null = null
 
   const lastId = stepIds[stepIds.length - 1]
   const lastStep = store.get(lastId)

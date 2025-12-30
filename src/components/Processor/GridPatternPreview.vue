@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import type { StepRef } from '../../lib/pipeline/Step.ts'
+import type { AnyStepRef } from '../../lib/pipeline/Step.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
@@ -15,13 +15,13 @@ const prng = computed(() => makePrng(previewStore.seed))
 
 type ImageOutput = {
   index: number,
-  step: StepRef,
+  step: AnyStepRef,
   image: ImageData
   key: string,
   encoded: string,
 }
 
-function make(step: StepRef, outputIndex: number, outputPreview: ImageData): ImageOutput {
+function make(step: AnyStepRef, outputIndex: number, outputPreview: ImageData): ImageOutput {
   const key = makeImgVar(step, outputIndex)
   const encoded = imageDataToUrlImage(outputPreview)
   return {
@@ -65,7 +65,7 @@ const cssStyle = computed(() => {
 })
 
 const IMAGE_VAR_PREFIX = `--preview-img-list-`
-const makeImgVar = (step: StepRef, index: number) => IMAGE_VAR_PREFIX + step.id + index
+const makeImgVar = (step: AnyStepRef, index: number) => IMAGE_VAR_PREFIX + step.id + index
 
 const cssImageVars = computed(() => stepOutputImages.value.map(({ step, image }, i) => {
     const encoded = imageDataToUrlImage(image)
@@ -75,7 +75,7 @@ const cssImageVars = computed(() => stepOutputImages.value.map(({ step, image },
 ))
 
 const grid = computed(() => {
-    const result: { index: number, cssStyle: string, step: StepRef }[][] = []
+    const result: { index: number, cssStyle: string, step: AnyStepRef }[][] = []
     for (let i = 0; i < previewStore.gridHeight; i++) {
       result[i] = []
       for (let j = 0; j < previewStore.gridWidth; j++) {

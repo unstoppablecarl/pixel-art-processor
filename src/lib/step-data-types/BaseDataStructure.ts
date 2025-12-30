@@ -138,7 +138,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return copyInstance
   }
 
-  abstract toImageData(...args: any): ImageData;
+  abstract toImageData(): ImageData;
 
   toUrlImage(): string {
     const canvas = document.createElement('canvas')

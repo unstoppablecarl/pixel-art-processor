@@ -2,42 +2,55 @@ import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
-import type { Config, ForkStepRunner, IStepHandler, StepRunner } from './StepHandler.ts'
-import { useStepRegistry } from './StepRegistry.ts'
+import type { Config, IStepHandler, PassthroughHandler } from './StepHandler.ts'
+import type { StepRunner } from './StepRunner.ts'
 
-export type AnyStepContext = {
-  C: any,
-  Output: any,
-  Input: any,
-  RC: any,
-  SerializedConfig: any,
-  InputConstructors: any,
-  OutputConstructors: any,
+export type ConfiguredStep<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
+  Required<Omit<Step<T>, 'config' | 'handler'>>
+  & {
+  config: NonNullable<Step<T>['config']>,
+  handler: IStepHandler<T, R>,
 }
-export const STEP_FORK_DEF = 'STEP_FORK'
+export type AnyConfiguredStep =
+  Required<Omit<Step<AnyStepContext>, 'config' | 'handler'>>
+  & {
+  config: any,
+  handler: any,
+}
 
-export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
-  // first steps do not have input so convert [] to null
-  ? null
-  : Input[number] extends StepDataType
-    // convert array of constructors to union of instances
-    ? InstanceType<Input[number]>
-    : never
+export type ConfiguredPassthroughStep<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
+  Omit<ConfiguredStep<T, R>, "handler"> & {
+  handler: PassthroughHandler<T, R>
+}
+
+
+export function assertConfiguredStep<T extends AnyStepContext>(step: Step<T> | StepRef<T>): asserts step is ConfiguredStep<T> {
+  if (!step.config) throw new Error(`Step is not configured: ${step.id} has no config`)
+  if (!step.handler) throw new Error(`Step is not configured: ${step.id} has no handler`)
+}
+
+export type AnyStepContext = StepContext<any, any, any, any, any>
 
 export type StepContext<
-  C extends Config = Config,
-  SerializedConfig extends Config = C,
-  RC extends ReactiveConfigType<C> = ReactiveConfigType<C>,
-  Input extends readonly StepDataType[] = readonly StepDataType[],
-  Output extends StepDataType = StepDataType,
+  C extends Config,
+  SerializedConfig extends Config,
+  RC extends ReactiveConfigType<C>,
+  Input extends readonly StepDataType[],
+  Output extends StepDataType,
 > = {
   C: C,
+  SerializedConfig: SerializedConfig,
+  RC: RC,
+  InputConstructors: Input,
   OutputConstructors: Output,
   Output: InstanceType<Output>,
-  InputConstructors: Input,
   Input: StepInputTypesToInstances<Input>,
-  RC: RC,
-  SerializedConfig: SerializedConfig,
 }
 
 export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;
@@ -49,21 +62,9 @@ export type StepLoaderSerialized<
   config: SerializedConfig
 }
 
-export type ConfiguredStep<T extends AnyStepContext, Runner> = Step<T> & {
-  handler: IStepHandler<T, Runner>
-  config: T['RC']
-}
+export type AnyStep = Step<AnyStepContext>
 
-export type ConfiguredNormalStep<T extends AnyStepContext> =
-  ConfiguredStep<T, StepRunner<T>> & NormalStep<T>
-
-export type ConfiguredForkStep<T extends AnyStepContext> =
-  ConfiguredStep<T, ForkStepRunner<T>> & ForkStep<T>
-
-
-export type AnyConfiguredStep = ConfiguredNormalStep<AnyStepContext> | ConfiguredForkStep<AnyStepContext>
-
-export type BaseStep<T extends AnyStepContext> = {
+export type Step<T extends AnyStepContext> = {
   readonly id: string,
   readonly def: string,
   inputData: T['Input'] extends null ? null : T['Input'] | null,
@@ -74,7 +75,7 @@ export type BaseStep<T extends AnyStepContext> = {
   validationErrors: StepValidationError[],
   config: T['RC'] | undefined,
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
-  handler: IStepHandler<T, StepRunner<T> | ForkStepRunner<T>> | undefined,
+  handler: IStepHandler<T> | undefined,
   parentForkId: null | string,
   branchIndex: null | number,
   lastExecutionTimeMS: undefined | number,
@@ -82,45 +83,28 @@ export type BaseStep<T extends AnyStepContext> = {
   muted: boolean,
 }
 
+export type SerializedStep = {
+  id: string,
+  def: string,
+  type: StepType,
+  parentForkId: string | null,
+  branchIndex: number | null,
+  config: Config | undefined,
+  seed: number,
+}
+
 export enum StepType {
   FORK = 'FORK',
   NORMAL = 'NORMAL',
 }
 
-declare const NormalBrand: unique symbol
-declare const ForkBrand: unique symbol
-
-export type NormalStep<T extends AnyStepContext> =
-  BaseStep<T> & {
-  // handler: IStepHandler<T, StepRunner<T>> | undefined,
-  [NormalBrand]: true
-}
-
-export type ForkStep<T extends AnyStepContext> =
-  BaseStep<T> & {
-  // handler: IStepHandler<T, ForkStepRunner<T>> | undefined,
-  [ForkBrand]: true,
-}
-
-export type Step<T extends AnyStepContext> =
-  | NormalStep<T>
-  | ForkStep<T>
-
-export type SerializedStep = {
-  id: string,
-  def: string,
-  parentForkId: string | null,
-  branchIndex: number | null,
-  config: Config | undefined,
-  seed: number,
-  muted: boolean,
-}
-
-export type DeSerializedStep<T extends AnyStepContext = AnyStepContext> =
-  Pick<Step<T>, 'id' | 'def' | 'parentForkId' | 'branchIndex' | 'config' | 'seed' | 'muted'>
+export type DeSerializedStep<T extends AnyStepContext> =
+  Pick<Step<T>, 'id' | 'def' | 'parentForkId' | 'branchIndex' | 'config' | 'seed'>
   & {}
 
-export type StepRef<T extends AnyStepContext = AnyStepContext> = ShallowReactive<Step<T>>
+export type StepRef<T extends AnyStepContext> = ShallowReactive<Step<T>>
+
+export type AnyStepRef = StepRef<AnyStepContext>
 
 export function createNewStep<T extends AnyStepContext>(
   def: string,
@@ -130,7 +114,7 @@ export function createNewStep<T extends AnyStepContext>(
 ): StepRef<T> {
 
   const id = `${def}_id_${idIncrement++}`
-  const step = {
+  return shallowReactive({
     id,
     def,
     parentForkId,
@@ -147,15 +131,7 @@ export function createNewStep<T extends AnyStepContext>(
     lastExecutionTimeMS: undefined,
     seed: 0,
     muted: false,
-  } as BaseStep<T>
-
-  const type = useStepRegistry().getStepType(def)
-
-  if (type === StepType.NORMAL) {
-    return shallowReactive(step) as NormalStep<T>
-  } else {
-    return shallowReactive(step) as ForkStep<T>
-  }
+  } as Step<T>)
 }
 
 export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerializedStep<T>): StepRef<T> {
@@ -166,7 +142,6 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
     branchIndex,
     config,
     seed,
-    muted,
   } = stepData
 
   return shallowReactive({
@@ -181,7 +156,6 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
     isProcessing: false,
     validationErrors: [] as StepValidationError[],
     seed,
-    muted,
     loadSerialized: {
       config,
     },
@@ -222,3 +196,11 @@ export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Rec
 
   return output
 }
+
+export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
+  // first steps do not have input so convert [] to null
+  ? null
+  : Input[number] extends StepDataType
+    // convert array of constructors to union of instances
+    ? InstanceType<Input[number]>
+    : never

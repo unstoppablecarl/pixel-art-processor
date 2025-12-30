@@ -1,11 +1,18 @@
 import type { Reactive, ShallowReactive } from 'vue'
-import type { Config, ConfigKeyAdapters } from '../pipeline/StepHandler.ts'
+import type { Config } from '../pipeline/StepHandler.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from './ImageData.ts'
 
 export type ConfigKeyAdapter<Serialized = any, Deserialized = any> = {
   serialize(value: Deserialized): Serialized,
   deserialize?: (value: Serialized) => Deserialized,
 }
+
+export type ConfigKeyAdapters<
+  C extends Config,
+  SerializedConfig extends Config
+> = Partial<{
+  [K in keyof C & keyof SerializedConfig]: ConfigKeyAdapter<SerializedConfig[K], C[K]>
+}>
 
 export const configImageDataAdapter: ConfigKeyAdapter<SerializedImageData | null, ImageData | null> = {
   serialize: serializeImageData,

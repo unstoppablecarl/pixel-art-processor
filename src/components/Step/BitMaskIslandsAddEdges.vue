@@ -1,8 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'bitmask_islands_add_edges',
   displayName: 'BitMask Islands: Add Edges',
@@ -11,7 +11,7 @@ export const STEP_META: StepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { computed } from 'vue'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
@@ -54,9 +54,9 @@ const CONFIG_DEFAULTS = {
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return reactive({
+    return {
       ...CONFIG_DEFAULTS,
-    })
+    }
   },
   run({ config }) {
     const size = config.size

@@ -15,7 +15,7 @@ export class PassThrough extends BaseDataStructure{
   set(x: number, y: number, value: any): void {
   }
 
-  toImageData(args: any): ImageData {
+  toImageData(): ImageData {
     // @ts-expect-error
     return undefined
   }

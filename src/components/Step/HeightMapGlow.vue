@@ -1,8 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'height_map_glow',
   displayName: 'HeightMap: Glow',
@@ -12,7 +12,6 @@ export const STEP_META: StepMeta = {
 
 </script>
 <script setup lang="ts">
-import { reactive } from 'vue'
 import { applyInnerGlow, INNER_GLOW_DEFAULTS } from '../../lib/generators/inner-glow.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
@@ -28,9 +27,9 @@ const { stepId } = defineProps<{ stepId: string }>()
 const step = useStepHandler(stepId, {
   ...STEP_META,
   config() {
-    return reactive({
+    return {
       ...INNER_GLOW_DEFAULTS,
-    })
+    }
   },
   run({ config, inputData }) {
     if (inputData === null) return
@@ -67,10 +66,9 @@ const config = step.config
           label="Size"
           v-model:value="config.size"
           :min="0"
-          :max="Math.floor(step.inputData?.width * 0.5)"
+          :max="Math.floor((step.inputData?.width ?? 0) * 0.5)"
           :step="1"
         />
-
 
         <RangeSlider
           :id="`${stepId}-choke`"

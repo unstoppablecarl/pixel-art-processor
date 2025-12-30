@@ -1,8 +1,8 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'bitmask_islands_grow',
   displayName: 'BitMask Islands: Grow',
@@ -13,7 +13,6 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { reactive } from 'vue'
 import {
   DEFAULT_EXPANDABLE,
   DEFAULT_EXPANDABLE_BOUNDS,
@@ -70,7 +69,7 @@ const step = useStepHandler(stepId, {
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
   config() {
-    return reactive({
+    return {
       minDistance: 4,
       islandType: IslandFilterType.ALL as IslandFilterType,
       growType: GrowType.PERLIN as GrowType,
@@ -89,7 +88,7 @@ const step = useStepHandler(stepId, {
       ...DEFAULT_SHOW_ADDED.CONFIG,
       ...DEFAULT_EXPANDABLE_BOUNDS.CONFIG,
       ...DEFAULT_EXPANDABLE_RESPECTING_DISTANCE.CONFIG,
-    })
+    }
   },
   run({ config, inputData }) {
     if (!inputData) return
