@@ -2,6 +2,7 @@ import { reactive, type Reactive, type WatchSource } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
+import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type AnyStepContext,
@@ -9,7 +10,8 @@ import {
   type StepContext,
   type StepInputTypesToInstances,
 } from './Step.ts'
-import { stepOutputTypeCompatibleWithInputTypes, type StepRegistry, useStepRegistry } from './StepRegistry.ts'
+import type { StepDataConfig } from './StepMeta.ts'
+import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
 import type { StepRunner } from './StepRunner.ts'
 import type { ConfiguredStep } from './useStepHandler.ts'
 
@@ -33,8 +35,13 @@ export type StepHandlerOptional =
 export type StepHandlerOptions<
   T extends AnyStepContext,
   R extends StepRunner<T> = StepRunner<T>
-> =
-  Optional<IStepHandler<T, R>, StepHandlerOptional>
+> = Omit<
+  Optional<
+    IStepHandler<T, R>, StepHandlerOptional
+  >,
+  | 'inputDataTypes'
+  | 'outputDataType'
+> & StepDataConfig<T['InputConstructors'], T['OutputConstructors']>
 
 // ⚠️ property order matters here ⚠️
 // anything that references SC must come after serializeConfig()
@@ -46,9 +53,6 @@ export type StepHandlerOptionsInfer<
   O extends StepDataType,
   R extends StepRunner<StepContext<C, SC, RC, I, O>>,
 > = {
-  inputDataTypes: I
-  outputDataType: O
-
   config?: () => C,
   reactiveConfig?: (defaults: C) => RC
 
@@ -69,7 +73,15 @@ export type StepHandlerOptionsInfer<
   validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[]
 
   run: R
-}
+} & ({
+  passthrough?: false,
+  inputDataTypes: I
+  outputDataType: O
+} | {
+  passthrough: true,
+  inputDataTypes?: undefined,
+  outputDataType?: undefined,
+})
 
 export interface IStepHandler<
   T extends AnyStepContext,
@@ -107,6 +119,15 @@ export interface IStepHandler<
   validateInput(inputData: T['Input']): StepValidationError[],
 
   run: R,
+
+  setPassThroughDataType?: (passthroughType: StepDataType) => void,
+}
+
+export interface IStepHandlerPassthrough<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> extends IStepHandler<T, R> {
+  setPassThroughDataType?: (dataType: StepDataType) => void,
 }
 
 export function makeStepHandler<
@@ -124,11 +145,35 @@ export function makeStepHandler<
   type Input = T['Input']
   type InputConstructors = T['InputConstructors']
 
+  if (!options.passthrough) {
+    options.inputDataTypes
+  }
+
   stepRegistry.validateDefRegistration(def, options)
 
+  let passthroughType: StepDataType | undefined
+
+  const isPassthrough = options.passthrough === true
+
   const baseStepHandler: Omit<IStepHandler<T, R>, 'run'> = {
-    inputDataTypes: options.inputDataTypes,
-    outputDataType: options.outputDataType,
+
+    get inputDataTypes() {
+      if (isPassthrough) {
+        return passthroughType ? [passthroughType] : [PassThrough]
+      }
+      return options.inputDataTypes
+    },
+
+    get outputDataType() {
+      if (isPassthrough) {
+        return passthroughType ?? PassThrough
+      }
+      return options.outputDataType
+    },
+
+    setPassThroughDataType(type: StepDataType) {
+      passthroughType = type
+    },
 
     config(): C {
       return {}
@@ -167,7 +212,7 @@ export function makeStepHandler<
     },
 
     validateInputTypeStatic(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
-      if (stepOutputTypeCompatibleWithInputTypes(typeFromPrevOutput, inputDataTypes)) {
+      if (inputDataTypes.includes(typeFromPrevOutput)) {
         return []
       }
 
@@ -186,4 +231,30 @@ export function makeStepHandler<
     ...options,
   } as IStepHandler<T, R>
 }
+
+export function makePassthroughHandler<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+>(
+  handler: IStepHandler<T, R>,
+): StepHandlerOptions<T, R> {
+  let resolvedType: StepDataType | undefined
+
+  return {
+    ...handler,
+    passthrough: true,
+    setPassThroughDataType(type: StepDataType) {
+      resolvedType = type
+    },
+
+    get inputDataTypes() {
+      return resolvedType ? [resolvedType] : [PassThrough]
+    },
+
+    get outputDataType() {
+      return resolvedType ?? PassThrough
+    },
+  } as IStepHandlerPassthrough<T, R>
+}
+
 

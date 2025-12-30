@@ -1,10 +1,10 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'height_map_to_normal_map',
   displayName: 'HeightMap -> NormalMap',

@@ -1,14 +1,12 @@
 <script lang="ts">
 import { STEP_FORK_DEF, StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
-import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.FORK,
   def: STEP_FORK_DEF,
   displayName: 'Fork',
-  inputDataTypes: [PassThrough],
-  outputDataType: PassThrough,
+  passthrough: true,
 }
 </script>
 <script setup lang="ts">
@@ -22,16 +20,11 @@ const step = useStepForkHandler(stepId, {
   config() {
     return {}
   },
-  run({ inputData }) {
+  run({ inputData, branchCount }) {
 
-    return null
-    //
-    // return {
-    //   branchesOutput: Array(branchCount).fill(inputData),
-    // }
-  },
-  validateInputType() {
-    return []
+    return {
+      branchesOutput: Array(branchCount).fill(inputData),
+    }
   },
 })
 

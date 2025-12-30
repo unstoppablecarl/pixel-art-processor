@@ -1,29 +1,29 @@
 import { type App, type Component, inject, type InjectionKey } from 'vue'
 import type { StepDataType } from '../../steps.ts'
-
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import { type AnyStepContext, type Step, StepType } from './Step.ts'
-import type { IStepHandler } from './StepHandler.ts'
+import type { StepHandlerOptions } from './StepHandler.ts'
 import type { StepMeta } from './StepMeta.ts'
 
-export type StepDefinition = {
-  readonly def: string,
-  readonly type: StepType,
-  readonly displayName: string,
-  readonly component: Component,
-} & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
+export type AnyStepDefinition = StepDefinition<any, any>
 
-export type StepDefinitions = Record<string, StepDefinition>
+export type StepDefinition<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = {
+  readonly component: Component,
+} & StepMeta<I, O>
+
+export type StepDefinitions = Record<string, AnyStepDefinition>
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
 
-export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
+export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
   const STEP_DEFINITIONS: StepDefinitions = {}
   const dataTypeRegistry: StepDataTypeRegistry = new StepDataTypeRegistry(stepDataTypes)
 
-  function defineStep(definition: StepDefinition) {
+  function defineStep(definition: AnyStepDefinition) {
     if (STEP_DEFINITIONS[definition.def]) {
       throw new Error('cannot define step that already exists: ' + definition.def)
     }
@@ -31,10 +31,10 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     return STEP_DEFINITIONS[definition.def]
   }
 
-  const defineSteps = (stepDefinitions: StepDefinition[]) => stepDefinitions.forEach(defineStep)
+  const defineSteps = (stepDefinitions: AnyStepDefinition[]) => stepDefinitions.forEach(defineStep)
   defineSteps(stepDefinitions)
 
-  function get(def: string): StepDefinition {
+  function get(def: string): AnyStepDefinition {
     const result = STEP_DEFINITIONS[def]
     if (!result) {
       throw new Error('Step Definition not found: ' + def)
@@ -59,7 +59,16 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
   function getStepsCompatibleWithOutput(def: string) {
     const currentStep = get(def)
 
-    return Object.values(STEP_DEFINITIONS).filter(s => stepOutputTypeCompatibleWithInputTypes(currentStep.outputDataType, s.inputDataTypes))
+    if (currentStep.passthrough) {
+      return Object.values(STEP_DEFINITIONS)
+    }
+
+    return Object.values(STEP_DEFINITIONS).filter(s => {
+      if (s.passthrough) {
+        return true
+      }
+      return s.inputDataTypes.includes(currentStep.outputDataType)
+    })
   }
 
   function isFork(def: string): boolean {
@@ -72,14 +81,17 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
 
   function validateDefRegistration(
     def: string,
-    {
-      inputDataTypes,
-      outputDataType,
-    }: Pick<StepMeta, 'inputDataTypes' | 'outputDataType'>) {
+    options: StepHandlerOptions<any>,
+  ) {
+
+    let inputDataTypes: undefined | StepDataType[]
+    let outputDataType: undefined | StepDataType
+
+    if (!options.passthrough) {
+      ({ inputDataTypes, outputDataType } = options)
+    }
 
     const definition = get(def)
-
-    console.log({ definition }, 'zxc')
 
     if (!objectsAreEqual(inputDataTypes, definition.inputDataTypes)) {
       console.error({ registeredInputDataTypes: inputDataTypes, moduleInputDataTypes: definition.inputDataTypes })
@@ -106,7 +118,7 @@ export function makeStepRegistry(stepDefinitions: StepDefinition[] = [], stepDat
     dataTypeRegistry,
     getStepsCompatibleWithOutput,
     validateDefRegistration,
-    rootSteps: () => toArray().filter(s => s.inputDataTypes.length === 0),
+    rootSteps: () => toArray().filter(s => !s.passthrough && s.inputDataTypes.length === 0),
     toArray,
   }
 }
@@ -123,13 +135,4 @@ export function useStepRegistry(): StepRegistry {
     throw new Error('StepRegistry not provided. Call installStepRegistry() in main.ts')
   }
   return registry
-}
-
-export function stepOutputTypeCompatibleWithInputTypes(outputType: StepDataType, inputDataTypes: StepDataType[]) {
-
-  if (outputType === PassThrough || inputDataTypes.includes(PassThrough)) {
-    return true
-  }
-
-  return inputDataTypes.includes(outputType)
 }

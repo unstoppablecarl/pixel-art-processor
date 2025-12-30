@@ -1,16 +1,39 @@
 import type { Component } from 'vue'
+import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepType } from './Step.ts'
-import type { IStepHandler } from './StepHandler.ts'
-import { type StepDefinition } from './StepRegistry.ts'
+import { type AnyStepDefinition } from './StepRegistry.ts'
 
-export type StepMeta = {
+export type AnyStepMeta = StepMeta<any, any>
+
+export type StepMeta<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = {
   type: StepType,
   def: string,
   displayName: string,
-} & Pick<IStepHandler<any>, 'inputDataTypes' | 'outputDataType'>
+} & StepDataConfig<I, O>
 
-export function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): StepDefinition[] {
+export type StepDataConfig<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = {
+  passthrough?: false,
+  inputDataTypes: I,
+  outputDataType: O
+} | {
+  passthrough: true,
+  inputDataTypes?: undefined,
+  outputDataType?: undefined,
+}
+
+export const defineStepMeta = <
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+>(meta: StepMeta<I, O>): StepMeta<I, O> => meta
+
+export function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): AnyStepDefinition[] {
 
   const errors = Object.entries(globResults)
     .map(([path, module]) => validateModule(path, module, stepDataTypes))
@@ -26,7 +49,14 @@ export function loadStepComponentsMetaData(globResults: Record<string, any>, ste
   }
 
   return Object.entries(globResults).map(([path, module]) => {
-    const { def, type, displayName, inputDataTypes, outputDataType } = (module as any).STEP_META as StepMeta
+    const {
+      def,
+      type,
+      displayName,
+      inputDataTypes,
+      outputDataType,
+      passthrough,
+    } = (module as any).STEP_META as StepMeta<any, any>
 
     return {
       def,
@@ -35,12 +65,13 @@ export function loadStepComponentsMetaData(globResults: Record<string, any>, ste
       component: (module as any).default as Component,
       inputDataTypes,
       outputDataType,
-    }
+      passthrough,
+    } as AnyStepDefinition
   })
 }
 
 function validateModule(path: string, module: any, stepDataTypes: DataStructureConstructor[]): ComponentError | void {
-  const STEP_META = (module as any).STEP_META as StepDefinition
+  const STEP_META = (module as any).STEP_META as AnyStepDefinition
 
   if (!STEP_META) {
     return {
@@ -65,18 +96,29 @@ function validateModule(path: string, module: any, stepDataTypes: DataStructureC
     errors.push(`STEP_META.displayName not set`)
   }
 
-  if (!STEP_META.inputDataTypes) {
-    errors.push(`STEP_META.inputDataTypes not set`)
+  if (!STEP_META.passthrough) {
+    validateInputDataTypes(STEP_META.def, STEP_META.inputDataTypes, stepDataTypes)
   }
-  validateInputDataTypes(STEP_META.def, STEP_META.inputDataTypes, stepDataTypes)
 
-  if (!STEP_META.outputDataType) {
-    errors.push(`STEP_META.outputDataType not set`)
-  }
-  validateOutputDataTypes(STEP_META.def, STEP_META.outputDataType, stepDataTypes)
+  if (STEP_META.passthrough) {
+    if (STEP_META.inputDataTypes !== undefined) {
+      throw new Error('passthrough steps must have inputDataTypes === undefined')
+    }
+    if (STEP_META.outputDataType !== undefined) {
+      throw new Error('passthrough steps must have outputDataType === undefined')
+    }
+  } else {
+    if (!STEP_META.inputDataTypes) {
+      errors.push(`STEP_META.inputDataTypes not set`)
+    }
 
-  if (!Array.isArray(STEP_META.inputDataTypes)) {
-    errors.push(`STEP_META.inputDataTypes must be an array`)
+    if (!STEP_META.outputDataType) {
+      errors.push(`STEP_META.outputDataType not set`)
+    }
+    if (!Array.isArray(STEP_META.inputDataTypes)) {
+      errors.push(`STEP_META.inputDataTypes must be an array`)
+    }
+    validateOutputDataTypes(STEP_META.def, STEP_META.outputDataType, stepDataTypes)
   }
 
   if (errors.length) {
@@ -92,7 +134,7 @@ type ComponentError = {
   errors: string[]
 }
 
-function validateInputDataTypes(def: string, inputDataTypes: any[], validDataTypes: DataStructureConstructor[]) {
+function validateInputDataTypes(def: string, inputDataTypes: readonly any[], validDataTypes: DataStructureConstructor[]) {
   const invalid = inputDataTypes.filter(t => !validDataTypes.includes(t))
   if (invalid.length) {
     const message = `Step "${def}" has invalid Input Data Type(s). Step Data Types must be registered in main.ts with installStepRegistry() `

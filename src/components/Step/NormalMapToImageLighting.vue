@@ -1,10 +1,10 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.NORMAL,
   def: 'normal_map_to_texture_lighting',
   displayName: 'NormalMap -> Texture Lighting',
