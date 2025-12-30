@@ -671,11 +671,6 @@ export const useStepStore = defineStore('steps', () => {
         return
       }
 
-      if (stepIsPassthrough(nextStep)) {
-        const outputDataType = getHandler(currentStep.id).outputDataType
-        nextStep.handler.setPassThroughDataType(outputDataType)
-      }
-
       _setInputData(nextStep, outputData)
     }
 
@@ -1057,9 +1052,15 @@ export const useStepStore = defineStore('steps', () => {
     }
 
     function validateInputDataFromPrev(stepId: string): StepValidationError[] {
+      const step = get(stepId)
       let prev = getPrev(stepId)
       if (!prev) {
         return []
+      }
+
+      if (stepIsPassthrough(step)) {
+        const outputDataType = getHandler(prev.id).outputDataType
+        step.handler.setPassThroughDataType(outputDataType)
       }
 
       const prevHandler = getHandler(prev.id)

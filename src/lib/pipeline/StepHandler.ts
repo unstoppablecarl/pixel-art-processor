@@ -145,36 +145,9 @@ export function makeStepHandler<
   type Input = T['Input']
   type InputConstructors = T['InputConstructors']
 
-  if (!options.passthrough) {
-    options.inputDataTypes
-  }
-
   stepRegistry.validateDefRegistration(def, options)
 
-  let passthroughType: StepDataType | undefined
-
-  const isPassthrough = options.passthrough === true
-
-  const baseStepHandler: Omit<IStepHandler<T, R>, 'run'> = {
-
-    get inputDataTypes() {
-      if (isPassthrough) {
-        return passthroughType ? [passthroughType] : [PassThrough]
-      }
-      return options.inputDataTypes
-    },
-
-    get outputDataType() {
-      if (isPassthrough) {
-        return passthroughType ?? PassThrough
-      }
-      return options.outputDataType
-    },
-
-    setPassThroughDataType(type: StepDataType) {
-      passthroughType = type
-    },
-
+  const baseStepHandler: Omit<IStepHandler<T, R>, 'run' | 'inputDataTypes' | 'outputDataType' | 'setPassThroughDataType'> = {
     config(): C {
       return {}
     },
@@ -226,9 +199,29 @@ export function makeStepHandler<
     },
   }
 
+  if (!options.passthrough) {
+    return {
+      ...baseStepHandler,
+      ...options,
+    } as IStepHandler<T, R>
+  }
+
+  let passthroughType: StepDataType | undefined = undefined
+
   return {
     ...baseStepHandler,
     ...options,
+    get inputDataTypes() {
+      return passthroughType ? [passthroughType] : [PassThrough]
+    },
+
+    get outputDataType() {
+      return passthroughType ?? PassThrough
+    },
+
+    setPassThroughDataType(type: StepDataType) {
+      passthroughType = type
+    },
   } as IStepHandler<T, R>
 }
 
