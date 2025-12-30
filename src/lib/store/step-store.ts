@@ -1087,7 +1087,7 @@ export const useStepStore = defineStore('steps', () => {
 
       step.handler = handler
       if (step.config === undefined) {
-        step.config = handler.config()
+        step.config = handler.reactiveConfig(handler.config())
       }
 
       if (step.loadSerialized !== null) {
