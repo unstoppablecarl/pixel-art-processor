@@ -24,6 +24,7 @@ const step = useStepForkHandler(stepId, {
 
     return {
       branchesOutput: Array(branchCount).fill(inputData),
+      preview: inputData?.toImageData(),
     }
   },
 })
@@ -37,9 +38,6 @@ const step = useStepForkHandler(stepId, {
     :draggable="false"
     :mutable="false"
   >
-    <template #body>
-      FORK
-    </template>
     <template #footer>
 
     </template>
