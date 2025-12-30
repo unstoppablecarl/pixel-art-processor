@@ -99,14 +99,8 @@ interface IStepHandler<T extends AnyStepContext> {
   // convert config from storage
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
 
-  // prepare input data when changed
-  prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
-
   // validate the prevStep.outputDataType against currentStep.inputDataType
-  validateInputType(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
-
-  // further validate input after determining it is the correct type
-  validateInput(inputData: T['Input']): StepValidationError[],
+  validateInputTypeStatic(inputData: T['Input'], typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   run: StepRunner<T>,
 }
@@ -156,16 +150,11 @@ type StepHandlerOptions<T extends AnyStepContext> = {
 
   loadConfig: (config: T['RC'], serialized: T['SerializedConfig']) => void
 
-  prevOutputToInput: (
-    output: T['Input'] | null,
-  ) => T['Input'] | null
-
-  validateInputType: (
+  validateInputTypeStatic: (
+    inputData: T['Input'],
     typeFromPrev: T['Input'],
     inputTypes: T['InputConstructors'],
   ) => StepValidationError[],
-
-  validateInput(inputData: T['Input']): StepValidationError[],
 
   run: StepRunner<T>
 }
@@ -206,14 +195,11 @@ type StepHandlerOptionsInfer<
   watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
   loadConfig: (config: RC, serialized: SC) => void
 
-  prevOutputToInput: (output: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null
-
-  validateInputType: (
+  validateInputTypeStatic: (
+    inputData: StepInputTypesToInstances<I>,
     typeFromPrev: StepInputTypesToInstances<I>,
     inputTypes: I,
   ) => StepValidationError[]
-
-  validateInput: (inputData: StepInputTypesToInstances<I>) => StepValidationError[]
 
   run: StepRunner<StepContext<C, SC, RC, I, O>>
 }
@@ -230,9 +216,7 @@ type StepHandlerOptional =
   | 'config'
   | 'reactiveConfig'
   | 'loadConfig'
-  | 'prevOutputToInput'
-  | 'validateInputType'
-  | 'validateInput'
+  | 'validateInputTypeStatic'
 
 type StepHandlerOptionsOptional<T extends AnyStepContext> =
   Optional<IStepHandler<T>, StepHandlerOptional>
@@ -272,18 +256,10 @@ function makeStepHandler<T extends AnyStepContext>(
       Object.assign(config, deserialized)
     },
 
-    prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null {
-      return outputData
-    },
-
-    validateInputType(
-      typeFromPrevOutput: StepDataType,
+    validateInputTypeStatic(
+      inputData: T['Input'],
       inputDataTypes: T['InputConstructors'],
     ): StepValidationError[] {
-      return []
-    },
-
-    validateInput(_inputData: T['Input']): StepValidationError[] {
       return []
     },
   }
@@ -355,17 +331,9 @@ describe('handler harness tests', () => {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(serialized).toExtend<SC>()
       },
-      prevOutputToInput(output) {
-        expectTypeOf(output).toEqualTypeOf<InputInstances | null>()
 
-        return output as InputInstances | null
-      },
-      validateInputType() {
-        return [] as StepValidationError[]
-      },
-      validateInput(inputData) {
+      validateInputTypeStatic(inputData) {
         expectTypeOf(inputData).toEqualTypeOf<InputInstances>()
-
         return [] as StepValidationError[]
       },
       run({ config, inputData }) {
@@ -436,14 +404,7 @@ describe('handler harness tests', () => {
         },
         loadConfig(config, serialized) {
         },
-        prevOutputToInput(output) {
-          return output
-        },
-        validateInput(inputData) {
-          return []
-        },
-
-        validateInputType() {
+        validateInputTypeStatic() {
           return []
         },
         run({ config, inputData }) {
@@ -522,14 +483,7 @@ describe('handler harness tests', () => {
         },
         loadConfig(config, serialized) {
         },
-        prevOutputToInput(output) {
-          return output
-        },
-        validateInput(inputData) {
-          return []
-        },
-
-        validateInputType() {
+        validateInputTypeStatic() {
           return []
         },
         run({ config, inputData }) {
@@ -543,61 +497,53 @@ describe('handler harness tests', () => {
     )
   })
 
-  // it('makeStepHandler with 2 input types', async () => {
-  //
-  //   const handler = makeStepHandler<T>('foo', {
-  //     inputDataTypes,
-  //     outputDataType,
-  //     config(): RC {
-  //       return shallowReactive(configRaw)
-  //     },
-  //
-  //     serializeConfig(config): SC {
-  //       expectTypeOf(config).toEqualTypeOf<C>()
-  //
-  //       return {
-  //         maskImageData: serializeImageData(config.maskImageData),
-  //       }
-  //     },
-  //
-  //     deserializeConfig(config): C {
-  //       expectTypeOf(config).toEqualTypeOf<SC>()
-  //
-  //       return {
-  //         maskImageData: deserializeImageData(config.maskImageData),
-  //       }
-  //     },
-  //
-  //     watcher(step): WatcherTarget[] {
-  //       expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
-  //       return []
-  //     },
-  //     loadConfig(config, serialized): void {
-  //       expectTypeOf(config).toEqualTypeOf<RC>()
-  //       expectTypeOf(serialized).toEqualTypeOf<SC>()
-  //     },
-  //     prevOutputToInput(output): TypeA | TypeB | null {
-  //       expectTypeOf(output).toEqualTypeOf<TypeA | TypeB | null>()
-  //       return output
-  //     },
-  //     validateInputTypeStatic() {
-  //       return []
-  //     },
-  //     validateInput(inputData): StepValidationError[] {
-  //       expectTypeOf(inputData).toEqualTypeOf<TypeA | TypeB>()
-  //
-  //       return []
-  //     },
-  //     run({ config, inputData }) {
-  //       expectTypeOf(config).toEqualTypeOf<RC>()
-  //       expectTypeOf(inputData).toEqualTypeOf<TypeA | TypeB | null>()
-  //
-  //       return { output: new TypeC() }
-  //     },
-  //   })
-  //
-  //   expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
-  // })
+  it('makeStepHandler with 2 input types', async () => {
+
+    const handler = makeStepHandler<T>('foo', {
+      inputDataTypes,
+      outputDataType,
+      config(): RC {
+        return shallowReactive(configRaw)
+      },
+
+      serializeConfig(config): SC {
+        expectTypeOf(config).toEqualTypeOf<C>()
+
+        return {
+          maskImageData: serializeImageData(config.maskImageData),
+        }
+      },
+
+      deserializeConfig(config): C {
+        expectTypeOf(config).toEqualTypeOf<SC>()
+
+        return {
+          maskImageData: deserializeImageData(config.maskImageData),
+        }
+      },
+
+      watcher(step): WatcherTarget[] {
+        expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
+        return []
+      },
+      loadConfig(config, serialized): void {
+        expectTypeOf(config).toEqualTypeOf<RC>()
+        expectTypeOf(serialized).toEqualTypeOf<SC>()
+      },
+      validateInputTypeStatic(inputData) {
+        expectTypeOf(inputData).toEqualTypeOf<TypeA | TypeB>()
+        return []
+      },
+      run({ config, inputData }) {
+        expectTypeOf(config).toEqualTypeOf<RC>()
+        expectTypeOf(inputData).toEqualTypeOf<TypeA | TypeB | null>()
+
+        return { output: new TypeC() }
+      },
+    })
+
+    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
+  })
 
   it('registerStep', async () => {
     const { step, handler } = registerStep<T>('foo', {
@@ -631,18 +577,11 @@ describe('handler harness tests', () => {
         expectTypeOf(config).toEqualTypeOf<RC>()
         expectTypeOf(serialized).toEqualTypeOf<SC>()
       },
-      prevOutputToInput(output): TypeA | TypeB | null {
-        expectTypeOf(output).toEqualTypeOf<TypeA | TypeB | null>()
-        return output
-      },
-      validateInputType() {
-        return []
-      },
-      validateInput(inputData): StepValidationError[] {
+      validateInputTypeStatic(inputData) {
         expectTypeOf(inputData).toEqualTypeOf<TypeA | TypeB>()
-
         return []
       },
+
       run({ config, inputData }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
         expectTypeOf(inputData).toEqualTypeOf<TypeA | TypeB | null>()
@@ -702,13 +641,7 @@ describe('handler harness tests', () => {
       },
       loadConfig(config, serialized) {
       },
-      prevOutputToInput(output) {
-        return output
-      },
-      validateInputType() {
-        return []
-      },
-      validateInput(inputData) {
+      validateInputTypeStatic() {
         return []
       },
       run({ config, inputData }) {
@@ -786,17 +719,8 @@ describe('handler harness tests', () => {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(serialized).toExtend<SC>()
       },
-      prevOutputToInput(output) {
-        expectTypeOf(output).toEqualTypeOf<InputInstances | null>()
-
-        return output as InputInstances | null
-      },
-      validateInputType() {
-        return [] as StepValidationError[]
-      },
-      validateInput(inputData) {
+      validateInputTypeStatic(inputData) {
         expectTypeOf(inputData).toEqualTypeOf<InputInstances>()
-
         return [] as StepValidationError[]
       },
       run({ config, inputData }) {
@@ -882,25 +806,11 @@ describe('handler harness tests', () => {
       (config: RC, serializedConfig: SC) => void
     >()
 
-    expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<
-      IStepHandler<T>['prevOutputToInput']
+    expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
+      IStepHandler<T>['validateInputTypeStatic']
     >()
-    expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<
-      ((output: InputInstances | null) => InputInstances | null)
-    >()
-
-    expectTypeOf(step.handler.validateInputType).toEqualTypeOf<
-      IStepHandler<T>['validateInputType']
-    >()
-    expectTypeOf(step.handler.validateInputType).toEqualTypeOf<
-      ((typeFromPrevOutput: InputInstances, inputDataTypes: T['InputConstructors']) => StepValidationError[])
-    >()
-
-    expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-      IStepHandler<T>['validateInput']
-    >()
-    expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-      (inputData: InputInstances) => StepValidationError[]
+    expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
+      ((inputData: T['Input'], typeFromPrevOutput: InputInstances, inputDataTypes: T['InputConstructors']) => StepValidationError[])
     >()
 
     expectTypeOf(step.handler.inputDataTypes).toEqualTypeOf<IStepHandler<T>['inputDataTypes']>()

@@ -680,7 +680,7 @@ export const useStepStore = defineStore('steps', () => {
         return
       }
 
-      step.inputData = getHandler<T>(step.id).prevOutputToInput(inputData)
+      step.inputData = inputData as typeof step.inputData
     }
 
     function loadPendingInput(stepId: string) {
@@ -695,9 +695,8 @@ export const useStepStore = defineStore('steps', () => {
         step.pendingInput = null
         return
       }
-      const handler = getHandler(stepId)
 
-      step.inputData = handler.prevOutputToInput(step.pendingInput)
+      step.inputData = step.pendingInput
       step.pendingInput = null
     }
 
@@ -1063,7 +1062,6 @@ export const useStepStore = defineStore('steps', () => {
         step.handler.setPassThroughDataType(outputDataType)
       }
 
-      const prevHandler = getHandler(prev.id)
       const currentHandler = getHandler(stepId)
 
       const hasInputTypes = currentHandler.inputDataTypes.length
@@ -1071,9 +1069,13 @@ export const useStepStore = defineStore('steps', () => {
         return []
       }
 
+      let inputData = prev.outputData
+      if (stepIsFork(prev)) {
+        inputData = prev.outputData[step.branchIndex!]
+      }
+
       return [
-        ...currentHandler.validateInputTypeStatic(prevHandler.outputDataType, currentHandler.inputDataTypes),
-        ...currentHandler.validateInput(prev.outputData),
+        ...currentHandler.validateInputTypeStatic(inputData, currentHandler.inputDataTypes),
       ]
     }
 

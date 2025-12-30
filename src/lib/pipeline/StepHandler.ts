@@ -2,6 +2,7 @@ import { reactive, type Reactive, type WatchSource } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
+import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { Require } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
@@ -29,9 +30,7 @@ export type StepHandlerOptional =
   | 'config'
   | 'reactiveConfig'
   | 'loadConfig'
-  | 'prevOutputToInput'
   | 'validateInputTypeStatic'
-  | 'validateInput'
 
 export type StepHandlerOptions<
   T extends AnyStepContext,
@@ -64,14 +63,10 @@ export type StepHandlerOptionsInfer<
 
   watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
-  prevOutputToInput?: (output: StepInputTypesToInstances<I> | null) => StepInputTypesToInstances<I> | null
-
-  validateInputType?: (
-    typeFromPrev: StepInputTypesToInstances<I>,
+  validateInputTypeStatic?: (
+    inputData: StepInputTypesToInstances<I>,
     inputTypes: I,
   ) => StepValidationError[]
-
-  validateInput?: (inputData: StepInputTypesToInstances<I>) => StepValidationError[]
 
   run: R
 } & ({
@@ -109,15 +104,7 @@ export interface IStepHandler<
   // convert config from storage
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
 
-  // prepare input data when changed
-  prevOutputToInput(outputData: T['Input'] | null): T['Input'] | null,
-
-  // validate the prevStep.outputDataType against currentStep.inputDataType
-  // static check if the output type is in the list of input types (or is a Passthrough)
-  validateInputTypeStatic(typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
-
-  // further validate input after determining it is the correct type
-  validateInput(inputData: T['Input']): StepValidationError[],
+  validateInputTypeStatic(inputData: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
   run: R,
 
@@ -180,22 +167,22 @@ export function makeStepHandler<
       Object.assign(config, deserialized)
     },
 
-    prevOutputToInput(outputData: Input): Input {
-      return outputData
-    },
-
-    validateInputTypeStatic(typeFromPrevOutput: InputConstructors, inputDataTypes: InputConstructors): StepValidationError[] {
-      if (inputDataTypes.includes(typeFromPrevOutput)) {
+    validateInputTypeStatic(
+      inputData: Input | null,
+      inputDataTypes: InputConstructors,
+    ): StepValidationError[] {
+      if (inputData === null) {
         return []
       }
 
-      return [
-        new InvalidInputTypeError(inputDataTypes, typeFromPrevOutput),
-      ]
-    },
+      if ((inputDataTypes as any[]).some(c => (inputData as any) instanceof c)) {
+        return []
+      }
 
-    validateInput(_inputData: StepDataType): StepValidationError[] {
-      return []
+      const receivedType = (inputData as BaseDataStructure).constructor as StepDataType
+      return [
+        new InvalidInputTypeError(inputDataTypes, receivedType),
+      ]
     },
   }
 

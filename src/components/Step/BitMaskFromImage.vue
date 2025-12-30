@@ -62,10 +62,6 @@ const step = useStepHandler(stepId, {
       output: bitMask,
     }
   },
-  // never accept input
-  prevOutputToInput(_input) {
-    return null
-  },
 })
 </script>
 <template>

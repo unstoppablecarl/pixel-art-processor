@@ -1,9 +1,9 @@
 <script lang="ts">
 import { StepType } from '../../lib/pipeline/Step.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 
-export const STEP_META: StepMeta = {
+export const STEP_META: AnyStepMeta = {
   type: StepType.FORK,
   def: 'fork_wang_tiles',
   displayName: 'Fork: Wang Tiles',
@@ -13,7 +13,7 @@ export const STEP_META: StepMeta = {
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { useForkStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useStepForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
@@ -46,7 +46,7 @@ const CONFIG_DEFAULTS = {
   padding: 4,
 }
 
-const step = useForkStepHandler(stepId, {
+const step = useStepForkHandler(stepId, {
   ...STEP_META,
   config() {
     return reactive({ ...CONFIG_DEFAULTS })
@@ -96,9 +96,6 @@ const step = useForkStepHandler(stepId, {
       branchesOutput,
       preview: branchesOutput.map(i => i.toImageData()),
     }
-  },
-  validateInputType() {
-    return []
   },
 })
 const config = step.config

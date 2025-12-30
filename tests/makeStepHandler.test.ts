@@ -65,9 +65,7 @@ describe('StepHandlerOptional', () => {
       | 'reactiveConfig'
       | 'config'
       | 'loadConfig'
-      | 'prevOutputToInput'
       | 'validateInputTypeStatic'
-      | 'validateInput'
 
     expectTypeOf<OptionalKeys>().toEqualTypeOf<Expected>()
   })
@@ -114,21 +112,9 @@ describe('StepHandlerOptions<T>', () => {
         return defaults
       },
 
-      prevOutputToInput(output): A | B | null {
-        expectTypeOf(output).toEqualTypeOf<A | B | null>()
-
-        return output as any
-      },
-
-      validateInputTypeStatic(type, allowed): StepValidationError[] {
-        expectTypeOf(type).toEqualTypeOf<A | B>()
-        expectTypeOf(allowed).toEqualTypeOf<readonly [typeof A, typeof B]>()
-
-        return []
-      },
-
-      validateInput(input): StepValidationError[] {
+      validateInputTypeStatic(input, allowed): StepValidationError[] {
         expectTypeOf(input).toEqualTypeOf<A | B>()
+        expectTypeOf(allowed).toEqualTypeOf<readonly [typeof A, typeof B]>()
 
         return []
       },
@@ -225,11 +211,6 @@ describe('makeStepHandler<T>', () => {
         }
       },
 
-      // Override some optional stuff to ensure merge behavior
-      prevOutputToInput(output) {
-        return [output, null] as any
-      },
-
       serializeConfig(config) {
         return {} as SerializedConfig
       },
@@ -267,14 +248,8 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler.loadConfig).toEqualTypeOf<
       IStepHandler<T>['loadConfig']
     >()
-    expectTypeOf(handler.prevOutputToInput).toEqualTypeOf<
-      IStepHandler<T>['prevOutputToInput']
-    >()
     expectTypeOf(handler.validateInputTypeStatic).toEqualTypeOf<
       IStepHandler<T>['validateInputTypeStatic']
-    >()
-    expectTypeOf(handler.validateInput).toEqualTypeOf<
-      IStepHandler<T>['validateInput']
     >()
   })
 

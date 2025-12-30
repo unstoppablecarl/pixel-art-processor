@@ -4,7 +4,8 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
 import {
-  type AnyStepContext, type ConfiguredStep,
+  type AnyStepContext,
+  type ConfiguredStep,
   type StepContext,
   type StepInputTypesToInstances,
   StepType,
@@ -148,10 +149,6 @@ describe('step handler type testing', async () => {
           output: new NormalMap(1, 1),
         }
       },
-      prevOutputToInput(input) {
-        expectTypeOf(input).toEqualTypeOf<InputInstances | null>()
-        return input
-      },
       watcher(step, defaultWatcherTargets) {
         type T = typeof step extends ConfiguredStep<infer U> ? U : never
         expectTypeOf(step).toExtend<ConfiguredStep<T>>()
@@ -242,25 +239,11 @@ describe('step handler type testing', async () => {
         (config: RC, serializedConfig: SC) => void
       >()
 
-      expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<
-        IStepHandler<T>['prevOutputToInput']
-      >()
-      expectTypeOf(step.handler.prevOutputToInput).toEqualTypeOf<
-        ((output: InputInstances | null) => InputInstances | null)
-      >()
-
       expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
         IStepHandler<T>['validateInputTypeStatic']
       >()
       expectTypeOf(step.handler.validateInputTypeStatic).toEqualTypeOf<
-        ((typeFromPrevOutput: InputInstances, inputDataTypes: T['InputConstructors']) => StepValidationError[])
-      >()
-
-      expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        IStepHandler<T>['validateInput']
-      >()
-      expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        (inputData: InputInstances) => StepValidationError[]
+        ((inputData: T['Input'], inputDataTypes: T['InputConstructors']) => StepValidationError[])
       >()
 
       expectTypeOf(step.handler.inputDataTypes).toEqualTypeOf<IStepHandler<T>['inputDataTypes']>()

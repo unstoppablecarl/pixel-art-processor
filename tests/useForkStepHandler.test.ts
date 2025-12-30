@@ -138,10 +138,7 @@ describe('step handler type testing', async () => {
           branchOutput: [new NormalMap(1, 1)],
         }
       },
-      prevOutputToInput(input) {
-        expectTypeOf(input).toEqualTypeOf<InputInstances | null>()
-        return input
-      },
+
       watcher(step, defaultWatcherTargets) {
         type T = typeof step extends ConfiguredStep<infer U> ? U : never
         expectTypeOf(step).toExtend<ConfiguredStep<T>>()
