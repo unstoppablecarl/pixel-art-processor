@@ -8,17 +8,14 @@ export type StepImage = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { AnyStepContext, Step } from '../lib/pipeline/Step.ts'
 import { useStepStore } from '../lib/store/step-store.ts'
 import { imageDataToUrlImage } from '../lib/util/ImageData.ts'
 
 const store = useStepStore()
 const {
   image,
-  step: _step,
 } = defineProps<{
   image: StepImage,
-  step: Step<AnyStepContext>
 }>()
 
 const width = computed(() => {
@@ -37,10 +34,6 @@ const encoded = computed(() => {
   }
   return imageDataToUrlImage(image.imageData)
 })
-
-// watch(encoded, () => {
-//   console.warn('IMAGE UPDATE', _step.id)
-// })
 
 </script>
 <template>

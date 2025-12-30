@@ -154,7 +154,6 @@ function toggleMute() {
           <StepImg
             v-for="image in stepImages"
             :key="image.label"
-            :step="step"
             :image="image"
           />
         </slot>

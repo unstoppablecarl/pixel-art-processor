@@ -79,8 +79,64 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
   return [value]
 }
 
+export function analyzeArrayChange(
+  oldArray: string[],
+  newArray: string[],
+): {
+  movedStepId: string
+  oldIndex: number
+  newIndex: number
+  isTransfer: boolean
+} {
+  // Find the step that moved
+  let movedStepId: string | null = null
+  let newIndex = -1
+
+  // Check for new item (transfer in)
+  for (let i = 0; i < newArray.length; i++) {
+    if (!oldArray.includes(newArray[i])) {
+      movedStepId = newArray[i]
+      newIndex = i
+      return {
+        movedStepId,
+        oldIndex: -1,
+        newIndex,
+        isTransfer: true,
+      }
+    }
+  }
+
+  // Check for removed item
+  for (let i = 0; i < oldArray.length; i++) {
+    if (!newArray.includes(oldArray[i])) {
+      // Item was removed - it moved elsewhere
+      return {
+        movedStepId: oldArray[i],
+        oldIndex: i,
+        newIndex: -1,
+        isTransfer: true,
+      }
+    }
+  }
+
+  // Find reordered item (same items, different positions)
+  for (let i = 0; i < newArray.length; i++) {
+    if (oldArray[i] !== newArray[i]) {
+      movedStepId = newArray[i]
+      newIndex = i
+      const oldIndex = oldArray.indexOf(movedStepId)
+      return {
+        movedStepId,
+        oldIndex,
+        newIndex,
+        isTransfer: false,
+      }
+    }
+  }
+
+  throw new Error('no array change found')
+}
+
 export type MaybePromise<T> =
   | T
   | Promise<T>
-
-export type Require<T, K extends keyof T> = T & { [P in K]-?: T[P] }

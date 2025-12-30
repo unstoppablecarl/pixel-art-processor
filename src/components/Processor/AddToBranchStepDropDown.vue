@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import type { AnyConfiguredStep } from '../../lib/pipeline/Step.ts'
+import type { AnyStepRef } from '../../lib/pipeline/Step.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 
@@ -11,7 +11,7 @@ const {
   step,
   branchIndex,
 } = defineProps<{
-  step: AnyConfiguredStep,
+  step: AnyStepRef,
   branchIndex: number,
 }>()
 

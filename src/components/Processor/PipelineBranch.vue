@@ -2,11 +2,13 @@
 import { dragAndDrop } from '@formkit/drag-and-drop'
 import { computed, onMounted, useTemplateRef } from 'vue'
 import { type AnyStepRef } from '../../lib/pipeline/Step.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = useStepStore()
+const stepRegistry = useStepRegistry()
 
 type Props = {
   stepIds: string[],
@@ -96,7 +98,7 @@ onMounted(() => {
     <template v-if="allSteps.steps.length">
       <template v-for="{ def, id } in allSteps.steps" :key="id">
         <component
-          :is="store.defToComponent(def)"
+          :is="stepRegistry.defToComponent(def)"
           :step-id="id"
           class="step"
         />
@@ -108,7 +110,7 @@ onMounted(() => {
   </div>
   <template v-if="allSteps.fork">
     <component
-      :is="store.defToComponent(allSteps.fork.def)"
+      :is="stepRegistry.defToComponent(allSteps.fork.def)"
       :step-id="allSteps.fork.id"
       class="step"
     />

@@ -85,6 +85,12 @@ describe('IStepHandler<T> basic structure', () => {
       expectTypeOf(config).toEqualTypeOf<RC>()
       expectTypeOf(serialized).toEqualTypeOf<SerializedConfig>()
     },
+    setPassThroughDataType() {
+
+    },
+    clearPassThroughDataType() {
+
+    },
   }
 
   it('has correct inputDataTypes', () => {
@@ -102,7 +108,7 @@ describe('IStepHandler<T> basic structure', () => {
   it('has correct config() return type', () => {
     expectTypeOf(handler.reactiveConfig({
       foo: 1,
-      bar: 'a'
+      bar: 'a',
     })).toEqualTypeOf<RC>()
   })
 

@@ -2,33 +2,28 @@ import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
-import type { Config, IStepHandler, PassthroughHandler } from './StepHandler.ts'
+import type { Config, IStepHandler } from './StepHandler.ts'
 import type { StepRunner } from './StepRunner.ts'
 
 export type ConfiguredStep<
   T extends AnyStepContext,
   R extends StepRunner<T> = StepRunner<T>
 > =
-  Required<Omit<Step<T>, 'config' | 'handler'>>
-  & {
-  config: NonNullable<Step<T>['config']>,
-  handler: IStepHandler<T, R>,
-}
+  (Omit<Step<T> & StepForkChild, 'config' | 'handler'> & {
+    config: NonNullable<Step<T>['config']>,
+    handler: IStepHandler<T, R>,
+  }) |
+  (Omit<Step<T> & StepRoot, 'config' | 'handler'> & {
+    config: NonNullable<Step<T>['config']>,
+    handler: IStepHandler<T, R>,
+  })
+
 export type AnyConfiguredStep =
   Required<Omit<Step<AnyStepContext>, 'config' | 'handler'>>
   & {
   config: any,
-  handler: any,
+  handler: IStepHandler<any, any>,
 }
-
-export type ConfiguredPassthroughStep<
-  T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
-> =
-  Omit<ConfiguredStep<T, R>, "handler"> & {
-  handler: PassthroughHandler<T, R>
-}
-
 
 export function assertConfiguredStep<T extends AnyStepContext>(step: Step<T> | StepRef<T>): asserts step is ConfiguredStep<T> {
   if (!step.config) throw new Error(`Step is not configured: ${step.id} has no config`)
@@ -76,11 +71,20 @@ export type Step<T extends AnyStepContext> = {
   config: T['RC'] | undefined,
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
   handler: IStepHandler<T> | undefined,
-  parentForkId: null | string,
-  branchIndex: null | number,
+
   lastExecutionTimeMS: undefined | number,
   seed: number,
   muted: boolean,
+} & (StepRoot | StepForkChild)
+
+type StepRoot = {
+  parentForkId: null,
+  branchIndex: null,
+}
+
+type StepForkChild = {
+  parentForkId: string;
+  branchIndex: number
 }
 
 export type SerializedStep = {
@@ -134,7 +138,7 @@ export function createNewStep<T extends AnyStepContext>(
   } as Step<T>)
 }
 
-export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerializedStep<T>): StepRef<T> {
+export function createLoadedStep<T extends AnyStepContext>(stepData: SerializedStep): StepRef<T> {
   const {
     id,
     def,
@@ -159,7 +163,7 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: DeSerialize
     loadSerialized: {
       config,
     },
-  } as Step<T>)
+  } as StepRef<T>)
 }
 
 export const serializeStep = <T extends AnyStepContext>(step: ShallowReactive<Step<T>>): SerializedStep => {

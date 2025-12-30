@@ -4,7 +4,6 @@ import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
-import type { Require } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type AnyStepContext,
@@ -32,6 +31,10 @@ export type StepHandlerOptional =
   | 'loadConfig'
   | 'validateInput'
 
+export type StepHandlerOptionsOmit =
+  | 'setPassThroughDataType'
+  | 'clearPassThroughDataType'
+
 export type StepHandlerOptions<
   T extends AnyStepContext,
   R extends StepRunner<T> = StepRunner<T>
@@ -39,6 +42,7 @@ export type StepHandlerOptions<
   Optional<
     IStepHandler<T, R>, StepHandlerOptional
   >,
+  | StepHandlerOptionsOmit
   | 'inputDataTypes'
   | 'outputDataType'
 > & StepDataConfig<T['InputConstructors'], T['OutputConstructors']>
@@ -108,14 +112,9 @@ export interface IStepHandler<
 
   run: R,
 
-  setPassThroughDataType?: (passthroughType: StepDataType) => void,
+  setPassThroughDataType: (passthroughType: StepDataType) => void,
+  clearPassThroughDataType: () => void,
 }
-
-export type PassthroughHandler<
-  T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
-> =
-  Require<IStepHandler<T, R>, 'setPassThroughDataType'>
 
 export function makeStepHandler<
   T extends AnyStepContext,
@@ -134,76 +133,66 @@ export function makeStepHandler<
 
   stepRegistry.validateDefRegistration(def, options)
 
-  const baseStepHandler: Omit<IStepHandler<T, R>, 'run' | 'inputDataTypes' | 'outputDataType' | 'setPassThroughDataType'> = {
+  const isPassthrough = options.passthrough
+  const defaultInput = isPassthrough ? [PassThrough] : options.inputDataTypes
+  const defaultOutput = isPassthrough ? PassThrough : options.outputDataType
+
+  let passthroughType: StepDataType | undefined = undefined
+
+  return {
     config(): C {
       return {}
     },
-
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-
     watcher(_step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]
     },
-
     deserializeConfig(serializedConfig: SerializedConfig): C {
       return {
         ...serializedConfig,
       } as C
     },
-
     serializeConfig(config: RC): SerializedConfig {
       const unwrapped = deepUnwrap(config)
       return {
         ...unwrapped,
       } as SerializedConfig
     },
-
     loadConfig(config: RC, serializedConfig: SerializedConfig): void {
       const deserialized = this.deserializeConfig(serializedConfig)
       Object.assign(config, deserialized)
     },
-
     validateInput(
       inputData: Input | null,
       inputDataTypes: InputConstructors,
     ): StepValidationError[] {
-      if (inputData === null) {
-        return []
-      }
+      if (inputData === null) return []
 
-      if ((inputDataTypes as any[]).some(c => (inputData as any) instanceof c)) {
-        return []
-      }
+      if ((inputDataTypes as any[]).some(c => (inputData as any) instanceof c)) return []
 
       const receivedType = (inputData as BaseDataStructure).constructor as StepDataType
       return [
         new InvalidInputTypeError(inputDataTypes, receivedType),
       ]
     },
-  }
 
-  if (!options.passthrough) {
-    return {
-      ...baseStepHandler,
-      ...options,
-    } as IStepHandler<T, R>
-  }
-
-  let passthroughType: StepDataType | undefined = undefined
-
-  return {
-    ...baseStepHandler,
+    // ⚠️make sure options is exactly here
     ...options,
+
     get inputDataTypes() {
-      return passthroughType ? [passthroughType] : [PassThrough]
+      return passthroughType ? [passthroughType] : defaultInput
     },
 
     get outputDataType() {
-      return passthroughType ?? PassThrough
+      return passthroughType ?? defaultOutput
+    },
+
+    clearPassThroughDataType() {
+      passthroughType = undefined
     },
 
     setPassThroughDataType(type: StepDataType) {
