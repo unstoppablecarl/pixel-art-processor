@@ -4,7 +4,7 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
 import {
-  type AnyStepContext,
+  type AnyStepContext, type ConfiguredStep,
   type StepContext,
   type StepInputTypesToInstances,
   StepType,
@@ -17,7 +17,7 @@ import type {
 } from '../src/lib/pipeline/StepHandler'
 import { makeStepRegistry, STEP_REGISTRY_INJECT_KEY, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
 import type { NormalStepRunner, NormalStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
-import { type ConfiguredStep, useStepHandler } from '../src/lib/pipeline/useStepHandler'
+import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'

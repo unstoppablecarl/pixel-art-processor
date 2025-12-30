@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
+import type { AnyConfiguredStep } from '../../lib/pipeline/Step.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
-import type { AnyConfiguredStep } from '../../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
 
 const store = useStepStore()

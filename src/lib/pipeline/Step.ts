@@ -3,16 +3,26 @@ import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
 import type { Config, IStepHandler } from './StepHandler.ts'
+import type { StepRunner } from './StepRunner.ts'
 
 export const STEP_FORK_DEF = 'STEP_FORK'
 
-export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
-  // first steps do not have input so convert [] to null
-  ? null
-  : Input[number] extends StepDataType
-    // convert array of constructors to union of instances
-    ? InstanceType<Input[number]>
-    : never
+
+export type ConfiguredStep<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> =
+  Required<Omit<Step<T>, 'config' | 'handler'>>
+  & {
+  config: NonNullable<Step<T>['config']>,
+  handler: IStepHandler<T, R>,
+}
+export type AnyConfiguredStep =
+  Required<Omit<Step<AnyStepContext>, 'config' | 'handler'>>
+  & {
+  config: any,
+  handler: any,
+}
 
 export type AnyStepContext = StepContext<any, any, any, any, any>
 
@@ -175,3 +185,11 @@ export const serializeSteps = <T extends AnyStepContext>(stepsById: Reactive<Rec
 
   return output
 }
+
+export type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
+  // first steps do not have input so convert [] to null
+  ? null
+  : Input[number] extends StepDataType
+    // convert array of constructors to union of instances
+    ? InstanceType<Input[number]>
+    : never

@@ -5,7 +5,7 @@ import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
-  type AnyStepContext,
+  type AnyStepContext, type ConfiguredStep,
   type ReactiveConfigType,
   type StepContext,
   type StepInputTypesToInstances,
@@ -13,7 +13,6 @@ import {
 import type { StepDataConfig } from './StepMeta.ts'
 import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
 import type { StepRunner } from './StepRunner.ts'
-import type { ConfiguredStep } from './useStepHandler.ts'
 
 export type Config = Record<string, any>
 
