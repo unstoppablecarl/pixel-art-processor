@@ -1,5 +1,5 @@
 import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
-import type { StepDataType, StepDataTypeInstance } from '../../steps.ts'
+import type { StepDataType } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 
 import type { Config, IStepHandler } from './StepHandler.ts'
@@ -62,10 +62,8 @@ export type AnyStep = Step<AnyStepContext>
 export type Step<T extends AnyStepContext> = {
   readonly id: string,
   readonly def: string,
-  inputData: T['Input'] extends null ? null : T['Input'] | null,
   outputData: T['Output'] | T['Output'][] | null,
   outputPreview: ImageData | ImageData[] | null,
-  pendingInput: StepDataTypeInstance | null,
   isProcessing: boolean,
   validationErrors: StepValidationError[],
   config: T['RC'] | undefined,
@@ -123,10 +121,8 @@ export function createNewStep<T extends AnyStepContext>(
     def,
     parentForkId,
     branchIndex,
-    inputData: null,
     outputData: null,
     outputPreview: null,
-    pendingInput: null,
     isProcessing: false,
     validationErrors: [],
     config: undefined,
@@ -154,9 +150,7 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: SerializedS
     def,
     parentForkId,
     branchIndex,
-    inputData: null,
     outputData: null,
-    pendingInput: null,
     config: undefined,
     isProcessing: false,
     validationErrors: [] as StepValidationError[],
