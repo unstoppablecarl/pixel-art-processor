@@ -1,10 +1,10 @@
 <script setup lang="ts">
-import { watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import { useStepStore } from '../lib/store/step-store.ts'
 import AppHeader from './AppHeader.vue'
+import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 import GridPatternPreview from './Processor/GridPatternPreview.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
-import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 
 const store = useStepStore()
 
@@ -13,6 +13,10 @@ watch(() => store.imgScale, () => {
   root.style.setProperty('--step-img-scale', '' + store.imgScale)
 }, { immediate: true })
 
+onMounted(() => {
+  console.log('processor mounted')
+  store.invalidateAll()
+})
 </script>
 <template>
 

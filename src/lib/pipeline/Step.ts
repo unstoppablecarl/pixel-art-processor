@@ -71,7 +71,7 @@ export type Step<T extends AnyStepContext> = {
   config: T['RC'] | undefined,
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
   handler: IStepHandler<T> | undefined,
-
+  initialized: boolean,
   lastExecutionTimeMS: undefined | number,
   seed: number,
   muted: boolean,
@@ -134,6 +134,7 @@ export function createNewStep<T extends AnyStepContext>(
     loadSerialized: null,
     lastExecutionTimeMS: undefined,
     seed: 0,
+    initialized: false,
     muted: false,
   } as Step<T>)
 }
@@ -160,6 +161,7 @@ export function createLoadedStep<T extends AnyStepContext>(stepData: SerializedS
     isProcessing: false,
     validationErrors: [] as StepValidationError[],
     seed,
+    initialized: false,
     loadSerialized: {
       config,
     },

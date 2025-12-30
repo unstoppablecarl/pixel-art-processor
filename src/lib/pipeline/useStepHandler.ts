@@ -1,5 +1,5 @@
 import { expectTypeOf } from 'expect-type'
-import { watch } from 'vue'
+import { nextTick, watch } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { useStepStore } from '../store/step-store.ts'
 import { logStepWatch } from '../util/misc.ts'
@@ -15,16 +15,24 @@ function useCoreStepHandler<
   options: StepHandlerOptions<T, R>,
 ) {
   const store = useStepStore()
-  const { step, handler, watcherTargets } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
+  const { step, watcherTargets } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
 
-  expectTypeOf(handler).toExtend<IStepHandler<T>>()
-
-  store.loadPendingInput(stepId)
+  expectTypeOf(step.handler).toExtend<IStepHandler<T>>()
 
   watch(watcherTargets, () => {
     logStepWatch(step.id)
     store.resolveStep<T>(stepId)
-  }, { immediate: true })
+  })
+
+  nextTick(() => {
+    store.resolveStep(stepId)
+    step.initialized = true
+    if (step.outputData === undefined) {
+      throw new Error('wtf2')
+    }
+    // console.log('outputData = prev.outputData', prev.outputData)
+    // console.log('prev', deepUnwrap(prev))
+  })
 
   return step as ConfiguredStep<T, R>
 }
@@ -74,7 +82,6 @@ export function useBranchHandler(forkId: string, branchIndex: number) {
   watch([
     () => fork.seed,
     () => branch.seed,
-    () => branch.inputData,
   ], () => {
     store.resolveBranch(forkId, branchIndex)
   })

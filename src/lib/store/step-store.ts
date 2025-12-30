@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { computed, reactive, type Reactive, type Ref, ref, watch } from 'vue'
+import { computed, nextTick, type Reactive, reactive, ref, type Ref, watch } from 'vue'
 import type { StepDataTypeInstance } from '../../steps.ts'
 import { GenericValidationError, StepValidationError } from '../errors.ts'
 import {
@@ -14,13 +14,7 @@ import {
   type Step,
   type StepRef,
 } from '../pipeline/Step.ts'
-import {
-  type Config,
-  type IStepHandler,
-  makeStepHandler,
-  type StepHandlerOptions,
-  type WatcherTarget,
-} from '../pipeline/StepHandler.ts'
+import { type Config, makeStepHandler, type StepHandlerOptions, type WatcherTarget } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import {
   type ForkStepRunner,
@@ -31,7 +25,6 @@ import {
   toForkStepRunnerResult,
   toNormalStepRunnerResult,
 } from '../pipeline/StepRunner.ts'
-import { copyStepDataOrNull } from '../step-data-types/_step-data-type-helpers.ts'
 import { analyzeArrayChange, arrayRemove, logStepEvent } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
@@ -49,7 +42,6 @@ type SerializedStepData = {
 
 type Branch = {
   seed: number,
-  inputData: StepDataTypeInstance | null,
   stepIds: string[]
 }
 
@@ -154,7 +146,6 @@ export const useStepStore = defineStore('steps', () => {
         forkBranches[step.id] = [{
           seed: 0,
           stepIds: [],
-          inputData: null,
         }]
       }
       return step
@@ -288,26 +279,21 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    async function addBranch(forkId: string) {
+    function addBranch(forkId: string) {
       getFork(forkId)
       forkBranches[forkId].push({
         seed: 0,
         stepIds: [],
-        inputData: null,
       })
     }
 
-    async function resolveBranch(forkId: string, branchIndex: number) {
+    function resolveBranch(forkId: string, branchIndex: number) {
       const branch = getBranch(forkId, branchIndex)
       if (!branch.stepIds.length) return
-
-      const firstBranchStepId = branch.stepIds[0]
-      const firstStep = get(firstBranchStepId)
-
-      _setInputData(firstStep, branch.inputData)
+      return resolveStep(branch.stepIds[0])
     }
 
-    function duplicateBranch(forkId: string, branchIndex: number): number {
+    function duplicateBranch(forkId: string, branchIndex: number) {
       getFork(forkId)
 
       const branches = getBranches(forkId)
@@ -319,46 +305,42 @@ export const useStepStore = defineStore('steps', () => {
       branches.push({
         seed: sourceBranch.seed,
         stepIds: [],
-        inputData: null,
       })
 
       // Duplicate each step in the source branch
       const stepIdMap = new Map<string, string>() // old ID -> new ID mapping
 
-      sourceBranch.stepIds.forEach(sourceStepId => {
-        const sourceStep = get(sourceStepId)
+      // let fork step update from branches.length changing
+      nextTick(() => {
 
-        // Create new step in the new branch
-        idIncrement.value += 1
-        const newStep = createNewStep(
-          sourceStep.def,
-          idIncrement.value,
-          forkId,
-          newBranchIndex,
-        )
+        sourceBranch.stepIds.forEach(sourceStepId => {
+          const sourceStep = get(sourceStepId)
 
-        stepsById[newStep.id] = newStep
-        branches[newBranchIndex].stepIds.push(newStep.id)
+          // Create new step in the new branch
+          idIncrement.value += 1
+          const newStep = createNewStep(
+            sourceStep.def,
+            idIncrement.value,
+            forkId,
+            newBranchIndex,
+          )
 
-        // Copy config if handler exists
-        if (sourceStep.handler) {
-          const freshConfig = sourceStep.handler.config()
-          Object.assign(freshConfig, deepUnwrap(sourceStep.config))
-          newStep.config = freshConfig
-        }
+          stepsById[newStep.id] = newStep
+          branches[newBranchIndex].stepIds.push(newStep.id)
 
-        stepIdMap.set(sourceStepId, newStep.id)
+          // Copy config if handler exists
+          if (sourceStep.handler) {
+            const freshConfig = sourceStep.handler.config()
+            Object.assign(freshConfig, deepUnwrap(sourceStep.config))
+            newStep.config = freshConfig
+          }
+
+          stepIdMap.set(sourceStepId, newStep.id)
+        })
       })
-
-      // Invalidate the new branch (starting from first step if exists)
-      if (branches[newBranchIndex].stepIds.length > 0) {
-        resolveStep(branches[newBranchIndex].stepIds[0])
-      }
-
-      return newBranchIndex
     }
 
-    async function removeBranch(forkId: string, branchIndex: number) {
+    function removeBranch(forkId: string, branchIndex: number) {
       const branches = getBranches(forkId)
 
       // Remove steps in the branch
@@ -509,78 +491,7 @@ export const useStepStore = defineStore('steps', () => {
       return get(nextStepId)
     }
 
-    function syncImageDataFromPrev(stepId: string) {
-      const prev = getPrev(stepId)
-      if (!prev) return
-
-      _pushImageData(prev.id, stepId)
-    }
-
-    function _pushImageData(stepId: string, nextStepId: string) {
-      const currentStep = get(stepId)
-      const nextStep = get(nextStepId)
-      logStepEvent(stepId, '_pushImageData', stepId, '->', nextStepId)
-
-      if (nextStep === null) {
-        return
-      }
-
-      let outputData: StepDataTypeInstance | null
-
-      if (stepIsFork(currentStep)) {
-        outputData = getBranch(currentStep.id, nextStep.branchIndex!).inputData
-      } else {
-        outputData = copyStepDataOrNull(currentStep.outputData)
-      }
-
-      if (!nextStep.handler) {
-        nextStep.pendingInput = outputData
-        return
-      }
-
-      _setInputData(nextStep, outputData)
-    }
-
-    function _setInputData<T extends AnyStepContext>(step: StepRef<T>, inputData: StepDataTypeInstance | null) {
-      if (!step.handler) {
-        step.pendingInput = inputData
-        return
-      }
-
-      step.inputData = inputData as typeof step.inputData
-    }
-
-    function loadPendingInput(stepId: string) {
-      const step = get(stepId)
-      if (!step.pendingInput) {
-        return
-      }
-
-      // if prev step is gone pending input is invalid
-      const prevStep = getPrev(stepId)
-      if (!prevStep) {
-        step.pendingInput = null
-        return
-      }
-
-      step.inputData = step.pendingInput
-      step.pendingInput = null
-    }
-
-    function loadStepData(stepId: string) {
-      const step = get(stepId)
-      if (step.loadSerialized === null) {
-        throw new Error('step has no data to load: ' + stepId)
-      }
-
-      const handler = getHandler(stepId)
-
-      handler.loadConfig(step.config as Config, step.loadSerialized.config)
-
-      step.loadSerialized = null
-    }
-
-    function getHandler<T extends AnyStepContext>(stepId: string) {
+    function getHandler(stepId: string) {
       const step = get(stepId)
       if (!step.handler) {
         throw new Error('Step does not have handler yet')
@@ -588,12 +499,11 @@ export const useStepStore = defineStore('steps', () => {
       return step.handler
     }
 
-    function getStepContext(stepId: string): {
+    function getStepContext<T extends AnyStepContext>(step: StepRef<T>): {
       array: string[],
       parentForkId: string | null,
       branchIndex: number | null
     } {
-      const step = get(stepId)
 
       if (step.parentForkId) {
         const branches = getBranches(step.parentForkId)
@@ -623,7 +533,7 @@ export const useStepStore = defineStore('steps', () => {
       newIndex: number,
     ): void {
       const step = get(stepId)
-      const sourceContext = getStepContext(stepId)
+      const sourceContext = getStepContext(step)
 
       if (newIndex < 0) {
         throw new Error(`Invalid newIndex: ${newIndex}`)
@@ -686,7 +596,7 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    async function invalidateAll() {
+    function invalidateAll() {
       if (!rootStepIds.value.length) return
       return resolveStep(rootStepIds.value[0])
     }
@@ -734,6 +644,17 @@ export const useStepStore = defineStore('steps', () => {
       get(stepId).validationErrors = errors
     }
 
+    function setPassthroughTypeFromPrev<T extends AnyStepContext>(step: ConfiguredStep<T>) {
+      const prev = getPrev(step.id)
+      if (!prev) {
+        step.handler.clearPassThroughDataType()
+        return
+      }
+
+      const outputDataType = getHandler(prev.id).outputDataType
+      step.handler.setPassThroughDataType(outputDataType)
+    }
+
     function getPrevOutputData<T extends AnyStepContext>(step: ConfiguredStep<T>): {
       outputData: StepDataTypeInstance | null,
       validationErrors: StepValidationError[]
@@ -748,15 +669,26 @@ export const useStepStore = defineStore('steps', () => {
 
       let outputData: StepDataTypeInstance | null
 
-      if (step.parentForkId) {
+      if (step.parentForkId && stepIsFork(prev)) {
         outputData = prev.outputData[step.branchIndex]
+        console.log(' outputData = prev.outputData[step.branchIndex]', prev.outputData[step.branchIndex])
+        console.log('prev', deepUnwrap(prev))
+
       } else {
         outputData = prev.outputData
+        console.log('outputData = prev.outputData', prev.outputData)
+        console.log('prev', deepUnwrap(prev))
+      }
+
+      if (outputData === undefined) {
+        console.log('prev', deepUnwrap(prev))
+        console.log('prev.outputData', deepUnwrap(prev).outputData)
+
+        throw new Error('wtf')
       }
 
       if (stepRegistry.stepIsPassthrough(step)) {
-        const outputDataType = getHandler(prev.id).outputDataType
-        step.handler.setPassThroughDataType(outputDataType)
+        setPassthroughTypeFromPrev(step)
       }
 
       const currentHandler = getHandler(step.id)
@@ -775,33 +707,39 @@ export const useStepStore = defineStore('steps', () => {
       }
     }
 
-    async function resolveStep<T extends AnyStepContext>(stepId: string) {
+    function resolveStep<T extends AnyStepContext>(stepId: string) {
       const step = get(stepId) as StepRef<T>
       assertConfiguredStep(step)
 
+      // prev is processing and it will trigger this when done
       const prev = getPrev(step.id)
-      if (!prev) {
-
+      if (prev) {
+        if (!prev.initialized) return
+        if (prev.isProcessing) return
+        if (!prev.handler) return
       }
+
       step.isProcessing = true
 
       const startTime = performance.now()
 
       try {
+        step.handler.clearPassThroughDataType()
 
         let { outputData, validationErrors } = getPrevOutputData(step)
 
-        if (outputData) {
-          outputData = outputData.copy()
-        }
-
         if (step.muted) {
+          setPassthroughTypeFromPrev(step)
+
           step.outputData = null
           step.outputData = outputData
           step.outputPreview = null
           step.validationErrors = []
           step.lastExecutionTimeMS = 0
         } else {
+          if (outputData) {
+            outputData = outputData.copy()
+          }
           prng.setSeed(calculateSeed(step.id))
 
           const duration = performance.now() - startTime
@@ -858,12 +796,10 @@ export const useStepStore = defineStore('steps', () => {
       stepId: string,
       handlerOptions: StepHandlerOptions<T>,
     ): {
-      step: StepRef<T>,
-      handler: IStepHandler<T>
+      step: ConfiguredStep<T>,
       watcherTargets: WatcherTarget[],
     } {
       const step = get(stepId) as StepRef<T>
-
       const handler = makeStepHandler<T>(step.def, handlerOptions)
 
       step.handler = handler
@@ -872,27 +808,24 @@ export const useStepStore = defineStore('steps', () => {
       }
 
       if (step.loadSerialized !== null) {
-        loadStepData(stepId)
+        handler.loadConfig(step.config as Config, step.loadSerialized.config)
+        step.loadSerialized = null
       }
-
-      syncImageDataFromPrev(step.id)
 
       const targets = [
         step.config,
-        () => step.inputData,
         () => step.seed,
         () => step.muted,
       ]
 
       if (stepIsFork(step)) {
-        targets.push(() => forkBranches.length)
+        targets.push(() => forkBranches[step.id].length)
       }
 
       const watcherTargets = handler.watcher(step as ConfiguredStep<T>, targets)
 
       return {
-        step,
-        handler,
+        step: step as ConfiguredStep<T>,
         watcherTargets,
       }
     }
@@ -925,9 +858,7 @@ export const useStepStore = defineStore('steps', () => {
     function getAllPipelineLeaves(): AnyStepRef[] {
       const leaves: AnyStepRef[] = []
 
-      if (rootStepIds.value.length === 0) {
-        return leaves
-      }
+      if (rootStepIds.value.length === 0) return leaves
 
       const lastMainStepId = rootStepIds.value[rootStepIds.value.length - 1]
       return getAllLeafSteps(lastMainStepId)
@@ -954,16 +885,13 @@ export const useStepStore = defineStore('steps', () => {
 
     function calculateSeed(stepId: string) {
       const step = get(stepId)
-
-      const stepSeed = step.seed
-      let forkSeed = 0
-      let branchSeed = 0
+      let result = globalSeed.value + step.seed
 
       if (step.parentForkId) {
-        forkSeed = get(step.parentForkId).seed
-        branchSeed = getBranch(step.parentForkId, step.branchIndex!).seed
+        result += get(step.parentForkId).seed
+        result += getBranch(step.parentForkId, step.branchIndex).seed
       }
-      return globalSeed.value + stepSeed + forkSeed + branchSeed
+      return result
     }
 
     function getStepsAddableAfter(stepId: string) {
@@ -1009,9 +937,9 @@ export const useStepStore = defineStore('steps', () => {
       registerStep,
       resolveStep,
       length,
-      loadPendingInput,
       handleStepError,
       stepLeaves,
+      invalidateAll,
     }
   },
   {

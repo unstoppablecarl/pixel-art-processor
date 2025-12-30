@@ -11,8 +11,10 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { useStepForkHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useStepStore } from '../../lib/store/step-store.ts'
 import StepCard from '../StepCard.vue'
 
+const store = useStepStore()
 const { stepId } = defineProps<{ stepId: string }>()
 
 const step = useStepForkHandler(stepId, {
@@ -37,6 +39,7 @@ const step = useStepForkHandler(stepId, {
     :copyable="false"
     :draggable="false"
     :mutable="false"
+    :sub-header="`: x ${store.getBranches(stepId).length}`"
   >
     <template #footer>
 

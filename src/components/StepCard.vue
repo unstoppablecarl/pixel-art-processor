@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
-import { computed } from 'vue'
+import { computed,onMounted } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
 import type { AnyConfiguredStep } from '../lib/pipeline/Step.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
@@ -22,6 +22,7 @@ const {
   copyable = true,
   showDimensions = false,
   mutable = true,
+  subHeader = '',
 } = defineProps<{
   step: AnyConfiguredStep
   showDimensions?: boolean,
@@ -31,6 +32,7 @@ const {
   copyable?: boolean,
   showSeed?: boolean,
   mutable?: boolean,
+  subHeader?: string,
 }>()
 
 const dimensions = computed(() => {
@@ -91,12 +93,18 @@ const header = computed(() => registry.get(step.def).displayName)
 function toggleMute() {
   step.muted = !step.muted
 }
+
+onMounted(() => {
+  console.log('step mounted: ', step.id)
+  store.invalidateAll()
+})
+
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
     <div class="step-header hstack gap-1 align-items-center">
       <div>
-        {{ header }}
+        {{ header }} {{subHeader}}
       </div>
       <div class="execution-time ms-auto" v-if="executionTime">
         <span class="material-symbols-outlined">timer</span>
