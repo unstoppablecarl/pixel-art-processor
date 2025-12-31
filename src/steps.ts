@@ -1,5 +1,5 @@
 import { loadStepComponentsMetaData } from './lib/pipeline/StepMeta.ts'
-import type { AnyStepDefinition } from './lib/pipeline/StepRegistry.ts'
+import { type AnyStepDefinition, makeStepRegistry } from './lib/pipeline/StepRegistry.ts'
 import { type DataStructureConstructor } from './lib/step-data-types/BaseDataStructure.ts'
 import { BitMask } from './lib/step-data-types/BitMask.ts'
 import { HeightMap } from './lib/step-data-types/HeightMap.ts'
@@ -32,3 +32,5 @@ export type StepDataTypeInstance =
   | HeightMap
   | PixelMap
   | PassThrough
+
+export const STEP_REGISTRY = makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES)

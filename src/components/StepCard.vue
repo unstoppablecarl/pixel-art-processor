@@ -87,7 +87,7 @@ const executionTime = computed(() => {
   return (step.lastExecutionTimeMS / 1000).toFixed(2)
 })
 
-const registry = useStepRegistry()
+const registry = STEP_REGISTRY
 const header = computed(() => registry.get(step.def).displayName)
 
 function toggleMute() {

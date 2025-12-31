@@ -5,7 +5,7 @@ import {
   type ForkStepRunner, type ForkStepRunnerOutput, type ForkStepRunnerResult,
   type NormalStepRunner,
   type NormalStepRunnerOutput, type NormalStepRunnerResult,
-  type StepRunner, type StepRunnerResult, toForkStepRunnerResult, toNormalStepRunnerResult,
+  type StepRunner, type AnyStepRunnerResult, toForkStepRunnerResult, toNormalStepRunnerResult,
 } from '../src/lib/pipeline/StepRunner.ts'
 
 // ---------------------------------------------------------
@@ -30,18 +30,18 @@ describe('StepRunner union structure', () => {
 })
 
 // ---------------------------------------------------------
-// 2. Raw runner outputs should NOT match StepRunnerResult
+// 2. Raw runner outputs should NOT match AnyStepRunnerResult
 // ---------------------------------------------------------
 
-describe('Raw runner outputs are narrower than StepRunnerResult', () => {
-  it('NormalStepRunnerOutput is NOT assignable to StepRunnerResult', () => {
+describe('Raw runner outputs are narrower than AnyStepRunnerResult', () => {
+  it('NormalStepRunnerOutput is NOT assignable to AnyStepRunnerResult', () => {
     expectTypeOf<NormalStepRunnerOutput<Out>>()
-      .not.toMatchTypeOf<StepRunnerResult>()
+      .not.toMatchTypeOf<AnyStepRunnerResult>()
   })
 
-  it('ForkStepRunnerOutput is NOT assignable to StepRunnerResult', () => {
+  it('ForkStepRunnerOutput is NOT assignable to AnyStepRunnerResult', () => {
     expectTypeOf<ForkStepRunnerOutput<Out>>()
-      .not.toMatchTypeOf<StepRunnerResult>()
+      .not.toMatchTypeOf<AnyStepRunnerResult>()
   })
 })
 
@@ -53,13 +53,13 @@ describe('Conversion functions produce correct narrowed results', () => {
   it('toNormalStepRunnerResult returns NormalStepRunnerResult<Out>', () => {
     const result = toNormalStepRunnerResult<Out>({ output: null })
     expectTypeOf(result).toMatchTypeOf<NormalStepRunnerResult<Out>>()
-    expectTypeOf(result).toMatchTypeOf<StepRunnerResult>()
+    expectTypeOf(result).toMatchTypeOf<AnyStepRunnerResult>()
   })
 
   it('toForkStepRunnerResult returns ForkStepRunnerResult<Out>', () => {
     const result = toForkStepRunnerResult<Out>({ branchesOutput: [] })
     expectTypeOf(result).toMatchTypeOf<ForkStepRunnerResult<Out>>()
-    expectTypeOf(result).toMatchTypeOf<StepRunnerResult>()
+    expectTypeOf(result).toMatchTypeOf<AnyStepRunnerResult>()
   })
 })
 
@@ -67,15 +67,15 @@ describe('Conversion functions produce correct narrowed results', () => {
 // 4. Narrowed results must be assignable to base result
 // ---------------------------------------------------------
 
-describe('Narrowed results extend StepRunnerResult', () => {
-  it('NormalStepRunnerResult<Out> extends StepRunnerResult', () => {
+describe('Narrowed results extend AnyStepRunnerResult', () => {
+  it('NormalStepRunnerResult<Out> extends AnyStepRunnerResult', () => {
     expectTypeOf<NormalStepRunnerResult<Out>>()
-      .toMatchTypeOf<StepRunnerResult>()
+      .toMatchTypeOf<AnyStepRunnerResult>()
   })
 
-  it('ForkStepRunnerResult<Out> extends StepRunnerResult', () => {
+  it('ForkStepRunnerResult<Out> extends AnyStepRunnerResult', () => {
     expectTypeOf<ForkStepRunnerResult<Out>>()
-      .toMatchTypeOf<StepRunnerResult>()
+      .toMatchTypeOf<AnyStepRunnerResult>()
   })
 })
 

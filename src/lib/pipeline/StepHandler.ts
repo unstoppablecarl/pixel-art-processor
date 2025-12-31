@@ -1,5 +1,5 @@
 import { reactive, type Reactive, type WatchSource } from 'vue'
-import type { StepDataType } from '../../steps.ts'
+import { STEP_REGISTRY, type StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
@@ -7,7 +7,7 @@ import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type AnyStepContext,
-  type ConfiguredStep,
+  type InitializedStep,
   type ReactiveConfigType,
   type StepContext,
   type StepInputTypesToInstances,
@@ -65,7 +65,7 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcher?: (step: InitializedStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
   validateInput?: (
     inputData: StepInputTypesToInstances<I>,
@@ -97,7 +97,7 @@ export interface IStepHandler<
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(step: InitializedStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -122,7 +122,7 @@ export function makeStepHandler<
 >(
   def: string,
   options: StepHandlerOptions<T, R>,
-  stepRegistry: StepRegistry = useStepRegistry(),
+  stepRegistry: StepRegistry = STEP_REGISTRY,
 ): IStepHandler<T, R> {
 
   type RC = T['RC']
@@ -146,7 +146,7 @@ export function makeStepHandler<
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-    watcher(_step: ConfiguredStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    watcher(_step: InitializedStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]

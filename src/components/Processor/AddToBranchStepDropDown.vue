@@ -15,7 +15,7 @@ const {
   branchIndex: number,
 }>()
 
-const stepRegistry = useStepRegistry()
+const stepRegistry = STEP_REGISTRY
 const addableSteps = computed(() => stepRegistry.getStepsCompatibleWithOutput(step.def))
 
 function addAfter(def: string) {

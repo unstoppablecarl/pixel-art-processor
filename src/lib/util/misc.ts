@@ -136,7 +136,3 @@ export function analyzeArrayChange(
 
   throw new Error('no array change found')
 }
-
-export type MaybePromise<T> =
-  | T
-  | Promise<T>

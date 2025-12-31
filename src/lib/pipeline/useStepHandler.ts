@@ -3,7 +3,7 @@ import { nextTick, watch } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { useStepStore } from '../store/step-store.ts'
 import { logStepWatch } from '../util/misc.ts'
-import { type AnyStepContext, type ConfiguredStep, type ReactiveConfigType, type StepContext } from './Step.ts'
+import { type AnyStepContext, type InitializedStep, type ReactiveConfigType, type StepContext } from './Step.ts'
 import type { Config, IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
 import type { ForkStepRunner, NormalStepRunner, StepRunner } from './StepRunner.ts'
 
@@ -34,7 +34,7 @@ function useCoreStepHandler<
     // console.log('prev', deepUnwrap(prev))
   })
 
-  return step as ConfiguredStep<T, R>
+  return step as InitializedStep<T, R>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️

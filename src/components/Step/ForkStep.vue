@@ -1,9 +1,9 @@
 <script lang="ts">
-import { StepType } from '../../lib/pipeline/Step.ts'
+import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: StepType.FORK,
+  type: NodeType.FORK,
   def: 'fork_step',
   displayName: 'Fork',
   passthrough: true,
@@ -22,10 +22,10 @@ const step = useStepForkHandler(stepId, {
   config() {
     return {}
   },
-  run({ inputData, branchCount }) {
+  run({ inputData, branchIndex }) {
 
     return {
-      branchesOutput: Array(branchCount).fill(inputData),
+      branchesOutput: Array(branchIndex).fill(inputData),
       preview: inputData?.toImageData(),
     }
   },

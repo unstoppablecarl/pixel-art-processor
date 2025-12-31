@@ -7,7 +7,7 @@ const { error } = defineProps<{
   error: InvalidInputTypeError,
 }>()
 
-const dataTypeRegistry = useStepRegistry().dataTypeRegistry
+const dataTypeRegistry = STEP_REGISTRY.dataTypeRegistry
 
 const valid = error.expectedTypes.map(t => {
   return dataTypeRegistry.getDisplayName(t)

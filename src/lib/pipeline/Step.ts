@@ -1,11 +1,12 @@
 import { type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
+import { NodeType } from './Node.ts'
 
 import type { Config, IStepHandler } from './StepHandler.ts'
 import type { StepRunner } from './StepRunner.ts'
 
-export type ConfiguredStep<
+export type InitializedStep<
   T extends AnyStepContext,
   R extends StepRunner<T> = StepRunner<T>
 > =
@@ -25,7 +26,7 @@ export type AnyConfiguredStep =
   handler: IStepHandler<any, any>,
 }
 
-export function assertConfiguredStep<T extends AnyStepContext>(step: Step<T> | StepRef<T>): asserts step is ConfiguredStep<T> {
+export function assertConfiguredStep<T extends AnyStepContext>(step: Step<T> | StepRef<T>): asserts step is InitializedStep<T> {
   if (!step.config) throw new Error(`Step is not configured: ${step.id} has no config`)
   if (!step.handler) throw new Error(`Step is not configured: ${step.id} has no handler`)
 }
@@ -88,16 +89,11 @@ type StepForkChild = {
 export type SerializedStep = {
   id: string,
   def: string,
-  type: StepType,
+  type: NodeType,
   parentForkId: string | null,
   branchIndex: number | null,
   config: Config | undefined,
   seed: number,
-}
-
-export enum StepType {
-  FORK = 'FORK',
-  NORMAL = 'NORMAL',
 }
 
 export type DeSerializedStep<T extends AnyStepContext> =

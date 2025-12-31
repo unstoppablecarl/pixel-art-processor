@@ -112,7 +112,7 @@ describe('IStepHandler<T> basic structure', () => {
     })).toEqualTypeOf<RC>()
   })
 
-  it('has correct run() signature', () => {
+  it('has correct process() signature', () => {
     expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null

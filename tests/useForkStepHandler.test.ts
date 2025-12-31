@@ -2,7 +2,8 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
-import { type AnyStepContext, type ConfiguredStep, type StepContext, StepType } from '../src/lib/pipeline/Step'
+import { NodeType } from '../src/lib/pipeline/Node.ts'
+import { type AnyStepContext, type InitializedStep, type StepContext } from '../src/lib/pipeline/Step'
 import type { IStepHandler, WatcherTarget } from '../src/lib/pipeline/StepHandler'
 import { makeStepRegistry, STEP_REGISTRY_INJECT_KEY, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
 import type { ForkStepRunner, ForkStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
@@ -46,13 +47,13 @@ function defineStep(
   {
     def,
     displayName = 'Testing',
-    type = StepType.NORMAL,
+    type = NodeType.NORMAL,
     inputDataTypes,
     outputDataType,
   }: {
     def: string,
     displayName?: string,
-    type?: StepType,
+    type?: NodeType,
     inputDataTypes: readonly StepDataType[],
     outputDataType: StepDataType
   },
@@ -126,10 +127,10 @@ describe('step handler type testing', async () => {
         }
       },
 
-      run({ config, inputData, branchCount }) {
+      run({ config, inputData, branchIndex }) {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(inputData).toEqualTypeOf<InputInstances | null>()
-        expectTypeOf(branchCount).toEqualTypeOf<number>()
+        expectTypeOf(branchIndex).toEqualTypeOf<number>()
 
         if (!config.maskImageData) return
 
@@ -140,9 +141,9 @@ describe('step handler type testing', async () => {
       },
 
       watcher(step, defaultWatcherTargets) {
-        type T = typeof step extends ConfiguredStep<infer U> ? U : never
-        expectTypeOf(step).toExtend<ConfiguredStep<T>>()
-        expectTypeOf(step.config).toEqualTypeOf<ConfiguredStep<T>['config']>()
+        type T = typeof step extends InitializedStep<infer U> ? U : never
+        expectTypeOf(step).toExtend<InitializedStep<T>>()
+        expectTypeOf(step.config).toEqualTypeOf<InitializedStep<T>['config']>()
 
         expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
 
@@ -152,14 +153,14 @@ describe('step handler type testing', async () => {
       },
 
     })
-    type T = typeof step extends ConfiguredStep<infer U> ? U : never
+    type T = typeof step extends InitializedStep<infer U> ? U : never
 
     it('creates correct step', () => {
       expectTypeOf<T>().toEqualTypeOf<StepContext<C, SC, RC, I, O>>()
-      expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
-      expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+      expectTypeOf(step).not.toEqualTypeOf<InitializedStep<AnyStepContext>>()
+      expectTypeOf(step).toExtend<InitializedStep<StepContext<C, SC, RC, I, O>>>()
 
-      expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T, ForkStepRunner<T>>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedStep<T, ForkStepRunner<T>>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | ImageData[] | null>()
       expectTypeOf(step.inputData).toEqualTypeOf<InputInstances | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | OutputInstance[] | null>()

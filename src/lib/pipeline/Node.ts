@@ -1,6 +1,16 @@
-import type { StepDataTypeInstance } from '../../steps.ts'
+import { STEP_REGISTRY, type StepDataTypeInstance } from '../../steps.ts'
+import type { StepValidationError } from '../errors.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
-import { nodeRunner } from './NodeRunner.ts'
+import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
+import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
+import type {
+  ForkStepRunner,
+  ForkStepRunnerOutput,
+  NormalStepRunner,
+  SingleRunnerOutput,
+  SingleRunnerResult,
+  StepRunner,
+} from './StepRunner.ts'
 
 export enum NodeType {
   STEP = 'STEP',
@@ -8,30 +18,59 @@ export enum NodeType {
   BRANCH = 'BRANCH',
 }
 
-export type BaseNodeSerialized = {
+export type BaseNodeSerialized<T extends AnyStepContext> = {
   id: string,
-  type: string,
+  def: string,
   seed: number,
+  muted: boolean,
+  config: T['SerializedConfig']
 }
 
-export abstract class BaseNode {
-  readonly abstract type: NodeType
-  seed = 0
-  seedSum = 0
+export type BaseNodeOptions<T extends AnyStepContext> = {
+  id: string,
+  def: string,
+  seed?: number,
+  muted?: boolean,
+  config?: T['SerializedConfig'],
+}
 
+export abstract class BaseNode<
+  T extends AnyStepContext,
+  R extends StepRunner<T> = StepRunner<T>
+> {
+  readonly abstract type: NodeType
+  // serialized
+  id: string
+  def: string
+  seed = 0
+  muted: boolean = false
+  config: T['RC'] | undefined
+
+  // transient
+  seedSum = 0
+  outputData: T['Output'] | T['Output'][] | null = null
+  outputPreview: ImageData | ImageData[] | null = null
+  validationErrors: StepValidationError[] = []
+  loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
+  handler: IStepHandler<T, R> | undefined
+
+  // system
   isDirty = false
   isProcessing = false
   initialized = false
   lastExecutionTimeMS: undefined | number
 
-  outputData: StepDataTypeInstance | StepDataTypeInstance[] | null = null
-
   abstract prevNodeId: string | null
 
-  constructor(
-    readonly id: string,
-  ) {
+  constructor({ id, def, seed = 0, muted = false, config }: BaseNodeOptions<T>) {
+    this.id = id
+    this.def = def
+    this.seed = seed
+    this.muted = muted
+    this.loadSerialized = { config }
   }
+
+  abstract runner(store: PipelineStore): Promise<ReturnType<R>>
 
   isReady(store: PipelineStore): boolean {
     return !this.isProcessing
@@ -45,11 +84,11 @@ export abstract class BaseNode {
       && this.initialized
   }
 
-  async process(cb: (node: AnyNode) => void) {
+  async processRunner(store: PipelineStore) {
     this.isProcessing = true
     const startTime = performance.now()
 
-    const result = await cb(this as unknown as AnyNode)
+    const result = await this.runner(store)
 
     this.isProcessing = false
     this.isDirty = false
@@ -60,29 +99,53 @@ export abstract class BaseNode {
 
   abstract childIds(store: PipelineStore): string[]
 
-  serialize(): BaseNodeSerialized {
+  serialize(): BaseNodeSerialized<T> {
     return {
       id: this.id,
-      type: this.type,
+      def: this.def,
       seed: this.seed,
+      muted: this.muted,
+      config: this.handler!.serializeConfig(this.config),
+    }
+  }
+
+  abstract getInputDataFromPrev(store: PipelineStore): T['Input'] | null
+
+  initialize(handlerOptions: StepHandlerOptions<T>) {
+    const handler = makeStepHandler<T>(this.def, handlerOptions)
+
+    this.handler = handler as IStepHandler<T, R>
+    if (this.config === undefined) {
+      this.config = handler.reactiveConfig(handler.config())
+    }
+
+    if (this.loadSerialized !== null) {
+      handler.loadConfig(this.config as Config, this.loadSerialized.config)
+      this.loadSerialized = null
     }
   }
 }
 
-export type StepNodeSerialized = BaseNodeSerialized & {
-  prevNodeId: string | null,
+type StepNodeProperties = {
+  prevNodeId?: string | null,
 }
+export type AnyStepNodeSerialized = StepNodeSerialized<AnyStepContext>
+export type StepNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & StepNodeProperties
+export type AnyStepNode = StepNode<AnyStepContext>
+export type StepNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & StepNodeProperties
 
-export class StepNode extends BaseNode {
+export class StepNode<
+  T extends AnyStepContext,
+  R extends NormalStepRunner<T> = NormalStepRunner<T>
+> extends BaseNode<T, R> {
   type = NodeType.STEP
 
+  prevNodeId: string | null
   outputData: StepDataTypeInstance | null = null
 
-  constructor(
-    id: string,
-    public prevNodeId: string | null,
-  ) {
-    super(id)
+  constructor(options: StepNodeOptions<T>) {
+    super(options)
+    this.prevNodeId = options.prevNodeId ?? null
   }
 
   isReady(store: PipelineStore) {
@@ -97,34 +160,52 @@ export class StepNode extends BaseNode {
     return result ? [result.id] : []
   }
 
-  serialize(): StepNodeSerialized {
+  serialize(): StepNodeSerialized<T> {
     return {
       ...super.serialize(),
       prevNodeId: this.prevNodeId,
     }
   }
 
-  getOutput(): StepDataTypeInstance | null {
-    return this.outputData
+  async runner(store: PipelineStore) {
+    const output = await this.handler!.run({
+      config: this.config as T['RC'],
+      inputData: this.getInputDataFromPrev(store),
+    })
+
+    return parseResult(output) as ReturnType<R>
+  }
+
+  getInputDataFromPrev(store: PipelineStore): T['Input'] | null {
+    if (!this.prevNodeId) return null
+
+    const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
+    return prev.outputData
   }
 }
 
-export type ForkNodeSerialized = BaseNodeSerialized & {
-  prevNodeId: string | null,
-  branchIds: string[],
+type ForkNodeProperties = {
+  prevNodeId?: string | null,
+  branchIds?: string[],
 }
+export type AnyForkNodeSerialized = ForkNodeSerialized<AnyStepContext>
+export type ForkNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & ForkNodeProperties
+export type AnyForkNode = ForkNode<AnyStepContext>
+export type ForkNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & ForkNodeProperties
 
-export class ForkNode extends BaseNode {
+export class ForkNode<
+  T extends AnyStepContext,
+  R extends ForkStepRunner<T> = ForkStepRunner<T>
+> extends BaseNode<T, R> {
   type = NodeType.FORK
-  branchIds: string[] = []
+  branchIds: string[]
+  prevNodeId: string | null
+  outputData: T['Output'][] = []
 
-  outputData: StepDataTypeInstance[] = []
-
-  constructor(
-    id: string,
-    public prevNodeId: string | null,
-  ) {
-    super(id)
+  constructor(options: ForkNodeOptions<T>) {
+    super(options)
+    this.prevNodeId = options.prevNodeId ?? null
+    this.branchIds = options.branchIds ?? []
   }
 
   isReady(store: PipelineStore) {
@@ -138,40 +219,74 @@ export class ForkNode extends BaseNode {
     return this.branchIds
   }
 
-  getOutput(store: PipelineStore, branchIndex: number): StepDataTypeInstance | null {
-    if (!this.outputData[branchIndex]) {
-      this.outputData[branchIndex] = nodeRunner(store, this)
-    }
+  async runner(store: PipelineStore): Promise<
+    ReturnType<R>
+  > {
+    const promises = new Array(this.branchIds.length).map(async (_v, i) => {
+      return () => this.getBranchOutput(store, i)
+    })
 
+    return Promise.all(promises) as ReturnType<R>
+  }
+
+  async getBranchOutput(store: PipelineStore, branchIndex: number): Promise<SingleRunnerOutput<T>> {
+    if (!this.outputData[branchIndex]) {
+      this.outputData[branchIndex] = await this.runBranch(store, branchIndex)
+    }
     return this.outputData[branchIndex]
   }
 
-  serialize(): ForkNodeSerialized {
+  protected async runBranch(store: PipelineStore, branchIndex: number): Promise<
+    ForkStepRunnerOutput<T>
+  > {
+    return this.handler!.run({
+      config: this.config as T['RC'],
+      inputData: this.getInputDataFromPrev(store),
+      branchIndex,
+    })
+  }
+
+  serialize(): ForkNodeSerialized<T> {
     return {
       ...super.serialize(),
       prevNodeId: this.prevNodeId,
       branchIds: this.branchIds,
     }
   }
+
+  getInputDataFromPrev(store: PipelineStore): T['Input'] | null {
+    if (!this.prevNodeId) return null
+
+    const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
+    return prev.outputData
+  }
 }
 
-export type BranchNodeSerialized = BaseNodeSerialized & {
+type BranchNodeProperties = {
   parentForkId: string,
   branchIndex: number,
-  nextId: string | null,
+  nextId?: string | null,
 }
+export type AnyBranchNodeSerialized = BranchNodeSerialized<AnyStepContext>
+export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & BranchNodeProperties
+export type AnyBranchNode = BranchNode<AnyStepContext>
+export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & BranchNodeProperties
 
-export class BranchNode extends BaseNode {
+export class BranchNode<
+  T extends AnyStepContext,
+  R extends NormalStepRunner<T> = NormalStepRunner<T>
+> extends BaseNode<T, R> {
   type = NodeType.BRANCH
-  outputData: StepDataTypeInstance | null = null
+  outputData: T['Output'] | null = null
+  parentForkId: string
+  branchIndex: number
+  nextId: string | null
 
-  constructor(
-    id: string,
-    public parentForkId: string,
-    public branchIndex: number,
-    public nextId: string | null,
-  ) {
-    super(id)
+  constructor(options: BranchNodeOptions<T>) {
+    super(options)
+    this.parentForkId = options.parentForkId
+    this.branchIndex = options.branchIndex
+    this.nextId = options.nextId ?? null
   }
 
   get prevNodeId() {
@@ -188,7 +303,7 @@ export class BranchNode extends BaseNode {
     return this.nextId ? [this.nextId] : []
   }
 
-  serialize(): BranchNodeSerialized {
+  serialize(): BranchNodeSerialized<T> {
     return {
       ...super.serialize(),
       parentForkId: this.parentForkId,
@@ -197,29 +312,42 @@ export class BranchNode extends BaseNode {
     }
   }
 
-  parentFork(store: PipelineStore): ForkNode {
-    return store.get(this.parentForkId) as ForkNode
+  parentFork(store: PipelineStore): AnyForkNode {
+    return store.get(this.parentForkId) as AnyForkNode
   }
 
-  getOutput(): StepDataTypeInstance | null {
+  async runner(store: PipelineStore) {
+    const output = await this.handler!.run({
+      config: this.config as T['RC'],
+      inputData: this.getInputDataFromPrev(store),
+    })
+
+    return parseResult(output) as ReturnType<R>
+  }
+
+  getOutput(): T['Output'] | null {
     return this.outputData
+  }
+
+  getInputDataFromPrev(store: PipelineStore): T['Input'] | null {
+    return this.parentFork(store).getBranchOutput(store, this.branchIndex) as T['Input']
   }
 }
 
-export type AnyNode = StepNode | ForkNode | BranchNode
-export type AnyNodeSerialized = StepNodeSerialized | ForkNodeSerialized | BranchNodeSerialized
+export type AnyNode = AnyStepNode | AnyForkNode | AnyBranchNode
+export type AnyNodeSerialized = AnyStepNodeSerialized | AnyForkNodeSerialized | AnyBranchNodeSerialized
 
-export function deSerializeNode(data: StepNodeSerialized | ForkNodeSerialized | BranchNodeSerialized): AnyNode {
+export function deSerializeNode(data: AnyNodeSerialized): AnyNode {
   if (isStepSerialized(data)) {
-    return new StepNode(data.id, data.prevNodeId)
+    return new StepNode(data)
   }
 
   if (isForkSerialized(data)) {
-    return new ForkNode(data.id, data.prevNodeId)
+    return new ForkNode(data)
   }
 
   if (isBranchSerialized(data)) {
-    return new BranchNode(data.id, data.parentForkId, data.branchIndex, data.nextId)
+    return new BranchNode(data)
   }
 
   const message = 'invalid serialized node'
@@ -227,11 +355,18 @@ export function deSerializeNode(data: StepNodeSerialized | ForkNodeSerialized | 
   throw new Error(message)
 }
 
-export const isStep = (n: AnyNode): n is StepNode => n.type === NodeType.STEP
-export const isFork = (n: AnyNode): n is ForkNode => n.type === NodeType.FORK
-export const isBranch = (n: AnyNode): n is BranchNode => n.type === NodeType.BRANCH
+export const isStep = (n: AnyNode): n is AnyStepNode => STEP_REGISTRY.getNodeType(n.def) === NodeType.STEP
+export const isFork = (n: AnyNode): n is AnyForkNode => STEP_REGISTRY.getNodeType(n.def) === NodeType.FORK
+export const isBranch = (n: AnyNode): n is AnyBranchNode => STEP_REGISTRY.getNodeType(n.def) === NodeType.BRANCH
 
-const isStepSerialized = (n: AnyNodeSerialized): n is StepNodeSerialized => n.type === NodeType.STEP
-const isForkSerialized = (n: AnyNodeSerialized): n is ForkNodeSerialized => n.type === NodeType.FORK
-const isBranchSerialized = (n: AnyNodeSerialized): n is BranchNodeSerialized => n.type === NodeType.BRANCH
+const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => STEP_REGISTRY.getNodeType(n.def) === NodeType.STEP
+const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => STEP_REGISTRY.getNodeType(n.def) === NodeType.FORK
+const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => STEP_REGISTRY.getNodeType(n.def) === NodeType.BRANCH
 
+function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): SingleRunnerResult<T> {
+  return {
+    output: result?.output ?? null,
+    preview: result?.preview ?? null,
+    validationErrors: result?.validationErrors ?? [],
+  }
+}

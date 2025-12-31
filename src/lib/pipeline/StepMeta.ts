@@ -1,7 +1,7 @@
 import type { Component } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { StepType } from './Step.ts'
+import { NodeType } from './Node.ts'
 import { type AnyStepDefinition } from './StepRegistry.ts'
 
 export type AnyStepMeta = StepMeta<any, any>
@@ -10,7 +10,7 @@ export type StepMeta<
   I extends readonly StepDataType[],
   O extends StepDataType,
 > = {
-  type: StepType,
+  type: NodeType,
   def: string,
   displayName: string,
 } & StepDataConfig<I, O>

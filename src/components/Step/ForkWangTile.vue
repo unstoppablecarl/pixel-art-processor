@@ -1,10 +1,10 @@
 <script lang="ts">
-import { StepType } from '../../lib/pipeline/Step.ts'
+import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: StepType.FORK,
+  type: NodeType.FORK,
   def: 'fork_wang_tiles',
   displayName: 'Fork: Wang Tiles',
   inputDataTypes: [],
@@ -51,9 +51,7 @@ const step = useStepForkHandler(stepId, {
   config() {
     return reactive({ ...CONFIG_DEFAULTS })
   },
-  run({ config, branchCount }) {
-
-    console.log({ branchCount })
+  run({ config, branchIndex }) {
 
     const size = config.size.value
     const options = {
@@ -91,7 +89,7 @@ const step = useStepForkHandler(stepId, {
       return mask
     }
 
-    const branchesOutput = Array(branchCount).fill(null).map((_v, i) => generate(i))
+    const branchesOutput = Array(branchIndex).fill(null).map((_v, i) => generate(i))
     return {
       branchesOutput,
       preview: branchesOutput.map(i => i.toImageData()),

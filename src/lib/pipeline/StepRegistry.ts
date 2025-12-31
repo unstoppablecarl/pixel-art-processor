@@ -1,9 +1,10 @@
-import { type App, type Component, inject, type InjectionKey } from 'vue'
+import { type Component } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyStepContext, type Step, type StepRef, StepType } from './Step.ts'
+import { NodeType } from './Node.ts'
+import { type AnyStepContext, type Step, type StepRef } from './Step.ts'
 import type { StepHandlerOptions } from './StepHandler.ts'
 import type { StepMeta } from './StepMeta.ts'
 
@@ -72,7 +73,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   }
 
   function isFork(def: string): boolean {
-    return get(def).type === StepType.FORK
+    return get(def).type === NodeType.FORK
   }
 
   function toArray() {
@@ -113,6 +114,9 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     defineSteps,
     get,
     has,
+    getNodeType(def: string): NodeType {
+      return get(def).type
+    },
     isFork,
     stepIsPassthrough,
     stepIsFork: <T extends AnyStepContext>(
@@ -129,18 +133,4 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     rootSteps: () => toArray().filter(s => !s.passthrough && s.inputDataTypes.length === 0),
     toArray,
   }
-}
-
-export const STEP_REGISTRY_INJECT_KEY: InjectionKey<StepRegistry> = Symbol('stepRegistry')
-
-export function installStepRegistry(app: App, registry: StepRegistry) {
-  app.provide(STEP_REGISTRY_INJECT_KEY, registry)
-}
-
-export function useStepRegistry(): StepRegistry {
-  const registry = inject(STEP_REGISTRY_INJECT_KEY)
-  if (!registry) {
-    throw new Error('StepRegistry not provided. Call installStepRegistry() in main.ts')
-  }
-  return registry
 }

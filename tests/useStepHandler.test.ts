@@ -3,12 +3,13 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
+import { NodeType } from '../src/lib/pipeline/Node.ts'
 import {
   type AnyStepContext,
-  type ConfiguredStep,
+  type InitializedStep,
   type StepContext,
   type StepInputTypesToInstances,
-  StepType,
+
 } from '../src/lib/pipeline/Step'
 import type {
   IStepHandler,
@@ -58,13 +59,13 @@ function defineStep(
   {
     def,
     displayName = 'Testing',
-    type = StepType.NORMAL,
+    type = NodeType.NORMAL,
     inputDataTypes,
     outputDataType,
   }: {
     def: string,
     displayName?: string,
-    type?: StepType,
+    type?: NodeType,
     inputDataTypes: readonly StepDataType[],
     outputDataType: StepDataType
   },
@@ -150,9 +151,9 @@ describe('step handler type testing', async () => {
         }
       },
       watcher(step, defaultWatcherTargets) {
-        type T = typeof step extends ConfiguredStep<infer U> ? U : never
-        expectTypeOf(step).toExtend<ConfiguredStep<T>>()
-        expectTypeOf(step.config).toEqualTypeOf<ConfiguredStep<T>['config']>()
+        type T = typeof step extends InitializedStep<infer U> ? U : never
+        expectTypeOf(step).toExtend<InitializedStep<T>>()
+        expectTypeOf(step.config).toEqualTypeOf<InitializedStep<T>['config']>()
 
         expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
 
@@ -162,14 +163,14 @@ describe('step handler type testing', async () => {
       },
 
     })
-    type T = typeof step extends ConfiguredStep<infer U> ? U : never
+    type T = typeof step extends InitializedStep<infer U> ? U : never
 
     it('creates correct step', () => {
       expectTypeOf<T>().toEqualTypeOf<StepContext<C, SC, RC, I, O>>()
-      expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
-      expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+      expectTypeOf(step).not.toEqualTypeOf<InitializedStep<AnyStepContext>>()
+      expectTypeOf(step).toExtend<InitializedStep<StepContext<C, SC, RC, I, O>>>()
 
-      expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T, NormalStepRunner<T>>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedStep<T, NormalStepRunner<T>>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | ImageData[] | null>()
       expectTypeOf(step.inputData).toEqualTypeOf<InputInstances | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | OutputInstance[] | null>()
@@ -215,7 +216,7 @@ describe('step handler type testing', async () => {
         IStepHandler<T, NormalStepRunner<T>>['watcher']
       >()
       expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        (step: ConfiguredStep<T, NormalStepRunner<T>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+        (step: InitializedStep<T, NormalStepRunner<T>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<

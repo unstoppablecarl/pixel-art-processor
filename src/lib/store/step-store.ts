@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { computed, nextTick, type Reactive, reactive, ref, type Ref, watch } from 'vue'
-import type { StepDataTypeInstance } from '../../steps.ts'
+import { STEP_REGISTRY, type StepDataTypeInstance } from '../../steps.ts'
 import { GenericValidationError, StepValidationError } from '../errors.ts'
 import {
   type AnyStepContext,
   type AnyStepRef,
   assertConfiguredStep,
-  type ConfiguredStep,
+  type InitializedStep,
   createLoadedStep,
   createNewStep,
   type SerializedStep,
@@ -21,7 +21,7 @@ import {
   type ForkStepRunnerOutput,
   type NormalStepRunner,
   type NormalStepRunnerOutput,
-  type StepRunnerResult,
+  type AnyStepRunnerResult,
   toForkStepRunnerResult,
   toNormalStepRunnerResult,
 } from '../pipeline/StepRunner.ts'
@@ -46,7 +46,7 @@ type Branch = {
 }
 
 export const useStepStore = defineStore('steps', () => {
-    const stepRegistry = useStepRegistry()
+    const stepRegistry = STEP_REGISTRY
     const globalSeed = ref(3)
 
     const idIncrement = ref(0)
@@ -644,7 +644,7 @@ export const useStepStore = defineStore('steps', () => {
       get(stepId).validationErrors = errors
     }
 
-    function setPassthroughTypeFromPrev<T extends AnyStepContext>(step: ConfiguredStep<T>) {
+    function setPassthroughTypeFromPrev<T extends AnyStepContext>(step: InitializedStep<T>) {
       const prev = getPrev(step.id)
       if (!prev) {
         step.handler.clearPassThroughDataType()
@@ -655,7 +655,7 @@ export const useStepStore = defineStore('steps', () => {
       step.handler.setPassThroughDataType(outputDataType)
     }
 
-    function getPrevOutputData<T extends AnyStepContext>(step: ConfiguredStep<T>): {
+    function getPrevOutputData<T extends AnyStepContext>(step: InitializedStep<T>): {
       outputData: StepDataTypeInstance | null,
       validationErrors: StepValidationError[]
     } {
@@ -671,20 +671,8 @@ export const useStepStore = defineStore('steps', () => {
 
       if (step.parentForkId && stepIsFork(prev)) {
         outputData = prev.outputData[step.branchIndex]
-        console.log(' outputData = prev.outputData[step.branchIndex]', prev.outputData[step.branchIndex])
-        console.log('prev', deepUnwrap(prev))
-
       } else {
         outputData = prev.outputData
-        console.log('outputData = prev.outputData', prev.outputData)
-        console.log('prev', deepUnwrap(prev))
-      }
-
-      if (outputData === undefined) {
-        console.log('prev', deepUnwrap(prev))
-        console.log('prev.outputData', deepUnwrap(prev).outputData)
-
-        throw new Error('wtf')
       }
 
       if (stepRegistry.stepIsPassthrough(step)) {
@@ -743,7 +731,7 @@ export const useStepStore = defineStore('steps', () => {
           prng.setSeed(calculateSeed(step.id))
 
           const duration = performance.now() - startTime
-          let result: StepRunnerResult
+          let result: AnyStepRunnerResult
 
           if (stepIsFork(step)) {
             const runner = step.handler.run as ForkStepRunner<T>
@@ -751,7 +739,7 @@ export const useStepStore = defineStore('steps', () => {
             const output = runner({
               config: step.config,
               inputData: outputData,
-              branchCount: getBranches(stepId).length,
+              branchIndex: getBranches(stepId).length,
             }) as ForkStepRunnerOutput<T['Input']>
 
             result = toForkStepRunnerResult(output)
@@ -796,7 +784,7 @@ export const useStepStore = defineStore('steps', () => {
       stepId: string,
       handlerOptions: StepHandlerOptions<T>,
     ): {
-      step: ConfiguredStep<T>,
+      step: InitializedStep<T>,
       watcherTargets: WatcherTarget[],
     } {
       const step = get(stepId) as StepRef<T>
@@ -822,10 +810,10 @@ export const useStepStore = defineStore('steps', () => {
         targets.push(() => forkBranches[step.id].length)
       }
 
-      const watcherTargets = handler.watcher(step as ConfiguredStep<T>, targets)
+      const watcherTargets = handler.watcher(step as InitializedStep<T>, targets)
 
       return {
-        step: step as ConfiguredStep<T>,
+        step: step as InitializedStep<T>,
         watcherTargets,
       }
     }

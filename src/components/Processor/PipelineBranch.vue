@@ -2,13 +2,13 @@
 import { dragAndDrop } from '@formkit/drag-and-drop'
 import { computed, onMounted, useTemplateRef } from 'vue'
 import { type AnyStepRef } from '../../lib/pipeline/Step.ts'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { useStepStore } from '../../lib/store/step-store.ts'
+import { STEP_REGISTRY } from '../../steps.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = useStepStore()
-const stepRegistry = useStepRegistry()
+const stepRegistry = STEP_REGISTRY
 
 type Props = {
   stepIds: string[],

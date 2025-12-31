@@ -72,8 +72,8 @@ describe('StepHandlerOptional', () => {
 })
 
 describe('StepHandlerOptions<T>', () => {
-  it('requires non-optional IStepHandler fields and run, while making StepHandlerOptional keys optional', () => {
-    // Minimal valid options: only required fields + run()
+  it('requires non-optional IStepHandler fields and process, while making StepHandlerOptional keys optional', () => {
+    // Minimal valid options: only required fields + process()
     const minimalOptions: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
@@ -171,8 +171,8 @@ describe('StepHandlerOptions<T>', () => {
       },
     }
 
-    // Omitting run should fail
-    // @ts-expect-error missing required run
+    // Omitting process should fail
+    // @ts-expect-error missing required process
     const bad3: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
@@ -232,7 +232,7 @@ describe('makeStepHandler<T>', () => {
     // defaulted config() is overridden by options.config()
     expectTypeOf(handler.config).toEqualTypeOf<() => RawConfig>()
 
-    // run has the correct StepRunner signature
+    // process has the correct StepRunner signature
     expectTypeOf(handler.run).toEqualTypeOf<NormalStepRunner<T>>()
 
     // ensure defaulted methods have the right types even if not provided in options
@@ -276,7 +276,7 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler).toExtend<IStepHandler<AnyT>>()
   })
 
-  it('produces a run return type by default', () => {
+  it('produces a process return type by default', () => {
     const options: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,

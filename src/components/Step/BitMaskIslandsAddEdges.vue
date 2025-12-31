@@ -1,9 +1,9 @@
 <script lang="ts">
-import { StepType } from '../../lib/pipeline/Step.ts'
+import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: StepType.NORMAL,
+  type: NodeType.NORMAL,
   def: 'bitmask_islands_add_edges',
   displayName: 'BitMask Islands: Add Edges',
   inputDataTypes: [],
