@@ -111,12 +111,6 @@ const computedSize = computed(() => config.size.value)
 </script>
 <template>
   <StepCard :node="node" show-dimensions>
-    <template #body>
-      {{ node.outputData }}
-
-
-    </template>
-
     <template #footer>
 
       <div class="section">
