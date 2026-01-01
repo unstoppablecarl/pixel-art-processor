@@ -1,6 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.STEP,
@@ -27,7 +28,6 @@ import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoot
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'

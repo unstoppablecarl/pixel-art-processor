@@ -1,6 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.STEP,
@@ -16,7 +17,6 @@ import { ref } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'

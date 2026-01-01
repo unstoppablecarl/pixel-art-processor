@@ -1,6 +1,8 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.STEP,
@@ -15,8 +17,6 @@ export const STEP_META: AnyStepMeta = {
 import { applyInnerGlow, INNER_GLOW_DEFAULTS } from '../../lib/generators/inner-glow.ts'
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
-import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'

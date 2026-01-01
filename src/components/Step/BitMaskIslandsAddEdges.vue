@@ -1,6 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.STEP,
@@ -14,7 +15,6 @@ export const STEP_META: AnyStepMeta = {
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
@@ -112,6 +112,12 @@ const computedSize = computed(() => config.size.value)
 </script>
 <template>
   <StepCard :node="node" show-dimensions>
+    <template #body>
+      {{ node.outputData }}
+
+
+    </template>
+
     <template #footer>
 
       <div class="section">

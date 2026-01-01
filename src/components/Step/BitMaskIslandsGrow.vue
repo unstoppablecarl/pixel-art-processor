@@ -1,6 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.STEP,
@@ -33,7 +34,6 @@ import { perlinGrower } from '../../lib/generators/IslandGrower/PerlinGrower.ts'
 import { weightedRandomGrower } from '../../lib/generators/IslandGrower/WeightedRandomGrower.ts'
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'

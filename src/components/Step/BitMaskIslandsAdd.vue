@@ -1,6 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.STEP,
@@ -20,7 +21,6 @@ import {
 } from '../../lib/generators/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
