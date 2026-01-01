@@ -22,8 +22,9 @@ import {
 import type { AnyStepContext } from '../pipeline/Step.ts'
 import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import type { AnyStepDefinition } from '../pipeline/StepRegistry.ts'
-import type { ImgSize } from '../util/misc.ts'
+import { type ImgSize } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
+import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
 
 type SerializedState = {
   nodes: AnyNodeSerialized[],
@@ -48,7 +49,6 @@ export interface PipelineStore {
   markRootDirty(): void
   rootNode(): AnyNode | undefined
   markDirty(id: NodeId): void
-  schedule(id: NodeId): void
   runNode(id: NodeId): Promise<void>
   add(def: NodeDef, afterId?: NodeId): AnyNode
   addStep(def: NodeDef, prevNodeId?: NodeId): AnyStepNode
@@ -90,14 +90,13 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       remove,
       move,
       markDirty,
-      schedule,
       runNode,
       loadNode,
       initializeNode,
       getStepsAddableAfter,
       duplicateNode,
       getRootNodeOutputSize,
-      getLeafNodes
+      getLeafNodes,
     }
 
     function $reset() {
@@ -316,9 +315,11 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       throw new Error('Unsupported node type in attachAfter')
     }
 
+    const queue = makeNodeRunnerQueue(store)
+
     function markDirty(id: NodeId) {
       get(id).isDirty = true
-      schedule(id)
+      queue(id)
     }
 
     function markRootDirty() {
@@ -326,16 +327,18 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       if (root) markDirty(root.id)
     }
 
-    function schedule(id: NodeId) {
-      if (get(id).isReady(store)) {
-        runNode(id)
-      }
-    }
-
     async function runNode(id: NodeId) {
       const node = get(id)
+
+      // Clear dirty before running
+      node.isDirty = false
+
       await node.processRunner(store)
-      node.childIds(store).forEach(schedule)
+
+      // After running, children become dirty
+      for (const childId of node.childIds(store)) {
+        markDirty(childId)
+      }
     }
 
     function initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T> {

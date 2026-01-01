@@ -16,6 +16,7 @@ export enum NodeType {
   FORK = 'FORK',
   BRANCH = 'BRANCH',
 }
+
 export type NodeId = string & { readonly __nodeIdBrand: unique symbol }
 export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
 
