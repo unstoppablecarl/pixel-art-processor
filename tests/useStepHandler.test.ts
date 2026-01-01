@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
-import { type InitializedNode, type InitializedStepNode, NodeType } from '../src/lib/pipeline/Node.ts'
+import { type InitializedNode, type InitializedStepNode, type NodeDef, NodeType } from '../src/lib/pipeline/Node.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type {
   IStepHandler,
@@ -52,7 +52,7 @@ function defineStep(
     inputDataTypes,
     outputDataType,
   }: {
-    def: string,
+    def: NodeDef,
     displayName?: string,
     type?: NodeType,
     inputDataTypes: readonly StepDataType[],
@@ -92,7 +92,7 @@ describe('step handler type testing', async () => {
     type O = typeof outputDataType
 
     const stepDef = defineStep({
-      def: 'foo',
+      def: 'foo' as NodeDef,
       inputDataTypes,
       outputDataType,
     })

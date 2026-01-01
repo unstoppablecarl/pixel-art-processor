@@ -2,7 +2,7 @@ import { watch } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { usePipelineStore } from '../store/pipeline-store.ts'
 import { logStepWatch } from '../util/misc.ts'
-import type { InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
+import type { InitializedForkNode, InitializedNode, InitializedStepNode, NodeId } from './Node.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
 import type { Config, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
 import type { ForkStepRunner, NormalStepRunner, StepRunner } from './StepRunner.ts'
@@ -11,12 +11,12 @@ function useCoreStepHandler<
   T extends AnyStepContext,
   R extends StepRunner<T>
 >(
-  stepId: string,
+  nodeId: NodeId,
   options: StepHandlerOptions<T, R>,
 ) {
   const store = usePipelineStore()
 
-  const node = store.initializeNode<T>(stepId, options as StepHandlerOptions<T>)
+  const node = store.initializeNode<T>(nodeId, options as StepHandlerOptions<T>)
 
   const watcherTargets = [
     node.config,
@@ -40,7 +40,7 @@ export function useStepHandler<
   I extends readonly StepDataType[],
   O extends StepDataType,
 >(
-  stepId: string,
+  nodeId: NodeId,
   options: StepHandlerOptionsInfer<
     C, SC, RC, I, O,
     NormalStepRunner<StepContext<C, SC, RC, I, O>>
@@ -49,7 +49,7 @@ export function useStepHandler<
   type T = StepContext<C, SC, RC, I, O>
   type R = NormalStepRunner<T>
 
-  return useCoreStepHandler<T, R>(stepId, options) as InitializedStepNode<T, R>
+  return useCoreStepHandler<T, R>(nodeId, options) as InitializedStepNode<T, R>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
@@ -60,7 +60,7 @@ export function useForkHandler<
   I extends readonly StepDataType[],
   O extends StepDataType
 >(
-  stepId: string,
+  nodeId: NodeId,
   options: StepHandlerOptionsInfer<
     C, SC, RC, I, O,
     ForkStepRunner<StepContext<C, SC, RC, I, O>>
@@ -69,5 +69,5 @@ export function useForkHandler<
   type T = StepContext<C, SC, RC, I, O>
   type R = ForkStepRunner<T>
 
-  return useCoreStepHandler<T, ForkStepRunner<T>>(stepId, options) as InitializedForkNode<T, R>
+  return useCoreStepHandler<T, ForkStepRunner<T>>(nodeId, options) as InitializedForkNode<T, R>
 }

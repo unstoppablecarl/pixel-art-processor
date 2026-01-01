@@ -14,13 +14,14 @@ export const STEP_META: AnyStepMeta = {
 
 </script>
 <script setup lang="ts">
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -39,14 +40,14 @@ const step = useStepHandler(stepId, {
     }
   },
 })
-const config = step.config
+const config = node.config
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :node="node">
     <template #footer>
       <div class="section">
         <RangeSlider
-          :id="`${stepId}-normalMapStrength`"
+          :id="`${nodeId}-normalMapStrength`"
           label="Strength"
           v-model:value="config.normalMapStrength"
           :min="0"

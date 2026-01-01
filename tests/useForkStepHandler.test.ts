@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
-import { type InitializedForkNode, type InitializedNode, NodeType } from '../src/lib/pipeline/Node.ts'
+import { type InitializedForkNode, type InitializedNode, type NodeDef, NodeType } from '../src/lib/pipeline/Node.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type {
   IStepHandler,
@@ -61,7 +61,7 @@ function defineStep(
 ) {
   return STEP_REGISTRY.defineStep({
     displayName,
-    def,
+    def: def as NodeDef,
     type,
     inputDataTypes,
     outputDataType,

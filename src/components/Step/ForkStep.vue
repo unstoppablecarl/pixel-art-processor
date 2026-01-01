@@ -10,12 +10,13 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const step = useForkHandler(stepId, {
+const node = useForkHandler(nodeId, {
   ...STEP_META,
   config() {
     return {}
@@ -32,12 +33,12 @@ const step = useForkHandler(stepId, {
 </script>
 <template>
   <StepCard
-    :step="step"
-    :show-add-step-btn="false"
+    :node="node"
+    :show-add-node-btn="false"
     :copyable="false"
     :draggable="false"
     :mutable="false"
-    :sub-header="`: x ${step.branchIds.length}`"
+    :sub-header="`: x ${node.branchIds.length}`"
   >
     <template #footer>
 

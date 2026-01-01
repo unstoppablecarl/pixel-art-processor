@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import type { AnyStepRef } from '../../lib/pipeline/Step.ts'
+import type { AnyNode } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
@@ -15,17 +15,17 @@ const prng = computed(() => makePrng(previewStore.seed))
 
 type ImageOutput = {
   index: number,
-  step: AnyStepRef,
+  node: AnyNode,
   image: ImageData
   key: string,
   encoded: string,
 }
 
-function make(step: AnyStepRef, outputIndex: number, outputPreview: ImageData): ImageOutput {
-  const key = makeImgVar(step, outputIndex)
+function make(node: AnyNode, outputIndex: number, outputPreview: ImageData): ImageOutput {
+  const key = makeImgVar(node, outputIndex)
   const encoded = imageDataToUrlImage(outputPreview)
   return {
-    step,
+    node,
     key,
     index: outputIndex,
     image: outputPreview,
@@ -35,19 +35,19 @@ function make(step: AnyStepRef, outputIndex: number, outputPreview: ImageData): 
 
 const stepOutputImages = computed(() => {
   let result: ImageOutput[] = []
-  store.stepLeaves.forEach(step => {
-    if (!step.outputPreview) return
+  store.getLeafNodes().forEach(node => {
+    if (!node.outputPreview) return
 
-    normalizeValueToArray(step.outputPreview)
+    normalizeValueToArray(node.outputPreview)
       .forEach((p, index) => {
-        result.push(make(step, index, p))
+        result.push(make(node, index, p))
       })
   })
   return result
 })
 
 const size = computed(() => {
-  let { width, height } = store.startStepOutputSize
+  let { width, height } = store.getRootNodeOutputSize()
   width *= previewStore.scale
   height *= previewStore.scale
 
@@ -57,36 +57,36 @@ const size = computed(() => {
 const cssStyle = computed(() => {
   const { width, height } = size.value
   return [
-    `--step-img-width: ${width}px;`,
-    `--step-img-height: ${height}px;`,
-    `--step-img-final-preview-size: ${width}px ${height}px;`,
+    `--node-img-width: ${width}px;`,
+    `--node-img-height: ${height}px;`,
+    `--node-img-final-preview-size: ${width}px ${height}px;`,
     ...cssImageVars.value,
   ].join(' ')
 })
 
 const IMAGE_VAR_PREFIX = `--preview-img-list-`
-const makeImgVar = (step: AnyStepRef, index: number) => IMAGE_VAR_PREFIX + step.id + index
+const makeImgVar = (node: AnyNode, index: number) => IMAGE_VAR_PREFIX + node.id + index
 
-const cssImageVars = computed(() => stepOutputImages.value.map(({ step, image }, i) => {
+const cssImageVars = computed(() => stepOutputImages.value.map(({ node, image }, i) => {
     const encoded = imageDataToUrlImage(image)
-    const key = makeImgVar(step, i)
+    const key = makeImgVar(node, i)
     return `${key}: url(${encoded});`
   },
 ))
 
 const grid = computed(() => {
-    const result: { index: number, cssStyle: string, step: AnyStepRef }[][] = []
+    const result: { index: number, cssStyle: string, node: AnyNode }[][] = []
     for (let i = 0; i < previewStore.gridHeight; i++) {
       result[i] = []
       for (let j = 0; j < previewStore.gridWidth; j++) {
 
         const index = prng.value.randomArrayIndex(stepOutputImages.value)
-        const step = stepOutputImages.value[index].step
+        const node = stepOutputImages.value[index].node
 
         result[i][j] = {
           index,
-          cssStyle: `--step-img-final-preview: var(${makeImgVar(step, index)});`,
-          step: step,
+          cssStyle: `--node-img-final-preview: var(${makeImgVar(node, index)});`,
+          node: node,
         }
       }
     }
@@ -114,7 +114,7 @@ const grid = computed(() => {
                id="scale"
                min="1"
                max="10"
-               step="1"
+               node="1"
                style="width: 150px;"
                v-model.number="previewStore.scale"
         >
@@ -126,7 +126,7 @@ const grid = computed(() => {
           <BFormInput
             id="preview-width"
             type="number"
-            step="1"
+            node="1"
             min="1"
             v-model.number="previewStore.gridWidth"
             style="width: 100px"
@@ -140,7 +140,7 @@ const grid = computed(() => {
           <BFormInput
             id="preview-height"
             type="number"
-            step="1"
+            node="1"
             min="1"
             v-model.number="previewStore.gridHeight"
             style="width: 100px"
@@ -154,7 +154,7 @@ const grid = computed(() => {
           <BFormInput
             id="preview-seed"
             type="number"
-            step="1"
+            node="1"
             min="1"
             v-model.number="previewStore.seed"
             style="width: 100px"
@@ -166,10 +166,10 @@ const grid = computed(() => {
     </div>
     <div class="min-vh-100 final-preview" v-if="stepOutputImages.length">
       <div v-for="row in grid" class="preview-row">
-        <div v-for="{index, cssStyle, step} in row" :style="cssStyle" class="preview-cell">
+        <div v-for="{index, cssStyle, node} in row" :style="cssStyle" class="preview-cell">
           <div class="label">
             <div>index: {{ index }}</div>
-            <div>id: {{ step.id }}</div>
+            <div>id: {{ node.id }}</div>
           </div>
         </div>
       </div>
@@ -179,16 +179,16 @@ const grid = computed(() => {
 <style lang="scss">
 
 .preview-row {
-  height: var(--step-img-height);
+  height: var(--node-img-height);
 }
 
 .preview-cell {
   display: inline-block;
-  background-image: var(--step-img-final-preview);
-  background-size: var(--step-img-final-preview-size);
+  background-image: var(--node-img-final-preview);
+  background-size: var(--node-img-final-preview-size);
 
-  width: var(--step-img-width);
-  height: var(--step-img-height);
+  width: var(--node-img-width);
+  height: var(--node-img-height);
 
   image-rendering: pixelated;
   image-rendering: -moz-crisp-edges;

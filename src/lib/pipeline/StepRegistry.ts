@@ -3,8 +3,8 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyNode, NodeType } from './Node.ts'
-import { type AnyStepContext} from './Step.ts'
+import { type AnyNode, type NodeDef, NodeType } from './Node.ts'
+import { type AnyStepContext } from './Step.ts'
 import type { StepHandlerOptions } from './StepHandler.ts'
 import type { StepMeta } from './StepMeta.ts'
 
@@ -15,7 +15,7 @@ export type StepDefinition<
   O extends StepDataType,
 > = {
   readonly component: Component,
-} & StepMeta<I, O>
+} & Omit<StepMeta<I, O>, 'def'> & { def: NodeDef }
 
 export type StepDefinitions = Record<string, AnyStepDefinition>
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
@@ -145,4 +145,4 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   }
 }
 
-export const BRANCH_DEF = 'branch_node'
+export const BRANCH_DEF = 'branch_node' as NodeDef

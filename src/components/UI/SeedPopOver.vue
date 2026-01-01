@@ -31,7 +31,7 @@ function reset(){
         type="number"
         class="form-control seed-input"
         min="0"
-        step="1"
+        node="1"
         v-model="model"
       />
       <button

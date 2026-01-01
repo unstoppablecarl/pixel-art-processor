@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
+import type { NodeDef, NodeId } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
 const store = usePipelineStore()
 
 const {
-  stepId,
+  nodeId,
 } = defineProps<{
-  stepId: string,
+  nodeId: NodeId,
 }>()
 
-const addableSteps = computed(() => store.getStepsAddableAfter(stepId))
+const addableSteps = computed(() => store.getStepsAddableAfter(nodeId))
 
-function addAfter(def: string) {
-  store.add(def, stepId)
+function addAfter(def: NodeDef) {
+  store.add(def, nodeId)
 }
 </script>
 <template>

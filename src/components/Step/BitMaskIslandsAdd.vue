@@ -18,6 +18,7 @@ import {
   DEFAULT_SHOW_ISLANDS,
   islandCheckboxColors,
 } from '../../lib/generators/island-ui.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { parseColorData } from '../../lib/util/color.ts'
@@ -29,9 +30,9 @@ import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { BTab, BTabs } from 'bootstrap-vue-next'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -83,11 +84,11 @@ const step = useStepHandler(stepId, {
   },
 })
 
-const config = step.config
+const config = node.config
 
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :node="node">
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"
@@ -102,22 +103,22 @@ const config = step.config
             v-model:maxValue="config.maxDistance "
             :show-inputs="false"
             :min="0"
-            :max="step.outputData?.width ?? 400"
+            :max="node.outputData?.width ?? 400"
             :step="1"
             label="Min/Max Dist:"
           />
 
           <RangeSlider
-            :id="`${stepId}-border-buffer`"
+            :id="`${nodeId}-border-buffer`"
             label="Border Buffer"
             v-model:value="config.borderBuffer"
             :min="0"
-            :max="step.outputData?.width ?? 400"
+            :max="node.outputData?.width ?? 400"
             :step="1"
           />
 
           <RangeSlider
-            :id="`${stepId}-tries`"
+            :id="`${nodeId}-tries`"
             label="Tries"
             v-model:value="config.tries"
             :min="1"
@@ -126,7 +127,7 @@ const config = step.config
           />
 
           <RangeSlider
-            :id="`${stepId}-population-factor`"
+            :id="`${nodeId}-population-factor`"
             label="Pop Factor"
             tool-tip="Percentage of points to keep"
             v-model:value="config.populationFactor"

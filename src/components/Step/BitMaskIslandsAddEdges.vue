@@ -12,6 +12,7 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
@@ -21,7 +22,7 @@ import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const CONFIG_DEFAULTS = {
   size: rangeSliderConfig({
@@ -51,7 +52,7 @@ const CONFIG_DEFAULTS = {
   padding: 4,
 }
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -105,18 +106,18 @@ const step = useStepHandler(stepId, {
   },
 })
 
-const config = step.config!
+const config = node.config!
 
 const computedSize = computed(() => config.size.value)
 </script>
 <template>
-  <StepCard :step="step" show-dimensions>
+  <StepCard :node="node" show-dimensions>
     <template #footer>
 
       <div class="section">
 
         <RangeSlider
-          :id="`${stepId}-size`"
+          :id="`${nodeId}-size`"
           label="Size"
           :defaults="CONFIG_DEFAULTS.size"
           v-model:value="config.size.value"
@@ -126,7 +127,7 @@ const computedSize = computed(() => config.size.value)
         />
 
         <RangeBandSlider
-          :id="`${stepId}-gap-size`"
+          :id="`${nodeId}-gap-size`"
           label="Gap Size"
           :min="0"
           :max="computedSize"
@@ -135,7 +136,7 @@ const computedSize = computed(() => config.size.value)
         />
 
         <RangeBandSlider
-          :id="`${stepId}-chunk-size`"
+          :id="`${nodeId}-chunk-size`"
           label="Chunk Size"
           :min="0"
           :max="computedSize"
@@ -144,7 +145,7 @@ const computedSize = computed(() => config.size.value)
         />
 
         <RangeSlider
-          :id="`${stepId}-padding`"
+          :id="`${nodeId}-padding`"
           label="Padding"
           v-model:value="config.padding"
           :min="0"
@@ -165,7 +166,7 @@ const computedSize = computed(() => config.size.value)
         </div>
 
         <RangeSlider
-          :id="`${stepId}-horizontal-chunks`"
+          :id="`${nodeId}-horizontal-chunks`"
           label="Horizontal Chunks"
           :defaults="CONFIG_DEFAULTS.horizontalChunks"
           v-model:value="config.horizontalChunks.value"
@@ -175,7 +176,7 @@ const computedSize = computed(() => config.size.value)
         />
 
         <NumberInput
-          :id="`${stepId}-horizontal-chunks-shuffle`"
+          :id="`${nodeId}-horizontal-chunks-shuffle`"
           label="Shuffle Seed"
           :step="1"
           :min="0"
@@ -195,7 +196,7 @@ const computedSize = computed(() => config.size.value)
         </div>
 
         <RangeSlider
-          :id="`${stepId}-vertical-chunks`"
+          :id="`${nodeId}-vertical-chunks`"
           label="Vertical Chunks"
           :defaults="CONFIG_DEFAULTS.verticalChunks"
           v-model:value="config.verticalChunks.value"
@@ -205,7 +206,7 @@ const computedSize = computed(() => config.size.value)
         />
 
         <NumberInput
-          :id="`${stepId}-vertical-chunks-shuffle`"
+          :id="`${nodeId}-vertical-chunks-shuffle`"
           label="Shuffle Seed"
           :step="1"
           :min="0"

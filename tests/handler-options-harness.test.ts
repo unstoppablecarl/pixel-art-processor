@@ -11,7 +11,7 @@ class TypeB {
 class TypeC {
 }
 
-type StepDataType =
+type NodeDataType =
   | typeof TypeA
   | typeof TypeB
   | typeof TypeC
@@ -42,42 +42,42 @@ function serializeImageData(imageData: ImageData | null): SerializedImageData | 
   }
 }
 
-type StepValidationError = {}
+type NodeValidationError = {}
 
-type ConfiguredStep<T extends AnyStepContext> =
-  Required<Omit<Step<T>, 'config' | 'handler'>>
+type ConfiguredNode<T extends AnyNodeContext> =
+  Required<Omit<Node<T>, 'config' | 'handler'>>
   & {
-  config: NonNullable<Step<T>['config']>,
-  handler: NonNullable<Step<T>['handler']>,
+  config: NonNullable<Node<T>['config']>,
+  handler: NonNullable<Node<T>['handler']>,
 }
 
 type WatcherTarget = {}
-type StepRunner<T extends AnyStepContext> = ({ config, inputData }: {
+type NodeRunner<T extends AnyNodeContext> = ({ config, inputData }: {
   config: T['RC'],
   inputData: T['Input'] | null,
-}) => StepRunnerOutputMaybePromise<T['Output']>
+}) => NodeRunnerOutputMaybePromise<T['Output']>
 
-type StepRunnerOutputMaybePromise<Output> =
-  | StepRunnerOutput<Output>
-  | Promise<StepRunnerOutput<Output>>
+type NodeRunnerOutputMaybePromise<Output> =
+  | NodeRunnerOutput<Output>
+  | Promise<NodeRunnerOutput<Output>>
 
-type StepRunnerOutput<Output> = null |
+type NodeRunnerOutput<Output> = null |
   undefined | {
   output: Output | null | undefined,
 }
 
 type Config = Record<string, any>
 
-type Step<T extends AnyStepContext> = {
+type Node<T extends AnyNodeContext> = {
   readonly id: string,
   readonly def: string,
   inputData: T['Input'] extends null ? null : T['Input'] | null,
   outputData: T['Output'] | T['Output'][] | null,
   config: T['RC'] | undefined,
-  handler: IStepHandler<T> | undefined,
+  handler: INodeHandler<T> | undefined,
 }
 
-interface IStepHandler<T extends AnyStepContext> {
+interface INodeHandler<T extends AnyNodeContext> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
 
@@ -88,7 +88,7 @@ interface IStepHandler<T extends AnyStepContext> {
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(node: ConfiguredNode<T>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -99,31 +99,31 @@ interface IStepHandler<T extends AnyStepContext> {
   // convert config from storage
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
 
-  // validate the prevStep.outputDataType against currentStep.inputDataType
-  validateInput(inputData: T['Input'], typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
+  // validate the prevNode.outputDataType against currentNode.inputDataType
+  validateInput(inputData: T['Input'], typeFromPrevOutput: T['Input'], inputDataTypes: T['InputConstructors']): NodeValidationError[],
 
-  run: StepRunner<T>,
+  run: NodeRunner<T>,
 }
 
-type StepInputTypesToInstances<Input extends readonly StepDataType[] = readonly StepDataType[]> = Input extends readonly []
-  // first steps do not have input so convert [] to null
+type NodeInputTypesToInstances<Input extends readonly NodeDataType[] = readonly NodeDataType[]> = Input extends readonly []
+  // first nodes do not have input so convert [] to null
   ? null
-  : Input[number] extends StepDataType
+  : Input[number] extends NodeDataType
     // convert array of constructors to union of instances
     ? InstanceType<Input[number]>
     : never
 
 type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;
 
-type AnyStepContext = StepContext<any, any, any, any, any>
+type AnyNodeContext = NodeContext<any, any, any, any, any>
 
 // Strict version for this harness (no defaults)
-type StepContext<
+type NodeContext<
   C extends Config,
   SerializedConfig extends Config,
   RC extends ReactiveConfigType<C>,
-  Input extends readonly StepDataType[],
-  Output extends StepDataType,
+  Input extends readonly NodeDataType[],
+  Output extends NodeDataType,
 > = {
   C: C,
   SerializedConfig: SerializedConfig,
@@ -131,10 +131,10 @@ type StepContext<
   OutputConstructors: Output,
   InputConstructors: Input,
   Output: InstanceType<Output>,
-  Input: StepInputTypesToInstances<Input>,
+  Input: NodeInputTypesToInstances<Input>,
 }
 
-type StepHandlerOptions<T extends AnyStepContext> = {
+type NodeHandlerOptions<T extends AnyNodeContext> = {
   inputDataTypes: T['InputConstructors']
   outputDataType: T['OutputConstructors']
 
@@ -145,7 +145,7 @@ type StepHandlerOptions<T extends AnyStepContext> = {
   deserializeConfig: (config: T['SerializedConfig']) => T['C']
 
   watcher: (
-    step: ConfiguredStep<T>,
+    node: ConfiguredNode<T>,
   ) => void
 
   loadConfig: (config: T['RC'], serialized: T['SerializedConfig']) => void
@@ -154,9 +154,9 @@ type StepHandlerOptions<T extends AnyStepContext> = {
     inputData: T['Input'],
     typeFromPrev: T['Input'],
     inputTypes: T['InputConstructors'],
-  ) => StepValidationError[],
+  ) => NodeValidationError[],
 
-  run: StepRunner<T>
+  run: NodeRunner<T>
 }
 
 const inputDataTypes = [TypeB, TypeA] as const
@@ -175,12 +175,12 @@ type O = typeof outputDataType
 type InputInstances = TypeA | TypeB
 type OutputInstance = TypeC
 
-type StepHandlerOptionsInfer<
+type NodeHandlerOptionsInfer<
   C extends Config,
   SC extends Config,
   RC extends ReactiveConfigType<C>,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
 > = {
   inputDataTypes: I
   outputDataType: O
@@ -192,24 +192,24 @@ type StepHandlerOptionsInfer<
   serializeConfig: (config: C) => SC
   deserializeConfig: (config: SC) => C
 
-  watcher?: (step: ConfiguredStep<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcher?: (node: ConfiguredNode<NodeContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
   loadConfig: (config: RC, serialized: SC) => void
 
   validateInput: (
-    inputData: StepInputTypesToInstances<I>,
-    typeFromPrev: StepInputTypesToInstances<I>,
+    inputData: NodeInputTypesToInstances<I>,
+    typeFromPrev: NodeInputTypesToInstances<I>,
     inputTypes: I,
-  ) => StepValidationError[]
+  ) => NodeValidationError[]
 
-  run: StepRunner<StepContext<C, SC, RC, I, O>>
+  run: NodeRunner<NodeContext<C, SC, RC, I, O>>
 }
 
-type T = StepContext<C, SC, RC, I, O>
-type Options = StepHandlerOptions<T>
+type T = NodeContext<C, SC, RC, I, O>
+type Options = NodeHandlerOptions<T>
 
 type Optional<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
 
-type StepHandlerOptional =
+type NodeHandlerOptional =
   | 'watcher'
   | 'serializeConfig'
   | 'deserializeConfig'
@@ -218,15 +218,15 @@ type StepHandlerOptional =
   | 'loadConfig'
   | 'validateInput'
 
-type StepHandlerOptionsOptional<T extends AnyStepContext> =
-  Optional<IStepHandler<T>, StepHandlerOptional>
+type NodeHandlerOptionsOptional<T extends AnyNodeContext> =
+  Optional<INodeHandler<T>, NodeHandlerOptional>
 
-function makeStepHandler<T extends AnyStepContext>(
+function makeNodeHandler<T extends AnyNodeContext>(
   def: string,
-  options: StepHandlerOptionsOptional<T>,
-): IStepHandler<T> {
+  options: NodeHandlerOptionsOptional<T>,
+): INodeHandler<T> {
 
-  const base: Omit<IStepHandler<T>, 'run'> = {
+  const base: Omit<INodeHandler<T>, 'run'> = {
     inputDataTypes: options.inputDataTypes,
     outputDataType: options.outputDataType,
 
@@ -238,7 +238,7 @@ function makeStepHandler<T extends AnyStepContext>(
       return reactive(defaults) as T['RC']
     },
 
-    watcher(step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]) {
+    watcher(node: ConfiguredNode<T>, defaultWatcherTargets: WatcherTarget[]) {
       return []
     },
 
@@ -259,7 +259,7 @@ function makeStepHandler<T extends AnyStepContext>(
     validateInput(
       inputData: T['Input'],
       inputDataTypes: T['InputConstructors'],
-    ): StepValidationError[] {
+    ): NodeValidationError[] {
       return []
     },
   }
@@ -268,23 +268,23 @@ function makeStepHandler<T extends AnyStepContext>(
   return {
     ...base,
     ...options,
-  } as IStepHandler<T>
+  } as INodeHandler<T>
 }
 
-function registerStep<T extends AnyStepContext>(
-  stepId: string,
-  handlerOptions: StepHandlerOptionsOptional<T>,
+function registerNode<T extends AnyNodeContext>(
+  nodeId: string,
+  handlerOptions: NodeHandlerOptionsOptional<T>,
 ): {
-  step: Step<T>,
-  handler: IStepHandler<T>
+  node: Node<T>,
+  handler: INodeHandler<T>
 } {
-  const step = {} as ConfiguredStep<T>
+  const node = {} as ConfiguredNode<T>
 
-  const handler = makeStepHandler<T>('test', handlerOptions)
-  step.handler = handler
+  const handler = makeNodeHandler<T>('test', handlerOptions)
+  node.handler = handler
 
   return {
-    step,
+    node,
     handler,
   }
 }
@@ -321,9 +321,9 @@ describe('handler harness tests', () => {
         } as C
       },
 
-      watcher(step) {
-        expectTypeOf(step).toExtend<ConfiguredStep<T>>()
-        expectTypeOf(step.config).toExtend<ConfiguredStep<T>['config']>()
+      watcher(node) {
+        expectTypeOf(node).toExtend<ConfiguredNode<T>>()
+        expectTypeOf(node.config).toExtend<ConfiguredNode<T>['config']>()
 
         return [] as WatcherTarget[]
       },
@@ -334,7 +334,7 @@ describe('handler harness tests', () => {
 
       validateInput(inputData) {
         expectTypeOf(inputData).toEqualTypeOf<InputInstances>()
-        return [] as StepValidationError[]
+        return [] as NodeValidationError[]
       },
       run({ config, inputData }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
@@ -351,26 +351,26 @@ describe('handler harness tests', () => {
       C extends Config,
       SC extends Config,
       RC extends ReactiveConfigType<C>,
-      I extends readonly StepDataType[],
-      O extends StepDataType,
+      I extends readonly NodeDataType[],
+      O extends NodeDataType,
     >(
-      options: StepHandlerOptions<StepContext<C, SC, RC, I, O>>,
+      options: NodeHandlerOptions<NodeContext<C, SC, RC, I, O>>,
       _configExample: C,
       _serializedConfigExample: SC,
       _inputExample: I,
       _outputExample: O,
     ) {
-      type T = StepContext<C, SC, RC, I, O>
+      type T = NodeContext<C, SC, RC, I, O>
 
-      expectTypeOf(options).toExtend<StepHandlerOptions<T>>()
+      expectTypeOf(options).toExtend<NodeHandlerOptions<T>>()
 
-      expectTypeOf<StepHandlerOptions<T>['serializeConfig']>()
+      expectTypeOf<NodeHandlerOptions<T>['serializeConfig']>()
         .toEqualTypeOf<(config: C) => SC>()
-      expectTypeOf<StepHandlerOptions<T>['deserializeConfig']>()
+      expectTypeOf<NodeHandlerOptions<T>['deserializeConfig']>()
         .toEqualTypeOf<(config: SC) => C>()
 
-      expectTypeOf<StepHandlerOptions<T>['run']>()
-        .toEqualTypeOf<StepRunner<T>>()
+      expectTypeOf<NodeHandlerOptions<T>['run']>()
+        .toEqualTypeOf<NodeRunner<T>>()
     }
 
     assertHandlerOptions<C, SC, RC, I, O>(
@@ -399,7 +399,7 @@ describe('handler harness tests', () => {
           }
         },
 
-        watcher(step) {
+        watcher(node) {
           return []
         },
         loadConfig(config, serialized) {
@@ -424,29 +424,29 @@ describe('handler harness tests', () => {
       C extends Config,
       SC extends Config,
       RC extends ReactiveConfigType<C>,
-      I extends readonly StepDataType[],
-      O extends StepDataType,
+      I extends readonly NodeDataType[],
+      O extends NodeDataType,
     >(
-      options: StepHandlerOptions<StepContext<C, SC, RC, I, O>>,
+      options: NodeHandlerOptions<NodeContext<C, SC, RC, I, O>>,
       _configExample: C,
       _serializedConfigExample: SC,
       _inputExample: I,
       _outputExample: O,
     ) {
-      type T = StepContext<C, SC, RC, I, O>
+      type T = NodeContext<C, SC, RC, I, O>
 
       // 1) Core identity: the options *are* handler options for T
-      expectTypeOf(options).toExtend<StepHandlerOptions<T>>()
+      expectTypeOf(options).toExtend<NodeHandlerOptions<T>>()
 
       // 3) Config relationships
-      expectTypeOf<StepHandlerOptions<T>['serializeConfig']>()
+      expectTypeOf<NodeHandlerOptions<T>['serializeConfig']>()
         .toEqualTypeOf<(config: C) => SC>()
-      expectTypeOf<StepHandlerOptions<T>['deserializeConfig']>()
+      expectTypeOf<NodeHandlerOptions<T>['deserializeConfig']>()
         .toEqualTypeOf<(config: SC) => C>()
 
       // 4) Run signature
-      expectTypeOf<StepHandlerOptions<T>['run']>()
-        .toEqualTypeOf<StepRunner<T>>()
+      expectTypeOf<NodeHandlerOptions<T>['run']>()
+        .toEqualTypeOf<NodeRunner<T>>()
     }
 
     assertHandlerOptions<C, SC, RC, I, O>(
@@ -478,7 +478,7 @@ describe('handler harness tests', () => {
           }
         },
 
-        watcher(step) {
+        watcher(node) {
           return []
         },
         loadConfig(config, serialized) {
@@ -497,9 +497,9 @@ describe('handler harness tests', () => {
     )
   })
 
-  it('makeStepHandler with 2 input types', async () => {
+  it('makeNodeHandler with 2 input types', async () => {
 
-    const handler = makeStepHandler<T>('foo', {
+    const handler = makeNodeHandler<T>('foo', {
       inputDataTypes,
       outputDataType,
       config(): RC {
@@ -522,8 +522,8 @@ describe('handler harness tests', () => {
         }
       },
 
-      watcher(step): WatcherTarget[] {
-        expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
+      watcher(node): WatcherTarget[] {
+        expectTypeOf(node).toEqualTypeOf<ConfiguredNode<T>>()
         return []
       },
       loadConfig(config, serialized): void {
@@ -542,11 +542,11 @@ describe('handler harness tests', () => {
       },
     })
 
-    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
+    expectTypeOf(handler).toEqualTypeOf<INodeHandler<T>>()
   })
 
-  it('registerStep', async () => {
-    const { step, handler } = registerStep<T>('foo', {
+  it('registerNode', async () => {
+    const { node, handler } = registerNode<T>('foo', {
       inputDataTypes,
       outputDataType,
       config(): RC {
@@ -569,8 +569,8 @@ describe('handler harness tests', () => {
         }
       },
 
-      watcher(step): WatcherTarget[] {
-        expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
+      watcher(node): WatcherTarget[] {
+        expectTypeOf(node).toEqualTypeOf<ConfiguredNode<T>>()
         return []
       },
       loadConfig(config, serialized): void {
@@ -590,8 +590,8 @@ describe('handler harness tests', () => {
       },
     })
 
-    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
-    expectTypeOf(step).toEqualTypeOf<Step<T>>()
+    expectTypeOf(handler).toEqualTypeOf<INodeHandler<T>>()
+    expectTypeOf(node).toEqualTypeOf<Node<T>>()
   })
 
   it('generic handler', () => {
@@ -599,16 +599,16 @@ describe('handler harness tests', () => {
       C extends Config,
       SC extends Config,
       RC extends ReactiveConfigType<C>,
-      I extends readonly StepDataType[],
-      O extends StepDataType,
+      I extends readonly NodeDataType[],
+      O extends NodeDataType,
     >(
-      stepId: string,
-      options: StepHandlerOptionsInfer<C, SC, RC, I, O>,
+      nodeId: string,
+      options: NodeHandlerOptionsInfer<C, SC, RC, I, O>,
     ) {
-      return {} as ConfiguredStep<StepContext<C, SC, RC, I, O>>
+      return {} as ConfiguredNode<NodeContext<C, SC, RC, I, O>>
     }
 
-    const step = useGenericHandler('testing', {
+    const node = useGenericHandler('testing', {
       inputDataTypes,
       outputDataType,
 
@@ -636,7 +636,7 @@ describe('handler harness tests', () => {
         }
       },
 
-      watcher(step) {
+      watcher(node) {
         return []
       },
       loadConfig(config, serialized) {
@@ -649,7 +649,7 @@ describe('handler harness tests', () => {
       },
     })
 
-    expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
+    expectTypeOf(node).toExtend<ConfiguredNode<NodeContext<C, SC, RC, I, O>>>()
   })
 
   it('realistic handler', () => {
@@ -658,22 +658,22 @@ describe('handler harness tests', () => {
       C extends Config,
       SC extends Config,
       RC extends ReactiveConfigType<C>,
-      I extends readonly StepDataType[],
-      O extends StepDataType,
+      I extends readonly NodeDataType[],
+      O extends NodeDataType,
     >(
-      stepId: string,
-      options: StepHandlerOptionsInfer<C, SC, RC, I, O>,
+      nodeId: string,
+      options: NodeHandlerOptionsInfer<C, SC, RC, I, O>,
     ) {
 
-      type T = StepContext<C, SC, RC, I, O>
-      const { step, handler } = registerStep<T>(stepId, options)
+      type T = NodeContext<C, SC, RC, I, O>
+      const { node, handler } = registerNode<T>(nodeId, options)
 
-      expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
+      expectTypeOf(handler).toEqualTypeOf<INodeHandler<T>>()
 
-      return step as ConfiguredStep<T>
+      return node as ConfiguredNode<T>
     }
 
-    const step = useTestHandler('testing', {
+    const node = useTestHandler('testing', {
       inputDataTypes,
       outputDataType,
 
@@ -705,9 +705,9 @@ describe('handler harness tests', () => {
         } as C
       },
 
-      watcher(step, defaultWatcherTargets) {
-        expectTypeOf(step).toExtend<ConfiguredStep<T>>()
-        expectTypeOf(step.config).toExtend<ConfiguredStep<T>['config']>()
+      watcher(node, defaultWatcherTargets) {
+        expectTypeOf(node).toExtend<ConfiguredNode<T>>()
+        expectTypeOf(node.config).toExtend<ConfiguredNode<T>['config']>()
 
         expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
 
@@ -721,7 +721,7 @@ describe('handler harness tests', () => {
       },
       validateInput(inputData) {
         expectTypeOf(inputData).toEqualTypeOf<InputInstances>()
-        return [] as StepValidationError[]
+        return [] as NodeValidationError[]
       },
       run({ config, inputData }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
@@ -735,85 +735,85 @@ describe('handler harness tests', () => {
     })
 
     // should work with the prev declared T as well
-    type T = typeof step extends ConfiguredStep<infer U> ? U : never
+    type T = typeof node extends ConfiguredNode<infer U> ? U : never
 
-    expectTypeOf<T>().toEqualTypeOf<StepContext<C, SC, RC, I, O>>()
-    expectTypeOf(step).not.toEqualTypeOf<ConfiguredStep<AnyStepContext>>()
-    expectTypeOf(step).toExtend<ConfiguredStep<StepContext<C, SC, RC, I, O>>>()
-    expectTypeOf(step).toEqualTypeOf<ConfiguredStep<T>>()
+    expectTypeOf<T>().toEqualTypeOf<NodeContext<C, SC, RC, I, O>>()
+    expectTypeOf(node).not.toEqualTypeOf<ConfiguredNode<AnyNodeContext>>()
+    expectTypeOf(node).toExtend<ConfiguredNode<NodeContext<C, SC, RC, I, O>>>()
+    expectTypeOf(node).toEqualTypeOf<ConfiguredNode<T>>()
 
-    expectTypeOf(step.inputData).toEqualTypeOf<InputInstances | null>()
-    expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | OutputInstance[] | null>()
+    expectTypeOf(node.inputData).toEqualTypeOf<InputInstances | null>()
+    expectTypeOf(node.outputData).toEqualTypeOf<OutputInstance | OutputInstance[] | null>()
 
-    expectTypeOf(step.handler.run).toEqualTypeOf<
-      IStepHandler<T>['run']
+    expectTypeOf(node.handler.run).toEqualTypeOf<
+      INodeHandler<T>['run']
     >()
-    expectTypeOf(step.handler.run).toEqualTypeOf<
-      StepRunner<T>
+    expectTypeOf(node.handler.run).toEqualTypeOf<
+      NodeRunner<T>
     >()
-    expectTypeOf(step.handler.run).toEqualTypeOf<
+    expectTypeOf(node.handler.run).toEqualTypeOf<
       ({ config, inputData }: {
         config: RC,
         inputData: InputInstances | null
-      }) => StepRunnerOutputMaybePromise<OutputInstance>
+      }) => NodeRunnerOutputMaybePromise<OutputInstance>
     >()
-    expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
+    expectTypeOf(node.handler.run).parameters.toEqualTypeOf<[
       { config: RC, inputData: InputInstances | null }
     ]>()
-    expectTypeOf(step.handler.run).returns.toEqualTypeOf<
-      StepRunnerOutputMaybePromise<OutputInstance>
+    expectTypeOf(node.handler.run).returns.toEqualTypeOf<
+      NodeRunnerOutputMaybePromise<OutputInstance>
     >()
 
-    expectTypeOf(step.handler.config).toEqualTypeOf<
-      IStepHandler<T>['config']
+    expectTypeOf(node.handler.config).toEqualTypeOf<
+      INodeHandler<T>['config']
     >()
-    expectTypeOf(step.handler.config).toEqualTypeOf<
+    expectTypeOf(node.handler.config).toEqualTypeOf<
       () => C
     >()
 
-    expectTypeOf(step.handler.reactiveConfig).toEqualTypeOf<
-      IStepHandler<T>['reactiveConfig']
+    expectTypeOf(node.handler.reactiveConfig).toEqualTypeOf<
+      INodeHandler<T>['reactiveConfig']
     >()
-    expectTypeOf(step.handler.reactiveConfig).toEqualTypeOf<
+    expectTypeOf(node.handler.reactiveConfig).toEqualTypeOf<
       (defaults: C) => RC
     >()
 
-    expectTypeOf(step.handler.watcher).toEqualTypeOf<
-      IStepHandler<T>['watcher']
+    expectTypeOf(node.handler.watcher).toEqualTypeOf<
+      INodeHandler<T>['watcher']
     >()
-    expectTypeOf(step.handler.watcher).toEqualTypeOf<
-      (step: ConfiguredStep<T>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+    expectTypeOf(node.handler.watcher).toEqualTypeOf<
+      (node: ConfiguredNode<T>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
     >()
 
-    expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
-      IStepHandler<T>['serializeConfig']
+    expectTypeOf(node.handler.serializeConfig).toEqualTypeOf<
+      INodeHandler<T>['serializeConfig']
     >()
-    expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
+    expectTypeOf(node.handler.serializeConfig).toEqualTypeOf<
       ((config: C) => SC)
     >()
 
-    expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
-      IStepHandler<T>['deserializeConfig']
+    expectTypeOf(node.handler.deserializeConfig).toEqualTypeOf<
+      INodeHandler<T>['deserializeConfig']
     >()
-    expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
+    expectTypeOf(node.handler.deserializeConfig).toEqualTypeOf<
       ((config: SC) => C)
     >()
 
-    expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
-      IStepHandler<T>['loadConfig']
+    expectTypeOf(node.handler.loadConfig).toEqualTypeOf<
+      INodeHandler<T>['loadConfig']
     >()
-    expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
+    expectTypeOf(node.handler.loadConfig).toEqualTypeOf<
       (config: RC, serializedConfig: SC) => void
     >()
 
-    expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-      IStepHandler<T>['validateInput']
+    expectTypeOf(node.handler.validateInput).toEqualTypeOf<
+      INodeHandler<T>['validateInput']
     >()
-    expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-      ((inputData: T['Input'], typeFromPrevOutput: InputInstances, inputDataTypes: T['InputConstructors']) => StepValidationError[])
+    expectTypeOf(node.handler.validateInput).toEqualTypeOf<
+      ((inputData: T['Input'], typeFromPrevOutput: InputInstances, inputDataTypes: T['InputConstructors']) => NodeValidationError[])
     >()
 
-    expectTypeOf(step.handler.inputDataTypes).toEqualTypeOf<IStepHandler<T>['inputDataTypes']>()
-    expectTypeOf(step.handler.outputDataType).toEqualTypeOf<IStepHandler<T>['outputDataType']>()
+    expectTypeOf(node.handler.inputDataTypes).toEqualTypeOf<INodeHandler<T>['inputDataTypes']>()
+    expectTypeOf(node.handler.outputDataType).toEqualTypeOf<INodeHandler<T>['outputDataType']>()
   })
 })

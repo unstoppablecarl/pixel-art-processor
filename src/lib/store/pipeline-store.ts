@@ -22,6 +22,7 @@ import {
 import type { AnyStepContext } from '../pipeline/Step.ts'
 import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import type { AnyStepDefinition } from '../pipeline/StepRegistry.ts'
+import type { ImgSize } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 
 type SerializedState = {
@@ -59,6 +60,8 @@ export interface PipelineStore {
   initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T>
   getStepsAddableAfter(id: NodeId): AnyStepDefinition[]
   duplicateNode(id: NodeId): NodeId
+  getRootNodeOutputSize(): ImgSize
+  getLeafNodes(): AnyNode[]
 }
 
 export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
@@ -93,6 +96,8 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       initializeNode,
       getStepsAddableAfter,
       duplicateNode,
+      getRootNodeOutputSize,
+      getLeafNodes
     }
 
     function $reset() {
@@ -443,6 +448,18 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       }
 
       return cloneRoot.id
+    }
+
+    function getRootNodeOutputSize(): ImgSize {
+      const root = rootNode()
+      return {
+        width: root?.outputData?.width ?? 0,
+        height: root?.outputData?.height ?? 0,
+      }
+    }
+
+    function getLeafNodes(): AnyNode[] {
+      return Object.values(nodes).filter(n => n.childIds(store).length === 0)
     }
 
     return store

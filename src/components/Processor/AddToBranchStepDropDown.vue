@@ -1,25 +1,24 @@
 <script setup lang="ts">
 import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import type { AnyStepRef } from '../../lib/pipeline/Step.ts'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
+import type { NodeDef, NodeId } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import { STEP_REGISTRY } from '../../steps.ts'
 
 const store = usePipelineStore()
 
 const {
-  step,
-  branchIndex,
+  branchNodeId,
 } = defineProps<{
-  step: AnyStepRef,
-  branchIndex: number,
+  branchNodeId: NodeId,
 }>()
 
 const stepRegistry = STEP_REGISTRY
-const addableSteps = computed(() => stepRegistry.getStepsCompatibleWithOutput(step.def))
+const node = computed(() => store.get(branchNodeId))
+const addableSteps = computed(() => stepRegistry.getStepsCompatibleWithOutput(node.value.def))
 
-function addAfter(def: string) {
-  store.addToBranch(step.id, branchIndex, def)
+function addAfter(def: NodeDef) {
+  store.add(def, node.value.id)
 }
 </script>
 <template>

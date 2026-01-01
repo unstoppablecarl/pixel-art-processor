@@ -11,12 +11,13 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import StepCard from '../StepCard.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {}
@@ -32,8 +33,8 @@ const step = useStepHandler(stepId, {
 </script>
 <template>
   <StepCard
-    :step="step"
-    :show-add-step-btn="false"
+    :node="node"
+    :show-add-node-btn="false"
     :copyable="false"
     :draggable="false"
     :mutable="false"

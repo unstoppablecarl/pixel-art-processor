@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import InvalidInputType from '../components/ValidationErrors/InvalidInputType.vue'
 import type { StepDataType } from '../steps.ts'
+import type { NodeId } from './pipeline/Node.ts'
 import { INVALID_INPUT_TYPE } from './pipeline/StepHandler.ts'
 import { usePipelineStore } from './store/pipeline-store.ts'
 
@@ -50,7 +51,7 @@ export class InvalidFileTypeError extends StepValidationError {
   }
 }
 
-export function handleStepValidationError(stepId: string, error: Error) {
+export function handleStepValidationError(nodeId: NodeId, error: Error) {
   const errors: StepValidationError[] = []
 
   if (error instanceof StepValidationError) {
@@ -63,5 +64,5 @@ export function handleStepValidationError(stepId: string, error: Error) {
     throw error
   }
 
-  usePipelineStore().get(stepId).validationErrors = errors
+  usePipelineStore().get(nodeId).validationErrors = errors
 }

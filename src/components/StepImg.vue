@@ -39,7 +39,7 @@ const encoded = computed(() => {
 <template>
   <img
     :alt="image.label"
-    class="step-img"
+    class="node-img"
     :src="encoded"
     style="image-rendering: pixelated;"
     :width="width"

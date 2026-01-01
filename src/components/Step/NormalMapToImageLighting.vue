@@ -16,15 +16,16 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -72,7 +73,7 @@ function handleTextureUpload(e: Event) {
     .then((imageData) => {
       config.textureImageData = imageData
     })
-    .catch(error => handleStepValidationError(stepId, error))
+    .catch(error => handleStepValidationError(nodeId, error))
 }
 
 const images = computed(() => [
@@ -82,7 +83,7 @@ const images = computed(() => [
   },
   {
     label: 'Output',
-    imageData: step.outputPreview as ImageData | null,
+    imageData: node.outputPreview as ImageData | null,
     placeholderWidth: config.textureImageData?.width,
     placeholderHeight: config.textureImageData?.height,
   },
@@ -91,11 +92,11 @@ const images = computed(() => [
 //   await nextTick()
 //   setTestFileInput(textureInputEl.value, TEST_TEXTURE_DATA)
 // })
-const config = step.config
+const config = node.config
 </script>
 <template>
   <StepCard
-    :step="step"
+    :node="node"
     :images="images"
     :show-dimensions="true"
   >
@@ -110,7 +111,7 @@ const config = step.config
         </div>
 
         <RangeSlider
-          :id="`${stepId}-lightX`"
+          :id="`${nodeId}-lightX`"
           label="X"
           :decimals="1"
           v-model:value="config.lightX"
@@ -121,7 +122,7 @@ const config = step.config
 
 
         <RangeSlider
-          :id="`${stepId}-lightY`"
+          :id="`${nodeId}-lightY`"
           label="Y"
           :decimals="1"
           v-model:value="config.lightY"
@@ -131,7 +132,7 @@ const config = step.config
         />
 
         <RangeSlider
-          :id="`${stepId}-lightZ`"
+          :id="`${nodeId}-lightZ`"
           label="Z"
           :decimals="1"
           v-model:value="config.lightZ"

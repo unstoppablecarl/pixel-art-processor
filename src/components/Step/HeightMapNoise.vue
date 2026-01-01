@@ -14,6 +14,7 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../lib/generators/perlin-noise.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
@@ -22,11 +23,11 @@ import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const store = usePipelineStore()
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const noiseImageData = shallowRef<ImageData | null>(null)
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -50,8 +51,8 @@ const step = useStepHandler(stepId, {
 })
 
 const images = computed(() => {
-  const step = store.get(stepId)
-  const outputPreview = step.outputPreview as ImageData | null
+  const node = store.get(nodeId)
+  const outputPreview = node.outputPreview as ImageData | null
   return [
     {
       label: 'Noise',
@@ -68,19 +69,19 @@ const images = computed(() => {
   ]
 })
 
-const config = step.config
+const config = node.config
 
 </script>
 <template>
   <StepCard
-    :step="step"
+    :node="node"
     :images="images"
   >
     <template #footer>
       <div class="section">
 
         <RangeSlider
-          :id="`${stepId}-amplitude`"
+          :id="`${nodeId}-amplitude`"
           label="Amplitude"
           :decimals="1"
           v-model:value="config.amplitude"
@@ -90,7 +91,7 @@ const config = step.config
         />
 
         <RangeSlider
-          :id="`${stepId}-frequency`"
+          :id="`${nodeId}-frequency`"
           label="Frequency"
           :decimals="2"
           v-model:value="config.frequency"
@@ -100,7 +101,7 @@ const config = step.config
         />
 
         <RangeSlider
-          :id="`${stepId}-octaves`"
+          :id="`${nodeId}-octaves`"
           label="Octaves"
           v-model:value="config.octaves"
           :min="1"
@@ -109,7 +110,7 @@ const config = step.config
         />
 
         <RangeSlider
-          :id="`${stepId}-gain`"
+          :id="`${nodeId}-gain`"
           label="Gain"
           v-model:value="config.gain"
           :min="0.1"
@@ -118,7 +119,7 @@ const config = step.config
         />
 
         <RangeSlider
-          :id="`${stepId}-lacunarity`"
+          :id="`${nodeId}-lacunarity`"
           label="Lacunarity"
           v-model:value="config.lacunarity"
           :min="1.5"

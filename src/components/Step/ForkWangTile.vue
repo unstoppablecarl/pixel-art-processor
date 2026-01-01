@@ -13,6 +13,7 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
@@ -23,7 +24,7 @@ import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const CONFIG_DEFAULTS = {
   size: rangeSliderConfig({
@@ -46,7 +47,7 @@ const CONFIG_DEFAULTS = {
   padding: 4,
 }
 
-const step = useForkHandler(stepId, {
+const node = useForkHandler(nodeId, {
   ...STEP_META,
   config() {
     return reactive({ ...CONFIG_DEFAULTS })
@@ -91,13 +92,13 @@ const step = useForkHandler(stepId, {
     }
   },
 })
-const config = step.config
+const config = node.config
 
 </script>
 <template>
   <StepCard
-    :step="step"
-    :show-add-step-btn="false"
+    :node="node"
+    :show-add-node-btn="false"
     :copyable="false"
     :draggable="false"
     :mutable="false"
@@ -107,7 +108,7 @@ const config = step.config
       <div class="section">
 
         <RangeSlider
-          :id="`${stepId}-size`"
+          :id="`${nodeId}-size`"
           label="Size"
           :defaults="CONFIG_DEFAULTS.size"
           v-model:value="config.size.value"
@@ -117,7 +118,7 @@ const config = step.config
         />
 
         <RangeBandSlider
-          :id="`${stepId}-gap-size`"
+          :id="`${nodeId}-gap-size`"
           label="Gap Size"
           :min="0"
           :max="config.size.value"
@@ -126,7 +127,7 @@ const config = step.config
         />
 
         <RangeBandSlider
-          :id="`${stepId}-chunk-size`"
+          :id="`${nodeId}-chunk-size`"
           label="Chunk Size"
           :min="0"
           :max="config.size.value"
@@ -135,7 +136,7 @@ const config = step.config
         />
 
         <RangeSlider
-          :id="`${stepId}-padding`"
+          :id="`${nodeId}-padding`"
           label="Padding"
           v-model:value="config.padding"
           :min="0"
@@ -144,13 +145,13 @@ const config = step.config
         />
 
         <CheckBoxInput
-          :id="`${stepId}-invert`"
+          :id="`${nodeId}-invert`"
           label="Invert"
           v-model="config.invert"
         />
 
         <RangeSlider
-          :id="`${stepId}-chunks`"
+          :id="`${nodeId}-chunks`"
           label="Chunks"
           :defaults="CONFIG_DEFAULTS.chunks"
           v-model:value="config.chunks.value"
@@ -160,7 +161,7 @@ const config = step.config
         />
 
         <NumberInput
-          :id="`${stepId}-chunks-shuffle`"
+          :id="`${nodeId}-chunks-shuffle`"
           label="Shuffle Seed"
           :step="1"
           :min="0"

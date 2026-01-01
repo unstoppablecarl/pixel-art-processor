@@ -13,6 +13,7 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { applyInnerGlow, INNER_GLOW_DEFAULTS } from '../../lib/generators/inner-glow.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
@@ -22,9 +23,9 @@ import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import StepCard from '../StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -49,29 +50,29 @@ const step = useStepHandler(stepId, {
   },
 })
 
-const config = step.config
+const config = node.config
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :node="node">
     <template #footer>
       <div class="section">
         <CheckBoxInput
-          :id="`${stepId}-from-center`"
+          :id="`${nodeId}-from-center`"
           label="From Center"
           v-model="config.fromCenter"
         />
 
         <RangeSlider
-          :id="`${stepId}-size`"
+          :id="`${nodeId}-size`"
           label="Size"
           v-model:value="config.size"
           :min="0"
-          :max="Math.floor((step.outputData?.width ?? 0) * 0.5)"
+          :max="Math.floor((node.outputData?.width ?? 0) * 0.5)"
           :step="1"
         />
 
         <RangeSlider
-          :id="`${stepId}-choke`"
+          :id="`${nodeId}-choke`"
           label="Choke"
           v-model:value="config.choke"
           :decimals="2"

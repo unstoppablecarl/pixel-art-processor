@@ -25,6 +25,7 @@ import {
 } from '../../lib/generators/island-ui.ts'
 import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
@@ -34,7 +35,7 @@ import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 enum SmoothType {
   GAUSSIAN = 'GAUSSIAN',
@@ -52,7 +53,7 @@ const ITERATION_DEFAULTS = rangeSliderConfig({
   value: 1,
 })
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
@@ -103,11 +104,11 @@ const step = useStepHandler(stepId, {
   },
 })
 
-const config = step.config
+const config = node.config
 
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :node="node">
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"
@@ -118,7 +119,7 @@ const config = step.config
           id="settings"
         >
           <RangeSlider
-            :id="`${stepId}-iterations`"
+            :id="`${nodeId}-iterations`"
             label="Iterations"
             :defaults="ITERATION_DEFAULTS"
             v-model:value="config.iterations.value"
@@ -128,11 +129,11 @@ const config = step.config
           />
 
           <RangeSlider
-            :id="`${stepId}-border-buffer`"
+            :id="`${nodeId}-border-buffer`"
             label="Border Buffer"
             v-model:value="config.borderBuffer"
             :min="0"
-            :max="step.outputData?.width ?? 400"
+            :max="node.outputData?.width ?? 400"
             :step="1"
           />
 

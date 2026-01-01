@@ -28,11 +28,6 @@ export type StepDataConfig<
   outputDataType?: undefined,
 }
 
-export const defineStepMeta = <
-  I extends readonly StepDataType[],
-  O extends StepDataType,
->(meta: StepMeta<I, O>): StepMeta<I, O> => meta
-
 export function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): AnyStepDefinition[] {
 
   const errors = Object.entries(globResults)

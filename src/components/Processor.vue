@@ -1,18 +1,18 @@
 <script setup lang="ts">
-import { onMounted, watch, computed } from 'vue'
+import { computed, onMounted, watch } from 'vue'
+import type { NodeId } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import AppHeader from './AppHeader.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
-import GridPatternPreview from './Processor/GridPatternPreview.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
 
 const store = usePipelineStore()
 
-const rootStepIds = computed(() => {
+const rootNodeIds = computed((): NodeId[] => {
   const root = store.rootNode()
   if (!root) return []
 
-  const ids: string[] = []
+  const ids: NodeId[] = []
   let current = root
 
   while (current) {
@@ -25,7 +25,7 @@ const rootStepIds = computed(() => {
   return ids
 })
 
-const rootSteps = computed(() => rootStepIds.value.map(id => store.get(id)))
+const rootSteps = computed(() => rootNodeIds.value.map(id => store.get(id)))
 
 watch(() => store.imgScale, () => {
   document.documentElement.style.setProperty('--step-img-scale', '' + store.imgScale)
@@ -42,16 +42,14 @@ onMounted(() => {
   <div class="overflow">
     <div class="processor-container px-3 pb-3 min-vw-100">
       <PipelineBranch
-        :step-ids="rootStepIds"
-        :parent-fork-id="null"
-        :branch-index="null"
+        :node-ids="rootNodeIds"
       />
     </div>
 
-    <div class="after-steps-container p-4" v-if="!rootSteps.length">
+    <div class="after-nodes-container p-4" v-if="!rootSteps.length">
       <AddRootStepButtons />
     </div>
 
-<!--    <GridPatternPreview />-->
+    <!--    <GridPatternPreview />-->
   </div>
 </template>

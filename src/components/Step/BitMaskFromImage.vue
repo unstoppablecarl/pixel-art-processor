@@ -14,25 +14,26 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { ref } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 const maskInputEl = ref<HTMLInputElement | null>(null)
 
 const handleFileUpload = (event: Event) => {
   getFileAsArrayBuffer(event)
     .then(arrayBufferToImageData)
     .then((imageData) => {
-      step.config.maskImageData = imageData
+      node.config.maskImageData = imageData
     })
-    .catch(error => handleStepValidationError(stepId, error))
+    .catch(error => handleStepValidationError(nodeId, error))
 }
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   config() {
     return {
@@ -65,10 +66,10 @@ const step = useStepHandler(stepId, {
 </script>
 <template>
   <StepCard
-    :step="step"
+    :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
-      imageData: step.config.maskImageData
+      imageData: node.config.maskImageData
     }]"
     show-dimensions
   >

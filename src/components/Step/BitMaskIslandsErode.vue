@@ -24,6 +24,7 @@ import {
   type IslandMutator,
 } from '../../lib/generators/IslandMutator.ts'
 import { islandEroderWeighted } from '../../lib/generators/IslandSmoother/island-eroder-weighted.ts'
+import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
@@ -33,7 +34,7 @@ import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 
-const { stepId } = defineProps<{ stepId: string }>()
+const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 enum ErodeType {
   WEIGHTED = 'WEIGHTED',
@@ -49,7 +50,7 @@ const ITERATION_DEFAULTS = rangeSliderConfig({
   value: 1,
 })
 
-const step = useStepHandler(stepId, {
+const node = useStepHandler(nodeId, {
   ...STEP_META,
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
@@ -111,11 +112,11 @@ const step = useStepHandler(stepId, {
   },
 })
 
-const config = step.config
+const config = node.config
 
 </script>
 <template>
-  <StepCard :step="step">
+  <StepCard :node="node">
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"
@@ -126,16 +127,16 @@ const config = step.config
           id="settings"
         >
           <RangeSlider
-            :id="`${stepId}-border-buffer`"
+            :id="`${nodeId}-border-buffer`"
             label="Border Buffer"
             v-model:value="config.borderBuffer"
             :min="0"
-            :max="step.outputData?.width ?? 400"
+            :max="node.outputData?.width ?? 400"
             :step="1"
           />
 
           <RangeSlider
-            :id="`${stepId}-grow-iterations`"
+            :id="`${nodeId}-grow-iterations`"
             label="Iterations"
             :defaults="ITERATION_DEFAULTS"
             v-model:value="config.iterations.value"

@@ -17,16 +17,16 @@ function makeBgColor(light: string) {
   return `background: light-dark(${light}, ${dark});`
 }
 
-export function logStepEvent(stepId: string, event: string, ...args: any[]) {
-  console.log(`%c[${stepId}] %c${event}`, `${blue}`, `${green}`, ...args)
+export function logStepEvent(nodeId: string, event: string, ...args: any[]) {
+  console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${green}`, ...args)
 }
 
-export function logStepWatch(stepId: string, ...args: any[]) {
-  console.log(`%c[${stepId}] %cWATCH`, `${blue}`, `${orange}`, ...args)
+export function logStepWatch(nodeId: string, ...args: any[]) {
+  console.log(`%c[${nodeId}] %cWATCH`, `${blue}`, `${orange}`, ...args)
 }
 
-export function logStepDebug(stepId: string, ...args: any[]) {
-  console.log(`%c[${stepId}] %DEBUG`, `${blue}`, `${purple}`, ...args)
+export function logStepDebug(nodeId: string, ...args: any[]) {
+  console.log(`%c[${nodeId}] %DEBUG`, `${blue}`, `${purple}`, ...args)
 }
 
 export function objectsAreEqual(obj1: any, obj2: any, maxDepth = 400, currentDepth = 0) {
@@ -136,3 +136,5 @@ export function analyzeArrayChange(
 
   throw new Error('no array change found')
 }
+
+export type ImgSize = { width: number, height: number }

@@ -14,7 +14,7 @@ import SeedPopOver from './UI/SeedPopOver.vue'
 const store = usePipelineStore()
 
 const {
-  step,
+  node,
   images,
   showAddStepBtn = true,
   showSeed = true,
@@ -24,7 +24,7 @@ const {
   mutable = true,
   subHeader = '',
 } = defineProps<{
-  step: AnyInitializedNode
+  node: AnyInitializedNode
   showDimensions?: boolean,
   images?: StepImage[],
   showAddStepBtn?: boolean,
@@ -36,19 +36,19 @@ const {
 }>()
 
 const dimensions = computed(() => {
-  if (!step.outputData) return ''
+  if (!node.outputData) return ''
 
-  return step.outputData.width + 'x' + step.outputData.height
+  return node.outputData.width + 'x' + node.outputData.height
 })
 
 function remove() {
-  store.remove(step.id)
+  store.remove(node.id)
 }
 
 const stepImages = computed(() => {
   if (images?.length) return images
 
-  return normalizeValueToArray(step.outputPreview)
+  return normalizeValueToArray(node.outputPreview)
     .map(i => ({
       label: '',
       imageData: i,
@@ -64,40 +64,40 @@ const imagesTotalWidth = computed(() => {
       return acc + width
     }, 0)
   }
-  return step?.outputData?.width
+  return node?.outputData?.width
 })
 
 const cssStyle = computed(() => {
   return [
     `--stem-image-count: ${imageCount.value};`,
-    `--step-total-image-width: ${imagesTotalWidth.value}px;`,
+    `--node-total-image-width: ${imagesTotalWidth.value}px;`,
   ].join(' ')
 })
 
 const invalidInputType = computed(() => {
-  return !!step.validationErrors.find((e: StepValidationError) => e.slug === INVALID_INPUT_TYPE)
+  return !!node.validationErrors.find((e: StepValidationError) => e.slug === INVALID_INPUT_TYPE)
 })
 
 const validationErrors = computed(() => {
-  return step.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
+  return node.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
 })
 
 const executionTime = computed(() => {
-  if (step.lastExecutionTimeMS === undefined) return
-  return (step.lastExecutionTimeMS / 1000).toFixed(2)
+  if (node.lastExecutionTimeMS === undefined) return
+  return (node.lastExecutionTimeMS / 1000).toFixed(2)
 })
 
 const registry = STEP_REGISTRY
-const header = computed(() => registry.get(step.def).displayName)
+const header = computed(() => registry.get(node.def).displayName)
 
 function toggleMute() {
-  step.muted = !step.muted
+  node.muted = !node.muted
 }
 
 </script>
 <template>
-  <div ref="stepEl" class="step" :style="cssStyle">
-    <div class="step-header hstack gap-1 align-items-center">
+  <div ref="stepEl" class="node" :style="cssStyle">
+    <div class="node-header hstack gap-1 align-items-center">
       <div>
         {{ header }} {{ subHeader }}
       </div>
@@ -107,8 +107,8 @@ function toggleMute() {
       </div>
     </div>
     <div :class="{
-      'card card-step': true,
-      'border-warning': step.muted,
+      'card card-node': true,
+      'border-warning': node.muted,
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
@@ -123,8 +123,8 @@ function toggleMute() {
         >:::
         </span>
 
-        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="step.seed" />
-        <BButtonGroup size="sm" class="step-header-buttons">
+        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="node.seed" />
+        <BButtonGroup size="sm" class="node-header-buttons">
           <button role="button" class="btn btn-sm btn-danger" @click="remove">
             <span class="material-symbols-outlined">delete</span>
           </button>
@@ -134,20 +134,20 @@ function toggleMute() {
             role="button"
             :class="{
               'btn btn-sm': true,
-              'active btn-warning': step.muted,
-              'btn-secondary': !step.muted,
+              'active btn-warning': node.muted,
+              'btn-secondary': !node.muted,
             }"
             @click="toggleMute"
           >
-            <span class="material-symbols-outlined">{{ step.muted ? 'visibility_off' : 'visibility' }}</span>
+            <span class="material-symbols-outlined">{{ node.muted ? 'visibility_off' : 'visibility' }}</span>
           </button>
 
-          <!--          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicate(step.id)">-->
-          <!--            <span class="material-symbols-outlined">content_copy</span>-->
-          <!--          </button>-->
+          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicateNode(node.id)">
+            <span class="material-symbols-outlined">content_copy</span>
+          </button>
 
-          <slot name="add-step">
-            <AddAfterStepDropDown v-if="showAddStepBtn" :step-id="step.id" size="sm" />
+          <slot name="add-node">
+            <AddAfterStepDropDown v-if="showAddStepBtn" :node-id="node.id" size="sm" />
           </slot>
         </BButtonGroup>
       </div>
@@ -169,7 +169,7 @@ function toggleMute() {
             Image Size: {{ dimensions }}
           </span>
         </div>
-        <div class="section" v-for="error in step.validationErrors">
+        <div class="section" v-for="error in node.validationErrors">
           <component :is="error.component" :error="error" />
         </div>
         <slot name="footer"></slot>

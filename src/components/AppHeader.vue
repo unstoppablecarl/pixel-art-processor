@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 
-const stepStore = usePipelineStore()
+const store = usePipelineStore()
 
 </script>
 <template>
@@ -16,7 +16,7 @@ const stepStore = usePipelineStore()
 
         <div class="form-group d-flex align-items-center gap-2 mb-0">
           <label class="form-label form-label-sm mb-0 text-nowrap" for="globalSeed">Global Seed</label>
-          <input type="number" id="globalSeed" step="1" v-model.number="stepStore.globalSeed"
+          <input type="number" id="globalSeed" step="1" v-model.number="store.globalSeed"
                  class="form-control form-control-sm d-inline-block" style="width: 60px" />
 
         </div>
@@ -26,16 +26,16 @@ const stepStore = usePipelineStore()
             class="form-label form-label-sm mb-0 text-nowrap"
             style="width: 50px;"
           >
-            Scale: {{ stepStore.imgScale }}
+            Scale: {{ store.imgScale }}
           </label>
           <input type="range"
                  class="form-range form-range-sm"
                  id="scale"
                  min="1"
                  max="10"
-                 step="1"
+                 node="1"
                  style="width: 150px;"
-                 v-model.number="stepStore.imgScale"
+                 v-model.number="store.imgScale"
           >
         </div>
       </form>
