@@ -159,17 +159,22 @@ export class StepNode<
     const _handler = this.handler as IStepHandler<T, R>
     const output = await _handler.run({
       config: this.config as T['RC'],
-      inputData: this.getInputDataFromPrev(store),
+      inputData: await this.getInputDataFromPrev(store),
     })
 
-    return parseResult<T>(output)
+    const result = parseResult<T>(output)
+    this.outputData = result.output
+    this.outputPreview = result.preview
+    this.validationErrors = result.validationErrors
   }
 
   async getInputDataFromPrev(store: MinStore): Promise<T['Input'] | null> {
     if (!this.prevNodeId) return null
 
     const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
-    return prev.outputData
+    if (prev.outputData) {
+      return prev.outputData.copy()
+    }
   }
 }
 
@@ -244,7 +249,9 @@ export class ForkNode<
     if (!this.prevNodeId) return null
 
     const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
-    return prev.outputData
+    if (prev.outputData) {
+      return prev.outputData.copy()
+    }
   }
 }
 
@@ -310,10 +317,13 @@ export class BranchNode<
     const _handler = this.handler as IStepHandler<T, R>
     const output = await _handler.run({
       config: this.config as T['RC'],
-      inputData: this.getInputDataFromPrev(store),
+      inputData: await this.getInputDataFromPrev(store),
     })
 
-    return parseResult(output) as ReturnType<R>
+    const result = parseResult<T>(output)
+    this.outputData = result.output
+    this.outputPreview = result.preview
+    this.validationErrors = result.validationErrors
   }
 
   getOutput(): T['Output'] | null {
@@ -321,7 +331,10 @@ export class BranchNode<
   }
 
   async getInputDataFromPrev(store: MinStore) {
-    return this.parentFork(store).getBranchOutput(store, this.branchIndex) as T['Input']
+    const result = await this.parentFork(store).getBranchOutput(store, this.branchIndex) as T['Input']
+    if (result.outputData) {
+      return result.outputData.copy()
+    }
   }
 }
 
