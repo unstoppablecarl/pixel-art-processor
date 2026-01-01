@@ -81,7 +81,7 @@ const node = useStepHandler(nodeId, {
 
       clusterRadius: 0,
       marchingGrowthPixelsPerIteration: 1,
-      perlinFactor: 0.2,
+      perlinFactor: 0.5,
 
       activeTabIndex: 0,
       ...DEFAULT_SHOW_ISLANDS.CONFIG,
@@ -184,11 +184,15 @@ const config = node.config
           </div>
 
           <template v-if="config.growType === GrowType.PERLIN">
-            <div>
-              <label class="form-label">Factor: {{ config.perlinFactor }}</label>
-              <input type="range" min="0" max="1" step="0.01" v-model.number="config.perlinFactor"
-                     class="form-range" />
-            </div>
+            <RangeSlider
+              :id="`${nodeId}-perlin-factor`"
+              label="Factor"
+              v-model:value="config.perlinFactor"
+              :decimals="2"
+              :min="0"
+              :max="1"
+              :step="0.01"
+            />
           </template>
 
           <template v-if="config.growType === GrowType.CLUSTER">
