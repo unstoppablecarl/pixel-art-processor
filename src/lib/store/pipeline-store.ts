@@ -14,8 +14,7 @@ import {
   isFork,
   isStep,
   type NodeDef,
-  type NodeId,
-  NodeType,
+  type NodeId, NodeType,
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
@@ -170,12 +169,18 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function addStep(def: NodeDef, prevNodeId?: NodeId): AnyStepNode {
       const id = _defToId(def)
-      return nodes[id] = shallowReactive(new StepNode({ id, def, prevNodeId }))
+      const step = nodes[id] = shallowReactive(new StepNode({ id, def, prevNodeId }))
+      markDirty(step.id)
+
+      return step
     }
 
     function addFork(def: NodeDef, prevNodeId?: NodeId): AnyForkNode {
       const id = _defToId(def)
-      return nodes[id] = shallowReactive(new ForkNode({ id, def, prevNodeId }))
+      const fork = nodes[id] = shallowReactive(new ForkNode({ id, def, prevNodeId }))
+      markDirty(fork.id)
+
+      return fork
     }
 
     function addBranch(def: NodeDef, parentForkId: NodeId): AnyBranchNode {
@@ -187,6 +192,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       nodes[id] = branch
 
       fork.branchIds.push(id)
+      markDirty(branch.id)
 
       return branch
     }
@@ -317,6 +323,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     const queue = makeNodeRunnerQueue(store)
 
+    // the only place to mark a node for processing
     function markDirty(id: NodeId) {
       get(id).isDirty = true
       queue(id)
