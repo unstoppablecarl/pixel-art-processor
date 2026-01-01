@@ -155,8 +155,8 @@ function toggleMute() {
       <div class="card-body">
         <slot name="body">
           <StepImg
-            v-for="image in stepImages"
-            :key="image.label"
+            v-for="(image, index) in stepImages"
+            :key="index"
             :image="image"
           />
         </slot>

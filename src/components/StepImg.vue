@@ -18,14 +18,15 @@ const {
   image: StepImage,
 }>()
 
-const width = computed(() => {
-  const width = image.imageData?.width ?? image.placeholderWidth ?? 7 //store.startStepOutputSize.width
-  return width * store.imgScale
-})
+const size = computed(() => {
+  const rootSize = store.getRootNodeOutputSize()
+  const width = image.imageData?.width ?? image.placeholderWidth ?? rootSize.width
+  const height = image.imageData?.height ?? image.placeholderHeight ?? rootSize.height
 
-const height = computed(() => {
-  const height = image.imageData?.height ?? image.placeholderHeight ?? 7// store.startStepOutputSize.height
-  return height * store.imgScale
+  return {
+    width: width * store.imgScale,
+    height: height * store.imgScale,
+  }
 })
 
 const encoded = computed(() => {
@@ -42,7 +43,7 @@ const encoded = computed(() => {
     class="node-img"
     :src="encoded"
     style="image-rendering: pixelated;"
-    :width="width"
-    :height="height"
+    :width="size.width"
+    :height="size.height"
   />
 </template>
