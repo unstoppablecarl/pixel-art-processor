@@ -3,7 +3,7 @@ import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions } from '../src/lib/pipeline/StepHandler.ts'
-import type { NormalStepRunner, NormalStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -51,7 +51,7 @@ describe('IStepHandler<T> basic structure', () => {
       })
     },
 
-    run(args) {
+    async run(args) {
       expectTypeOf(args.config).toEqualTypeOf<RC>()
       expectTypeOf(args.inputData).toEqualTypeOf<
         StepInputTypesToInstances<[typeof A, typeof B]> | null
@@ -119,7 +119,7 @@ describe('IStepHandler<T> basic structure', () => {
     }]>()
 
     expectTypeOf(handler.run).returns.toEqualTypeOf<
-      NormalStepRunnerOutput<T['Output']> | null | undefined | Promise<NormalStepRunnerOutput<T['Output']>>
+      Promise<SingleRunnerOutput<T>>
     >()
   })
 })
@@ -131,7 +131,7 @@ describe('StepHandlerOptions<T>', () => {
     config() {
       return {} as RC
     },
-    run(args) {
+    async run(args) {
       return {
         output: {} as InstanceType<typeof COut>,
       }
@@ -166,8 +166,10 @@ describe('IStepHandler variance behavior', () => {
 
   it('allows narrowing inputDataTypes', () => {
     expectTypeOf(handler2.inputDataTypes).toEqualTypeOf<readonly [typeof A]>()
-    expectTypeOf(handler2).toExtend<Pick<IStepHandler<T2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'>>()
-    expectTypeOf(handler2.run).returns.toExtend<{ output: InstanceType<typeof COut> }>()
+    expectTypeOf(handler2.inputDataTypes).toExtend<IStepHandler<T2>['inputDataTypes']>()
+    expectTypeOf(handler2.outputDataType).toExtend<IStepHandler<T2>['outputDataType']>()
+    expectTypeOf(handler2.config).toExtend<IStepHandler<T2>['config']>()
+
   })
 
   it('does not allow widening inputDataTypes', () => {
@@ -178,7 +180,7 @@ describe('IStepHandler variance behavior', () => {
       config() {
         return {} as RC
       },
-      run() {
+      async run() {
         return { output: {} as InstanceType<typeof COut> }
       },
     }

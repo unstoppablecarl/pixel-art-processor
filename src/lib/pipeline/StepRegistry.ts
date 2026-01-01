@@ -3,8 +3,8 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { NodeType } from './Node.ts'
-import { type AnyStepContext, type Step, type StepRef } from './Step.ts'
+import { type AnyNode, NodeType } from './Node.ts'
+import { type AnyStepContext} from './Step.ts'
 import type { StepHandlerOptions } from './StepHandler.ts'
 import type { StepMeta } from './StepMeta.ts'
 
@@ -76,6 +76,14 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return get(def).type === NodeType.FORK
   }
 
+  function isBranch(def: string): boolean {
+    return get(def).type === NodeType.BRANCH
+  }
+
+  function isStep(def: string): boolean {
+    return get(def).type === NodeType.STEP
+  }
+
   function toArray() {
     return Object.values(STEP_DEFINITIONS)
   }
@@ -105,7 +113,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     }
   }
 
-  function stepIsPassthrough<T extends AnyStepContext>(step: StepRef<T>): boolean {
+  function stepIsPassthrough<T extends AnyStepContext>(step: AnyNode<T>): boolean {
     return !!get(step.def).passthrough
   }
 
@@ -118,9 +126,11 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
       return get(def).type
     },
     isFork,
+    isBranch,
+    isStep,
     stepIsPassthrough,
     stepIsFork: <T extends AnyStepContext>(
-      step: Step<T>,
+      step: AnyNode<T>,
     ) => isFork(step.def),
     defToComponent(def: string): Component {
       return get(def).component
@@ -134,3 +144,5 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     toArray,
   }
 }
+
+export const BRANCH_DEF = 'branch_node'

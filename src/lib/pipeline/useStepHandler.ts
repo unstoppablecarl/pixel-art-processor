@@ -1,10 +1,10 @@
-import { expectTypeOf } from 'expect-type'
-import { nextTick, watch } from 'vue'
+import { watch } from 'vue'
 import type { StepDataType } from '../../steps.ts'
-import { useStepStore } from '../store/step-store.ts'
+import { usePipelineStore } from '../store/pipeline-store.ts'
 import { logStepWatch } from '../util/misc.ts'
-import { type AnyStepContext, type InitializedStep, type ReactiveConfigType, type StepContext } from './Step.ts'
-import type { Config, IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
+import type { InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
+import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
+import type { Config, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
 import type { ForkStepRunner, NormalStepRunner, StepRunner } from './StepRunner.ts'
 
 function useCoreStepHandler<
@@ -14,27 +14,22 @@ function useCoreStepHandler<
   stepId: string,
   options: StepHandlerOptions<T, R>,
 ) {
-  const store = useStepStore()
-  const { step, watcherTargets } = store.registerStep<T>(stepId, options as StepHandlerOptions<T>)
+  const store = usePipelineStore()
 
-  expectTypeOf(step.handler).toExtend<IStepHandler<T>>()
+  const node = store.initializeNode<T>(stepId, options as StepHandlerOptions<T>)
+
+  const watcherTargets = [
+    node.config,
+    () => node.seed,
+    () => node.muted,
+  ]
 
   watch(watcherTargets, () => {
-    logStepWatch(step.id)
-    store.resolveStep<T>(stepId)
+    logStepWatch(node.id)
+    store.markDirty(node.id)
   })
 
-  nextTick(() => {
-    store.resolveStep(stepId)
-    step.initialized = true
-    if (step.outputData === undefined) {
-      throw new Error('wtf2')
-    }
-    // console.log('outputData = prev.outputData', prev.outputData)
-    // console.log('prev', deepUnwrap(prev))
-  })
-
-  return step as InitializedStep<T, R>
+  return node as InitializedNode<T, R>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
@@ -43,7 +38,7 @@ export function useStepHandler<
   SC extends Config,
   RC extends ReactiveConfigType<C>,
   I extends readonly StepDataType[],
-  O extends StepDataType
+  O extends StepDataType,
 >(
   stepId: string,
   options: StepHandlerOptionsInfer<
@@ -52,11 +47,13 @@ export function useStepHandler<
   >,
 ) {
   type T = StepContext<C, SC, RC, I, O>
-  return useCoreStepHandler<T, NormalStepRunner<T>>(stepId, options)
+  type R = NormalStepRunner<T>
+
+  return useCoreStepHandler<T, R>(stepId, options) as InitializedStepNode<T, R>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
-export function useStepForkHandler<
+export function useForkHandler<
   C extends Config,
   SC extends Config,
   RC extends ReactiveConfigType<C>,
@@ -70,19 +67,7 @@ export function useStepForkHandler<
   >,
 ) {
   type T = StepContext<C, SC, RC, I, O>
-  return useCoreStepHandler<T, ForkStepRunner<T>>(stepId, options)
-}
+  type R = ForkStepRunner<T>
 
-export function useBranchHandler(forkId: string, branchIndex: number) {
-  const store = useStepStore()
-
-  const fork = store.getFork(forkId)
-  const branch = store.getBranch(forkId, branchIndex)
-
-  watch([
-    () => fork.seed,
-    () => branch.seed,
-  ], () => {
-    store.resolveBranch(forkId, branchIndex)
-  })
+  return useCoreStepHandler<T, ForkStepRunner<T>>(stepId, options) as InitializedForkNode<T, R>
 }

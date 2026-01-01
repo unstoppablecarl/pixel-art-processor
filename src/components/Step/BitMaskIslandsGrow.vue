@@ -3,7 +3,7 @@ import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'bitmask_islands_grow',
   displayName: 'BitMask Islands: Grow',
   inputDataTypes: [BitMask],
@@ -90,7 +90,7 @@ const step = useStepHandler(stepId, {
       ...DEFAULT_EXPANDABLE_RESPECTING_DISTANCE.CONFIG,
     }
   },
-  run({ config, inputData }) {
+  async run({ config, inputData }) {
     if (!inputData) return
 
     const mask = inputData as BitMask
@@ -157,7 +157,7 @@ const config = step.config
             label="Min Distance"
             v-model:value="config.minDistance"
             :min="0"
-            :max="step.inputData?.width"
+            :max="step.outputData?.width ?? 400"
             :step="1"
           />
 

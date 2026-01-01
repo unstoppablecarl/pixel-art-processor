@@ -3,7 +3,7 @@ import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'bitmask_islands_add_edges',
   displayName: 'BitMask Islands: Add Edges',
   inputDataTypes: [],
@@ -58,7 +58,7 @@ const step = useStepHandler(stepId, {
       ...CONFIG_DEFAULTS,
     }
   },
-  run({ config }) {
+  async run({ config }) {
     const size = config.size
     const mask = new BitMask(size.value, size.value)
 

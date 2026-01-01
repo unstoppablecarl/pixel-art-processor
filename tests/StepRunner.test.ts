@@ -2,12 +2,8 @@ import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
 import type { AnyStepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import {
-  type AnyStepRunnerResult,
   type ForkStepRunner,
-  type ForkStepRunnerOutput,
-  type ForkStepRunnerResult,
-  type NormalStepRunner,
-  type NormalStepRunnerResult,
+  type NormalStepRunner, type SingleRunnerResult,
   type StepRunner,
 } from '../src/lib/pipeline/StepRunner.ts'
 import type { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -20,6 +16,12 @@ import type { StepDataType } from '../src/steps.ts'
 
 type T = AnyStepContext
 
+type IsEqual<A, B> =
+  [A] extends [B]
+    ? ([B] extends [A] ? true : false)
+    : false
+
+
 // ---------------------------------------------------------
 // 1. Runner union structure
 // ---------------------------------------------------------
@@ -31,38 +33,6 @@ describe('StepRunner union structure', () => {
 
   it('ForkStepRunner<T> is assignable to StepRunner<T>', () => {
     expectTypeOf<ForkStepRunner<T>>().toExtend<StepRunner<T>>()
-  })
-})
-
-// ---------------------------------------------------------
-// 2. Raw runner outputs should NOT match AnyStepRunnerResult
-// ---------------------------------------------------------
-
-describe('Raw runner outputs are narrower than AnyStepRunnerResult', () => {
-  it('NormalStepRunnerOutput is NOT assignable to AnyStepRunnerResult', () => {
-    expectTypeOf<NormalStepRunnerResult<T>>()
-      .not.toEqualTypeOf<AnyStepRunnerResult<AnyStepContext>>()
-  })
-
-  it('ForkStepRunnerOutput is NOT assignable to AnyStepRunnerResult', () => {
-    expectTypeOf<ForkStepRunnerOutput<T>>()
-      .not.toEqualTypeOf<AnyStepRunnerResult<AnyStepContext>>()
-  })
-})
-
-// ---------------------------------------------------------
-// 4. Narrowed results must be assignable to base result
-// ---------------------------------------------------------
-
-describe('Narrowed results extend AnyStepRunnerResult', () => {
-  it('NormalStepRunnerResult<Out> extends AnyStepRunnerResult', () => {
-    expectTypeOf<NormalStepRunnerResult<T>>()
-      .toExtend<AnyStepRunnerResult<T>>()
-  })
-
-  it('ForkStepRunnerResult<Out> extends AnyStepRunnerResult', () => {
-    expectTypeOf<ForkStepRunnerResult<T>>()
-      .toExtend<AnyStepRunnerResult<T>>()
   })
 })
 
@@ -86,7 +56,7 @@ describe('Manual narrowing of StepRunner<T>', () => {
 
 // Minimal mock StepContext for type‑level testing
 type MockStepContext<RC, Input extends readonly StepDataType[],
-  Output extends StepDataType,> = {
+  Output extends StepDataType, > = {
   RC: RC
   C: RC
   SerializedConfig: RC
@@ -99,7 +69,7 @@ type MockStepContext<RC, Input extends readonly StepDataType[],
 
 type Ctx = MockStepContext<
   { foo: number },
-  readonly [ typeof PixelMap],
+  readonly [typeof PixelMap],
   typeof NormalMap
 >
 
@@ -117,44 +87,47 @@ describe('StepRunner type collapse tests', () => {
     expectTypeOf<ShouldBeFalse>().toEqualTypeOf<false>()
   })
 
-  it('ForkStepRunner<T> should NOT collapse to StepRunner<T>', () => {
-    type F = ForkStepRunner<Ctx>
-    type U = StepRunner<Ctx>
 
-    type ShouldBeTrue = F extends U ? true : false
-    expectTypeOf<ShouldBeTrue>().toEqualTypeOf<true>()
-
-    type ShouldBeFalse = U extends F ? true : false
-    expectTypeOf<ShouldBeFalse>().toEqualTypeOf<false>()
-  })
-
-  it('NormalStepRunner<T> and ForkStepRunner<T> should remain distinct', () => {
-    type N = NormalStepRunner<Ctx>
-    type F = ForkStepRunner<Ctx>
-
-    type NtoF = N extends F ? true : false
-    type FtoN = F extends N ? true : false
-
-    expectTypeOf<NtoF>().toEqualTypeOf<false>()
-    expectTypeOf<FtoN>().toEqualTypeOf<false>()
-  })
-
-  it('StepRunner<T> should remain a proper union, not collapse to a single type', () => {
+  it('StepRunner<T> is exactly the union of Normal and Fork and they remain distinct', () => {
     type U = StepRunner<Ctx>
     type N = NormalStepRunner<Ctx>
     type F = ForkStepRunner<Ctx>
 
-    // U must accept both
-    expectTypeOf<N>().toMatchTypeOf<U>()
-    expectTypeOf<F>().toMatchTypeOf<U>()
+    // 1) U is exactly N | F
+    type ExactUnion = N | F
+    expectTypeOf<U>().toEqualTypeOf<ExactUnion>()
 
-    // But U must NOT be assignable to either subtype
-    type UtoN = U extends N ? true : false
-    type UtoF = U extends F ? true : false
-
-    expectTypeOf<UtoN>().toEqualTypeOf<false>()
-    expectTypeOf<UtoF>().toEqualTypeOf<false>()
+    // 2) N and F are not equal types
+    type NEqualsF = IsEqual<N, F>
+    expectTypeOf<NEqualsF>().toEqualTypeOf<false>()
   })
+
+  it('NormalStepRunner<Ctx> has the correct call signature', () => {
+    type N = NormalStepRunner<Ctx>
+    type Expected = (options: {
+      config: Ctx['RC']
+      inputData: Ctx['Input'] | null
+    }) => Promise<any>
+
+    expectTypeOf<N>().toExtend<Expected>()
+  })
+
+  it('ForkStepRunner<Ctx> has the correct call signature', () => {
+    type F = ForkStepRunner<Ctx>
+    type Expected = (options: {
+      config: Ctx['RC']
+      inputData: Ctx['Input'] | null
+      branchIndex: number
+    }) => Promise<any>
+
+    expectTypeOf<F>().toExtend<Expected>()
+  })
+
+  it('SingleRunnerResult<T> output matches T["Output"] | null', () => {
+    type Result = SingleRunnerResult<Ctx>
+    expectTypeOf<Result['output']>().toEqualTypeOf<Ctx['Output'] | null>()
+  })
+
 })
 
 

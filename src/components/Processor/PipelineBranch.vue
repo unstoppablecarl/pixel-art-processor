@@ -1,98 +1,44 @@
 <script setup lang="ts">
-import { dragAndDrop } from '@formkit/drag-and-drop'
-import { computed, onMounted, useTemplateRef } from 'vue'
-import { type AnyStepRef } from '../../lib/pipeline/Step.ts'
-import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { useStepStore } from '../../lib/store/step-store.ts'
+import { computed } from 'vue'
+import { type AnyForkNode, isFork } from '../../lib/pipeline/Node.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { STEP_REGISTRY } from '../../steps.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
-const store = useStepStore()
+const store = usePipelineStore()
 const stepRegistry = STEP_REGISTRY
 
 type Props = {
   stepIds: string[],
-} & (
-  {
-    parentForkId: null,
-    branchIndex: null,
-  } | {
-  parentForkId: string,
-  branchIndex: number,
-})
-
-const {
-  stepIds,
-  parentForkId,
-  branchIndex,
-} = defineProps<Props>()
-
-if (parentForkId) {
-  useBranchHandler(parentForkId, branchIndex)
 }
 
+const { stepIds, parentForkId } = defineProps<Props>()
+
+// Convert stepIds into nodes and detect fork at end
 const allSteps = computed(() => {
   if (!stepIds.length) {
+    return { normalStepIds: [], steps: [], fork: null }
+  }
+
+  const steps = stepIds.map(id => store.get(id))
+  const last = steps[steps.length - 1]
+
+  if (isFork(last)) {
     return {
-      normalStepIds: [],
-      steps: [],
-      fork: null,
+      normalStepIds: stepIds.slice(0, -1),
+      steps: steps.slice(0, -1),
+      fork: last as AnyForkNode,
     }
   }
 
-  let fork: AnyStepRef | null = null
-
-  const lastId = stepIds[stepIds.length - 1]
-  const lastStep = store.get(lastId)
-
-  let normalStepIds: string[] = []
-
-  if (store.stepIsFork(lastStep)) {
-    fork = lastStep
-    normalStepIds = stepIds.slice(0, -1)
-  } else {
-    normalStepIds = stepIds
-  }
-
   return {
-    normalStepIds,
-    steps: normalStepIds.map(id => store.get(id)),
-    fork,
+    normalStepIds: stepIds,
+    steps,
+    fork: null,
   }
 })
-
-const branchDragContainer = useTemplateRef('branchDragContainer')
-
-onMounted(() => {
-  if (!branchDragContainer.value) return
-
-  dragAndDrop({
-    parent: branchDragContainer.value,
-    getValues: () => allSteps.value.normalStepIds,
-    setValues: (newOrder) => {
-      const fork = allSteps.value.fork
-      if (fork) {
-        newOrder = [...newOrder, fork.id]
-      }
-
-      if (parentForkId === null) {
-        store.setRootStepIds(newOrder)
-      } else {
-        store.setBranchStepIds(parentForkId, branchIndex!, newOrder)
-      }
-    },
-    config: {
-      group: 'steps',
-      dragHandle: '.btn-grab',
-      draggingClass: 'step-dragging',
-      dropZoneClass: 'drop-zone',
-      dragPlaceholderClass: 'drag-placeholder',
-      dropZoneParentClass: 'drop-zone-parent',
-    },
-  })
-})
-
 </script>
+
 <template>
   <div ref="branchDragContainer" class="processor-branch">
     <template v-if="allSteps.steps.length">
@@ -104,10 +50,12 @@ onMounted(() => {
         />
       </template>
     </template>
+
     <div v-else-if="parentForkId" class="empty-branch-placeholder">
       Drop Here
     </div>
   </div>
+
   <template v-if="allSteps.fork">
     <component
       :is="stepRegistry.defToComponent(allSteps.fork.def)"

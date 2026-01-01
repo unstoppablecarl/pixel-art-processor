@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
-import { useStepStore } from '../../lib/store/step-store.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import { STEP_REGISTRY } from '../../steps.ts'
 
-const stepStore = useStepStore()
+const stepStore = usePipelineStore()
 const stepRegistry = STEP_REGISTRY
 const steps = computed(() => stepRegistry.rootSteps())
 

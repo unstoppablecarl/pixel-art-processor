@@ -3,9 +3,9 @@ import { BDropdown, BDropdownItem } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { AnyStepRef } from '../../lib/pipeline/Step.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
-import { useStepStore } from '../../lib/store/step-store.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
-const store = useStepStore()
+const store = usePipelineStore()
 
 const {
   step,

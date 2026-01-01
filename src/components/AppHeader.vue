@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { useStepStore } from '../lib/store/step-store.ts'
+import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 
-const stepStore = useStepStore()
+const stepStore = usePipelineStore()
 
 </script>
 <template>

@@ -3,7 +3,7 @@ import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'height_map_glow',
   displayName: 'HeightMap: Glow',
   inputDataTypes: [BitMask],
@@ -31,7 +31,7 @@ const step = useStepHandler(stepId, {
       ...INNER_GLOW_DEFAULTS,
     }
   },
-  run({ config, inputData }) {
+  async run({ config, inputData }) {
     if (inputData === null) return
 
     const bitMask = inputData as BitMask
@@ -66,7 +66,7 @@ const config = step.config
           label="Size"
           v-model:value="config.size"
           :min="0"
-          :max="Math.floor((step.inputData?.width ?? 0) * 0.5)"
+          :max="Math.floor((step.outputData?.width ?? 0) * 0.5)"
           :step="1"
         />
 

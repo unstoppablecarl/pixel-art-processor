@@ -2,14 +2,14 @@
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { AnyStepRef } from '../../lib/pipeline/Step.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
-import { useStepStore } from '../../lib/store/step-store.ts'
 import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
 import { normalizeValueToArray } from '../../lib/util/misc.ts'
 import { makePrng } from '../../lib/util/prng.ts'
 
 const previewStore = usePreviewStore()
-const store = useStepStore()
+const store = usePipelineStore()
 
 const prng = computed(() => makePrng(previewStore.seed))
 

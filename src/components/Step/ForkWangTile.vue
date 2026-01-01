@@ -13,7 +13,7 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
-import { useStepForkHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'
@@ -46,12 +46,12 @@ const CONFIG_DEFAULTS = {
   padding: 4,
 }
 
-const step = useStepForkHandler(stepId, {
+const step = useForkHandler(stepId, {
   ...STEP_META,
   config() {
     return reactive({ ...CONFIG_DEFAULTS })
   },
-  run({ config, branchIndex }) {
+  async run({ config, branchIndex }) {
 
     const size = config.size.value
     const options = {
@@ -63,36 +63,31 @@ const step = useStepForkHandler(stepId, {
       padding: config.padding,
     }
 
-    function generate(index: number) {
-      const mask = new BitMask(size, size)
-      const edgeSetters = {
-        setLeftEdge: (i: number) => mask.set(0, i, 1),
-        setRightEdge: (i: number) => mask.set(size - 1, i, 1),
-        setTopEdge: (i: number) => mask.set(i, 0, 1),
-        setBottomEdge: (i: number) => mask.set(i, size - 1, 1),
-      }
-
-      const edges = Object.values(edgeSetters)
-
-      const chunks = prng.generateChunkedBinaryArray({
-        chunks: config.chunks.value,
-        shuffleSeed: config.shuffleSeed,
-        ...options,
-      })
-
-      chunks.forEach((v, i) => {
-        if (!v === config.invert) {
-          edges[index % 4](i)
-        }
-      })
-
-      return mask
+    const mask = new BitMask(size, size)
+    const edgeSetters = {
+      setLeftEdge: (i: number) => mask.set(0, i, 1),
+      setRightEdge: (i: number) => mask.set(size - 1, i, 1),
+      setTopEdge: (i: number) => mask.set(i, 0, 1),
+      setBottomEdge: (i: number) => mask.set(i, size - 1, 1),
     }
 
-    const branchesOutput = Array(branchIndex).fill(null).map((_v, i) => generate(i))
+    const edges = Object.values(edgeSetters)
+
+    const chunks = prng.generateChunkedBinaryArray({
+      chunks: config.chunks.value,
+      shuffleSeed: config.shuffleSeed,
+      ...options,
+    })
+
+    chunks.forEach((v, i) => {
+      if (!v === config.invert) {
+        edges[branchIndex % 4](i)
+      }
+    })
+
     return {
-      branchesOutput,
-      preview: branchesOutput.map(i => i.toImageData()),
+      output: mask,
+      preview: mask.toImageData(),
     }
   },
 })

@@ -5,7 +5,7 @@ import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'normal_map_to_texture_lighting',
   displayName: 'NormalMap -> Texture Lighting',
   inputDataTypes: [NormalMap],
@@ -15,8 +15,8 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { handleStepValidationError } from '../../lib/errors.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { useStepStore } from '../../lib/store/step-store.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
@@ -46,7 +46,7 @@ const step = useStepHandler(stepId, {
       textureImageData: deserializeImageData(config.textureImageData),
     }
   },
-  run({ config, inputData }) {
+  async run({ config, inputData }) {
     if (!inputData) return
     if (!config.textureImageData) return
 
@@ -72,7 +72,7 @@ function handleTextureUpload(e: Event) {
     .then((imageData) => {
       config.textureImageData = imageData
     })
-    .catch(error => useStepStore().handleStepError(stepId, error))
+    .catch(error => handleStepValidationError(stepId, error))
 }
 
 const images = computed(() => [

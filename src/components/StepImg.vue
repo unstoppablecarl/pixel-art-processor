@@ -8,10 +8,10 @@ export type StepImage = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useStepStore } from '../lib/store/step-store.ts'
+import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { imageDataToUrlImage } from '../lib/util/ImageData.ts'
 
-const store = useStepStore()
+const store = usePipelineStore()
 const {
   image,
 } = defineProps<{
@@ -19,12 +19,12 @@ const {
 }>()
 
 const width = computed(() => {
-  const width = image.imageData?.width ?? image.placeholderWidth ?? store.startStepOutputSize.width
+  const width = image.imageData?.width ?? image.placeholderWidth ?? 7 //store.startStepOutputSize.width
   return width * store.imgScale
 })
 
 const height = computed(() => {
-  const height = image.imageData?.height ?? image.placeholderHeight ?? store.startStepOutputSize.height
+  const height = image.imageData?.height ?? image.placeholderHeight ?? 7// store.startStepOutputSize.height
   return height * store.imgScale
 })
 

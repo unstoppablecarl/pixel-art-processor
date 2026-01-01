@@ -3,7 +3,7 @@ import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'bitmask_islands_add',
   displayName: 'BitMask Islands: Add',
   inputDataTypes: [BitMask],
@@ -45,7 +45,7 @@ const step = useStepHandler(stepId, {
       ...DEFAULT_SHOW_ADDED.CONFIG,
     }
   },
-  run({ config, inputData }) {
+  async run({ config, inputData }) {
     if (!inputData) return
 
     const mask = inputData as BitMask
@@ -102,7 +102,7 @@ const config = step.config
             v-model:maxValue="config.maxDistance "
             :show-inputs="false"
             :min="0"
-            :max="step.inputData?.width ?? 400"
+            :max="step.outputData?.width ?? 400"
             :step="1"
             label="Min/Max Dist:"
           />
@@ -112,7 +112,7 @@ const config = step.config
             label="Border Buffer"
             v-model:value="config.borderBuffer"
             :min="0"
-            :max="step.inputData?.width"
+            :max="step.outputData?.width ?? 400"
             :step="1"
           />
 

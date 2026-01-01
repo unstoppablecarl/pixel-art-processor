@@ -5,15 +5,15 @@ import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
+import type { InitializedNode } from './Node.ts'
 import {
   type AnyStepContext,
-  type InitializedStep,
   type ReactiveConfigType,
   type StepContext,
   type StepInputTypesToInstances,
 } from './Step.ts'
 import type { StepDataConfig } from './StepMeta.ts'
-import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
+import { type StepRegistry } from './StepRegistry.ts'
 import type { StepRunner } from './StepRunner.ts'
 
 export type Config = Record<string, any>
@@ -65,7 +65,7 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcher?: (step: InitializedStep<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcher?: (step: InitializedNode<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
   validateInput?: (
     inputData: StepInputTypesToInstances<I>,
@@ -97,7 +97,7 @@ export interface IStepHandler<
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: InitializedStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcher(step: InitializedNode<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -146,7 +146,7 @@ export function makeStepHandler<
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-    watcher(_step: InitializedStep<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    watcher(_step: InitializedNode<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
       return [
         ...defaultWatcherTargets,
       ]

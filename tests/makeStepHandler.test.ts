@@ -14,11 +14,10 @@ import {
   type StepHandlerOptions,
 } from '../src/lib/pipeline/StepHandler.ts'
 import type { StepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import type { NormalStepRunner, NormalStepRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
-import type { MaybePromise } from '../src/lib/util/misc.ts'
 
 class A extends BitMask {
 }
@@ -77,7 +76,7 @@ describe('StepHandlerOptions<T>', () => {
     const minimalOptions: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
-      run(args) {
+      async run(args) {
         expectTypeOf(args.config).toEqualTypeOf<RC>()
         expectTypeOf(args.inputData).toEqualTypeOf<
           StepInputTypesToInstances<[typeof A, typeof B]> | null
@@ -101,7 +100,7 @@ describe('StepHandlerOptions<T>', () => {
         return {} as RC
       },
 
-      run(args) {
+      async run(args) {
         return {
           output: {} as InstanceType<typeof COut>,
         }
@@ -157,7 +156,7 @@ describe('StepHandlerOptions<T>', () => {
     // @ts-expect-error missing required inputDataTypes
     const bad1: StepHandlerOptions<T> = {
       outputDataType: COut,
-      run() {
+      async run() {
         return { output: {} as InstanceType<typeof COut> }
       },
     }
@@ -166,7 +165,7 @@ describe('StepHandlerOptions<T>', () => {
     // @ts-expect-error missing required outputDataType
     const bad2: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
-      run() {
+      async run() {
         return { output: {} as InstanceType<typeof COut> }
       },
     }
@@ -200,7 +199,7 @@ describe('makeStepHandler<T>', () => {
         return {} as RC
       },
 
-      run(args) {
+      async run(args) {
         expectTypeOf(args.config).toEqualTypeOf<RC>()
         expectTypeOf(args.inputData).toEqualTypeOf<
           StepInputTypesToInstances<[typeof A, typeof B]> | null
@@ -262,7 +261,7 @@ describe('makeStepHandler<T>', () => {
       config() {
         return {} as ReactiveConfigType<RawConfig>
       },
-      run(args: { config: ReactiveConfigType<RawConfig> }) {
+      async run(args: { config: ReactiveConfigType<RawConfig> }) {
         return {
           output: {} as COut,
         }
@@ -280,7 +279,7 @@ describe('makeStepHandler<T>', () => {
     const options: StepHandlerOptions<T, NormalStepRunner<T>> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
-      run(args) {
+      async run(args) {
         return {
           output: {} as InstanceType<typeof COut>,
         }
@@ -294,8 +293,8 @@ describe('makeStepHandler<T>', () => {
     >()
 
     expectTypeOf(handler.run).returns.toEqualTypeOf<
-      MaybePromise<
-        NormalStepRunnerOutput<T['Output']>
+      Promise<
+        SingleRunnerOutput<T>
       >
     >()
   })

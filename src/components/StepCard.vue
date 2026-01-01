@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
-import { computed,onMounted } from 'vue'
+import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
-import type { AnyConfiguredStep } from '../lib/pipeline/Step.ts'
+import type { AnyInitializedNode } from '../lib/pipeline/Node.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
-import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
-import { useStepStore } from '../lib/store/step-store.ts'
+import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { normalizeValueToArray } from '../lib/util/misc.ts'
+import { STEP_REGISTRY } from '../steps.ts'
 import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
 import StepImg, { type StepImage } from './StepImg.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
 
-const store = useStepStore()
+const store = usePipelineStore()
 
 const {
   step,
@@ -24,7 +24,7 @@ const {
   mutable = true,
   subHeader = '',
 } = defineProps<{
-  step: AnyConfiguredStep
+  step: AnyInitializedNode
   showDimensions?: boolean,
   images?: StepImage[],
   showAddStepBtn?: boolean,
@@ -94,17 +94,12 @@ function toggleMute() {
   step.muted = !step.muted
 }
 
-onMounted(() => {
-  console.log('step mounted: ', step.id)
-  store.invalidateAll()
-})
-
 </script>
 <template>
   <div ref="stepEl" class="step" :style="cssStyle">
     <div class="step-header hstack gap-1 align-items-center">
       <div>
-        {{ header }} {{subHeader}}
+        {{ header }} {{ subHeader }}
       </div>
       <div class="execution-time ms-auto" v-if="executionTime">
         <span class="material-symbols-outlined">timer</span>
@@ -147,9 +142,9 @@ onMounted(() => {
             <span class="material-symbols-outlined">{{ step.muted ? 'visibility_off' : 'visibility' }}</span>
           </button>
 
-          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicate(step.id)">
-            <span class="material-symbols-outlined">content_copy</span>
-          </button>
+          <!--          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicate(step.id)">-->
+          <!--            <span class="material-symbols-outlined">content_copy</span>-->
+          <!--          </button>-->
 
           <slot name="add-step">
             <AddAfterStepDropDown v-if="showAddStepBtn" :step-id="step.id" size="sm" />

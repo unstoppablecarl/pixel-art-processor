@@ -3,7 +3,7 @@ import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'height_map_noise',
   displayName: 'HeightMap: Noise',
   inputDataTypes: [HeightMap],
@@ -16,11 +16,11 @@ import { computed, shallowRef } from 'vue'
 import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../lib/generators/perlin-noise.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
-import { useStepStore } from '../../lib/store/step-store.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard from '../StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
-const store = useStepStore()
+const store = usePipelineStore()
 
 const { stepId } = defineProps<{ stepId: string }>()
 
@@ -33,7 +33,7 @@ const step = useStepHandler(stepId, {
       ...GENERATE_NOISE_DEFAULTS,
     }
   },
-  run({ config, inputData }) {
+  async run({ config, inputData }) {
     if (!inputData) return
 
     noiseImageData.value = generateNoise(inputData.width, inputData.height, config)

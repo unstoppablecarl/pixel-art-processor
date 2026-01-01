@@ -2,6 +2,7 @@ import type { Component } from 'vue'
 import InvalidInputType from '../components/ValidationErrors/InvalidInputType.vue'
 import type { StepDataType } from '../steps.ts'
 import { INVALID_INPUT_TYPE } from './pipeline/StepHandler.ts'
+import { usePipelineStore } from './store/pipeline-store.ts'
 
 export abstract class StepValidationError extends Error {
   component: Component = GenericValidationError
@@ -47,4 +48,20 @@ export class InvalidFileTypeError extends StepValidationError {
   constructor() {
     super('Invalid File format', 'Failed to load image from ArrayBuffer')
   }
+}
+
+export function handleStepValidationError(stepId: string, error: Error) {
+  const errors: StepValidationError[] = []
+
+  if (error instanceof StepValidationError) {
+    errors.push(error)
+  } else {
+    errors.push(new GenericValidationError(error.message + ''))
+  }
+
+  if (!(error instanceof StepValidationError)) {
+    throw error
+  }
+
+  usePipelineStore().get(stepId).validationErrors = errors
 }

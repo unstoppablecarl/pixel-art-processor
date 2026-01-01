@@ -5,7 +5,7 @@ import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 
 export const STEP_META: AnyStepMeta = {
-  type: NodeType.NORMAL,
+  type: NodeType.STEP,
   def: 'height_map_to_normal_map',
   displayName: 'HeightMap -> NormalMap',
   inputDataTypes: [HeightMap],
@@ -27,7 +27,7 @@ const step = useStepHandler(stepId, {
       normalMapStrength: 1.5,
     }
   },
-  run({ config, inputData }) {
+  async run({ config, inputData }) {
     if (!inputData) return
 
     const heightMap = inputData as HeightMap
