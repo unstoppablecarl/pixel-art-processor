@@ -1,5 +1,5 @@
 import { reactive, type Reactive, type WatchSource } from 'vue'
-import { STEP_REGISTRY, type StepDataType } from '../../steps.ts'
+import { type StepDataType } from '../../steps.ts'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
@@ -13,7 +13,7 @@ import {
   type StepInputTypesToInstances,
 } from './Step.ts'
 import type { StepDataConfig } from './StepMeta.ts'
-import { type StepRegistry } from './StepRegistry.ts'
+import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
 import type { StepRunner } from './StepRunner.ts'
 
 export type Config = Record<string, any>
@@ -122,7 +122,7 @@ export function makeStepHandler<
 >(
   def: string,
   options: StepHandlerOptions<T, R>,
-  stepRegistry: StepRegistry = STEP_REGISTRY,
+  stepRegistry: StepRegistry = useStepRegistry(),
 ): IStepHandler<T, R> {
 
   type RC = T['RC']

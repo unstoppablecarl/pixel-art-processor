@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { type AnyForkNode, isFork, type NodeId } from '../../lib/pipeline/Node.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { STEP_REGISTRY } from '../../steps.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = usePipelineStore()
-const stepRegistry = STEP_REGISTRY
+const stepRegistry = useStepRegistry()
 
 const { nodeIds } = defineProps<{
   nodeIds: NodeId[],

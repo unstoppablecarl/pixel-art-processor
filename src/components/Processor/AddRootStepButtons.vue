@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NodeDef } from '../../lib/pipeline/Node.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { STEP_REGISTRY } from '../../steps.ts'
 
 const store = usePipelineStore()
-const stepRegistry = STEP_REGISTRY
+const stepRegistry = useStepRegistry()
 const steps = computed(() => stepRegistry.rootSteps())
 
 function add(def: NodeDef) {

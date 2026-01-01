@@ -11,6 +11,7 @@ import type {
   StepHandlerOptionsInfer,
   WatcherTarget,
 } from '../src/lib/pipeline/StepHandler'
+import { useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
@@ -19,7 +20,7 @@ import { NormalMap } from '../src/lib/step-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
-import { STEP_REGISTRY, type StepDataType } from '../src/steps'
+import { type StepDataType } from '../src/steps'
 
 function makeAppContext(cb: () => void) {
 
@@ -59,7 +60,7 @@ function defineStep(
     outputDataType: StepDataType
   },
 ) {
-  return STEP_REGISTRY.defineStep({
+  return useStepRegistry().defineStep({
     displayName,
     def,
     type,

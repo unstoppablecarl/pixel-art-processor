@@ -1,13 +1,13 @@
 <script setup lang="ts">
 
 import type { InvalidInputTypeError } from '../../lib/errors.ts'
-import { STEP_REGISTRY } from '../../steps.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 
 const { error } = defineProps<{
   error: InvalidInputTypeError,
 }>()
 
-const dataTypeRegistry = STEP_REGISTRY.dataTypeRegistry
+const dataTypeRegistry = useStepRegistry().dataTypeRegistry
 
 const valid = error.expectedTypes.map(t => {
   return dataTypeRegistry.getDisplayName(t)

@@ -105,7 +105,6 @@ const node = useStepHandler(nodeId, {
     }
   },
 })
-
 const config = node.config!
 
 const computedSize = computed(() => config.size.value)
@@ -220,6 +219,7 @@ const computedSize = computed(() => config.size.value)
           input-width="50%"
 
         />
+        a
       </div>
     </template>
   </StepCard>

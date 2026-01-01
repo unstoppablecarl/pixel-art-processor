@@ -1,8 +1,8 @@
-import { STEP_REGISTRY } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
 import { type IStepHandler } from './StepHandler.ts'
+import { useStepRegistry } from './StepRegistry.ts'
 import type {
   ForkStepRunner,
   NormalStepRunner,
@@ -351,13 +351,13 @@ export function deSerializeNode(data: AnyNodeSerialized): AnyNode {
   throw new Error(message)
 }
 
-export const isStep = (n: AnyNode): n is AnyStepNode => STEP_REGISTRY.getNodeType(n.def) === NodeType.STEP
-export const isFork = (n: AnyNode): n is AnyForkNode => STEP_REGISTRY.getNodeType(n.def) === NodeType.FORK
-export const isBranch = (n: AnyNode): n is AnyBranchNode => STEP_REGISTRY.getNodeType(n.def) === NodeType.BRANCH
+export const isStep = (n: AnyNode): n is AnyStepNode => useStepRegistry().getNodeType(n.def) === NodeType.STEP
+export const isFork = (n: AnyNode): n is AnyForkNode => useStepRegistry().getNodeType(n.def) === NodeType.FORK
+export const isBranch = (n: AnyNode): n is AnyBranchNode => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
 
-const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => STEP_REGISTRY.getNodeType(n.def) === NodeType.STEP
-const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => STEP_REGISTRY.getNodeType(n.def) === NodeType.FORK
-const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => STEP_REGISTRY.getNodeType(n.def) === NodeType.BRANCH
+const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.STEP
+const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.FORK
+const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
 
 function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): SingleRunnerResult<T> {
   return {

@@ -1,4 +1,4 @@
-import { type Component } from 'vue'
+import { type Component, type InjectionKey, inject, App } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
@@ -145,4 +145,17 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   }
 }
 
+export const STEP_REGISTRY_INJECT_KEY: InjectionKey<StepRegistry> = Symbol('stepRegistry')
+
+export function installStepRegistry(app: App, registry: StepRegistry) {
+  app.provide(STEP_REGISTRY_INJECT_KEY, registry)
+}
+
+export function useStepRegistry(): StepRegistry {
+  const registry = inject(STEP_REGISTRY_INJECT_KEY)
+  if (!registry) {
+    throw new Error('StepRegistry not provided. Call installStepRegistry() in main.ts')
+  }
+  return registry
+}
 export const BRANCH_DEF = 'branch_node' as NodeDef

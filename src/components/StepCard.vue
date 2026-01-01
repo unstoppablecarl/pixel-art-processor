@@ -4,9 +4,9 @@ import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
 import type { AnyInitializedNode } from '../lib/pipeline/Node.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
+import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { normalizeValueToArray } from '../lib/util/misc.ts'
-import { STEP_REGISTRY } from '../steps.ts'
 import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
 import StepImg, { type StepImage } from './StepImg.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
@@ -87,7 +87,7 @@ const executionTime = computed(() => {
   return (node.lastExecutionTimeMS / 1000).toFixed(2)
 })
 
-const registry = STEP_REGISTRY
+const registry = useStepRegistry()
 const header = computed(() => registry.get(node.def).displayName)
 
 function toggleMute() {

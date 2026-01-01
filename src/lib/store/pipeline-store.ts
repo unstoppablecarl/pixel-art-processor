@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
 import { reactive, ref, type Ref, shallowReactive, watch } from 'vue'
-import { STEP_REGISTRY } from '../../steps.ts'
 import {
   type AnyBranchNode,
   type AnyForkNode,
@@ -21,7 +20,7 @@ import {
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
 import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
-import type { AnyStepDefinition } from '../pipeline/StepRegistry.ts'
+import { type AnyStepDefinition, useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { type ImgSize } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
@@ -65,6 +64,7 @@ export interface PipelineStore {
 }
 
 export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
+    const stepRegistry = useStepRegistry()
     const nodes = reactive<Record<string, AnyNode>>({})
     const idIncrement = ref(0)
     const globalSeed = ref(3)
@@ -141,7 +141,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     function add(def: NodeDef, afterId?: NodeId): AnyNode {
-      const type = STEP_REGISTRY.getNodeType(def)
+      const type = stepRegistry.getNodeType(def)
       if (type == NodeType.STEP) {
         return addStep(def, afterId)
       }
@@ -360,11 +360,11 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function getStepsAddableAfter(id: NodeId): AnyStepDefinition[] {
       const node = get(id)
-      const nodes = STEP_REGISTRY.getStepsCompatibleWithOutput(node.def)
+      const nodes = stepRegistry.getStepsCompatibleWithOutput(node.def)
 
       return nodes.filter(s => {
-        if (isStep(node)) return !STEP_REGISTRY.isBranch(s.def)
-        if (isFork(node)) return !STEP_REGISTRY.isFork(s.def)
+        if (isStep(node)) return !stepRegistry.isBranch(s.def)
+        if (isFork(node)) return !stepRegistry.isFork(s.def)
         if (isBranch(node)) return false
       })
     }
