@@ -13,7 +13,8 @@ const pinia = createPinia()
 
 pinia.use(createPersistedState())
 
-installStepRegistry(app, makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
+// ⚠️this has to run after init but before app.mount()
+installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
 
 app.config.performance = __DEV__
 
