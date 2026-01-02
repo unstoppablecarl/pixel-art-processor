@@ -13,11 +13,12 @@ const { branchNodeId } = defineProps<{
   branchNodeId: NodeId,
 }>()
 
-const branch = computed(() => store.get(branchNodeId) as AnyBranchNode)
+const branch = computed(() => store.getIfExists(branchNodeId) as AnyBranchNode | undefined)
 
 const nodeIds = computed((): NodeId[] => {
+  if (!branch.value) return []
   const ids: NodeId[] = []
-  let currentId = branch.value.nextId
+  let currentId = store.get(branchNodeId).childIds(store)[0]
 
   while (currentId) {
     ids.push(currentId)
@@ -28,9 +29,8 @@ const nodeIds = computed((): NodeId[] => {
   return ids
 })
 </script>
-
 <template>
-  <div class="card-header hstack">
+  <div class="card-header hstack" v-if="branch">
     <div class="me-auto pe-2">Branch {{ branch.branchIndex + 1 }}</div>
 
     <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
@@ -42,7 +42,7 @@ const nodeIds = computed((): NodeId[] => {
       </button>
 
       <button role="button" class="btn btn-sm btn-secondary d-inline-block"
-              @click="store.duplicateNode(branchNodeId)">
+              @click="store.duplicateBranchNode(branchNodeId)">
         <span class="material-symbols-outlined">content_copy</span>
       </button>
 

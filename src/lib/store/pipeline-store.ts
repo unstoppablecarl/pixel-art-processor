@@ -45,6 +45,11 @@ export interface PipelineStore {
   $restoreState(data: SerializedState): void,
 
   get(id: NodeId): AnyNode
+  getBranch(id: NodeId): AnyBranchNode
+  getFork(id: NodeId): AnyForkNode
+  getStep(id: NodeId): AnyStepNode
+  getIfExists<T extends AnyStepContext>(id: NodeId): AnyNode<T> | undefined
+  has(id: NodeId): boolean
   markRootDirty(): void
   rootNode(): AnyNode | undefined
   markDirty(id: NodeId): void
@@ -54,11 +59,12 @@ export interface PipelineStore {
   addFork(def: NodeDef, prevNodeId?: NodeId): AnyForkNode
   addBranch(def: NodeDef, parentForkId: NodeId): AnyBranchNode
   remove(id: NodeId): void
-  move(id: NodeId, afterId: NodeId | null): void
+  moveStepNode(id: NodeId, afterId: NodeId | null): void
   loadNode(serialized: AnyNodeSerialized): void
   initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T>
   getStepsAddableAfter(id: NodeId): AnyStepDefinition[]
-  duplicateNode(id: NodeId): NodeId
+  duplicateStepNode(id: NodeId): NodeId
+  duplicateBranchNode(id: NodeId): NodeId
   getRootNodeOutputSize(): ImgSize
   getLeafNodes(): AnyNode[]
 }
@@ -83,18 +89,24 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       rootNode,
       markRootDirty,
       get,
+      getIfExists,
+      getStep,
+      getFork,
+      getBranch,
+      has,
       add,
       addStep,
       addFork,
       addBranch,
       remove,
-      move,
+      moveStepNode,
       markDirty,
       runNode,
       loadNode,
       initializeNode,
       getStepsAddableAfter,
-      duplicateNode,
+      duplicateStepNode,
+      duplicateBranchNode,
       getRootNodeOutputSize,
       getLeafNodes,
     }
@@ -138,6 +150,32 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     function get<T extends AnyStepContext>(id: NodeId): AnyNode<T> {
       if (!nodes[id]) throw new Error('node not found: ' + id)
       return nodes[id] as AnyNode<T>
+    }
+
+    function getStep<T extends AnyStepContext>(id: NodeId): StepNode<T> {
+      const step = get(id)
+      if (!isStep(step)) throw new Error(`${id} is not a step`)
+      return step as StepNode<T>
+    }
+
+    function getFork<T extends AnyStepContext>(id: NodeId): ForkNode<T> {
+      const fork = get(id)
+      if (!isFork(fork)) throw new Error(`${id} is not a fork`)
+      return fork as ForkNode<T>
+    }
+
+    function getBranch<T extends AnyStepContext>(id: NodeId): BranchNode<T> {
+      const branch = get(id)
+      if (!isBranch(branch)) throw new Error(`${id} is not a branch`)
+      return branch as BranchNode<T>
+    }
+
+    function getIfExists<T extends AnyStepContext>(id: NodeId): AnyNode<T> | undefined {
+      return nodes[id] as AnyNode<T> | undefined
+    }
+
+    function has(id: NodeId): boolean {
+      return !!nodes[id]
     }
 
     function add(def: NodeDef, afterId?: NodeId): AnyNode {
@@ -184,12 +222,12 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return fork
     }
 
-    function addBranch(def: NodeDef, parentForkId: NodeId): AnyBranchNode {
-      const fork = get(parentForkId) as AnyForkNode
+    function addBranch(def: NodeDef, prevNodeId: NodeId): AnyBranchNode {
+      const fork = get(prevNodeId) as AnyForkNode
       const branchIndex = fork.branchIds.length
 
       const id = _defToId(def)
-      const branch = shallowReactive(new BranchNode({ id, def, parentForkId, branchIndex }))
+      const branch = shallowReactive(new BranchNode({ id, def, prevNodeId, branchIndex }))
       nodes[id] = branch
 
       fork.branchIds.push(id)
@@ -198,134 +236,132 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return branch
     }
 
-    function detach(id: NodeId) {
-      const node = get(id)
+    function removeBranch(forkId: NodeId, branchId: NodeId): void {
+      const fork = getFork(forkId)
+      const index = fork.branchIds.indexOf(branchId)
+      if (index !== -1) {
+        fork.branchIds.splice(index, 1)
+        // reindex remaining branches
+        fork.branchIds.forEach((bid, i) => {
+          const b = store.get(bid) as AnyBranchNode
+          b.branchIndex = i
+        })
+      }
+    }
 
-      // If node has a parent
-      if (node.prevNodeId) {
-        const parent = get(node.prevNodeId)
+    function getDescendantIds(id: NodeId): NodeId[] {
+      const result: NodeId[] = []
+      const visited = new Set<NodeId>()
 
-        // Parent is a branch → clear nextId
-        if (isBranch(parent) && parent.nextId === id) {
-          parent.nextId = null
-        }
+      function walk(currentId: NodeId) {
+        if (visited.has(currentId)) return
+        visited.add(currentId)
 
-        // Parent is a fork → remove from branchIds
-        if (isFork(parent)) {
-          const index = parent.branchIds.indexOf(id)
-          if (index !== -1) {
-            parent.branchIds.splice(index, 1)
-            // reindex remaining branches
-            parent.branchIds.forEach((bid, i) => {
-              const b = get(bid) as AnyBranchNode
-              b.branchIndex = i
-            })
-          }
+        const node = getIfExists(currentId)
+        if (!node) return
+
+        for (const childId of node.childIds(store)) {
+          result.push(childId)
+          walk(childId)
         }
       }
 
+      walk(id)
+      return result
+    }
+
+    function removeBranchOrForkAndDescendants(id: NodeId): void {
+      const node = get(id)
+      if (isStep(node)) throw new Error(`${id} is not a branch or fork`)
+      for (const descendantId of getDescendantIds(id)) {
+        delete nodes[descendantId]
+      }
+      delete nodes[id]
+    }
+
+    function detachStep(node: AnyStepNode) {
+      const parentId = node.prevNodeId
+      const childId = node.childIds(store)[0] ?? null
+
       node.prevNodeId = null
+
+      if (childId) {
+        get(childId).prevNodeId = null
+      }
+
+      if (parentId && childId) {
+        get(childId).prevNodeId = parentId
+      }
     }
 
     function remove(id: NodeId): void {
       const node = get(id)
-      detach(id)
 
-      node.childIds(store).forEach(remove)
+      if (isStep(node)) {
+        detachStep(node)
+        delete nodes[id]
+        return
+      }
 
-      delete nodes[id]
+      if (isBranch(node)) {
+        const branch = node as AnyBranchNode
+        const parentId = branch.prevNodeId
+        if (parentId) {
+          removeBranch(parentId, branch.id)
+        }
+        removeBranchOrForkAndDescendants(id)
+        return
+      }
+
+      if (isFork(node)) {
+        removeBranchOrForkAndDescendants(id)
+        return
+      }
+
+      throw new Error(`remove: unsupported node type for ${id}`)
     }
 
-    function move(nodeId: NodeId, afterId: NodeId | null) {
-      const node = get(nodeId)
-      if (isBranch(node)) throw new Error('cannot move branch nodes')
+    function moveStepNode(id: NodeId, afterId: NodeId | null) {
+      const node = getStep(id)
+      if (isBranch(node)) throw new Error('cannot moveStepNode branch nodes')
+      if (isFork(node)) throw new Error('cannot moveStepNode fork nodes')
 
-      // move to root
+      if (id === afterId) return
+
+      // moveStepNode to first root position
       if (afterId === null) {
-        detach(nodeId)
+        const root = rootNode()
+        if (root) {
+          root.prevNodeId = node.id
+        }
         node.prevNodeId = null
-
-        markDirty(nodeId)
+        markDirty(id)
         return
       }
 
-      if (nodeId === afterId) return
-
-      detach(nodeId)
-      attachAfter(nodeId, afterId)
-      markDirty(nodeId)
+      detachStep(node)
+      insertStepAfter(node, afterId)
+      markDirty(id)
     }
 
-    function attachAfter(nodeId: NodeId, afterId: NodeId) {
-      const node = get(nodeId)
+    function insertStepAfter(node: AnyStepNode, afterId: NodeId) {
       const after = get(afterId)
+      if (isFork(after)) throw new Error('Cannot attach step after a ForkNode')
 
-      if (isFork(after)) {
-        throw new Error('Cannot attach after a ForkNode')
+      // Insert node between after and its old child
+      const oldChildId = after.childIds(store)[0]
+      if (oldChildId) {
+        get(oldChildId).prevNodeId = node.id
       }
 
-      // Branch nodes cannot be attached after StepNodes
-      if (isStep(after) && isBranch(node)) {
-        throw new Error('Cannot attach a BranchNode after a StepNode')
-      }
-
-      // Branch → Branch is illegal
-      if (isBranch(after) && isBranch(node)) {
-        throw new Error('Cannot attach a BranchNode after a BranchNode')
-      }
-
-      // Step → Branch is illegal (branches must be children of forks)
-      if (isStep(after) && isBranch(node)) {
-        throw new Error('Cannot attach a BranchNode after a StepNode')
-      }
-
-      // ─────────────────────────────────────────────
-      // 1. CASE: after is StepNode
-      // Step → Step
-      // Step → Fork
-      // (Branch → Step is already rejected above)
-      // ─────────────────────────────────────────────
-      if (isStep(after)) {
-        // Insert node between after and its old child
-        node.prevNodeId = afterId
-
-        const oldChildId = after.childIds(store)[0]
-        if (oldChildId) {
-          get(oldChildId).prevNodeId = nodeId
-        }
-
-        return
-      }
-
-      // ─────────────────────────────────────────────
-      // 3. CASE: after is BranchNode
-      // Branch → Step (valid)
-      // Branch → Fork (valid)
-      // Branch → Branch (invalid, already rejected)
-      // ─────────────────────────────────────────────
-      if (isBranch(after)) {
-        const oldNextId = after.nextId
-
-        // Attach node as new first child
-        after.nextId = nodeId
-        node.prevNodeId = afterId
-
-        // Reattach old child under node
-        if (oldNextId) {
-          const oldNext = get(oldNextId)
-          oldNext.prevNodeId = nodeId
-        }
-
-        return
-      }
-
-      throw new Error('Unsupported node type in attachAfter')
+      node.prevNodeId = afterId
     }
 
     const queue = makeNodeRunnerQueue(store)
 
     // the only place to mark a node for processing
     function markDirty(id: NodeId) {
+      console.log('markDirty', id)
       get(id).isDirty = true
       queue(id)
     }
@@ -402,8 +438,6 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
           childClone.prevNodeId = newId
         } else if (isBranch(original)) {
           // Branch → (Step | Fork) via nextId
-          const branchClone = clone as AnyBranchNode
-          branchClone.nextId = childClone.id
           childClone.prevNodeId = newId
         } else if (isFork(original)) {
           // Fork → Branches via branchIds[]
@@ -411,54 +445,54 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
           forkClone.branchIds.push(childClone.id)
 
           const branchClone = childClone as AnyBranchNode
-          branchClone.parentForkId = newId
+          branchClone.prevNodeId = newId
           branchClone.branchIndex = forkClone.branchIds.length - 1
+        } else {
+          throw new Error('cloneSubtree: unsupported node type')
         }
-        throw new Error('cloneSubtree: unsupported node type')
       }
 
       return clone
     }
 
-    function duplicateNode(id: NodeId): NodeId {
-      const original = get(id)
+    function duplicateStepNode(id: NodeId): NodeId {
+      const step = getStep(id)
+      const clone = _cloneNodeInstance(step)
+      insertStepAfter(clone, step.id)
+
+      return clone.id
+    }
+
+    function duplicateBranchNode(id: NodeId): NodeId {
+      const original = getBranch(id)
 
       // 1. Deep‑clone subtree
       const cloneMap = new Map<NodeId, NodeId>()
       const cloneRoot = _cloneSubtree(id, cloneMap)
 
-      // 2. Reinsert the cloned root appropriately by node type
-      if (isBranch(original)) {
-        // Duplicate branch inside its fork's branchIds[]
-        const parentFork = get(original.parentForkId) as AnyForkNode
+      // Duplicate branch inside its fork's branchIds[]
+      const parentFork = original.parentFork(store)
 
-        const idx = parentFork.branchIds.indexOf(original.id)
-        if (idx === -1) {
-          throw new Error(`duplicateNode: branch ${id} not found in parentFork.branchIds`)
-        }
-
-        // Insert cloned branch ID right after the original
-        parentFork.branchIds.splice(idx + 1, 0, cloneRoot.id)
-
-        // Fix parent/branchIndex on the cloned branch
-        const branchClone = cloneRoot as AnyBranchNode
-        branchClone.parentForkId = parentFork.id
-        branchClone.branchIndex = idx + 1
-
-        // Reindex all branches
-        parentFork.branchIds.forEach((bid, i) => {
-          const b = get(bid) as AnyBranchNode
-          b.branchIndex = i
-        })
-      } else {
-        // Attach cloned root right after the original node
-        attachAfter(cloneRoot.id, id)
+      const idx = parentFork.branchIds.indexOf(original.id)
+      if (idx === -1) {
+        throw new Error(`duplicateNode: branch ${id} not found in parentFork.branchIds`)
       }
 
-      // 3. Mark all cloned nodes dirty so they recompute
-      for (const clonedId of cloneMap.values()) {
-        markDirty(clonedId)
-      }
+      // Insert cloned branch ID right after the original
+      parentFork.branchIds.splice(idx + 1, 0, cloneRoot.id)
+
+      // Fix parent/branchIndex on the cloned branch
+      const branchClone = cloneRoot as AnyBranchNode
+      branchClone.prevNodeId = parentFork.id
+      branchClone.branchIndex = idx + 1
+
+      // Reindex all branches
+      parentFork.branchIds.forEach((bid, i) => {
+        const b = get(bid) as AnyBranchNode
+        b.branchIndex = i
+      })
+
+      markDirty(cloneRoot.id)
 
       return cloneRoot.id
     }
@@ -476,10 +510,14 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     return store
-  },
+  }
+
+  ,
   {
     persist: {
       key: 'pipeline',
-    },
-  },
+    }
+    ,
+  }
+  ,
 )

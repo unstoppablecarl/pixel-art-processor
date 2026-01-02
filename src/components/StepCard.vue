@@ -142,7 +142,7 @@ function toggleMute() {
             <span class="material-symbols-outlined">{{ node.muted ? 'visibility_off' : 'visibility' }}</span>
           </button>
 
-          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicateNode(node.id)">
+          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicateStepNode(node.id)">
             <span class="material-symbols-outlined">content_copy</span>
           </button>
 

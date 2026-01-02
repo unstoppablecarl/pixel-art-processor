@@ -99,7 +99,7 @@ export abstract class BaseNode<
     return result
   }
 
-  abstract childIds(store: MinStore): string[]
+  abstract childIds(store: MinStore): NodeId[]
 
   serialize(): BaseNodeSerialized<T> {
 
@@ -267,9 +267,8 @@ export class ForkNode<
 }
 
 type BranchNodeProperties = {
-  parentForkId: NodeId,
+  prevNodeId: NodeId,
   branchIndex: number,
-  nextId?: NodeId | null,
 }
 export type AnyBranchNodeSerialized = BranchNodeSerialized<AnyStepContext>
 export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & BranchNodeProperties
@@ -282,46 +281,36 @@ export class BranchNode<
 > extends BaseNode<T, R> {
   type = NodeType.BRANCH
   outputData: T['Output'] | null = null
-  parentForkId: NodeId
+  prevNodeId: NodeId
   branchIndex: number
-  nextId: NodeId | null
 
   constructor(options: BranchNodeOptions<T>) {
     super(options)
-    this.parentForkId = options.parentForkId
+    this.prevNodeId = options.prevNodeId
     this.branchIndex = options.branchIndex
-    this.nextId = options.nextId ?? null
-  }
-
-  get prevNodeId() {
-    return this.parentForkId
-  }
-
-  set prevNodeId(val: NodeId) {
-    this.parentForkId = val
   }
 
   isReady(store: MinStore) {
     if (!super.isReady(store)) return false
 
-    return store.get(this.parentForkId).outputReady()
+    return store.get(this.prevNodeId).outputReady()
   }
 
   childIds(store: MinStore): NodeId[] {
-    return this.nextId ? [this.nextId] : []
+    const result = Object.values(store.nodes).find(n => n.prevNodeId === this.id)
+    return result ? [result.id] : []
   }
 
   serialize(): BranchNodeSerialized<T> {
     return {
       ...super.serialize(),
-      parentForkId: this.parentForkId,
+      prevNodeId: this.prevNodeId,
       branchIndex: this.branchIndex,
-      nextId: this.nextId,
     }
   }
 
   parentFork(store: MinStore): AnyForkNode {
-    return store.get(this.parentForkId) as AnyForkNode
+    return store.get(this.prevNodeId) as AnyForkNode
   }
 
   async runner(store: MinStore) {
@@ -376,9 +365,9 @@ export function deSerializeNode(data: AnyNodeSerialized): AnyNode {
   throw new Error(message)
 }
 
-export const isStep = (n: AnyNode): n is AnyStepNode => useStepRegistry().getNodeType(n.def) === NodeType.STEP
-export const isFork = (n: AnyNode): n is AnyForkNode => useStepRegistry().getNodeType(n.def) === NodeType.FORK
-export const isBranch = (n: AnyNode): n is AnyBranchNode => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
+export const isStep = (n: AnyNode): n is StepNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.STEP
+export const isFork = (n: AnyNode): n is ForkNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.FORK
+export const isBranch = (n: AnyNode): n is BranchNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
 
 const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.STEP
 const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.FORK

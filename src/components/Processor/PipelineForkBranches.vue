@@ -9,12 +9,12 @@ const store = usePipelineStore()
 
 const { forkNodeId } = defineProps<{ forkNodeId: NodeId }>()
 
-const fork = computed(() => store.get(forkNodeId) as AnyForkNode)
-const branches = computed(() => fork.value.branchIds)
+const fork = computed(() => store.getIfExists(forkNodeId) as AnyForkNode | undefined)
+const branches = computed(() => fork?.value?.branchIds ?? [])
 </script>
 
 <template>
-  <div class="fork-branches">
+  <div class="fork-branches" v-if="fork">
     <div class="fork-branch-header-spacer">&nbsp;</div>
 
     <div
