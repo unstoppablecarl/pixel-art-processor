@@ -452,7 +452,9 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const step = getStep(id)
       const clone = _cloneNodeInstance(step) as AnyStepNode
       insertStepAfter(clone, step.id)
+      nodes[clone.id] = clone
 
+      markDirty(clone.id)
       return clone.id
     }
 
