@@ -380,6 +380,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       }
 
       node.isDirty = false
+      prng.setSeed(node.getSeedSum(store))
 
       await node.processRunner(store)
 

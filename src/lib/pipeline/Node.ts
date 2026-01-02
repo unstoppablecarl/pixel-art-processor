@@ -140,6 +140,14 @@ export abstract class BaseNode<
   }
 
   abstract getInputDataFromPrev(store: MinStore): Promise<T['Input'] | null>
+
+  getSeedSum(store: MinStore): number {
+    this.seedSum = this.seed
+    if (this.prevNodeId) {
+      this.seedSum += store.get(this.prevNodeId).seedSum
+    }
+    return this.seedSum
+  }
 }
 
 type StepNodeProperties = {
