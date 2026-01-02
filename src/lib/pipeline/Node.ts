@@ -29,6 +29,7 @@ export type BaseNodeSerialized<T extends AnyStepContext> = {
   def: NodeDef,
   seed: number,
   muted: boolean,
+  visible: boolean,
   config: T['SerializedConfig']
 }
 
@@ -37,6 +38,7 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
   def: NodeDef,
   seed?: number,
   muted?: boolean,
+  visible?: boolean,
   config?: T['SerializedConfig'],
 }
 
@@ -49,8 +51,9 @@ export abstract class BaseNode<
   id: NodeId
   def: NodeDef
   seed = 0
-  muted: boolean = false
+  muted = false
   config: T['RC'] | undefined
+  visible = true
 
   // transient
   seedSum = 0
@@ -66,11 +69,13 @@ export abstract class BaseNode<
 
   abstract prevNodeId: NodeId | null
 
-  constructor({ id, def, seed = 0, muted = false, config }: BaseNodeOptions<T>) {
+  constructor({ id, def, seed = 0, muted = false, visible = true, config }: BaseNodeOptions<T>) {
     this.id = id
     this.def = def
     this.seed = seed
     this.muted = muted
+    this.visible = visible
+
     if (config) {
       this.loadSerialized = { config }
     }
@@ -122,6 +127,7 @@ export abstract class BaseNode<
       def: this.def,
       seed: this.seed,
       muted: this.muted,
+      visible: this.visible,
       config: config,
     }
   }

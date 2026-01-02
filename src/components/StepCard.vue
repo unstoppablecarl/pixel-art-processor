@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButtonGroup } from 'bootstrap-vue-next'
+import { BButton, BButtonGroup, BCollapse } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
 import { type AnyInitializedNode, isBranch, isFork, isStep } from '../lib/pipeline/Node.ts'
@@ -7,7 +7,7 @@ import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
-import StepImg, { type StepImage } from './StepImg.vue'
+import StepImg from './StepImg.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -22,6 +22,7 @@ const {
   showDimensions = false,
   mutable = true,
   subHeader = '',
+  imgColumns = 1,
 } = defineProps<{
   node: AnyInitializedNode
   showDimensions?: boolean,
@@ -32,7 +33,16 @@ const {
   showSeed?: boolean,
   mutable?: boolean,
   subHeader?: string,
+  imgColumns?: number
 }>()
+
+export type StepImage = {
+  imageData: ImageData | null,
+  label?: string,
+  placeholderWidth?: number,
+  placeholderHeight?: number,
+  validationErrors?: StepValidationError[]
+}
 
 const dimensions = computed(() => {
   const { width, height } = node.getOutputSize()
@@ -44,43 +54,27 @@ function remove() {
   store.remove(node.id)
 }
 
-const stepImages = computed(() => {
+const nodeImages = computed(() => {
   if (images?.length) return images
 
   if (isFork(node)) {
-    return node.forkOutputData.value.map(({ preview }) => {
-      return {
-        label: '',
-        imageData: preview,
-      }
-    })
+    throw new Error('fork must provide images via props.images')
   }
 
   if (isBranch(node) || isStep(node)) {
     return [{
-      label: '',
+      label: (node?.outputPreview?.width ?? 0) + ' x ' + (node?.outputPreview?.height ?? 0)  + ' px',
       imageData: node.outputPreview,
+      validationErrors: [],
     }]
   }
 })
 
-const imageCount = computed(() => images?.length ?? 1)
-const imagesTotalWidth = computed(() => {
-  if (images?.length) {
-    return images.reduce((acc, stepImage) => {
-      const width = stepImage?.imageData?.width ?? stepImage.placeholderWidth ?? 100
-
-      return acc + width
-    }, 0)
-  }
-
-  return store.getRootNodeOutputSize().width
-})
-
 const cssStyle = computed(() => {
+
   return [
-    `--stem-image-count: ${imageCount.value};`,
-    `--node-total-image-width: ${imagesTotalWidth.value}px;`,
+    `--node-img-width: ${node.getOutputSize().width}px;`,
+    `--columns-per-card: ${imgColumns};`,
   ].join(' ')
 })
 
@@ -103,7 +97,6 @@ const header = computed(() => registry.get(node.def).displayName)
 function toggleMute() {
   node.muted = !node.muted
 }
-
 </script>
 <template>
   <div ref="stepEl" class="node" :style="cssStyle">
@@ -161,32 +154,50 @@ function toggleMute() {
             <AddAfterStepDropDown v-if="showAddStepBtn" :node-id="node.id" size="sm" />
           </slot>
         </BButtonGroup>
-      </div>
 
-      <slot name="body-outer">
-        <div class="card-body">
-          <slot name="body">
-            <StepImg
-              v-for="({imageData, label}, index) in stepImages"
-              :image-data="imageData"
-              :label="label"
-              :key="index"
-            />
-          </slot>
-        </div>
-      </slot>
-
-      <div class="card-footer">
-        <div class="section" v-if="showDimensions && dimensions">
-          <span class="btn-sm-py text-muted me-auto ms-1">
-            Image Size: {{ dimensions }}
-          </span>
-        </div>
-        <div class="section" v-if="isStep(node) ? node.validationErrors : false" v-for="error in node.validationErrors">
-          <component :is="error.component" :error="error" />
-        </div>
-        <slot name="footer"></slot>
+        <BButton
+          :class="'btn-collapse ms-1 ' + (node.visible ? null : 'collapsed')"
+          size="sm"
+          variant="transparent"
+          :aria-expanded="node.visible ? 'true' : 'false'"
+          @click="node.visible = !node.visible"
+        />
       </div>
+      <BCollapse
+        v-model="node.visible"
+        lazy
+      >
+        <slot name="body-outer">
+          <div class="card-body">
+            <div
+              v-for="({imageData, label, validationErrors: imgValidationErrors = []}) in nodeImages"
+              class="node-img-container"
+            >
+              <div class="node-img-label" v-if="label">{{ label }}</div>
+              <template v-if="imageData">
+                <StepImg :image-data="imageData" />
+              </template>
+              <div class="section" v-for="error in imgValidationErrors">
+                <component :is="error.component" :error="error" />
+              </div>
+            </div>
+          </div>
+        </slot>
+
+        <div class="card-footer">
+
+          <div class="section" v-if="showDimensions && dimensions">
+            <span class="btn-sm-py text-muted me-auto ms-1">
+              Image Size: {{ dimensions }}
+            </span>
+          </div>
+
+          <div class="section" v-for="error in node.validationErrors">
+            <component :is="error.component" :error="error" />
+          </div>
+          <slot name="footer"></slot>
+        </div>
+      </BCollapse>
     </div>
   </div>
 </template>

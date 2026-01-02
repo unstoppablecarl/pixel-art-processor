@@ -57,14 +57,10 @@ const images = computed(() => {
     {
       label: 'Noise',
       imageData: noiseImageData.value,
-      placeholderWidth: noiseImageData.value?.width,
-      placeholderHeight: noiseImageData.value?.height,
     },
     {
       label: 'Output',
       imageData: outputPreview,
-      placeholderWidth: outputPreview?.width,
-      placeholderHeight: outputPreview?.height,
     },
   ]
 })
@@ -76,6 +72,7 @@ const config = node.config
   <StepCard
     :node="node"
     :images="images"
+    :img-columns="2"
   >
     <template #footer>
       <div class="section">
