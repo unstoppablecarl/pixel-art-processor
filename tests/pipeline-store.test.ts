@@ -1,9 +1,13 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { AnyBranchNode, AnyForkNode, AnyStepNode } from '../src/lib/pipeline/Node.ts'
-import { BRANCH_DEF } from '../src/lib/pipeline/StepRegistry.ts'
+import { BRANCH_DEF, installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
+import { STEP_DATA_TYPES, STEP_DEFINITIONS } from '../src/steps.ts'
 
+beforeEach(() => {
+  installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
+})
 // Helpers to reduce noise
 function addStepAfter(store: PipelineStore, prevId: string | null = null): AnyStepNode {
   return store.addStep('bitmask_islands_add' as any, prevId as any)

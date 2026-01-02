@@ -11,7 +11,7 @@ import type {
   StepHandlerOptionsInfer,
   WatcherTarget,
 } from '../src/lib/pipeline/StepHandler'
-import { useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
 import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
@@ -22,7 +22,9 @@ import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
 import { type StepDataType } from '../src/steps'
 
+
 function makeAppContext(cb: () => void) {
+  installStepRegistry(makeStepRegistry())
 
   const App = {
     setup() {
@@ -72,7 +74,8 @@ function defineStep(
 
 describe('step handler type testing', async () => {
 
-  makeAppContext(() => {
+  makeAppContext(async () => {
+
 
     const inputDataTypes = [HeightMap, BitMask] as const
     const outputDataType = NormalMap
@@ -123,6 +126,8 @@ describe('step handler type testing', async () => {
       deserializeConfig(config) {
         expectTypeOf(config).toExtend<SC>()
 
+        expect(config).not.toEqual(undefined)
+
         return {
           ...config,
           maskImageData: deserializeImageData(config.maskImageData),
@@ -155,6 +160,8 @@ describe('step handler type testing', async () => {
       },
 
     })
+
+    await Promise.resolve()
 
     type RF = typeof step extends InitializedNode<any, infer R> ? R : never
     type TF = typeof step extends InitializedNode<infer U, infer R> ? U : never

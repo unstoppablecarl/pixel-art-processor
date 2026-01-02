@@ -392,14 +392,16 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const handler = makeStepHandler<T>(node.def, handlerOptions)
 
       node.handler = handler as IStepHandler<T>
+
+      if (node.loadSerialized) {
+        handler.loadConfig(node.config as Config, node.loadSerialized.config)
+        node.loadSerialized = null
+      }
+
       if (node.config === undefined) {
         node.config = handler.reactiveConfig(handler.config())
       }
 
-      if (node.loadSerialized !== null) {
-        handler.loadConfig(node.config as Config, node.loadSerialized.config)
-        node.loadSerialized = null
-      }
 
       return node
     }

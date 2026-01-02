@@ -53,7 +53,7 @@ export abstract class BaseNode<
   outputData: T['Output'] | T['Output'][] | null = null
   outputPreview: ImageData | ImageData[] | null = null
   validationErrors: StepValidationError[] = []
-  loadSerialized: StepLoaderSerialized<T['SerializedConfig']>
+  loadSerialized: StepLoaderSerialized<T['SerializedConfig']> = null
   handler: IStepHandler<T> | undefined
 
   // system
@@ -69,7 +69,9 @@ export abstract class BaseNode<
     this.def = def
     this.seed = seed
     this.muted = muted
-    this.loadSerialized = { config }
+    if (config) {
+      this.loadSerialized = { config }
+    }
   }
 
   abstract runner(store: MinStore): void

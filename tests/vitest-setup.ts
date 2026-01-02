@@ -1,15 +1,11 @@
 import { enableAutoUnmount } from '@vue/test-utils'
 import { setActivePinia } from 'pinia'
 import { afterEach, beforeEach } from 'vitest'
-import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import { STEP_DATA_TYPES, STEP_DEFINITIONS } from '../src/steps.ts'
 
 enableAutoUnmount(afterEach)
 
 beforeEach(() => {
   setActivePinia(undefined)
-  installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
-
 })
 
 if (typeof ImageData === 'undefined') {
