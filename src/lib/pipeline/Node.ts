@@ -102,12 +102,20 @@ export abstract class BaseNode<
   abstract childIds(store: MinStore): string[]
 
   serialize(): BaseNodeSerialized<T> {
+
+    let config: T['SerializedConfig'] = undefined
+    if (this.handler) {
+      config = this.handler.serializeConfig(this.config)
+    } else {
+      config = this.loadSerialized?.config
+    }
+
     return {
       id: this.id,
       def: this.def,
       seed: this.seed,
       muted: this.muted,
-      config: this.handler!.serializeConfig(this.config),
+      config: config,
     }
   }
 
@@ -220,7 +228,7 @@ export class ForkNode<
   }
 
   async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerOutput<T>> {
-    if (!this.outputData[branchIndex] === undefined) {
+    if (this.outputData[branchIndex] === undefined) {
       this.outputData[branchIndex] = await this.runBranch(store, branchIndex)
     }
     return this.outputData[branchIndex]
@@ -229,12 +237,15 @@ export class ForkNode<
   protected async runBranch(store: MinStore, branchIndex: number): Promise<
     SingleRunnerOutput<T>
   > {
+    const inputData = await this.getInputDataFromPrev(store)
     const _handler = this.handler as IStepHandler<T, R>
-    return _handler.run({
+    const output = await _handler.run({
       config: this.config as T['RC'],
-      inputData: this.getInputDataFromPrev(store),
+      inputData,
       branchIndex,
     })
+
+    return parseResult<T>(output)
   }
 
   serialize(): ForkNodeSerialized<T> {
@@ -331,7 +342,8 @@ export class BranchNode<
   }
 
   async getInputDataFromPrev(store: MinStore) {
-    const result = await this.parentFork(store).getBranchOutput(store, this.branchIndex) as T['Input']
+    const fork = this.parentFork(store)
+    const result = await fork.getBranchOutput(store, this.branchIndex) as T['Input']
     if (result.outputData) {
       return result.outputData.copy()
     }

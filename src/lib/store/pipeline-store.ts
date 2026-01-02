@@ -14,7 +14,8 @@ import {
   isFork,
   isStep,
   type NodeDef,
-  type NodeId, NodeType,
+  type NodeId,
+  NodeType,
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
@@ -337,7 +338,9 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     async function runNode(id: NodeId) {
       const node = get(id)
 
-      // Clear dirty before running
+      // will be handled upstream
+      if (!node.isReady(store)) return
+
       node.isDirty = false
 
       await node.processRunner(store)

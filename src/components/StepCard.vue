@@ -155,15 +155,15 @@ function toggleMute() {
       <div class="card-body">
         <slot name="body">
           <StepImg
-            v-for="(image, index) in stepImages"
+            v-for="({imageData, label}, index) in stepImages"
+            :image-data="imageData"
+            :label="label"
             :key="index"
-            :image="image"
           />
         </slot>
       </div>
 
       <div class="card-footer">
-
         <div class="section" v-if="showDimensions && dimensions">
           <span class="btn-sm-py text-muted me-auto ms-1">
             Image Size: {{ dimensions }}

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
-import type { NodeId } from '../lib/pipeline/Node.ts'
+import { isFork, type NodeId } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import AppHeader from './AppHeader.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
@@ -17,6 +17,7 @@ const rootNodeIds = computed((): NodeId[] => {
 
   while (current) {
     ids.push(current.id)
+    if (isFork(current)) break
     const next = Object.values(store.nodes).find(n => n.prevNodeId === current.id)
     if (!next) break
     current = next

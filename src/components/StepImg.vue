@@ -13,15 +13,21 @@ import { imageDataToUrlImage } from '../lib/util/ImageData.ts'
 
 const store = usePipelineStore()
 const {
-  image,
+  imageData,
+  label = '',
+  placeholderWidth = 0,
+  placeholderHeight = 0,
 } = defineProps<{
-  image: StepImage,
+  imageData: ImageData | null,
+  label?: string,
+  placeholderWidth?: number,
+  placeholderHeight?: number,
 }>()
 
 const size = computed(() => {
   const rootSize = store.getRootNodeOutputSize()
-  const width = image.imageData?.width ?? image.placeholderWidth ?? rootSize.width
-  const height = image.imageData?.height ?? image.placeholderHeight ?? rootSize.height
+  const width = imageData?.width ?? placeholderWidth ?? rootSize.width
+  const height = imageData?.height ?? placeholderHeight ?? rootSize.height
 
   return {
     width: width * store.imgScale,
@@ -30,16 +36,16 @@ const size = computed(() => {
 })
 
 const encoded = computed(() => {
-  if (!image.imageData) {
+  if (!imageData) {
     return '/placeholder.png'
   }
-  return imageDataToUrlImage(image.imageData)
+  return imageDataToUrlImage(imageData)
 })
 
 </script>
 <template>
   <img
-    :alt="image.label"
+    :alt="label"
     class="node-img"
     :src="encoded"
     style="image-rendering: pixelated;"
