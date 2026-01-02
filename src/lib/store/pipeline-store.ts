@@ -19,7 +19,7 @@ import {
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
-import { type Config, type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
+import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import { type AnyStepDefinition, useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { type ImgSize } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
@@ -393,15 +393,14 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
       node.handler = handler as IStepHandler<T>
 
-      if (node.loadSerialized) {
-        handler.loadConfig(node.config as Config, node.loadSerialized.config)
-        node.loadSerialized = null
-      }
-
       if (node.config === undefined) {
         node.config = handler.reactiveConfig(handler.config())
       }
 
+      if (node.loadSerialized) {
+        handler.loadConfig(node.config as T['RC'], node.loadSerialized.config)
+        node.loadSerialized = null
+      }
 
       return node
     }
