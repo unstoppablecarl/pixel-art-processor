@@ -51,7 +51,7 @@ const node = useStepHandler(nodeId, {
 })
 
 const images = computed(() => {
-  const node = store.get(nodeId)
+  const node = store.getStep(nodeId)
   const outputPreview = node.outputPreview as ImageData | null
   return [
     {

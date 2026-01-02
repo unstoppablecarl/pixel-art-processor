@@ -48,7 +48,7 @@ export interface PipelineStore {
   getBranch(id: NodeId): AnyBranchNode
   getFork(id: NodeId): AnyForkNode
   getStep(id: NodeId): AnyStepNode
-  getIfExists<T extends AnyStepContext>(id: NodeId): AnyNode<T> | undefined
+  getIfExists(id: NodeId): AnyNode | undefined
   has(id: NodeId): boolean
   markRootDirty(): void
   rootNode(): AnyNode | undefined
@@ -147,9 +147,9 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return `${def}_${idIncrement.value++}` as NodeId
     }
 
-    function get<T extends AnyStepContext>(id: NodeId): AnyNode<T> {
+    function get(id: NodeId): AnyNode {
       if (!nodes[id]) throw new Error('node not found: ' + id)
-      return nodes[id] as AnyNode<T>
+      return nodes[id] as AnyNode
     }
 
     function getStep<T extends AnyStepContext>(id: NodeId): StepNode<T> {
@@ -170,8 +170,8 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return branch as BranchNode<T>
     }
 
-    function getIfExists<T extends AnyStepContext>(id: NodeId): AnyNode<T> | undefined {
-      return nodes[id] as AnyNode<T> | undefined
+    function getIfExists(id: NodeId): AnyNode | undefined {
+      return nodes[id] as AnyNode | undefined
     }
 
     function has(id: NodeId): boolean {
@@ -246,7 +246,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
           const b = store.get(bid) as AnyBranchNode
           b.branchIndex = i
         })
-        fork.outputData.value.splice(index, 1)
+        fork.forkOutputData.value.splice(index, 1)
       }
     }
 
@@ -392,8 +392,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     function initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T> {
-      const node = get(id) as GraphNode<T>
-
+      const node = get(id) as unknown as GraphNode<T>
       node.initialize(handlerOptions)
       return node
     }
@@ -451,7 +450,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function duplicateStepNode(id: NodeId): NodeId {
       const step = getStep(id)
-      const clone = _cloneNodeInstance(step)
+      const clone = _cloneNodeInstance(step) as AnyStepNode
       insertStepAfter(clone, step.id)
 
       return clone.id
@@ -493,10 +492,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function getRootNodeOutputSize(): ImgSize {
       const root = rootNode()
-      return {
-        width: root?.outputData?.width ?? 0,
-        height: root?.outputData?.height ?? 0,
-      }
+      return root ? root.getOutputSize() : { width: 0, height: 0 }
     }
 
     function getLeafNodes(): AnyNode[] {

@@ -33,7 +33,7 @@ const node = useForkHandler(nodeId, {
 })
 
 const store = usePipelineStore()
-const outputDataRef = store.get(node.id).outputData
+const outputDataRef = store.getFork(node.id).forkOutputData
 </script>
 <template>
   <StepCard

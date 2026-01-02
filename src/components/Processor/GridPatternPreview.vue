@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import type { AnyNode } from '../../lib/pipeline/Node.ts'
+import { type AnyNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
@@ -36,12 +36,13 @@ function make(node: AnyNode, outputIndex: number, outputPreview: ImageData): Ima
 const stepOutputImages = computed(() => {
   let result: ImageOutput[] = []
   store.getLeafNodes().forEach(node => {
-    if (!node.outputPreview) return
-
-    normalizeValueToArray(node.outputPreview)
-      .forEach((p, index) => {
-        result.push(make(node, index, p))
-      })
+    if (isStep(node) || isBranch(node)) {
+      if (!node.outputPreview) return
+      normalizeValueToArray(node.outputPreview)
+        .forEach((p, index) => {
+          result.push(make(node, index, p))
+        })
+    }
   })
   return result
 })

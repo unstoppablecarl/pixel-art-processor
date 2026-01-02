@@ -1,9 +1,9 @@
 import { Component, ref, type Ref } from 'vue'
 import type { StepDataType } from '../../steps.ts'
-import type { StepValidationError } from '../errors.ts'
+import { type StepValidationError } from '../errors.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
-import { logNodeEvent } from '../util/misc.ts'
+import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
 import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
 import { useStepRegistry } from './StepRegistry.ts'
@@ -54,8 +54,6 @@ export abstract class BaseNode<
 
   // transient
   seedSum = 0
-  outputData: T['Output'] | T['Output'][] | null = null
-  outputPreview: ImageData | ImageData[] | null = null
   validationErrors: StepValidationError[] = []
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']> = null
   handler: IStepHandler<T> | undefined
@@ -107,6 +105,8 @@ export abstract class BaseNode<
   }
 
   abstract childIds(store: MinStore): NodeId[]
+
+  abstract getOutputSize(): ImgSize
 
   serialize(): BaseNodeSerialized<T> {
 
@@ -169,6 +169,7 @@ export class StepNode<
 
   prevNodeId: NodeId | null
   outputData: T['Output'] | null = null
+  outputPreview: ImageData | null = null
 
   constructor(options: StepNodeOptions<T>) {
     super(options)
@@ -215,6 +216,13 @@ export class StepNode<
       return prev.outputData.copy()
     }
   }
+
+  getOutputSize(): ImgSize {
+    return {
+      width: this?.outputData?.width ?? 0,
+      height: this?.outputData?.height ?? 0,
+    }
+  }
 }
 
 type ForkNodeProperties = {
@@ -233,7 +241,7 @@ export class ForkNode<
   type = NodeType.FORK
   branchIds = ref<NodeId[]>([])
   prevNodeId: NodeId | null
-  outputData = ref<SingleRunnerOutput<T>[]>([]) as Ref<SingleRunnerOutput<T>[]>
+  forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
@@ -253,20 +261,22 @@ export class ForkNode<
   }
 
   async runner(store: MinStore) {
-    this.outputData.value = await Promise.all(
+    this.forkOutputData.value = await Promise.all(
       this.branchIds.value.map((_, i) => this.getBranchOutput(store, i)),
-    ) as SingleRunnerOutput<T>[]
+    ) as SingleRunnerResult<T>[]
+
+    this.validationErrors = this.forkOutputData.value.flatMap(({ validationErrors }) => validationErrors) ?? []
   }
 
-  async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerOutput<T>> {
-    if (this.outputData.value[branchIndex] === undefined) {
-      this.outputData.value[branchIndex] = await this.runBranch(store, branchIndex)
+  async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
+    if (this.forkOutputData.value[branchIndex] === undefined) {
+      this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
     }
-    return this.outputData.value[branchIndex]
+    return this.forkOutputData.value[branchIndex]
   }
 
-  protected async runBranch(store: MinStore, branchIndex: number): Promise<
-    SingleRunnerOutput<T>
+  private async runBranch(store: MinStore, branchIndex: number): Promise<
+    SingleRunnerResult<T>
   > {
     const inputData = await this.getInputDataFromPrev(store)
     const _handler = this.handler as IStepHandler<T, R>
@@ -295,6 +305,14 @@ export class ForkNode<
       return prev.outputData.copy()
     }
   }
+
+  getOutputSize(): ImgSize {
+    const first = this.forkOutputData.value[0]?.output
+    return {
+      width: first?.width ?? 0,
+      height: first?.height ?? 0,
+    }
+  }
 }
 
 type BranchNodeProperties = {
@@ -312,6 +330,8 @@ export class BranchNode<
 > extends BaseNode<T, R> {
   type = NodeType.BRANCH
   outputData: T['Output'] | null = null
+  outputPreview: ImageData | null = null
+
   prevNodeId: NodeId
   branchIndex: number
   initialized = true
@@ -392,6 +412,13 @@ export class BranchNode<
   initialize(handlerOptions: StepHandlerOptions<T>): void {
     // noop
   }
+
+  getOutputSize(): ImgSize {
+    return {
+      width: this?.outputData?.width ?? 0,
+      height: this?.outputData?.height ?? 0,
+    }
+  }
 }
 
 export type AnyNode<T extends AnyStepContext = AnyStepContext> = StepNode<T> | ForkNode<T> | BranchNode<T>
@@ -420,9 +447,9 @@ export function deSerializeNode(data: AnyNodeSerialized): AnyNode {
   throw new Error(message)
 }
 
-export const isStep = (n: AnyNode): n is StepNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.STEP
-export const isFork = (n: AnyNode): n is ForkNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.FORK
-export const isBranch = (n: AnyNode): n is BranchNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
+export const isStep = (n: AnyNode | AnyInitializedNode): n is StepNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.STEP
+export const isFork = (n: AnyNode | AnyInitializedNode): n is ForkNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.FORK
+export const isBranch = (n: AnyNode | AnyInitializedNode): n is BranchNode<any> => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
 
 const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.STEP
 const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.FORK
@@ -485,6 +512,14 @@ export type InitializedNode<
   | InitializedStepNode<T, R>
   | InitializedForkNode<T, R>
   | InitializedBranchNode<T, R>
+
+export function assertInitialized<T extends AnyStepContext, R extends StepRunner<T>>(
+  node: GraphNode<T>,
+): asserts node is GraphNode<T> & { handler: IStepHandler<T, R>, config: NonNullable<GraphNode<T>['config']> } {
+  if (!node.initialized || !node.handler || node.config === undefined) {
+    throw new Error('Node not initialized')
+  }
+}
 
 export const BRANCH_DEF = 'branch_node' as NodeDef
 

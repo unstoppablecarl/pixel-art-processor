@@ -182,7 +182,7 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).toExtend<InitializedNode<StepContext<C, SC, RC, I, O>>>()
 
       expectTypeOf(step).toEqualTypeOf<InitializedStepNode<T, NormalStepRunner<T>>>()
-      expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | ImageData[] | null>()
+      expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
     })
 

@@ -2,11 +2,10 @@
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { StepValidationError } from '../lib/errors.ts'
-import type { AnyInitializedNode } from '../lib/pipeline/Node.ts'
+import { type AnyInitializedNode, isBranch, isFork, isStep } from '../lib/pipeline/Node.ts'
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
-import { normalizeValueToArray } from '../lib/util/misc.ts'
 import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
 import StepImg, { type StepImage } from './StepImg.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
@@ -36,9 +35,9 @@ const {
 }>()
 
 const dimensions = computed(() => {
-  if (!node.outputData) return ''
+  const { width, height } = node.getOutputSize()
 
-  return node.outputData.width + 'x' + node.outputData.height
+  return width + 'x' + height
 })
 
 function remove() {
@@ -48,11 +47,21 @@ function remove() {
 const stepImages = computed(() => {
   if (images?.length) return images
 
-  return normalizeValueToArray(node.outputPreview)
-    .map(i => ({
+  if (isFork(node)) {
+    return node.forkOutputData.value.map(({ preview }) => {
+      return {
+        label: '',
+        imageData: preview,
+      }
+    })
+  }
+
+  if (isBranch(node) || isStep(node)) {
+    return [{
       label: '',
-      imageData: i,
-    }))
+      imageData: node.outputPreview,
+    }]
+  }
 })
 
 const imageCount = computed(() => images?.length ?? 1)
@@ -64,7 +73,8 @@ const imagesTotalWidth = computed(() => {
       return acc + width
     }, 0)
   }
-  return node?.outputData?.width
+
+  return store.getRootNodeOutputSize().width
 })
 
 const cssStyle = computed(() => {
@@ -142,7 +152,8 @@ function toggleMute() {
             <span class="material-symbols-outlined">{{ node.muted ? 'visibility_off' : 'visibility' }}</span>
           </button>
 
-          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary" @click="store.duplicateStepNode(node.id)">
+          <button v-if="copyable" role="button" class="btn btn-sm btn-secondary"
+                  @click="store.duplicateStepNode(node.id)">
             <span class="material-symbols-outlined">content_copy</span>
           </button>
 
@@ -169,7 +180,7 @@ function toggleMute() {
             Image Size: {{ dimensions }}
           </span>
         </div>
-        <div class="section" v-for="error in node.validationErrors">
+        <div class="section" v-if="isStep(node) ? node.validationErrors : false" v-for="error in node.validationErrors">
           <component :is="error.component" :error="error" />
         </div>
         <slot name="footer"></slot>

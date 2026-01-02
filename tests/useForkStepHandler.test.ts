@@ -177,8 +177,7 @@ describe('fork handler type testing', async () => {
       expectTypeOf(step).toExtend<InitializedNode<StepContext<C, SC, RC, I, O>>>()
 
       expectTypeOf(step).toEqualTypeOf<InitializedForkNode<T, ForkStepRunner<T>>>()
-      expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | ImageData[] | null>()
-      expectTypeOf(step.outputData).toExtend<Ref<SingleRunnerOutput<T>[]>>()
+      expectTypeOf(step.forkOutputData).toExtend<Ref<SingleRunnerOutput<T>[]>>()
     })
 
     it('creates correct handler', () => {
