@@ -339,6 +339,9 @@ export class BranchNode<
       setPassThroughDataType(type: StepDataType) {
         passthroughType = type
       },
+      serializeConfig() {
+        // noop
+      },
     } as unknown as IStepHandler<T>
   }
 
@@ -367,7 +370,7 @@ export class BranchNode<
 
   async runner(store: MinStore) {
     const fork = this.parentFork(store)
-    this.handler.setPassThroughDataType(fork.handler!.outputDataType)
+    this.handler.setPassThroughDataType(fork.handler?.outputDataType)
 
     this.outputData = await this.getInputDataFromPrev(store)
     this.outputPreview = null
