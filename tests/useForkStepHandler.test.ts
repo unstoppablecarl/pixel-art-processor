@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { Component, type ShallowReactive, shallowReactive } from 'vue'
+import { Component, type ShallowReactive, shallowReactive , type Ref} from 'vue'
 import type { StepValidationError } from '../src/lib/errors.ts'
 import { type InitializedForkNode, type InitializedNode, type NodeDef, NodeType } from '../src/lib/pipeline/Node.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
@@ -178,7 +178,7 @@ describe('fork handler type testing', async () => {
 
       expectTypeOf(step).toEqualTypeOf<InitializedForkNode<T, ForkStepRunner<T>>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | ImageData[] | null>()
-      expectTypeOf(step.outputData).toExtend<SingleRunnerOutput<T>[]>()
+      expectTypeOf(step.outputData).toExtend<Ref<SingleRunnerOutput<T>[]>>()
     })
 
     it('creates correct handler', () => {

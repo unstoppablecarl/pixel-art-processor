@@ -1,4 +1,4 @@
-import { Component, ref } from 'vue'
+import { Component, ref, type Ref } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
@@ -233,7 +233,7 @@ export class ForkNode<
   type = NodeType.FORK
   branchIds = ref<NodeId[]>([])
   prevNodeId: NodeId | null
-  outputData = ref<SingleRunnerOutput<T>[]>([])
+  outputData = ref<SingleRunnerOutput<T>[]>([]) as Ref<SingleRunnerOutput<T>[]>
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
