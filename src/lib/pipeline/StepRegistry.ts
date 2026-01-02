@@ -147,8 +147,20 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
 
 let REGISTRY: StepRegistry | undefined
 
+// Restore from previous HMR state
+if (import.meta.hot) {
+  if (import.meta.hot.data.stepRegistry) {
+    REGISTRY = import.meta.hot.data.stepRegistry
+  }
+}
+
 export function installStepRegistry(registry: StepRegistry) {
   REGISTRY = registry
+
+  // cache hmr state
+  if (import.meta.hot) {
+    import.meta.hot.data.stepRegistry = registry
+  }
 }
 
 export function useStepRegistry(): StepRegistry {
@@ -156,6 +168,23 @@ export function useStepRegistry(): StepRegistry {
     throw new Error('StepRegistry not found. Call installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES)) in main.ts')
   }
   return REGISTRY
+}
+
+// Preserve on HMR disposal
+if (import.meta.hot) {
+  import.meta.hot.dispose((data) => {
+    data.stepRegistry = REGISTRY
+  })
+
+  // Watch for step definition changes
+  import.meta.hot.accept(async () => {
+    // Re-import and re-install when steps change
+    const { STEP_DEFINITIONS, STEP_DATA_TYPES } = await import('../../steps.ts')
+    if (REGISTRY) {
+      console.log('[HMR] Step definitions updated, reloading registry...')
+      installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
+    }
+  })
 }
 
 export const BRANCH_DEF = 'branch_node' as NodeDef
