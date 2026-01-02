@@ -10,11 +10,12 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import { isBranch, isStep, type NodeId } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard from '../StepCard.vue'
 import StepImg from '../StepImg.vue'
+import { computed } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -34,6 +35,14 @@ const node = useForkHandler(nodeId, {
 
 const store = usePipelineStore()
 const outputDataRef = store.getFork(node.id).forkOutputData
+
+const prevNodePreview = computed(() => {
+  if (!node.prevNodeId) return
+  const prev = store.get(node.prevNodeId)
+  if (isBranch(prev) || isStep(prev)) {
+    return prev.outputPreview
+  }
+})
 </script>
 <template>
   <StepCard
@@ -44,18 +53,31 @@ const outputDataRef = store.getFork(node.id).forkOutputData
     :mutable="false"
     :sub-header="`: x ${node.branchIds.value.length}`"
   >
-
-    <template #body>
-
-      <div v-for="({preview, validationErrors}, index) in outputDataRef ??[]">
-        <template v-if="preview">
+    <template #body-outer>
+      <div class="card-body card-body-multi-image">
+        <div
+          v-if="!outputDataRef.length && prevNodePreview"
+          class="node-img-container"
+        >
+          <div class="node-img-label">Input (no branches)</div>
           <StepImg
-            :image-data="preview"
+            :image-data="prevNodePreview"
           />
-          <div>Branch: {{ index + 1 }}</div>
-        </template>
-        <div class="section" v-for="error in validationErrors">
-          <component :is="error.component" :error="error" />
+        </div>
+
+        <div
+          v-for="({preview, validationErrors}, index) in outputDataRef"
+          class="node-img-container"
+        >
+          <template v-if="preview">
+            <div class="node-img-label">Branch: {{ index + 1 }}</div>
+            <StepImg
+              :image-data="preview"
+            />
+          </template>
+          <div class="section" v-for="error in validationErrors">
+            <component :is="error.component" :error="error" />
+          </div>
         </div>
       </div>
     </template>

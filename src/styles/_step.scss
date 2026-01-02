@@ -194,7 +194,29 @@
   }
 }
 
-.step-img {
+.card-body-multi-image {
+  padding: 0;
+
+  .node-img-container {
+    &:not(:first-child) {
+      border-top: 1px solid rgba(#fff, 0.2);
+    }
+
+    padding: 0 calc((var(--step-padding) + var(--bs-card-spacer-x)) * 0.5) 10px;
+  }
+
+  .node-img-label {
+    padding: 5px calc(var(--step-padding) * 0.5) 8px;
+    font-weight: 500;
+    color: rgba(#fff, 0.5);
+  }
+
+  .node-img {
+    margin: 0;
+  }
+}
+
+.node-img {
   margin: 0 calc(var(--step-padding) * 0.5);
   display: inline-block;
 }

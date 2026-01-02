@@ -163,16 +163,18 @@ function toggleMute() {
         </BButtonGroup>
       </div>
 
-      <div class="card-body">
-        <slot name="body">
-          <StepImg
-            v-for="({imageData, label}, index) in stepImages"
-            :image-data="imageData"
-            :label="label"
-            :key="index"
-          />
-        </slot>
-      </div>
+      <slot name="body-outer">
+        <div class="card-body">
+          <slot name="body">
+            <StepImg
+              v-for="({imageData, label}, index) in stepImages"
+              :image-data="imageData"
+              :label="label"
+              :key="index"
+            />
+          </slot>
+        </div>
+      </slot>
 
       <div class="card-footer">
         <div class="section" v-if="showDimensions && dimensions">
