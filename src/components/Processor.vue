@@ -29,7 +29,7 @@ const rootNodeIds = computed((): NodeId[] => {
 const rootSteps = computed(() => rootNodeIds.value.map(id => store.get(id)))
 
 watch(() => store.imgScale, () => {
-  document.documentElement.style.setProperty('--step-img-scale', '' + store.imgScale)
+  document.documentElement.style.setProperty('--node-img-scale', '' + store.imgScale)
 }, { immediate: true })
 
 onMounted(() => {
