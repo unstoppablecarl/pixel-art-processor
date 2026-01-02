@@ -1,4 +1,5 @@
 import tinycolor from 'tinycolor2'
+import { deepUnwrap } from './vue-util.ts'
 
 const blue = makeBgColor('#CCEDFC')
 const green = makeBgColor('#D1FCCC')
@@ -17,16 +18,30 @@ function makeBgColor(light: string) {
   return `background: light-dark(${light}, ${dark});`
 }
 
-export function logStepEvent(nodeId: string, event: string, ...args: any[]) {
-  console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${green}`, ...args)
+const logActive = true
+
+function log(color: string, nodeId: string, event: string, ...args: any[]) {
+  console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${color}`, ...args.map((m) => deepUnwrap(m)))
 }
 
-export function logStepWatch(nodeId: string, ...args: any[]) {
-  console.log(`%c[${nodeId}] %cWATCH`, `${blue}`, `${orange}`, ...args)
+export function logNodeEvent(nodeId: string, event: string, ...args: any[]) {
+  if (!logActive) return
+  log(green, nodeId, event, ...args)
 }
 
-export function logStepDebug(nodeId: string, ...args: any[]) {
-  console.log(`%c[${nodeId}] %DEBUG`, `${blue}`, `${purple}`, ...args)
+export function logNodeEventWarning(nodeId: string, event: string, ...args: any[]) {
+  if (!logActive) return
+  log(orange, nodeId, event, ...args)
+}
+
+export function logNodeWatch(nodeId: string, ...args: any[]) {
+  if (!logActive) return
+  logNodeEventWarning(nodeId, 'WATCH', ...args)
+}
+
+export function logNodeDebug(nodeId: string, ...args: any[]) {
+  if (!logActive) return
+  log(purple, nodeId, 'DEBUG', ...args)
 }
 
 export function objectsAreEqual(obj1: any, obj2: any, maxDepth = 400, currentDepth = 0) {
@@ -77,64 +92,6 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
   if (value === null) return []
   if (Array.isArray(value)) return value
   return [value]
-}
-
-export function analyzeArrayChange(
-  oldArray: string[],
-  newArray: string[],
-): {
-  movedStepId: string
-  oldIndex: number
-  newIndex: number
-  isTransfer: boolean
-} {
-  // Find the step that moved
-  let movedStepId: string | null = null
-  let newIndex = -1
-
-  // Check for new item (transfer in)
-  for (let i = 0; i < newArray.length; i++) {
-    if (!oldArray.includes(newArray[i])) {
-      movedStepId = newArray[i]
-      newIndex = i
-      return {
-        movedStepId,
-        oldIndex: -1,
-        newIndex,
-        isTransfer: true,
-      }
-    }
-  }
-
-  // Check for removed item
-  for (let i = 0; i < oldArray.length; i++) {
-    if (!newArray.includes(oldArray[i])) {
-      // Item was removed - it moved elsewhere
-      return {
-        movedStepId: oldArray[i],
-        oldIndex: i,
-        newIndex: -1,
-        isTransfer: true,
-      }
-    }
-  }
-
-  // Find reordered item (same items, different positions)
-  for (let i = 0; i < newArray.length; i++) {
-    if (oldArray[i] !== newArray[i]) {
-      movedStepId = newArray[i]
-      newIndex = i
-      const oldIndex = oldArray.indexOf(movedStepId)
-      return {
-        movedStepId,
-        oldIndex,
-        newIndex,
-        isTransfer: false,
-      }
-    }
-  }
-
-  throw new Error('no array change found')
 }
 
 export type ImgSize = { width: number, height: number }

@@ -19,9 +19,9 @@ import {
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
-import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from '../pipeline/StepHandler.ts'
+import { type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import { type AnyStepDefinition, useStepRegistry } from '../pipeline/StepRegistry.ts'
-import { type ImgSize } from '../util/misc.ts'
+import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
 
@@ -361,7 +361,6 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     // the only place to mark a node for processing
     function markDirty(id: NodeId) {
-      console.log('markDirty', id)
       get(id).isDirty = true
       queue(id)
     }
@@ -375,7 +374,10 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const node = get(id)
 
       // will be handled upstream
-      if (!node.isReady(store)) return
+      if (!node.isReady(store)) {
+        logNodeEventWarning(id, 'attempt to run failed (not ready)', node)
+        return
+      }
 
       node.isDirty = false
 
@@ -389,19 +391,8 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T> {
       const node = get(id) as GraphNode<T>
-      const handler = makeStepHandler<T>(node.def, handlerOptions)
 
-      node.handler = handler as IStepHandler<T>
-
-      if (node.config === undefined) {
-        node.config = handler.reactiveConfig(handler.config())
-      }
-
-      if (node.loadSerialized) {
-        handler.loadConfig(node.config as T['RC'], node.loadSerialized.config)
-        node.loadSerialized = null
-      }
-
+      node.initialize(handlerOptions)
       return node
     }
 

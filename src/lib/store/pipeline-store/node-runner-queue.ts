@@ -1,4 +1,5 @@
 import type { NodeId } from '../../pipeline/Node.ts'
+import { logNodeEvent } from '../../util/misc.ts'
 import type { PipelineStore } from '../pipeline-store.ts'
 
 // Polyfill/alias for queueMicrotask (works in all environments)
@@ -32,6 +33,7 @@ export function makeNodeRunnerQueue(store: PipelineStore) {
 
     // Run each root (usually 1, but forks may produce multiple)
     for (const rootId of roots) {
+      logNodeEvent(rootId, 'store.runNode()')
       await store.runNode(rootId)
     }
   }

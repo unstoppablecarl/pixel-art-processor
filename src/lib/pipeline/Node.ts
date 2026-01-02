@@ -1,7 +1,8 @@
 import type { StepValidationError } from '../errors.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
+import { logNodeEvent } from '../util/misc.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
-import { type IStepHandler } from './StepHandler.ts'
+import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
 import { useStepRegistry } from './StepRegistry.ts'
 import type {
   ForkStepRunner,
@@ -97,6 +98,7 @@ export abstract class BaseNode<
     this.isProcessing = false
     this.isDirty = false
     this.lastExecutionTimeMS = performance.now() - startTime
+    logNodeEvent(this.id, 'processRunner', result)
 
     return result
   }
@@ -119,6 +121,22 @@ export abstract class BaseNode<
       muted: this.muted,
       config: config,
     }
+  }
+
+  initialize(handlerOptions: StepHandlerOptions<T>): void {
+    const handler = makeStepHandler<T>(this.def, handlerOptions)
+
+    this.handler = handler as IStepHandler<T>
+
+    if (this.config === undefined) {
+      this.config = handler.reactiveConfig(handler.config())
+    }
+
+    if (this.loadSerialized) {
+      handler.loadConfig(this.config as T['RC'], this.loadSerialized.config)
+      this.loadSerialized = null
+    }
+    this.initialized = true
   }
 
   abstract getInputDataFromPrev(store: MinStore): Promise<T['Input'] | null>

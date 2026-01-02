@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import type { StepDataType } from '../../steps.ts'
 import { usePipelineStore } from '../store/pipeline-store.ts'
-import { logStepWatch } from '../util/misc.ts'
+import { logNodeWatch } from '../util/misc.ts'
 import type { InitializedForkNode, InitializedNode, InitializedStepNode, NodeId } from './Node.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
 import type { Config, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
@@ -25,7 +25,7 @@ function useCoreStepHandler<
   ]
 
   watch(watcherTargets, () => {
-    logStepWatch(node.id)
+    logNodeWatch(node.id)
     store.markDirty(node.id)
   })
 
