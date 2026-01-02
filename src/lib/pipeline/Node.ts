@@ -12,8 +12,8 @@ import type {
   NormalStepRunner,
   SingleRunnerOutput,
   SingleRunnerResult,
-  StepRunner,
-} from './StepRunner.ts'
+  NodeRunner,
+} from './NodeRunner.ts'
 
 export enum NodeType {
   STEP = 'STEP',
@@ -42,7 +42,7 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
 
 export abstract class BaseNode<
   T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
+  R extends NodeRunner<T> = NodeRunner<T>
 > {
   readonly abstract type: NodeType
   // serialized
@@ -466,54 +466,54 @@ function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): S
 type Initialized<
   N extends BaseNode<any>,
   T extends AnyStepContext,
-  R extends StepRunner<T>
+  R extends NodeRunner<T>
 > =
   Omit<N, 'config' | 'handler'> & {
   config: NonNullable<N['config']>,
   handler: IStepHandler<T, R>,
 }
 
-export type InitializedStepNode<T extends AnyStepContext, R extends StepRunner<T>> =
+export type InitializedStepNode<T extends AnyStepContext, R extends NodeRunner<T>> =
   Initialized<StepNode<T>, T, R> & {
   type: NodeType.STEP,
   outputData: T['Output'] | null
 }
 
-export type InitializedForkNode<T extends AnyStepContext, R extends StepRunner<T>> =
+export type InitializedForkNode<T extends AnyStepContext, R extends NodeRunner<T>> =
   Initialized<ForkNode<T>, T, R> & {
   type: NodeType.FORK,
   outputData: T['Output'][]
 }
 
-export type InitializedBranchNode<T extends AnyStepContext, R extends StepRunner<T>> =
+export type InitializedBranchNode<T extends AnyStepContext, R extends NodeRunner<T>> =
   Initialized<BranchNode<T>, T, R> & {
   type: NodeType.BRANCH,
   outputData: T['Output'] | null
 }
 
-export type AnyInitializedNode = InitializedNode<AnyStepContext, StepRunner<AnyStepContext>>
+export type AnyInitializedNode = InitializedNode<AnyStepContext, NodeRunner<AnyStepContext>>
 
 export type InitializedNormalNode<
   T extends AnyStepContext,
-  R extends StepRunner<T>
+  R extends NodeRunner<T>
 > =
   | InitializedStepNode<T, R>
   | InitializedBranchNode<T, R>
 
 export type InitializedForkOnlyNode<
   T extends AnyStepContext,
-  R extends StepRunner<T>
+  R extends NodeRunner<T>
 > = InitializedForkNode<T, R>
 
 export type InitializedNode<
   T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
+  R extends NodeRunner<T> = NodeRunner<T>
 > =
   | InitializedStepNode<T, R>
   | InitializedForkNode<T, R>
   | InitializedBranchNode<T, R>
 
-export function assertInitialized<T extends AnyStepContext, R extends StepRunner<T>>(
+export function assertInitialized<T extends AnyStepContext, R extends NodeRunner<T>>(
   node: GraphNode<T>,
 ): asserts node is GraphNode<T> & { handler: IStepHandler<T, R>, config: NonNullable<GraphNode<T>['config']> } {
   if (!node.initialized || !node.handler || node.config === undefined) {

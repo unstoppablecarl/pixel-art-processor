@@ -20,7 +20,7 @@
 //   type ForkStepRunnerOutput,
 //   type NormalStepRunner,
 //   type NormalStepRunnerOutput,
-// } from '../pipeline/StepRunner.ts'
+// } from '../pipeline/NodeRunner.ts'
 // import { analyzeArrayChange, arrayRemove, logStepEvent } from '../util/misc.ts'
 // import { prng } from '../util/prng.ts'
 // import { deepUnwrap } from '../util/vue-util.ts'

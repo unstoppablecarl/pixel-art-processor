@@ -14,7 +14,7 @@ import {
   type StepHandlerOptions,
 } from '../src/lib/pipeline/StepHandler.ts'
 import type { StepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -231,7 +231,7 @@ describe('makeStepHandler<T>', () => {
     // defaulted config() is overridden by options.config()
     expectTypeOf(handler.config).toEqualTypeOf<() => RawConfig>()
 
-    // process has the correct StepRunner signature
+    // process has the correct NodeRunner signature
     expectTypeOf(handler.run).toEqualTypeOf<NormalStepRunner<T>>()
 
     // ensure defaulted methods have the right types even if not provided in options

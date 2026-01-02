@@ -12,7 +12,7 @@ import type {
   WatcherTarget,
 } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import type { ForkStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/StepRunner.ts'
+import type { ForkStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { useForkHandler } from '../src/lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'

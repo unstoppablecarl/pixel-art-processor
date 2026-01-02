@@ -4,8 +4,8 @@ import type { AnyStepContext, StepInputTypesToInstances } from '../src/lib/pipel
 import {
   type ForkStepRunner,
   type NormalStepRunner, type SingleRunnerResult,
-  type StepRunner,
-} from '../src/lib/pipeline/StepRunner.ts'
+  type NodeRunner,
+} from '../src/lib/pipeline/NodeRunner.ts'
 import type { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
 import type { PixelMap } from '../src/lib/step-data-types/PixelMap.ts'
 import type { StepDataType } from '../src/steps.ts'
@@ -26,13 +26,13 @@ type IsEqual<A, B> =
 // 1. Runner union structure
 // ---------------------------------------------------------
 
-describe('StepRunner union structure', () => {
-  it('NormalStepRunner<T> is assignable to StepRunner<T>', () => {
-    expectTypeOf<NormalStepRunner<T>>().toExtend<StepRunner<T>>()
+describe('NodeRunner union structure', () => {
+  it('NormalStepRunner<T> is assignable to NodeRunner<T>', () => {
+    expectTypeOf<NormalStepRunner<T>>().toExtend<NodeRunner<T>>()
   })
 
-  it('ForkStepRunner<T> is assignable to StepRunner<T>', () => {
-    expectTypeOf<ForkStepRunner<T>>().toExtend<StepRunner<T>>()
+  it('ForkStepRunner<T> is assignable to NodeRunner<T>', () => {
+    expectTypeOf<ForkStepRunner<T>>().toExtend<NodeRunner<T>>()
   })
 })
 
@@ -40,15 +40,15 @@ describe('StepRunner union structure', () => {
 // 5. Manual narrowing works
 // ---------------------------------------------------------
 
-describe('Manual narrowing of StepRunner<T>', () => {
+describe('Manual narrowing of NodeRunner<T>', () => {
   it('can narrow to NormalStepRunner<T>', () => {
-    const run = {} as StepRunner<T>
+    const run = {} as NodeRunner<T>
     const normal = run as NormalStepRunner<T>
     expectTypeOf(normal).toExtend<NormalStepRunner<T>>()
   })
 
   it('can narrow to ForkStepRunner<T>', () => {
-    const run = {} as StepRunner<T>
+    const run = {} as NodeRunner<T>
     const fork = run as ForkStepRunner<T>
     expectTypeOf(fork).toExtend<ForkStepRunner<T>>()
   })
@@ -73,10 +73,10 @@ type Ctx = MockStepContext<
   typeof NormalMap
 >
 
-describe('StepRunner type collapse tests', () => {
-  it('NormalStepRunner<T> should NOT collapse to StepRunner<T>', () => {
+describe('NodeRunner type collapse tests', () => {
+  it('NormalStepRunner<T> should NOT collapse to NodeRunner<T>', () => {
     type N = NormalStepRunner<Ctx>
-    type U = StepRunner<Ctx>
+    type U = NodeRunner<Ctx>
 
     // If N collapses to U, this becomes false
     type ShouldBeTrue = N extends U ? true : false
@@ -88,8 +88,8 @@ describe('StepRunner type collapse tests', () => {
   })
 
 
-  it('StepRunner<T> is exactly the union of Normal and Fork and they remain distinct', () => {
-    type U = StepRunner<Ctx>
+  it('NodeRunner<T> is exactly the union of Normal and Fork and they remain distinct', () => {
+    type U = NodeRunner<Ctx>
     type N = NormalStepRunner<Ctx>
     type F = ForkStepRunner<Ctx>
 

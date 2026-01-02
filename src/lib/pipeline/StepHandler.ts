@@ -14,7 +14,7 @@ import {
 } from './Step.ts'
 import type { StepDataConfig } from './StepMeta.ts'
 import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
-import type { StepRunner } from './StepRunner.ts'
+import type { NodeRunner } from './NodeRunner.ts'
 
 export type Config = Record<string, any>
 
@@ -37,7 +37,7 @@ export type StepHandlerOptionsOmit =
 
 export type StepHandlerOptions<
   T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
+  R extends NodeRunner<T> = NodeRunner<T>
 > = Omit<
   Optional<
     IStepHandler<T, R>, StepHandlerOptional
@@ -55,7 +55,7 @@ export type StepHandlerOptionsInfer<
   RC extends ReactiveConfigType<C>,
   I extends readonly StepDataType[],
   O extends StepDataType,
-  R extends StepRunner<StepContext<C, SC, RC, I, O>>,
+  R extends NodeRunner<StepContext<C, SC, RC, I, O>>,
 > = {
   config?: () => C,
   reactiveConfig?: (defaults: C) => RC
@@ -85,7 +85,7 @@ export type StepHandlerOptionsInfer<
 
 export interface IStepHandler<
   T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
+  R extends NodeRunner<T> = NodeRunner<T>
 > {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
@@ -118,7 +118,7 @@ export interface IStepHandler<
 
 export function makeStepHandler<
   T extends AnyStepContext,
-  R extends StepRunner<T> = StepRunner<T>
+  R extends NodeRunner<T> = NodeRunner<T>
 >(
   def: string,
   options: StepHandlerOptions<T, R>,

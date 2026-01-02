@@ -12,7 +12,7 @@ export type SingleRunnerResult<T extends AnyStepContext> = {
   validationErrors: StepValidationError[]
 }
 
-export type StepRunner<T extends AnyStepContext> =
+export type NodeRunner<T extends AnyStepContext> =
   | NormalStepRunner<T>
   | ForkStepRunner<T>
 

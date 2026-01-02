@@ -5,11 +5,11 @@ import { logNodeWatch } from '../util/misc.ts'
 import type { InitializedForkNode, InitializedNode, InitializedStepNode, NodeId } from './Node.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
 import type { Config, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
-import type { ForkStepRunner, NormalStepRunner, StepRunner } from './StepRunner.ts'
+import type { ForkStepRunner, NormalStepRunner, NodeRunner } from './NodeRunner.ts'
 
 function useCoreStepHandler<
   T extends AnyStepContext,
-  R extends StepRunner<T>
+  R extends NodeRunner<T>
 >(
   nodeId: NodeId,
   options: StepHandlerOptions<T, R>,
