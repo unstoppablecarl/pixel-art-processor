@@ -18,29 +18,29 @@ function makeBgColor(light: string) {
   return `background: light-dark(${light}, ${dark});`
 }
 
-const logActive = true
+let logActive = true
 
+export function setLogActive(flag: boolean){
+  logActive = flag
+}
 function log(color: string, nodeId: string, event: string, ...args: any[]) {
+  if (!logActive) return
   console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${color}`, ...args.map((m) => deepUnwrap(m)))
 }
 
 export function logNodeEvent(nodeId: string, event: string, ...args: any[]) {
-  if (!logActive) return
   log(green, nodeId, event, ...args)
 }
 
 export function logNodeEventWarning(nodeId: string, event: string, ...args: any[]) {
-  if (!logActive) return
   log(orange, nodeId, event, ...args)
 }
 
 export function logNodeWatch(nodeId: string, ...args: any[]) {
-  if (!logActive) return
   logNodeEventWarning(nodeId, 'WATCH', ...args)
 }
 
 export function logNodeDebug(nodeId: string, ...args: any[]) {
-  if (!logActive) return
   log(purple, nodeId, 'DEBUG', ...args)
 }
 

@@ -3,10 +3,10 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyNode, type NodeDef, NodeType } from './Node.ts'
+import { type AnyNode, BRANCH_STEP_DEF, type NodeDef, NodeType } from './Node.ts'
 import { type AnyStepContext } from './Step.ts'
 import type { StepHandlerOptions } from './StepHandler.ts'
-import type { StepMeta } from './StepMeta.ts'
+import { type StepMeta } from './StepMeta.ts'
 
 export type AnyStepDefinition = StepDefinition<any, any>
 
@@ -23,6 +23,8 @@ export type StepRegistry = ReturnType<typeof makeStepRegistry>
 export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
   const STEP_DEFINITIONS: StepDefinitions = {}
   const dataTypeRegistry: StepDataTypeRegistry = new StepDataTypeRegistry(stepDataTypes)
+
+  stepDefinitions = [BRANCH_STEP_DEF, ...stepDefinitions]
 
   function defineStep(definition: AnyStepDefinition) {
     if (STEP_DEFINITIONS[definition.def]) {
@@ -122,6 +124,9 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     defineSteps,
     get,
     has,
+    getDefKeys(): NodeDef[] {
+      return Object.keys(STEP_DEFINITIONS) as NodeDef[]
+    },
     getNodeType(def: string): NodeType {
       return get(def).type
     },
@@ -148,7 +153,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
 let REGISTRY: StepRegistry | undefined
 
 // Restore from previous HMR state
-if (import.meta.hot) {
+if (import.meta.hot && !import.meta.env.VITEST) {
   if (import.meta.hot.data.stepRegistry) {
     REGISTRY = import.meta.hot.data.stepRegistry
   }
@@ -158,7 +163,8 @@ export function installStepRegistry(registry: StepRegistry) {
   REGISTRY = registry
 
   // cache hmr state
-  if (import.meta.hot) {
+  if (import.meta.hot && !import.meta.env.VITEST) {
+
     import.meta.hot.data.stepRegistry = registry
   }
 }
@@ -171,7 +177,7 @@ export function useStepRegistry(): StepRegistry {
 }
 
 // Preserve on HMR disposal
-if (import.meta.hot) {
+if (import.meta.hot && !import.meta.env.VITEST) {
   import.meta.hot.dispose((data) => {
     data.stepRegistry = REGISTRY
   })
@@ -186,5 +192,3 @@ if (import.meta.hot) {
     }
   })
 }
-
-export const BRANCH_DEF = 'branch_node' as NodeDef

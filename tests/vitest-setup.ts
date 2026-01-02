@@ -1,10 +1,12 @@
 import { enableAutoUnmount } from '@vue/test-utils'
 import { setActivePinia } from 'pinia'
 import { afterEach, beforeEach } from 'vitest'
+import { setLogActive } from '../src/lib/util/misc.ts'
 
 enableAutoUnmount(afterEach)
 
 beforeEach(() => {
+  setLogActive(false)
   setActivePinia(undefined)
 })
 
