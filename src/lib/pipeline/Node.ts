@@ -1,4 +1,7 @@
+import { Component, ref } from 'vue'
+import type { StepDataType } from '../../steps.ts'
 import type { StepValidationError } from '../errors.ts'
+import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { logNodeEvent } from '../util/misc.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
@@ -228,14 +231,14 @@ export class ForkNode<
   R extends ForkStepRunner<T> = ForkStepRunner<T>
 > extends BaseNode<T, R> {
   type = NodeType.FORK
-  branchIds: NodeId[]
+  branchIds = ref<NodeId[]>([])
   prevNodeId: NodeId | null
-  outputData: SingleRunnerOutput<T>[] = []
+  outputData = ref<SingleRunnerOutput<T>[]>([])
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId ?? null
-    this.branchIds = options.branchIds ?? []
+    this.branchIds.value = options.branchIds ?? []
   }
 
   isReady(store: MinStore) {
@@ -246,20 +249,20 @@ export class ForkNode<
   }
 
   childIds(store: MinStore) {
-    return this.branchIds
+    return this.branchIds.value
   }
 
   async runner(store: MinStore) {
-    this.outputData = await Promise.all(
-      this.branchIds.map((_, i) => this.getBranchOutput(store, i)),
+    this.outputData.value = await Promise.all(
+      this.branchIds.value.map((_, i) => this.getBranchOutput(store, i)),
     ) as SingleRunnerOutput<T>[]
   }
 
   async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerOutput<T>> {
-    if (this.outputData[branchIndex] === undefined) {
-      this.outputData[branchIndex] = await this.runBranch(store, branchIndex)
+    if (this.outputData.value[branchIndex] === undefined) {
+      this.outputData.value[branchIndex] = await this.runBranch(store, branchIndex)
     }
-    return this.outputData[branchIndex]
+    return this.outputData.value[branchIndex]
   }
 
   protected async runBranch(store: MinStore, branchIndex: number): Promise<
@@ -280,7 +283,7 @@ export class ForkNode<
     return {
       ...super.serialize(),
       prevNodeId: this.prevNodeId,
-      branchIds: this.branchIds,
+      branchIds: this.branchIds.value,
     }
   }
 
@@ -311,11 +314,32 @@ export class BranchNode<
   outputData: T['Output'] | null = null
   prevNodeId: NodeId
   branchIndex: number
+  initialized = true
+  handler: IStepHandler<T>
 
   constructor(options: BranchNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId
     this.branchIndex = options.branchIndex
+    let passthroughType: StepDataType | undefined = undefined
+
+    this.handler = {
+      get inputDataTypes() {
+        return passthroughType ? [passthroughType] : [PassThrough]
+      },
+
+      get outputDataType() {
+        return passthroughType ?? PassThrough
+      },
+
+      clearPassThroughDataType() {
+        passthroughType = undefined
+      },
+
+      setPassThroughDataType(type: StepDataType) {
+        passthroughType = type
+      },
+    } as unknown as IStepHandler<T>
   }
 
   isReady(store: MinStore) {
@@ -342,16 +366,12 @@ export class BranchNode<
   }
 
   async runner(store: MinStore) {
-    const _handler = this.handler as IStepHandler<T, R>
-    const output = await _handler.run({
-      config: this.config as T['RC'],
-      inputData: await this.getInputDataFromPrev(store),
-    })
+    const fork = this.parentFork(store)
+    this.handler.setPassThroughDataType(fork.handler!.outputDataType)
 
-    const result = parseResult<T>(output)
-    this.outputData = result.output
-    this.outputPreview = result.preview
-    this.validationErrors = result.validationErrors
+    this.outputData = await this.getInputDataFromPrev(store)
+    this.outputPreview = null
+    this.validationErrors = []
   }
 
   getOutput(): T['Output'] | null {
@@ -364,6 +384,10 @@ export class BranchNode<
     if (result.outputData) {
       return result.outputData.copy()
     }
+  }
+
+  initialize(handlerOptions: StepHandlerOptions<T>): void {
+    // noop
   }
 }
 
@@ -458,3 +482,13 @@ export type InitializedNode<
   | InitializedStepNode<T, R>
   | InitializedForkNode<T, R>
   | InitializedBranchNode<T, R>
+
+export const BRANCH_DEF = 'branch_node' as NodeDef
+
+export const BRANCH_STEP_DEF = {
+  type: NodeType.BRANCH,
+  def: BRANCH_DEF,
+  displayName: 'Branch',
+  passthrough: true,
+  component: {} as Component,
+}

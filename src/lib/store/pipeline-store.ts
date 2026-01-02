@@ -224,13 +224,13 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function addBranch(def: NodeDef, prevNodeId: NodeId): AnyBranchNode {
       const fork = get(prevNodeId) as AnyForkNode
-      const branchIndex = fork.branchIds.length
+      const branchIndex = fork.branchIds.value.length
 
       const id = _defToId(def)
       const branch = shallowReactive(new BranchNode({ id, def, prevNodeId, branchIndex }))
       nodes[id] = branch
 
-      fork.branchIds.push(id)
+      fork.branchIds.value.push(id)
       markDirty(branch.id)
 
       return branch
@@ -238,14 +238,15 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function removeBranch(forkId: NodeId, branchId: NodeId): void {
       const fork = getFork(forkId)
-      const index = fork.branchIds.indexOf(branchId)
+      const index = fork.branchIds.value.indexOf(branchId)
       if (index !== -1) {
-        fork.branchIds.splice(index, 1)
+        fork.branchIds.value.splice(index, 1)
         // reindex remaining branches
-        fork.branchIds.forEach((bid, i) => {
+        fork.branchIds.value.forEach((bid, i) => {
           const b = store.get(bid) as AnyBranchNode
           b.branchIndex = i
         })
+        fork.outputData.value.splice(index, 1)
       }
     }
 
@@ -435,11 +436,11 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
         } else if (isFork(original)) {
           // Fork → Branches via branchIds[]
           const forkClone = clone as AnyForkNode
-          forkClone.branchIds.push(childClone.id)
+          forkClone.branchIds.value.push(childClone.id)
 
           const branchClone = childClone as AnyBranchNode
           branchClone.prevNodeId = newId
-          branchClone.branchIndex = forkClone.branchIds.length - 1
+          branchClone.branchIndex = forkClone.branchIds.value.length - 1
         } else {
           throw new Error('cloneSubtree: unsupported node type')
         }
@@ -466,13 +467,13 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       // Duplicate branch inside its fork's branchIds[]
       const parentFork = original.parentFork(store)
 
-      const idx = parentFork.branchIds.indexOf(original.id)
+      const idx = parentFork.branchIds.value.indexOf(original.id)
       if (idx === -1) {
         throw new Error(`duplicateNode: branch ${id} not found in parentFork.branchIds`)
       }
 
       // Insert cloned branch ID right after the original
-      parentFork.branchIds.splice(idx + 1, 0, cloneRoot.id)
+      parentFork.branchIds.value.splice(idx + 1, 0, cloneRoot.id)
 
       // Fix parent/branchIndex on the cloned branch
       const branchClone = cloneRoot as AnyBranchNode
@@ -480,7 +481,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       branchClone.branchIndex = idx + 1
 
       // Reindex all branches
-      parentFork.branchIds.forEach((bid, i) => {
+      parentFork.branchIds.value.forEach((bid, i) => {
         const b = get(bid) as AnyBranchNode
         b.branchIndex = i
       })

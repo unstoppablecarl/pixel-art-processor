@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { AnyForkNode, NodeId } from '../../lib/pipeline/Node.ts'
-import { BRANCH_DEF } from '../../lib/pipeline/StepRegistry.ts'
+import { BRANCH_DEF, type NodeId } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineForkBranch from './PipelineForkBranch.vue'
 
@@ -9,17 +8,17 @@ const store = usePipelineStore()
 
 const { forkNodeId } = defineProps<{ forkNodeId: NodeId }>()
 
-const fork = computed(() => store.getIfExists(forkNodeId) as AnyForkNode | undefined)
-const branches = computed(() => fork?.value?.branchIds ?? [])
+const branchIds = computed(() => {
+  return store.getFork(forkNodeId).branchIds.value
+})
 </script>
-
 <template>
-  <div class="fork-branches" v-if="fork">
+  <div class="fork-branches">
     <div class="fork-branch-header-spacer">&nbsp;</div>
 
     <div
-      v-for="(branchId, branchIndex) in branches"
-      :key="`${fork.id}-branch-${branchIndex}`"
+      v-for="(branchId, branchIndex) in branchIds"
+      :key="`${forkNodeId}-branch-${branchIndex}`"
       class="card card-fork-branch"
     >
       <PipelineForkBranch :branch-node-id="branchId" />

@@ -12,6 +12,7 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard from '../StepCard.vue'
 import StepImg from '../StepImg.vue'
 
@@ -23,8 +24,7 @@ const node = useForkHandler(nodeId, {
     return {}
   },
   async run({ inputData, branchIndex }) {
-
-    console.log('ForkStep run', inputData, branchIndex)
+    console.log('ForkStep run', branchIndex, inputData)
     return {
       output: inputData,
       preview: inputData?.toImageData(),
@@ -32,6 +32,8 @@ const node = useForkHandler(nodeId, {
   },
 })
 
+const store = usePipelineStore()
+const outputDataRef = store.get(node.id).outputData
 </script>
 <template>
   <StepCard
@@ -40,12 +42,12 @@ const node = useForkHandler(nodeId, {
     :copyable="false"
     :draggable="false"
     :mutable="false"
-    :sub-header="`: x ${node.branchIds.length}`"
+    :sub-header="`: x ${node.branchIds.value.length}`"
   >
 
     <template #body>
 
-      <div v-for="({preview, validationErrors}, index) in node.outputData ??[]">
+      <div v-for="({preview, validationErrors}, index) in outputDataRef ??[]">
         <template v-if="preview">
           <StepImg
             :image-data="preview"
