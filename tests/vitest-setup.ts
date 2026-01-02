@@ -4,9 +4,9 @@ import { afterEach, beforeEach } from 'vitest'
 import { setLogActive } from '../src/lib/util/misc.ts'
 
 enableAutoUnmount(afterEach)
+setLogActive(false)
 
 beforeEach(() => {
-  setLogActive(false)
   setActivePinia(undefined)
 })
 
