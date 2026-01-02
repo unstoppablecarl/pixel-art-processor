@@ -4,16 +4,16 @@ import { type StepValidationError } from '../errors.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
-import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
-import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
-import { useStepRegistry } from './StepRegistry.ts'
 import type {
   ForkStepRunner,
+  NodeRunner,
   NormalStepRunner,
   SingleRunnerOutput,
   SingleRunnerResult,
-  NodeRunner,
 } from './NodeRunner.ts'
+import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
+import { type IStepHandler, makeStepHandler, type StepHandlerOptions, type WatcherTarget } from './StepHandler.ts'
+import { useStepRegistry } from './StepRegistry.ts'
 
 export enum NodeType {
   STEP = 'STEP',
@@ -28,7 +28,6 @@ export type BaseNodeSerialized<T extends AnyStepContext> = {
   id: NodeId,
   def: NodeDef,
   seed: number,
-  muted: boolean,
   visible: boolean,
   config: T['SerializedConfig']
 }
@@ -37,7 +36,6 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
   id: NodeId,
   def: NodeDef,
   seed?: number,
-  muted?: boolean,
   visible?: boolean,
   config?: T['SerializedConfig'],
 }
@@ -51,7 +49,6 @@ export abstract class BaseNode<
   id: NodeId
   def: NodeDef
   seed = 0
-  muted = false
   config: T['RC'] | undefined
   visible = true
 
@@ -69,19 +66,16 @@ export abstract class BaseNode<
 
   abstract prevNodeId: NodeId | null
 
-  constructor({ id, def, seed = 0, muted = false, visible = true, config }: BaseNodeOptions<T>) {
+  constructor({ id, def, seed = 0, visible = true, config }: BaseNodeOptions<T>) {
     this.id = id
     this.def = def
     this.seed = seed
-    this.muted = muted
     this.visible = visible
 
     if (config) {
       this.loadSerialized = { config }
     }
   }
-
-  abstract runner(store: MinStore): void
 
   isReady(store: MinStore): boolean {
     return !this.isProcessing
@@ -96,22 +90,25 @@ export abstract class BaseNode<
   }
 
   async processRunner(store: MinStore) {
+    logNodeEvent(this.id, 'processRunner')
+
     this.isProcessing = true
     const startTime = performance.now()
 
-    const result = await this.runner(store)
+    await this.runner(store)
 
     this.isProcessing = false
     this.isDirty = false
     this.lastExecutionTimeMS = performance.now() - startTime
-    logNodeEvent(this.id, 'processRunner', result)
-
-    return result
   }
+
+  abstract runner(store: MinStore): Promise<void>
 
   abstract childIds(store: MinStore): NodeId[]
 
   abstract getOutputSize(): ImgSize
+
+  abstract getOutputDataFromPrev(store: MinStore): Promise<T['Input'] | null>
 
   serialize(): BaseNodeSerialized<T> {
 
@@ -126,7 +123,6 @@ export abstract class BaseNode<
       id: this.id,
       def: this.def,
       seed: this.seed,
-      muted: this.muted,
       visible: this.visible,
       config: config,
     }
@@ -148,8 +144,6 @@ export abstract class BaseNode<
     this.initialized = true
   }
 
-  abstract getInputDataFromPrev(store: MinStore): Promise<T['Input'] | null>
-
   getSeedSum(store: MinStore): number {
     this.seedSum = this.seed
     if (this.prevNodeId) {
@@ -157,21 +151,30 @@ export abstract class BaseNode<
     }
     return this.seedSum
   }
+
+  getWatcherTargets(): WatcherTarget[] {
+    return [
+      this.config,
+      () => this.seed,
+    ]
+  }
 }
 
 type StepNodeProperties = {
-  prevNodeId?: NodeId | null,
+  prevNodeId: NodeId | null,
+  muted: boolean
 }
 export type AnyStepNodeSerialized = StepNodeSerialized<AnyStepContext>
 export type StepNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & StepNodeProperties
 export type AnyStepNode = StepNode<AnyStepContext>
-export type StepNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & StepNodeProperties
+export type StepNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & Partial<StepNodeProperties>
 
 export class StepNode<
   T extends AnyStepContext,
   R extends NormalStepRunner<T> = NormalStepRunner<T>
 > extends BaseNode<T, R> {
   type = NodeType.STEP
+  muted: boolean
 
   prevNodeId: NodeId | null
   outputData: T['Output'] | null = null
@@ -180,6 +183,7 @@ export class StepNode<
   constructor(options: StepNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId ?? null
+    this.muted = options.muted ?? false
   }
 
   isReady(store: MinStore) {
@@ -197,15 +201,27 @@ export class StepNode<
   serialize(): StepNodeSerialized<T> {
     return {
       ...super.serialize(),
+      muted: this.muted,
       prevNodeId: this.prevNodeId,
     }
   }
 
   async runner(store: MinStore) {
+    if (this.muted) {
+      this.outputData = await this.getOutputDataFromPrev(store)
+      this.outputPreview = null
+      this.validationErrors = []
+
+      if (!this.prevNodeId) return
+      const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
+      this.handler!.setPassThroughDataType(prev.handler!.outputDataType)
+      return
+    }
+
     const _handler = this.handler as IStepHandler<T, R>
     const output = await _handler.run({
       config: this.config as T['RC'],
-      inputData: await this.getInputDataFromPrev(store),
+      inputData: await this.getOutputDataFromPrev(store),
     })
 
     const result = parseResult<T>(output)
@@ -214,13 +230,14 @@ export class StepNode<
     this.validationErrors = result.validationErrors
   }
 
-  async getInputDataFromPrev(store: MinStore): Promise<T['Input'] | null> {
+  async getOutputDataFromPrev(store: MinStore): Promise<T['Input'] | null> {
     if (!this.prevNodeId) return null
 
     const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
     if (prev.outputData) {
       return prev.outputData.copy()
     }
+    return null
   }
 
   getOutputSize(): ImgSize {
@@ -228,6 +245,10 @@ export class StepNode<
       width: this?.outputData?.width ?? 0,
       height: this?.outputData?.height ?? 0,
     }
+  }
+
+  getWatcherTargets(): WatcherTarget[] {
+    return [...super.getWatcherTargets(), () => this.muted]
   }
 }
 
@@ -284,7 +305,7 @@ export class ForkNode<
   private async runBranch(store: MinStore, branchIndex: number): Promise<
     SingleRunnerResult<T>
   > {
-    const inputData = await this.getInputDataFromPrev(store)
+    const inputData = await this.getOutputDataFromPrev(store)
     const _handler = this.handler as IStepHandler<T, R>
     const output = await _handler.run({
       config: this.config as T['RC'],
@@ -303,7 +324,7 @@ export class ForkNode<
     }
   }
 
-  async getInputDataFromPrev(store: MinStore): Promise<T['Input'] | null> {
+  async getOutputDataFromPrev(store: MinStore): Promise<T['Input'] | null> {
     if (!this.prevNodeId) return null
 
     const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
@@ -398,7 +419,7 @@ export class BranchNode<
     const fork = this.parentFork(store)
     this.handler.setPassThroughDataType(fork.handler?.outputDataType)
 
-    this.outputData = await this.getInputDataFromPrev(store)
+    this.outputData = await this.getOutputDataFromPrev(store)
     this.outputPreview = null
     this.validationErrors = []
   }
@@ -407,7 +428,7 @@ export class BranchNode<
     return this.outputData
   }
 
-  async getInputDataFromPrev(store: MinStore) {
+  async getOutputDataFromPrev(store: MinStore) {
     const fork = this.parentFork(store)
     const result = await fork.getBranchOutput(store, this.branchIndex) as T['Input']
     if (result.outputData) {

@@ -63,7 +63,7 @@ const nodeImages = computed(() => {
 
   if (isBranch(node) || isStep(node)) {
     return [{
-      label: (node?.outputPreview?.width ?? 0) + ' x ' + (node?.outputPreview?.height ?? 0)  + ' px',
+      label: (node?.outputPreview?.width ?? 0) + ' x ' + (node?.outputPreview?.height ?? 0) + ' px',
       imageData: node.outputPreview,
       validationErrors: [],
     }]
@@ -95,8 +95,11 @@ const registry = useStepRegistry()
 const header = computed(() => registry.get(node.def).displayName)
 
 function toggleMute() {
+  if (!isStep(node)) throw new Error('can only mute step nodes')
   node.muted = !node.muted
 }
+
+const isMuted = computed(() => isStep(node) && node.muted)
 </script>
 <template>
   <div ref="stepEl" class="node" :style="cssStyle">
@@ -111,7 +114,7 @@ function toggleMute() {
     </div>
     <div :class="{
       'card card-node': true,
-      'border-warning': node.muted,
+      'border-warning': isMuted,
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
@@ -133,7 +136,7 @@ function toggleMute() {
           </button>
 
           <button
-            v-if="mutable"
+            v-if="mutable && isStep(node)"
             role="button"
             :class="{
               'btn btn-sm': true,
@@ -174,9 +177,7 @@ function toggleMute() {
               class="node-img-container"
             >
               <div class="node-img-label" v-if="label">{{ label }}</div>
-              <template v-if="imageData">
-                <StepImg :image-data="imageData" />
-              </template>
+              <StepImg :image-data="imageData" />
               <div class="section" v-for="error in imgValidationErrors">
                 <component :is="error.component" :error="error" />
               </div>

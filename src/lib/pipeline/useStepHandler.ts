@@ -3,9 +3,9 @@ import type { StepDataType } from '../../steps.ts'
 import { usePipelineStore } from '../store/pipeline-store.ts'
 import { logNodeWatch } from '../util/misc.ts'
 import type { InitializedForkNode, InitializedNode, InitializedStepNode, NodeId } from './Node.ts'
+import type { ForkStepRunner, NodeRunner, NormalStepRunner } from './NodeRunner.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
 import type { Config, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
-import type { ForkStepRunner, NormalStepRunner, NodeRunner } from './NodeRunner.ts'
 
 function useCoreStepHandler<
   T extends AnyStepContext,
@@ -18,13 +18,7 @@ function useCoreStepHandler<
 
   const node = store.initializeNode<T>(nodeId, options as StepHandlerOptions<T>)
 
-  const watcherTargets = [
-    node.config,
-    () => node.seed,
-    () => node.muted,
-  ]
-
-  watch(watcherTargets, () => {
+  watch(node.getWatcherTargets(), () => {
     logNodeWatch(node.id)
     store.markDirty(node.id)
   })
