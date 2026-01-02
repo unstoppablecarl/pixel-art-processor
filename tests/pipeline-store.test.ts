@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest'
 import { type AnyBranchNode, type AnyForkNode, type AnyStepNode, BRANCH_DEF } from '../src/lib/pipeline/Node.ts'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
+import { deepUnwrap } from '../src/lib/util/vue-util.ts'
 import { STEP_DATA_TYPES, STEP_DEFINITIONS } from '../src/steps.ts'
 
 beforeEach(() => {
@@ -41,12 +42,12 @@ describe('PipelineStore remove() and move()', () => {
 
     await Promise.resolve()
 
-    expect(fork.branchIds).toEqual([b1.id, b2.id])
+    expect(deepUnwrap(fork.branchIds)).toEqual([b1.id, b2.id])
 
     store.remove(b1.id)
     await Promise.resolve()
 
-    expect(fork.branchIds).toEqual([b2.id])
+    expect(deepUnwrap(fork.branchIds)).toEqual([b2.id])
     expect(store.has(b1.id)).toBe(false)
     expect(store.getBranch(b2.id).branchIndex).toBe(0)
   })
