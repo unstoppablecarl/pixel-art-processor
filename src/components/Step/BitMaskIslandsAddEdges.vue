@@ -213,7 +213,6 @@ const computedSize = computed(() => config.size.value)
           input-width="50%"
 
         />
-        a
       </div>
     </template>
   </StepCard>
