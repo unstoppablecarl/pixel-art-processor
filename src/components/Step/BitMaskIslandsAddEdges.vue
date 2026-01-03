@@ -1,6 +1,5 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
@@ -13,7 +12,7 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../StepCard.vue'

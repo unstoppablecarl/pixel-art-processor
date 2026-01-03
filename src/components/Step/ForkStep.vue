@@ -1,6 +1,6 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.FORK,
@@ -10,7 +10,8 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { isBranch, isStep, type NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
+import { isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard, { type StepImage } from '../StepCard.vue'

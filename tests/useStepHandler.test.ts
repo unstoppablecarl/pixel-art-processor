@@ -2,17 +2,13 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
-import type { StepValidationError } from '../src/lib/errors.ts'
-import { type InitializedNode, type InitializedStepNode, type NodeDef, NodeType } from '../src/lib/pipeline/Node.ts'
-import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
-import type {
-  IStepHandler,
-  StepHandlerOptions,
-  StepHandlerOptionsInfer,
-  WatcherTarget,
-} from '../src/lib/pipeline/StepHandler'
-import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { StepValidationError } from '../src/lib/errors.ts'
+import { type NodeDef, NodeType, type StepDataType, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
+import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
+import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
+import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
@@ -20,8 +16,6 @@ import { NormalMap } from '../src/lib/step-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
-import { type StepDataType } from '../src/steps'
-
 
 function makeAppContext(cb: () => void) {
   installStepRegistry(makeStepRegistry())
@@ -75,7 +69,6 @@ function defineStep(
 describe('step handler type testing', async () => {
 
   makeAppContext(async () => {
-
 
     const inputDataTypes = [HeightMap, BitMask] as const
     const outputDataType = NormalMap

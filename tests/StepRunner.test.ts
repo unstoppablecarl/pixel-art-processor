@@ -1,5 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
+import type { StepDataType } from '../src/lib/pipeline/_types.ts'
 import type { AnyStepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import {
   type ForkStepRunner,
@@ -8,7 +9,6 @@ import {
 } from '../src/lib/pipeline/NodeRunner.ts'
 import type { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
 import type { PixelMap } from '../src/lib/step-data-types/PixelMap.ts'
-import type { StepDataType } from '../src/steps.ts'
 
 // ---------------------------------------------------------
 // Helpers

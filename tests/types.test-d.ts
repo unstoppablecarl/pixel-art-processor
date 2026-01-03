@@ -1,4 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest'
+import type { StepDataType } from '../src/lib/pipeline/_types.ts'
 import type {
   AnyStepContext,
   ReactiveConfigType,
@@ -8,7 +9,6 @@ import type {
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
-import type { StepDataType } from '../src/steps.ts'
 
 describe('basic type testing', async () => {
 

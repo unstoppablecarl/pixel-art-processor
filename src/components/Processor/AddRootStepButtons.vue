@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { NodeDef } from '../../lib/pipeline/Node.ts'
+import type { NodeDef } from '../../lib/pipeline/_types.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 

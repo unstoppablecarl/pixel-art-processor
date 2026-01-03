@@ -1,6 +1,5 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
@@ -25,8 +24,9 @@ import {
   type IslandMutator,
 } from '../../lib/generators/IslandMutator.ts'
 import { islandEroderWeighted } from '../../lib/generators/IslandSmoother/island-eroder-weighted.ts'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { getIslands } from '../../lib/step-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
@@ -76,7 +76,7 @@ const node = useStepHandler(nodeId, {
     if (!inputData) return
 
     const mask = inputData as BitMask
-    const islands = mask.getIslands()
+    const islands = getIslands(mask)
     const C = config
 
     const map: Record<ErodeType, () => IslandMutator> = {

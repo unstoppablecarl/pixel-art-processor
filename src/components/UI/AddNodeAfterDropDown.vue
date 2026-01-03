@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { BButtonGroup, BDropdown, BDropdownHeader, BDropdownItem, BTooltip } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
-import { type NodeDef, type NodeId } from '../../lib/pipeline/Node.ts'
-import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
+import type { NodeDef, NodeId, StepDataType, StepMeta } from '../../lib/pipeline/_types.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { getNodeDataTypeCssClass, type StepDataType } from '../../steps.ts'
+import { getNodeDataTypeCssClass } from '../../steps.ts'
 
 const store = usePipelineStore()
 

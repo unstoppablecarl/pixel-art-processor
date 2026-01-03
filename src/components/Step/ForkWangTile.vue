@@ -1,21 +1,32 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+console.log('[STEP] Loading: fork_wang_tiles - START')
+
+import { NodeType } from '../../lib/pipeline/_types.ts'
+console.log('[STEP] fork_wang_tiles: Imported NodeType')
+
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+console.log('[STEP] fork_wang_tiles: Imported BitMask')
+
+import type { AnyStepMeta } from '../../lib/pipeline/_types.ts'
+console.log('[STEP] fork_wang_tiles: Imported AnyStepMeta')
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.FORK,
   def: 'fork_wang_tiles',
   displayName: 'Fork: Wang Tiles',
-  passthrough: true,
+  inputDataTypes: [],
+  outputDataType: BitMask,
 }
+
+console.log('[STEP] fork_wang_tiles: STEP_META created and exported')
 </script>
 <script setup lang="ts">
-import { reactive } from 'vue'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import { reactive, computed } from 'vue'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { prng } from '../../lib/util/prng.ts'
-import StepCard from '../StepCard.vue'
+import StepCard, { type StepImage } from '../StepCard.vue'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
@@ -78,8 +89,11 @@ const node = useForkHandler(nodeId, {
       ...options,
     })
 
+
     chunks.forEach((v, i) => {
       if (!v === config.invert) {
+        console.log(branchIndex % 4)
+
         edges[branchIndex % 4](i)
       }
     })
@@ -90,12 +104,25 @@ const node = useForkHandler(nodeId, {
     }
   },
 })
-const config = node.config
 
+const store = usePipelineStore()
+const outputDataRef = store.getFork(node.id).forkOutputData
+
+const config = node.config
+const images = computed((): StepImage[] => {
+  return outputDataRef.value.map(({ preview, validationErrors }, index) => {
+    return {
+      imageData: preview,
+      label: `Branch: ${index + 1}`,
+      validationErrors,
+    }
+  })
+})
 </script>
 <template>
   <StepCard
     :node="node"
+    :images="images"
     :show-add-node-btn="false"
     :copyable="false"
     :draggable="false"
@@ -166,6 +193,7 @@ const config = node.config
           v-model="config.shuffleSeed"
           input-width="50%"
         />
+        asdf
       </div>
     </template>
   </StepCard>

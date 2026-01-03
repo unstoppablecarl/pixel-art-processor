@@ -1,7 +1,6 @@
 import { type Reactive, type ShallowReactive } from 'vue'
-import type { StepDataType } from '../../steps.ts'
 
-import type { Config } from './StepHandler.ts'
+import type { Config, StepDataType } from './_types.ts'
 
 export type AnyStepContext = StepContext<any, any, any, any, any>
 

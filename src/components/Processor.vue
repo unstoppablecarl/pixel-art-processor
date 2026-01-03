@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
-import { isFork, type NodeId } from '../lib/pipeline/Node.ts'
+import type { NodeId } from '../lib/pipeline/_types.ts'
+import { isFork } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import AppHeader from './AppHeader.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'

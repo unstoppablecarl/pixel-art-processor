@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { BRANCH_DEF, type NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
+
+import { BRANCH_DEF } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineForkBranch from './PipelineForkBranch.vue'
 

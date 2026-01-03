@@ -1,12 +1,13 @@
-import type { Component } from 'vue'
-import InvalidInputType from '../components/ValidationErrors/InvalidInputType.vue'
-import type { StepDataType } from '../steps.ts'
-import type { NodeId } from './pipeline/Node.ts'
-import { INVALID_INPUT_TYPE } from './pipeline/StepHandler.ts'
-import { usePipelineStore } from './store/pipeline-store.ts'
+import { type Component, defineAsyncComponent } from 'vue'
+import type { NodeId, StepDataType } from './pipeline/_types.ts'
+
+export const INVALID_INPUT_TYPE = 'INVALID_INPUT_TYPE'
 
 export abstract class StepValidationError extends Error {
-  component: Component = GenericValidationError
+  get component(): Component {
+    return defineAsyncComponent(() => import('../components/ValidationErrors/GenericValidationError.vue'))
+  }
+
   abstract slug: string
 
   constructor(
@@ -21,7 +22,10 @@ let genericErrorIncrement = 0
 
 export class GenericValidationError extends StepValidationError {
   slug = 'GENERIC_VALIDATION_ERROR'
-  component = GenericValidationError
+
+  get component(): Component {
+    return defineAsyncComponent(() => import('../components/ValidationErrors/GenericValidationError.vue'))
+  }
 
   constructor(
     message: string,
@@ -33,7 +37,10 @@ export class GenericValidationError extends StepValidationError {
 
 export class InvalidInputTypeError extends StepValidationError {
   slug = INVALID_INPUT_TYPE
-  component = InvalidInputType
+
+  get component(): Component {
+    return defineAsyncComponent(() => import('../components/ValidationErrors/GenericValidationError.vue'))
+  }
 
   constructor(
     public expectedTypes: readonly StepDataType[],
@@ -64,5 +71,5 @@ export function handleStepValidationError(nodeId: NodeId, error: Error) {
     throw error
   }
 
-  usePipelineStore().get(nodeId).validationErrors = errors
+  return errors
 }

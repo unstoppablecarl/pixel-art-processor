@@ -75,10 +75,11 @@ export function makePrng(initialSeed = 0) {
     shuffleArrayWithPositionOddEvenConstraint<T>(arr: T[]): T[] {
       return shuffleArrayWithPositionOddEvenConstraint<T>(this as Prng, arr)
     },
-    generateChunkedBinaryArray(options: Omit<GenerateChunkedArrayOptions, 'prng'>): number[] {
+    generateChunkedBinaryArray(options: Omit<GenerateChunkedArrayOptions, 'prng' | 'makePrng'>): number[] {
       return generateChunkedArray({
         prng: () => PRNG.next(),
         ...options,
+        makePrng,
       })
     },
     weightedArrayItems,

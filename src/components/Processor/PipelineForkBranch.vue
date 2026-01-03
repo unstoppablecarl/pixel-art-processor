@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, watch } from 'vue'
-import { isBranch, isFork, type NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
+import { isBranch, isFork } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'

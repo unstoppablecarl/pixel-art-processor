@@ -1,26 +1,19 @@
-import { reactive, type Reactive, type WatchSource } from 'vue'
-import { type StepDataType } from '../../steps.ts'
+import { reactive } from 'vue'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError, StepValidationError } from '../errors.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
+import type { Config, StepDataConfig, StepDataType, WatcherTarget } from './_types.ts'
 import type { InitializedNode } from './Node.ts'
+import type { NodeRunner } from './NodeRunner.ts'
 import {
   type AnyStepContext,
   type ReactiveConfigType,
   type StepContext,
   type StepInputTypesToInstances,
 } from './Step.ts'
-import type { StepDataConfig } from './StepMeta.ts'
 import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
-import type { NodeRunner } from './NodeRunner.ts'
-
-export type Config = Record<string, any>
-
-export type WatcherTarget = WatchSource | Reactive<any>
-
-export const INVALID_INPUT_TYPE = 'INVALID_INPUT_TYPE'
 
 export type StepHandlerOptional =
   | 'watcher'
@@ -200,5 +193,3 @@ export function makeStepHandler<
     },
   } as IStepHandler<T, R>
 }
-
-

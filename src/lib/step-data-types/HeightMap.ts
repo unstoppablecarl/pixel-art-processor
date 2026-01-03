@@ -1,6 +1,5 @@
 import type { RGBA } from '../util/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
-import { NormalMap } from './NormalMap.ts'
 
 export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
   readonly __brand = 'HeightMap'
@@ -57,42 +56,6 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
 
     return imageData
   }
-
-  getHeight(x: number, y: number): number {
-    return this.data[y * this.width + x]! / 255
-  }
-
-  toNormalMap(strength: number) {
-    const w = this.width
-    const h = this.height
-    const result = new NormalMap(this.width, this.height)
-
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        const idx = (y * w + x) * 4
-        const centerHeight = this.getHeight(x, y)
-        const left = (x > 0) ? this.getHeight(x - 1, y) : centerHeight
-        const right = (x < w - 1) ? this.getHeight(x + 1, y) : centerHeight
-        const top = (y > 0) ? this.getHeight(x, y - 1) : centerHeight
-        const bottom = (y < h - 1) ? this.getHeight(x, y + 1) : centerHeight
-        const dx = (right - left) * strength
-        const dy = (bottom - top) * strength
-        const nx = -dx
-        const ny = -dy
-        const nz = 1
-        const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
-        const nnx = nx / len
-        const nny = ny / len
-        const nnz = nz / len
-        result.data[idx] = ((nnx + 1) * 0.5 * 255) | 0
-        result.data[idx + 1] = ((nny + 1) * 0.5 * 255) | 0
-        result.data[idx + 2] = ((nnz + 1) * 0.5 * 255) | 0
-        result.data[idx + 3] = 255
-      }
-    }
-    return result
-  }
-
 }
 
 export const standardLuminanceFormula = ({ r, g, b }: RGBA) => Math.round(0.299 * r + 0.587 * g + 0.114 * b)

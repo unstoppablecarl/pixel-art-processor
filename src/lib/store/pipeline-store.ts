@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive, ref, type Ref, shallowReactive, watch } from 'vue'
+import { type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
 import {
   type AnyBranchNode,
   type AnyForkNode,
@@ -13,9 +14,6 @@ import {
   isBranch,
   isFork,
   isStep,
-  type NodeDef,
-  type NodeId,
-  NodeType,
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'

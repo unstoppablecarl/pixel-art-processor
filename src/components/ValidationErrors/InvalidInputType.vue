@@ -1,5 +1,4 @@
 <script setup lang="ts">
-
 import type { InvalidInputTypeError } from '../../lib/errors.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 

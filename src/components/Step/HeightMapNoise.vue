@@ -1,6 +1,5 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 
 export const STEP_META: AnyStepMeta = {
@@ -15,7 +14,7 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
 import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../lib/generators/perlin-noise.ts'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard from '../StepCard.vue'

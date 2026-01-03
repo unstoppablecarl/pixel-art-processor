@@ -1,23 +1,19 @@
 import { type Component } from 'vue'
-import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { BRANCH_DEF, BRANCH_STEP_DEF, type NodeDef, NodeType } from './Node.ts'
-import type { StepHandlerOptions } from './StepHandler.ts'
-import { type StepMeta } from './StepMeta.ts'
+import { type AnyStepDefinition, type NodeDef, NodeType, type StepDefinitions } from './_types.ts'
 
-export type AnyStepDefinition = StepDefinition<any, any>
-
-export type StepDefinition<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = {
-  readonly component: Component,
-} & Omit<StepMeta<I, O>, 'def'> & { def: NodeDef }
-
-export type StepDefinitions = Record<string, AnyStepDefinition>
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
+
+export const BRANCH_DEF = 'branch_node' as NodeDef
+export const BRANCH_STEP_DEF = {
+  type: NodeType.BRANCH,
+  def: BRANCH_DEF,
+  displayName: 'Branch',
+  passthrough: true,
+  component: {} as Component,
+}
 
 export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
   const STEP_DEFINITIONS: StepDefinitions = {}
@@ -48,7 +44,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return def in STEP_DEFINITIONS
   }
 
-  function isCompatibleWithOutputType(def: NodeDef, stepDataType: StepDataType): boolean {
+  function isCompatibleWithOutputType(def: NodeDef, stepDataType: DataStructureConstructor): boolean {
     const definition = get(def)
     if (definition.passthrough) return true
     return definition.inputDataTypes.includes(stepDataType)
@@ -80,13 +76,14 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     }
   }
 
-  function validateDefRegistration(
-    def: string,
-    options: StepHandlerOptions<any>,
-  ) {
+  function validateDefRegistration(def: string, options: {
+    passthrough?: boolean,
+    inputDataTypes?: any,
+    outputDataType?: any
+  }) {
 
-    let inputDataTypes: undefined | StepDataType[]
-    let outputDataType: undefined | StepDataType
+    let inputDataTypes: undefined | DataStructureConstructor[]
+    let outputDataType: undefined | DataStructureConstructor
 
     if (!options.passthrough) {
       ({ inputDataTypes, outputDataType } = options)

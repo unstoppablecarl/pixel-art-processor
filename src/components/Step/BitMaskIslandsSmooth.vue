@@ -1,6 +1,5 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
@@ -26,8 +25,9 @@ import {
 } from '../../lib/generators/island-ui.ts'
 import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { getIslands } from '../../lib/step-data-types/BitMask/island-helpers.ts'
 import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../StepCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
@@ -79,7 +79,7 @@ const node = useStepHandler(nodeId, {
     if (!inputData) return
 
     const mask = inputData as BitMask
-    const islands = mask.getIslands()
+    const islands = getIslands(mask)
     const C = config
 
     const islandFilter = ISLAND_FILTERS[C.islandType].filter

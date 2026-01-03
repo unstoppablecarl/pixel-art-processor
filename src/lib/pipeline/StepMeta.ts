@@ -1,32 +1,6 @@
 import type { Component } from 'vue'
-import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { NodeType } from './Node.ts'
-import { type AnyStepDefinition } from './StepRegistry.ts'
-
-export type AnyStepMeta = StepMeta<any, any>
-
-export type StepMeta<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = {
-  type: NodeType,
-  def: string,
-  displayName: string,
-} & StepDataConfig<I, O>
-
-export type StepDataConfig<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = {
-  passthrough?: false,
-  inputDataTypes: I,
-  outputDataType: O
-} | {
-  passthrough: true,
-  inputDataTypes?: undefined,
-  outputDataType?: undefined,
-}
+import { type AnyStepDefinition, type StepMeta } from './_types.ts'
 
 export function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): AnyStepDefinition[] {
 

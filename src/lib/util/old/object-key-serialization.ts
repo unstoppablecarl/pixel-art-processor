@@ -1,5 +1,5 @@
 import type { Reactive, ShallowReactive } from 'vue'
-import type { Config } from '../../pipeline/StepHandler.ts'
+import type { Config } from '../../pipeline/_types.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../ImageData.ts'
 
 export type ConfigKeyAdapter<Serialized = any, Deserialized = any> = {

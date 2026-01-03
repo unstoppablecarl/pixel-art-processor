@@ -1,6 +1,5 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 
@@ -16,7 +15,7 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
@@ -73,7 +72,9 @@ function handleTextureUpload(e: Event) {
     .then((imageData) => {
       config.textureImageData = imageData
     })
-    .catch(error => handleStepValidationError(nodeId, error))
+    .catch(error => {
+      node.validationErrors = handleStepValidationError(nodeId, error)
+    })
 }
 
 const images = computed(() => [

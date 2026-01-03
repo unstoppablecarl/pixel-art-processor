@@ -1,6 +1,5 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/Node.ts'
-import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
@@ -15,7 +14,7 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { ref } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
-import type { NodeId } from '../../lib/pipeline/Node.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
@@ -23,15 +22,6 @@ import StepCard from '../StepCard.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 const maskInputEl = ref<HTMLInputElement | null>(null)
-
-const handleFileUpload = (event: Event) => {
-  getFileAsArrayBuffer(event)
-    .then(arrayBufferToImageData)
-    .then((imageData) => {
-      node.config.maskImageData = imageData
-    })
-    .catch(error => handleStepValidationError(nodeId, error))
-}
 
 const node = useStepHandler(nodeId, {
   ...STEP_META,
@@ -63,6 +53,16 @@ const node = useStepHandler(nodeId, {
     }
   },
 })
+const handleFileUpload = (event: Event) => {
+  getFileAsArrayBuffer(event)
+    .then(arrayBufferToImageData)
+    .then((imageData) => {
+      node.config.maskImageData = imageData
+    })
+    .catch(error => {
+      node.validationErrors = handleStepValidationError(nodeId, error)
+    })
+}
 </script>
 <template>
   <StepCard

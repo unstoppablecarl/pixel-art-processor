@@ -1,4 +1,3 @@
-import { makePrng } from '../prng.ts'
 import { shuffleArrayWithPositionOddEvenConstraint } from './random-array.ts'
 
 export type GenerateChunkedArrayOptions = {
@@ -11,6 +10,7 @@ export type GenerateChunkedArrayOptions = {
   maxChunkSize: number,
   padding: number,
   shuffleSeed: number,
+  makePrng: (seed: number) => () => number
 }
 
 export function generateChunkedArray(
@@ -24,6 +24,7 @@ export function generateChunkedArray(
     maxChunkSize,
     padding,
     shuffleSeed,
+    makePrng,
   }: GenerateChunkedArrayOptions,
 ): number[] {
   // Initialize array with all zeros

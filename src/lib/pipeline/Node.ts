@@ -1,10 +1,11 @@
-import { Component, ref, type Ref } from 'vue'
-import type { StepDataType } from '../../steps.ts'
-import { type StepValidationError } from '../errors.ts'
+import { ref, type Ref } from 'vue'
+import { StepValidationError } from '../errors.ts'
+
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
+import { type NodeDef, type NodeId, NodeType, type StepDataType, type WatcherTarget } from './_types.ts'
 import type {
   ForkStepRunner,
   NodeRunner,
@@ -13,17 +14,8 @@ import type {
   SingleRunnerResult,
 } from './NodeRunner.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
-import { type IStepHandler, makeStepHandler, type StepHandlerOptions, type WatcherTarget } from './StepHandler.ts'
+import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
 import { useStepRegistry } from './StepRegistry.ts'
-
-export enum NodeType {
-  STEP = 'STEP',
-  FORK = 'FORK',
-  BRANCH = 'BRANCH',
-}
-
-export type NodeId = string & { readonly __nodeIdBrand: unique symbol }
-export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
 
 export type BaseNodeSerialized<T extends AnyStepContext> = {
   id: NodeId,
@@ -559,14 +551,4 @@ export function assertInitialized<T extends AnyStepContext, R extends NodeRunner
   if (!node.initialized || !node.handler || node.config === undefined) {
     throw new Error('Node not initialized')
   }
-}
-
-export const BRANCH_DEF = 'branch_node' as NodeDef
-
-export const BRANCH_STEP_DEF = {
-  type: NodeType.BRANCH,
-  def: BRANCH_DEF,
-  displayName: 'Branch',
-  passthrough: true,
-  component: {} as Component,
 }

@@ -1,6 +1,8 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
-import type { StepValidationError } from '../src/lib/errors.ts'
+import { StepValidationError } from '../src/lib/errors.ts'
+import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+
 import {
   type AnyStepContext,
   type ReactiveConfigType,
@@ -13,8 +15,7 @@ import {
   type StepHandlerOptional,
   type StepHandlerOptions,
 } from '../src/lib/pipeline/StepHandler.ts'
-import type { StepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import { type StepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'

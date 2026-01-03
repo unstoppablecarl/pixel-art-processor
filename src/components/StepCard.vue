@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { BButton, BButtonGroup, BCollapse } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import type { StepValidationError } from '../lib/errors.ts'
+import { INVALID_INPUT_TYPE, StepValidationError } from '../lib/errors.ts'
 import { type AnyInitializedNode, isBranch, isFork, isStep } from '../lib/pipeline/Node.ts'
-import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import StepImg from './StepImg.vue'

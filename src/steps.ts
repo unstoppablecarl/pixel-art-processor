@@ -1,5 +1,5 @@
+import { type AnyStepDefinition, type NodeDataTypeColor, type StepDataType } from './lib/pipeline/_types.ts'
 import { loadStepComponentsMetaData } from './lib/pipeline/StepMeta.ts'
-import { type AnyStepDefinition } from './lib/pipeline/StepRegistry.ts'
 import { type DataStructureConstructor } from './lib/step-data-types/BaseDataStructure.ts'
 import { BitMask } from './lib/step-data-types/BitMask.ts'
 import { HeightMap } from './lib/step-data-types/HeightMap.ts'
@@ -15,33 +15,15 @@ export const STEP_DATA_TYPES: DataStructureConstructor[] = [
   PassThrough as DataStructureConstructor,
 ]
 
-
 const stepModules = import.meta.glob(['./components/Step/**/*.vue'], { eager: true })
 
 export const STEP_DEFINITIONS: AnyStepDefinition[] = loadStepComponentsMetaData(stepModules as Record<string, any>, STEP_DATA_TYPES)
-
-export type StepDataType =
-  | typeof BitMask
-  | typeof NormalMap
-  | typeof HeightMap
-  | typeof PixelMap
-  | typeof PassThrough
-
-export type StepDataTypeInstance =
-  | BitMask
-  | NormalMap
-  | HeightMap
-  | PixelMap
-  | PassThrough
-
 
 const green = '#146c43'
 const pink = '#ab296a'
 const purple = '#59359a'
 const blue = '#0a58ca'
 
-export type NodeDataTypeColor = { key: string, color: string, cssClass: string }
-export type NodeDataTypeColors = typeof STEP_DATA_TYPE_COLORS
 export const STEP_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
   [BitMask, { key: '--bit-mask-color', color: green, cssClass: 'bit-mask-bg' }],
   [HeightMap, { key: '--height-map-color', color: pink, cssClass: 'height-map-bg' }],
@@ -53,7 +35,6 @@ export const STEP_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
     cssClass: 'pass-through-bg',
   }],
 ])
-
 
 export function getNodeDataTypeCssClass(stepDataType: StepDataType) {
   return STEP_DATA_TYPE_COLORS.get(stepDataType)!.cssClass

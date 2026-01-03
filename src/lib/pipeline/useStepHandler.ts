@@ -1,11 +1,11 @@
 import { watch } from 'vue'
-import type { StepDataType } from '../../steps.ts'
 import { usePipelineStore } from '../store/pipeline-store.ts'
 import { logNodeWatch } from '../util/misc.ts'
-import type { InitializedForkNode, InitializedNode, InitializedStepNode, NodeId } from './Node.ts'
+import type { Config, NodeId, StepDataType } from './_types.ts'
+import type { InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
 import type { ForkStepRunner, NodeRunner, NormalStepRunner } from './NodeRunner.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
-import type { Config, StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
+import type { StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
 
 function useCoreStepHandler<
   T extends AnyStepContext,

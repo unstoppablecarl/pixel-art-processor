@@ -1,4 +1,4 @@
-import type { NodeId } from '../../pipeline/Node.ts'
+import type { NodeId } from '../../pipeline/_types.ts'
 import { logNodeEvent } from '../../util/misc.ts'
 import type { PipelineStore } from '../pipeline-store.ts'
 
