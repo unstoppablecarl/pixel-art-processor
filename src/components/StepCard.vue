@@ -55,7 +55,7 @@ function remove() {
 }
 
 const nodeImages = computed(() => {
-  if (images?.length) return images
+  if (images) return images
 
   if (isFork(node)) {
     throw new Error('fork must provide images via props.images')
