@@ -35,7 +35,7 @@ const allNodes = computed(() => {
 </script>
 
 <template>
-  <div ref="branchDragContainer" class="processor-branch">
+  <div class="processor-branch">
     <template v-if="allNodes.nodes.length">
       <template v-for="node in allNodes.nodes" :key="node.id">
         <component

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
-import { computed } from 'vue'
-import type { AnyBranchNode, NodeId } from '../../lib/pipeline/Node.ts'
+import { computed, watch } from 'vue'
+import { isBranch, isFork, type NodeId } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 import AddToBranchStepDropDown from './AddToBranchStepDropDown.vue'
@@ -13,20 +13,31 @@ const { branchNodeId } = defineProps<{
   branchNodeId: NodeId,
 }>()
 
-const branch = computed(() => store.getIfExists(branchNodeId) as AnyBranchNode | undefined)
+const branch = computed(() => store.getBranch(branchNodeId))
 
 const nodeIds = computed((): NodeId[] => {
   if (!branch.value) return []
   const ids: NodeId[] = []
-  let currentId = store.get(branchNodeId).childIds(store)[0]
+  let currentId = store.get(branchNodeId).childIds(store)[0] as NodeId
 
   while (currentId) {
     ids.push(currentId)
-    const next = store.get(currentId).childIds(store)[0]
+    const current = store.get(currentId)
+    if (isFork(current)) {
+      break
+    }
+    let next
+
+    next = current.childIds(store)[0] as NodeId
     currentId = next
+    if (isBranch(current)) throw new Error('should not be a branch here')
   }
 
   return ids
+})
+
+watch(() => branch.value.seed, () => {
+  store.markDirty(branch.value.id)
 })
 </script>
 <template>

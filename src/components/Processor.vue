@@ -41,13 +41,13 @@ onMounted(() => {
   <AppHeader />
 
   <div class="overflow">
-    <div class="processor-container px-3 pb-3 min-vw-100">
+    <div class="processor-container pb-3">
       <PipelineBranch
         :node-ids="rootNodeIds"
       />
     </div>
 
-    <div class="after-nodes-container p-4" v-if="!rootSteps.length">
+    <div class="add-root-nodes-container p-4" v-if="!rootSteps.length">
       <AddRootStepButtons />
     </div>
 
