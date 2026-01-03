@@ -71,9 +71,9 @@ const nodeImages = computed(() => {
 })
 
 const cssStyle = computed(() => {
-
+  const width = nodeImages.value?.[0]?.imageData?.width ?? node.getOutputSize().width ?? store.getRootNodeOutputSize().width
   return [
-    `--node-img-width: ${node.getOutputSize().width}px;`,
+    `--node-img-width: ${width}px;`,
     `--columns-per-card: ${imgColumns};`,
   ].join(' ')
 })
@@ -177,6 +177,7 @@ const isMuted = computed(() => isStep(node) && node.muted)
               class="node-img-container"
             >
               <div class="node-img-label" v-if="label">{{ label }}</div>
+              {{}}
               <StepImg :image-data="imageData" />
               <div class="section" v-for="error in imgValidationErrors">
                 <component :is="error.component" :error="error" />
