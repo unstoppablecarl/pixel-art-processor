@@ -89,7 +89,6 @@ const node = useForkHandler(nodeId, {
       ...options,
     })
 
-
     chunks.forEach((v, i) => {
       if (!v === config.invert) {
         console.log(branchIndex % 4)
@@ -193,7 +192,6 @@ const images = computed((): StepImage[] => {
           v-model="config.shuffleSeed"
           input-width="50%"
         />
-        asdf
       </div>
     </template>
   </StepCard>
