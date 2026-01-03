@@ -71,7 +71,7 @@ const nodeImages = computed(() => {
 })
 
 const cssStyle = computed(() => {
-  const width = nodeImages.value?.[0]?.imageData?.width || node.getOutputSize().width || store.getRootNodeOutputSize().width
+  const width = nodeImages.value?.[0]?.imageData?.width || node.getOutputSize().width || store.getRootNodeOutputSize().width || 64
   return [
     `--node-img-width: ${width}px;`,
     `--columns-per-card: ${imgColumns};`,
