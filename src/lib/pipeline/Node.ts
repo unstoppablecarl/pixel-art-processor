@@ -209,6 +209,7 @@ export class StepNode<
   }
 
   async runner(store: MinStore) {
+    logNodeEvent(this.id, 'runner: start')
     if (this.muted) {
       this.outputData = await this.getOutputDataFromPrev(store)
       this.outputPreview = null
@@ -230,6 +231,8 @@ export class StepNode<
     this.outputData = result.output
     this.outputPreview = result.preview
     this.validationErrors = result.validationErrors
+    logNodeEvent(this.id, 'runner: end', result)
+
   }
 
   async getOutputDataFromPrev(store: MinStore): Promise<T['Input'] | null> {
@@ -298,9 +301,14 @@ export class ForkNode<
   }
 
   async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
+    logNodeEvent(this.id, 'getBranchOutput: start', { branchIndex })
     if (this.forkOutputData.value[branchIndex] === undefined) {
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
+      logNodeEvent(this.id, 'getBranchOutput: end', { branchIndex }, this.forkOutputData.value[branchIndex])
+    } else {
+      logNodeEvent(this.id, 'getBranchOutput: end (cached)', { branchIndex }, this.forkOutputData.value[branchIndex])
     }
+
     return this.forkOutputData.value[branchIndex]
   }
 
@@ -432,11 +440,13 @@ export class BranchNode<
   }
 
   async getOutputDataFromPrev(store: MinStore) {
+    logNodeEvent(this.id, 'getOutputDataFromPrev: start')
+
     const fork = this.parentFork(store)
-    const result = await fork.getBranchOutput(store, this.branchIndex) as T['Input']
-    if (result.outputData) {
-      return result.outputData.copy()
-    }
+    const result = await fork.getBranchOutput(store, this.branchIndex)
+    const final = result?.output?.copy() ?? null
+    logNodeEvent(this.id, 'getOutputDataFromPrev: end', final)
+    return final
   }
 
   initialize(handlerOptions: StepHandlerOptions<T>): void {
