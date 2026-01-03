@@ -15,6 +15,7 @@ export const STEP_DATA_TYPES: DataStructureConstructor[] = [
   PassThrough as DataStructureConstructor,
 ]
 
+
 const stepModules = import.meta.glob(['./components/Step/**/*.vue'], { eager: true })
 
 export const STEP_DEFINITIONS: AnyStepDefinition[] = loadStepComponentsMetaData(stepModules as Record<string, any>, STEP_DATA_TYPES)
@@ -32,3 +33,27 @@ export type StepDataTypeInstance =
   | HeightMap
   | PixelMap
   | PassThrough
+
+
+const green = '#146c43'
+const pink = '#ab296a'
+const purple = '#59359a'
+const blue = '#0a58ca'
+
+export type NodeDataTypeColor = { key: string, color: string, cssClass: string }
+export type NodeDataTypeColors = typeof STEP_DATA_TYPE_COLORS
+export const STEP_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
+  [BitMask, { key: '--bit-mask-color', color: green, cssClass: 'height-map-bg' }],
+  [HeightMap, { key: '--height-map-color', color: pink, cssClass: 'height-map-bg' }],
+  [NormalMap, { key: '-normal-map-color', color: purple, cssClass: 'height-map-bg' }],
+  [PixelMap, { key: '--pixel-map-color', color: blue, cssClass: 'height-map-bg' }],
+  [PassThrough, {
+    key: '--pass-through-color',
+    color: 'linear-gradient(90deg, rgba(0, 255, 255, 1) 0%, rgba(255, 0, 255, 1) 100%)',
+    cssClass: 'pass-through-bg',
+  }],
+])
+
+export function getNodeDataTypeCssClass(stepDataType: StepDataType) {
+  return STEP_DATA_TYPE_COLORS.get(stepDataType)!.cssClass
+}

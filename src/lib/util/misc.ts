@@ -1,4 +1,5 @@
 import tinycolor from 'tinycolor2'
+import { type NodeDataTypeColor, type NodeDataTypeColors } from '../../steps.ts'
 import { deepUnwrap } from './vue-util.ts'
 
 const blue = makeBgColor('#CCEDFC')
@@ -18,11 +19,12 @@ function makeBgColor(light: string) {
   return `background: light-dark(${light}, ${dark});`
 }
 
-let logActive = true
+let logActive = false
 
-export function setLogActive(flag: boolean){
+export function setLogActive(flag: boolean) {
   logActive = flag
 }
+
 function log(color: string, nodeId: string, event: string, ...args: any[]) {
   if (!logActive) return
   console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${color}`, ...args.map((m) => deepUnwrap(m)))
@@ -95,3 +97,25 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
 }
 
 export type ImgSize = { width: number, height: number }
+
+export function injectCss(cssString: string) {
+  const head = document.head || document.getElementsByTagName('head')[0]
+  const style = document.createElement('style')
+  style.appendChild(document.createTextNode(cssString))
+  head.appendChild(style)
+}
+
+export function buildNodeDataTypeCss(items: NodeDataTypeColor[]) {
+  return items.map(({ cssClass, key }) => {
+    console.log({ cssClass, key })
+    return `.${cssClass} { background: var(${key}) !important; }`
+  }).join(' ')
+}
+
+export function injectNodeDataTypeCss(stepDataTypeColors: NodeDataTypeColors) {
+  const items = [...stepDataTypeColors.values()]
+  for (const { key, color } of items) {
+    document.documentElement.style.setProperty(key, color)
+  }
+  injectCss(buildNodeDataTypeCss(items))
+}

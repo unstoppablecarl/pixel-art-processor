@@ -59,17 +59,23 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     }
   }
 
+  function isCompatibleWithOutputType(def: NodeDef, stepDataType: StepDataType): boolean {
+    const definition = get(def)
+    if (definition.passthrough) return true
+    return definition.inputDataTypes.includes(stepDataType)
+  }
+
+  function getStepsCompatibleWithOutputType(stepDataType: StepDataType) {
+    return toArray().filter(s => isCompatibleWithOutputType(s.def, stepDataType))
+  }
+
   function getStepsCompatibleWithOutput(def: string) {
     const currentStep = get(def)
-
-    if (currentStep.passthrough) {
-      return Object.values(STEP_DEFINITIONS)
-    }
+    if (currentStep.passthrough) return Object.values(STEP_DEFINITIONS)
 
     return Object.values(STEP_DEFINITIONS).filter(s => {
-      if (s.passthrough) {
-        return true
-      }
+      if (s.passthrough) return true
+
       return s.inputDataTypes.includes(currentStep.outputDataType)
     })
   }
@@ -115,7 +121,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     }
   }
 
-  function stepIsPassthrough<T extends AnyStepContext>(step: AnyNode<T>): boolean {
+  function nodeIsPassthrough<T extends AnyStepContext>(step: AnyNode<T>): boolean {
     return !!get(step.def).passthrough
   }
 
@@ -133,7 +139,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     isFork,
     isBranch,
     isStep,
-    stepIsPassthrough,
+    nodeIsPassthrough,
     stepIsFork: <T extends AnyStepContext>(
       step: AnyNode<T>,
     ) => isFork(step.def),
@@ -143,7 +149,9 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     validateDefIsFork,
     validateDef,
     dataTypeRegistry,
+    isCompatibleWithOutputType,
     getStepsCompatibleWithOutput,
+    getStepsCompatibleWithOutputType,
     validateDefRegistration,
     rootSteps: () => toArray().filter(s => !s.passthrough && s.inputDataTypes.length === 0),
     toArray,
