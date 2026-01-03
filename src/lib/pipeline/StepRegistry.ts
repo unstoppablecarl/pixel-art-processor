@@ -3,7 +3,7 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyNode, BRANCH_STEP_DEF, type NodeDef, NodeType } from './Node.ts'
+import { type AnyNode, BRANCH_DEF, BRANCH_STEP_DEF, type NodeDef, NodeType } from './Node.ts'
 import { type AnyStepContext } from './Step.ts'
 import type { StepHandlerOptions } from './StepHandler.ts'
 import { type StepMeta } from './StepMeta.ts'
@@ -96,6 +96,10 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return Object.values(STEP_DEFINITIONS)
   }
 
+  function addableToArray() {
+    return Object.values(STEP_DEFINITIONS).filter(({ def }) => def !== BRANCH_DEF)
+  }
+
   function validateDefRegistration(
     def: string,
     options: StepHandlerOptions<any>,
@@ -136,6 +140,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     getNodeType(def: string): NodeType {
       return get(def).type
     },
+    addableToArray,
     isFork,
     isBranch,
     isStep,

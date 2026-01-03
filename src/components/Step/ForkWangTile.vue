@@ -1,14 +1,12 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/Node.ts'
 import type { AnyStepMeta } from '../../lib/pipeline/StepMeta.ts'
-import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.FORK,
   def: 'fork_wang_tiles',
   displayName: 'Fork: Wang Tiles',
-  inputDataTypes: [],
-  outputDataType: PassThrough,
+  passthrough: true,
 }
 </script>
 <script setup lang="ts">

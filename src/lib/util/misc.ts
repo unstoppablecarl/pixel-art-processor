@@ -107,7 +107,6 @@ export function injectCss(cssString: string) {
 
 export function buildNodeDataTypeCss(items: NodeDataTypeColor[]) {
   return items.map(({ cssClass, key }) => {
-    console.log({ cssClass, key })
     return `.${cssClass} { background: var(${key}) !important; }`
   }).join(' ')
 }

@@ -6,8 +6,8 @@ import { type AnyInitializedNode, isBranch, isFork, isStep } from '../lib/pipeli
 import { INVALID_INPUT_TYPE } from '../lib/pipeline/StepHandler.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
-import AddAfterStepDropDown from './StepCard/AddAfterStepDropDown.vue'
 import StepImg from './StepImg.vue'
+import AddNodeAfterDropDown from './UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -154,7 +154,12 @@ const isMuted = computed(() => isStep(node) && node.muted)
           </button>
 
           <slot name="add-node">
-            <AddAfterStepDropDown v-if="showAddStepBtn" :node-id="node.id" size="sm" />
+            <AddNodeAfterDropDown
+              size="sm"
+              v-if="showAddStepBtn"
+              :node-id="node.id"
+              @add="store.add($event, node.id)"
+            />
           </slot>
         </BButtonGroup>
 
