@@ -4,6 +4,7 @@ import { type StepValidationError } from '../errors.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
+import { deepUnwrap } from '../util/vue-util.ts'
 import type {
   ForkStepRunner,
   NodeRunner,
@@ -90,7 +91,7 @@ export abstract class BaseNode<
   }
 
   async processRunner(store: MinStore) {
-    logNodeEvent(this.id, 'processRunner')
+    logNodeEvent(this.id, 'processRunner: start')
 
     this.isProcessing = true
     const startTime = performance.now()
@@ -100,6 +101,7 @@ export abstract class BaseNode<
     this.isProcessing = false
     this.isDirty = false
     this.lastExecutionTimeMS = performance.now() - startTime
+    logNodeEvent(this.id, 'processRunner: end', deepUnwrap(this))
   }
 
   abstract runner(store: MinStore): Promise<void>
@@ -289,7 +291,7 @@ export class ForkNode<
 
   async runner(store: MinStore) {
     this.forkOutputData.value = await Promise.all(
-      this.branchIds.value.map((_, i) => this.getBranchOutput(store, i)),
+      this.branchIds.value.map((_, i) => this.runBranch(store, i)),
     ) as SingleRunnerResult<T>[]
 
     this.validationErrors = this.forkOutputData.value.flatMap(({ validationErrors }) => validationErrors) ?? []
@@ -305,6 +307,7 @@ export class ForkNode<
   private async runBranch(store: MinStore, branchIndex: number): Promise<
     SingleRunnerResult<T>
   > {
+    logNodeEvent(this.id, 'runBranch', { branchIndex })
     const inputData = await this.getOutputDataFromPrev(store)
     const _handler = this.handler as IStepHandler<T, R>
     const output = await _handler.run({
