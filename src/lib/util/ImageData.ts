@@ -58,14 +58,6 @@ export function fillTransparentPixels(imageData: ImageData, grayScale: number = 
   return imageData
 }
 
-export function copyImageDataOrNull(imageData: ImageData | null) {
-  if (imageData === null) {
-    return null
-  }
-
-  return copyImageData(imageData)
-}
-
 export function copyImageData(imageData: ImageData) {
   if (!(imageData instanceof ImageData)) {
     throw new Error('imageData must be an ImageData object or null')
