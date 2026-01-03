@@ -20,7 +20,7 @@ import {
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
 import { type StepHandlerOptions } from '../pipeline/StepHandler.ts'
-import { type AnyStepDefinition, useStepRegistry } from '../pipeline/StepRegistry.ts'
+import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
@@ -54,15 +54,14 @@ export interface PipelineStore {
   rootNode(): AnyNode | undefined
   markDirty(id: NodeId): void
   runNode(id: NodeId): Promise<void>
-  add(def: NodeDef, afterId?: NodeId): AnyNode
-  addStep(def: NodeDef, prevNodeId?: NodeId): AnyStepNode
-  addFork(def: NodeDef, prevNodeId?: NodeId): AnyForkNode
+  add(def: NodeDef, afterId: NodeId | null): AnyNode
+  addStep(def: NodeDef, prevNodeId: NodeId | null): AnyStepNode
+  addFork(def: NodeDef, prevNodeId: NodeId | null): AnyForkNode
   addBranch(def: NodeDef, parentForkId: NodeId): AnyBranchNode
   remove(id: NodeId): void
   moveStepNode(id: NodeId, afterId: NodeId | null): void
   loadNode(serialized: AnyNodeSerialized): void
   initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T>
-  getStepsAddableAfter(id: NodeId): AnyStepDefinition[]
   duplicateStepNode(id: NodeId): NodeId
   duplicateBranchNode(id: NodeId): NodeId
   getRootNodeOutputSize(): ImgSize
@@ -104,7 +103,6 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       runNode,
       loadNode,
       initializeNode,
-      getStepsAddableAfter,
       duplicateStepNode,
       duplicateBranchNode,
       getRootNodeOutputSize,
@@ -178,23 +176,14 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return !!nodes[id]
     }
 
-    function add(def: NodeDef, afterId?: NodeId): AnyNode {
+    function add(def: NodeDef, afterId: NodeId | null): AnyNode {
       const type = stepRegistry.getNodeType(def)
-      if (type == NodeType.STEP) {
-        return addStep(def, afterId)
-      }
-
-      if (type == NodeType.FORK) {
-        return addFork(def, afterId)
-      }
-
+      if (type == NodeType.STEP) return addStep(def, afterId)
+      if (type == NodeType.FORK) return addFork(def, afterId)
       if (type == NodeType.BRANCH) {
-        if (!afterId) {
-          throw new Error('afterId required by BranchNode')
-        }
+        if (!afterId) throw new Error('afterId required by BranchNode')
         return addBranch(def, afterId)
       }
-
       throw new Error('Invalid def')
     }
 
@@ -206,7 +195,12 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       nodes[serialized.id] = _nodeFromSerialized(serialized)
     }
 
-    function addStep(def: NodeDef, prevNodeId?: NodeId): AnyStepNode {
+    function addStep(def: NodeDef, prevNodeId: NodeId | null): AnyStepNode {
+      if (prevNodeId) {
+        const prev = get(prevNodeId)
+        stepRegistry.validateCanBeChildOf(def, prev.def)
+      }
+
       const id = _defToId(def)
       const step = nodes[id] = shallowReactive(new StepNode({ id, def, prevNodeId }))
       markDirty(step.id)
@@ -214,7 +208,12 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return step
     }
 
-    function addFork(def: NodeDef, prevNodeId?: NodeId): AnyForkNode {
+    function addFork(def: NodeDef, prevNodeId: NodeId | null): AnyForkNode {
+      if (prevNodeId) {
+        const prev = get(prevNodeId)
+        stepRegistry.validateCanBeChildOf(def, prev.def)
+      }
+
       const id = _defToId(def)
       const fork = nodes[id] = shallowReactive(new ForkNode({ id, def, prevNodeId }))
       markDirty(fork.id)
@@ -223,7 +222,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     function addBranch(def: NodeDef, prevNodeId: NodeId): AnyBranchNode {
-      const fork = get(prevNodeId) as AnyForkNode
+      const fork = getFork(prevNodeId) as AnyForkNode
       const branchIndex = fork.branchIds.value.length
 
       const id = _defToId(def)
@@ -395,17 +394,6 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const node = get(id) as unknown as GraphNode<T>
       node.initialize(handlerOptions)
       return node
-    }
-
-    function getStepsAddableAfter(id: NodeId): AnyStepDefinition[] {
-      const node = get(id)
-      const nodes = stepRegistry.getStepsCompatibleWithOutput(node.def)
-
-      return nodes.filter(s => {
-        if (isStep(node)) return !stepRegistry.isBranch(s.def)
-        if (isFork(node)) return !stepRegistry.isFork(s.def)
-        if (isBranch(node)) return false
-      })
     }
 
     function _cloneNodeInstance(original: AnyNode): AnyNode {

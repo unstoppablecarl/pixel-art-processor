@@ -3,8 +3,7 @@ import type { StepDataType } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyNode, BRANCH_DEF, BRANCH_STEP_DEF, type NodeDef, NodeType } from './Node.ts'
-import { type AnyStepContext } from './Step.ts'
+import { BRANCH_DEF, BRANCH_STEP_DEF, type NodeDef, NodeType } from './Node.ts'
 import type { StepHandlerOptions } from './StepHandler.ts'
 import { type StepMeta } from './StepMeta.ts'
 
@@ -49,55 +48,36 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return def in STEP_DEFINITIONS
   }
 
-  function validateDef(def: string) {
-    get(def)
-  }
-
-  function validateDefIsFork(def: string) {
-    if (!isFork(def)) {
-      throw new Error(`Def ${def} is not a fork`)
-    }
-  }
-
   function isCompatibleWithOutputType(def: NodeDef, stepDataType: StepDataType): boolean {
     const definition = get(def)
     if (definition.passthrough) return true
     return definition.inputDataTypes.includes(stepDataType)
   }
 
-  function getStepsCompatibleWithOutputType(stepDataType: StepDataType) {
-    return toArray().filter(s => isCompatibleWithOutputType(s.def, stepDataType))
-  }
-
-  function getStepsCompatibleWithOutput(def: string) {
-    const currentStep = get(def)
-    if (currentStep.passthrough) return Object.values(STEP_DEFINITIONS)
-
-    return Object.values(STEP_DEFINITIONS).filter(s => {
-      if (s.passthrough) return true
-
-      return s.inputDataTypes.includes(currentStep.outputDataType)
-    })
-  }
-
-  function isFork(def: string): boolean {
-    return get(def).type === NodeType.FORK
-  }
-
-  function isBranch(def: string): boolean {
-    return get(def).type === NodeType.BRANCH
-  }
-
-  function isStep(def: string): boolean {
-    return get(def).type === NodeType.STEP
-  }
-
-  function toArray() {
-    return Object.values(STEP_DEFINITIONS)
-  }
+  const isFork = (def: string): boolean => get(def).type === NodeType.FORK
+  const isBranch = (def: string): boolean => get(def).type === NodeType.BRANCH
+  const isStep = (def: string): boolean => get(def).type === NodeType.STEP
 
   function addableToArray() {
     return Object.values(STEP_DEFINITIONS).filter(({ def }) => def !== BRANCH_DEF)
+  }
+
+  function canBeChildOf(childDef: NodeDef, parentDef: NodeDef) {
+    if (isStep(parentDef)) return !isBranch(childDef)
+    if (isBranch(parentDef)) return isStep(childDef)
+    if (isFork(parentDef)) return isBranch(childDef)
+  }
+
+  function validateCanBeChildOf(childDef: NodeDef, parentDef: NodeDef) {
+    if (isStep(parentDef) && isBranch(childDef)) throw new Error('branch cannot be child of step')
+    if (isBranch(parentDef)) {
+      if (isBranch(childDef)) throw new Error('branch cannot be child of branch')
+      if (isFork(childDef)) throw new Error('fork cannot be child of branch')
+    }
+    if (isFork(parentDef)) {
+      if (isStep(childDef)) throw new Error('step cannot be child of fork')
+      if (isFork(childDef)) throw new Error('fork cannot be child of fork')
+    }
   }
 
   function validateDefRegistration(
@@ -125,41 +105,24 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     }
   }
 
-  function nodeIsPassthrough<T extends AnyStepContext>(step: AnyNode<T>): boolean {
-    return !!get(step.def).passthrough
-  }
-
   return {
     defineStep,
     defineSteps,
     get,
     has,
-    getDefKeys(): NodeDef[] {
-      return Object.keys(STEP_DEFINITIONS) as NodeDef[]
-    },
-    getNodeType(def: string): NodeType {
-      return get(def).type
-    },
+    getNodeType: (def: string): NodeType => get(def).type,
+    defToComponent: (def: string): Component => get(def).component,
+    canBeChildOf,
+    validateCanBeChildOf,
     addableToArray,
+    isStep,
     isFork,
     isBranch,
-    isStep,
-    nodeIsPassthrough,
-    stepIsFork: <T extends AnyStepContext>(
-      step: AnyNode<T>,
-    ) => isFork(step.def),
-    defToComponent(def: string): Component {
-      return get(def).component
-    },
-    validateDefIsFork,
-    validateDef,
     dataTypeRegistry,
     isCompatibleWithOutputType,
-    getStepsCompatibleWithOutput,
-    getStepsCompatibleWithOutputType,
     validateDefRegistration,
-    rootSteps: () => toArray().filter(s => !s.passthrough && s.inputDataTypes.length === 0),
-    toArray,
+    rootNodes: () => Object.values(STEP_DEFINITIONS)
+      .filter(s => !s.passthrough && s.inputDataTypes.length === 0),
   }
 }
 

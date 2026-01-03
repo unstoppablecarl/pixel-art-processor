@@ -6,10 +6,10 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
 const store = usePipelineStore()
 const stepRegistry = useStepRegistry()
-const steps = computed(() => stepRegistry.rootSteps())
+const steps = computed(() => stepRegistry.rootNodes())
 
 function add(def: NodeDef) {
-  store.add(def)
+  store.add(def, null)
 }
 </script>
 <template>

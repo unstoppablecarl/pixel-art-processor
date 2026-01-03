@@ -158,7 +158,6 @@ const isMuted = computed(() => isStep(node) && node.muted)
               size="sm"
               v-if="showAddStepBtn"
               :node-id="node.id"
-              @add="store.add($event, node.id)"
             />
           </slot>
         </BButtonGroup>

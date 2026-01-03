@@ -3,8 +3,8 @@ import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, watch } from 'vue'
 import { isBranch, isFork, type NodeId } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
-import AddToBranchStepDropDown from './AddToBranchStepDropDown.vue'
 import PipelineBranch from './PipelineBranch.vue'
 
 const store = usePipelineStore()
@@ -58,7 +58,10 @@ watch(() => branch.value.seed, () => {
       </button>
 
       <template v-if="!nodeIds.length">
-        <AddToBranchStepDropDown :branch-node-id="branchNodeId" />
+        <AddNodeAfterDropDown
+          size="sm"
+          :node-id="branchNodeId"
+        />
       </template>
     </BButtonGroup>
   </div>

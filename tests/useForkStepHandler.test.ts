@@ -100,7 +100,7 @@ describe('fork handler type testing', async () => {
     })
 
     const store = usePipelineStore() as unknown as PipelineStore
-    const newStep = store.add(stepDef.def)
+    const newStep = store.add(stepDef.def, null)
     const step = useForkHandler(newStep.id, {
       inputDataTypes,
       outputDataType,

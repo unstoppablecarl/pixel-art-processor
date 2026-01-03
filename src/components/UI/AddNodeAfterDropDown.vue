@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BButtonGroup, BDropdown, BDropdownHeader, BDropdownItem, BTooltip } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
-import type { NodeDef, NodeId } from '../../lib/pipeline/Node.ts'
+import { type NodeDef, type NodeId } from '../../lib/pipeline/Node.ts'
 import type { StepMeta } from '../../lib/pipeline/StepMeta.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
@@ -10,60 +10,61 @@ import { getNodeDataTypeCssClass, type StepDataType } from '../../steps.ts'
 
 const store = usePipelineStore()
 
-const emit = defineEmits(['add'])
 const {
   nodeId,
 } = defineProps<{
   nodeId: NodeId,
 }>()
 
-const addableSteps = computed(() => {
+const addableNodes = computed(() => {
   const stepRegistry = useStepRegistry()
   const node = store.get(nodeId)
 
-  const result = stepRegistry.addableToArray().map((
-      {
-        def,
-        displayName,
-        inputDataTypes,
-        outputDataType,
-        passthrough,
-      }: StepMeta<any, any>) => {
+  const result = stepRegistry.addableToArray()
+    .filter(({ def }) => stepRegistry.canBeChildOf(node.def, def))
+    .map((
+        {
+          def,
+          displayName,
+          inputDataTypes,
+          outputDataType,
+          passthrough,
+        }: StepMeta<any, any>) => {
 
-      const input: StepDataType[] = passthrough ? [PassThrough] : inputDataTypes
-      const output: StepDataType = passthrough ? PassThrough : outputDataType
+        const input: StepDataType[] = passthrough ? [PassThrough] : inputDataTypes
+        const output: StepDataType = passthrough ? PassThrough : outputDataType
 
-      let inputNames: string[] = ['None']
-      let outputName: string = 'None'
-      let inputColorCssClass = ['bg-secondary']
-      let outputColorCssClass: string
+        let inputNames: string[] = ['None']
+        let outputName: string = 'None'
+        let inputColorCssClass = ['bg-secondary']
+        let outputColorCssClass: string
 
-      if (passthrough) {
-        inputColorCssClass = [getNodeDataTypeCssClass(PassThrough)]
-        inputNames = [PassThrough.displayName]
-        outputName = PassThrough.displayName
+        if (passthrough) {
+          inputColorCssClass = [getNodeDataTypeCssClass(PassThrough)]
+          inputNames = [PassThrough.displayName]
+          outputName = PassThrough.displayName
 
-      } else {
-        if (inputDataTypes.length) {
-          inputColorCssClass = input.map(getNodeDataTypeCssClass)
-          inputNames = input.map(c => c.displayName)
-          outputName = output.displayName
+        } else {
+          if (inputDataTypes.length) {
+            inputColorCssClass = input.map(getNodeDataTypeCssClass)
+            inputNames = input.map(c => c.displayName)
+            outputName = output.displayName
+          }
         }
-      }
 
-      outputColorCssClass = getNodeDataTypeCssClass(output)
+        outputColorCssClass = getNodeDataTypeCssClass(output)
 
-      return {
-        def,
-        displayName,
-        compatible: stepRegistry.isCompatibleWithOutputType(def as NodeDef, node.handler!.outputDataType),
-        inputColorCssClass,
-        outputColorCssClass: outputColorCssClass,
-        inputNames,
-        outputName,
-      }
-    },
-  )
+        return {
+          def: def as NodeDef,
+          displayName,
+          compatible: stepRegistry.isCompatibleWithOutputType(def as NodeDef, node.handler!.outputDataType),
+          inputColorCssClass,
+          outputColorCssClass: outputColorCssClass,
+          inputNames,
+          outputName,
+        }
+      },
+    )
 
   if (!showAll.value) {
     return result.filter(c => c.compatible)
@@ -76,7 +77,7 @@ const showAll = ref(true)
 </script>
 <template>
   <BDropdown
-    v-if="addableSteps.length"
+    v-if="addableNodes.length"
     no-caret
   >
     <template #button-content>
@@ -105,9 +106,9 @@ const showAll = ref(true)
     </BDropdownHeader>
 
     <BDropdownItem
-      v-for="{def, displayName, inputColorCssClass, outputColorCssClass, inputNames, outputName, compatible} in addableSteps"
+      v-for="{def, displayName, inputColorCssClass, outputColorCssClass, inputNames, outputName, compatible} in addableNodes"
       :key="def"
-      @click="emit('add', def)"
+      @click="store.add(def ,nodeId)"
       :class="{ 'incompatible-data-type': !compatible }"
     >
 
