@@ -21,7 +21,7 @@ function useCoreStepHandler<
   watch(node.getWatcherTargets(), () => {
     logNodeWatch(node.id)
     store.markDirty(node.id)
-  })
+  }, { deep: true })
 
   return node as InitializedNode<T, R>
 }

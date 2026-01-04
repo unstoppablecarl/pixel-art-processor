@@ -12,16 +12,14 @@ export const STEP_META: AnyStepMeta = {
 
 </script>
 <script setup lang="ts">
-import { ref } from 'vue'
-import { handleStepValidationError } from '../../lib/errors.ts'
+import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
+import ImageFileInput from '../UIForms/ImageFileInput.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
-const maskInputEl = ref<HTMLInputElement | null>(null)
 
 const node = useStepHandler(nodeId, {
   ...STEP_META,
@@ -53,15 +51,9 @@ const node = useStepHandler(nodeId, {
     }
   },
 })
-const handleFileUpload = (event: Event) => {
-  getFileAsArrayBuffer(event)
-    .then(arrayBufferToImageData)
-    .then((imageData) => {
-      node.config.maskImageData = imageData
-    })
-    .catch(error => {
-      node.validationErrors = handleStepValidationError(nodeId, error)
-    })
+
+function handleError(errors: StepValidationError[]) {
+  node.validationErrors = errors
 }
 </script>
 <template>
@@ -69,13 +61,16 @@ const handleFileUpload = (event: Event) => {
     :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
-      imageData: node.config.maskImageData
+      imageData: node.config.maskImageData,
     }]"
     show-dimensions
   >
     <template #footer>
       <div class="section">
-        <input ref="maskInputEl" type="file" accept="image/*" @change="handleFileUpload" class="form-control" />
+        <ImageFileInput
+          v-model="node.config.maskImageData"
+          @error="handleError"
+        />
       </div>
     </template>
   </StepCard>

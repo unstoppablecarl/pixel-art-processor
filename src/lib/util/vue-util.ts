@@ -1,5 +1,5 @@
 import { isProxy, isReactive, isReadonly, isRef, toRaw, toValue, type UnwrapNestedRefs, type UnwrapRef } from 'vue'
-import { StepValidationError } from '../errors.ts'
+import { StepValidationError } from '../errors/StepValidationError.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
   let rawValue: unknown = value

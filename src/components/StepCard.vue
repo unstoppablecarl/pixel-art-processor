@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import { BButton, BButtonGroup, BCollapse } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import { INVALID_INPUT_TYPE, StepValidationError } from '../lib/errors.ts'
-import { type AnyInitializedNode, isBranch, isFork, isStep } from '../lib/pipeline/Node.ts'
+import { getValidationErrorComponent } from '../lib/errors.ts'
+
+import { INVALID_INPUT_TYPE_ERROR } from '../lib/errors/InvalidInputTypeError.ts'
+import { StepValidationError } from '../lib/errors/StepValidationError.ts'
+import { type AnyInitializedNode, isBranch, isStep } from '../lib/pipeline/Node.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'
@@ -46,12 +49,8 @@ function remove() {
   store.remove(node.id)
 }
 
-const nodeImages = computed((): StepImg => {
+const nodeImages = computed((): StepImg[] => {
   if (images) return images
-
-  if (isFork(node)) {
-    throw new Error('fork must provide images via props.images')
-  }
 
   if (isBranch(node) || isStep(node)) {
     return [{
@@ -60,6 +59,8 @@ const nodeImages = computed((): StepImg => {
       validationErrors: [],
     }]
   }
+
+  throw new Error('fork must provide images via props.images')
 })
 
 const cssStyle = computed(() => {
@@ -71,11 +72,11 @@ const cssStyle = computed(() => {
 })
 
 const invalidInputType = computed(() => {
-  return !!node.validationErrors.find((e: StepValidationError) => e.slug === INVALID_INPUT_TYPE)
+  return !!node.validationErrors.find((e: StepValidationError) => e.slug === INVALID_INPUT_TYPE_ERROR)
 })
 
 const validationErrors = computed(() => {
-  return node.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE)
+  return node.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE_ERROR)
 })
 
 const executionTime = computed(() => {
@@ -169,10 +170,10 @@ const isMuted = computed(() => isStep(node) && node.muted)
         <slot name="body-outer">
           <div class="card-body">
             <StepImage
+              v-for="({imageData, label, validationErrors: imgValidationErrors = []}) in nodeImages"
               :image-data="imageData"
               :label="label"
-              :validationErrors="validationErrors"
-              v-for="({imageData, label, validationErrors}) in nodeImages"
+              :validationErrors="imgValidationErrors"
             />
           </div>
         </slot>
@@ -186,7 +187,7 @@ const isMuted = computed(() => isStep(node) && node.muted)
           </div>
 
           <div class="section" v-for="error in node.validationErrors">
-            <component :is="error.component" :error="error" />
+            <component :is="getValidationErrorComponent(error)" :error="error" />
           </div>
           <slot name="footer"></slot>
         </div>

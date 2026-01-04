@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { StepValidationError } from '../../lib/errors.ts'
+import { StepValidationError } from '../../lib/errors/StepValidationError.ts'
 
 const { error } = defineProps<{
   error: StepValidationError

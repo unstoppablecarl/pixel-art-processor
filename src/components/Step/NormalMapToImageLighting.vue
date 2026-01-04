@@ -13,13 +13,13 @@ export const STEP_META: AnyStepMeta = {
 
 </script>
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import { handleStepValidationError } from '../../lib/errors.ts'
+import { computed } from 'vue'
+import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../StepCard.vue'
+import ImageFileInput from '../UIForms/ImageFileInput.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -64,19 +64,6 @@ const node = useStepHandler(nodeId, {
   },
 })
 
-const textureInputEl = ref<HTMLInputElement | null>(null)
-
-function handleTextureUpload(e: Event) {
-  getFileAsArrayBuffer(e)
-    .then(arrayBufferToImageData)
-    .then((imageData) => {
-      config.textureImageData = imageData
-    })
-    .catch(error => {
-      node.validationErrors = handleStepValidationError(nodeId, error)
-    })
-}
-
 const images = computed(() => [
   {
     label: 'Texture',
@@ -94,6 +81,10 @@ const images = computed(() => [
 //   setTestFileInput(textureInputEl.value, TEST_TEXTURE_DATA)
 // })
 const config = node.config
+
+function handleError(errors: StepValidationError[]) {
+  node.validationErrors = errors
+}
 </script>
 <template>
   <StepCard
@@ -103,7 +94,10 @@ const config = node.config
   >
     <template #footer>
       <div class="section">
-        <input ref="textureInputEl" type="file" accept="image/*" @change="handleTextureUpload" class="form-control" />
+        <ImageFileInput
+          v-model="node.config.textureImageData"
+          @error="handleError"
+        />
       </div>
 
       <div class="section">

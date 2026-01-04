@@ -1,75 +1,43 @@
-import { type Component, defineAsyncComponent } from 'vue'
-import type { NodeId, StepDataType } from './pipeline/_types.ts'
+import type { Component } from 'vue'
+import GenericValidationErrorMessage from '../components/ValidationErrors/GenericValidationErrorMessage.vue'
+import InvalidInputTypeMessage from '../components/ValidationErrors/InvalidInputTypeMessage.vue'
+import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
+import { StepValidationError } from './errors/StepValidationError.ts'
 
-export const INVALID_INPUT_TYPE = 'INVALID_INPUT_TYPE'
+type ErrorCtor = new (...args: any[]) => StepValidationError
 
-export abstract class StepValidationError extends Error {
-  get component(): Component {
-    return defineAsyncComponent(() => import('../components/ValidationErrors/GenericValidationError.vue'))
-  }
+const registry = new Map<ErrorCtor, Component>()
 
-  abstract slug: string
+const map: { component: Component, error: ErrorCtor }[] = [{
+  component: InvalidInputTypeMessage,
+  error: InvalidInputTypeError,
+}]
 
-  constructor(
-    public title: string,
-    message: string,
-  ) {
-    super(message)
-  }
+map.forEach(({ component, error }) => {
+  registerValidationErrorComponent(error, component)
+})
+
+export function registerValidationErrorComponent(
+  ctor: ErrorCtor,
+  component: Component,
+) {
+  registry.set(ctor, component)
 }
 
-let genericErrorIncrement = 0
-
-export class GenericValidationError extends StepValidationError {
-  slug = 'GENERIC_VALIDATION_ERROR'
-
-  get component(): Component {
-    return defineAsyncComponent(() => import('../components/ValidationErrors/GenericValidationError.vue'))
-  }
-
-  constructor(
-    message: string,
-  ) {
-    super('Error', message)
-    this.slug += '_' + genericErrorIncrement++
-  }
+export function getValidationErrorComponent(
+  error: StepValidationError,
+): Component {
+  return (
+    registry.get(error.constructor as ErrorCtor) ??
+    // fallback
+    GenericValidationErrorMessage
+  )
 }
 
-export class InvalidInputTypeError extends StepValidationError {
-  slug = INVALID_INPUT_TYPE
-
-  get component(): Component {
-    return defineAsyncComponent(() => import('../components/ValidationErrors/GenericValidationError.vue'))
-  }
-
-  constructor(
-    public expectedTypes: readonly StepDataType[],
-    public receivedType: StepDataType,
-  ) {
-    super('Invalid Input Data Type', `Accepted: ${expectedTypes.join('/')}, Received: ${receivedType}`)
-  }
-}
-
-export class InvalidFileTypeError extends StepValidationError {
-  slug = 'INVALID_FILE_TYPE_ERROR'
-
-  constructor() {
-    super('Invalid File format', 'Failed to load image from ArrayBuffer')
-  }
-}
-
-export function handleStepValidationError(nodeId: NodeId, error: Error) {
-  const errors: StepValidationError[] = []
-
+export function handleStepValidationError(error: Error): StepValidationError[] {
   if (error instanceof StepValidationError) {
-    errors.push(error)
-  } else {
-    errors.push(new GenericValidationError(error.message + ''))
+    return error
   }
 
-  if (!(error instanceof StepValidationError)) {
-    throw error
-  }
-
-  return errors
+  throw error
 }

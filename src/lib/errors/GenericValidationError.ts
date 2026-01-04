@@ -1,0 +1,16 @@
+import { StepValidationError } from './StepValidationError.ts'
+
+let genericErrorIncrement = 0
+
+export const GENERIC_VALIDATION_ERROR = 'GENERIC_VALIDATION_ERROR'
+
+export class GenericValidationError extends StepValidationError {
+  slug = GENERIC_VALIDATION_ERROR
+
+  constructor(
+    message: string,
+  ) {
+    super('Error', message)
+    this.slug += '_' + genericErrorIncrement++
+  }
+}

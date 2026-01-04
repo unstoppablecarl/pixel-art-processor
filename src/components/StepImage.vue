@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getValidationErrorComponent } from '../lib/errors.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { imageDataToUrlImage } from '../lib/util/ImageData.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'
@@ -44,9 +45,9 @@ const encoded = computed(() => {
       :width="size.width"
       :height="size.height"
     />
-    
+
     <div class="section" v-for="error in validationErrors">
-      <component :is="error.component" :error="error" />
+      <component :is="getValidationErrorComponent(error)" :error="error" />
     </div>
   </div>
 </template>

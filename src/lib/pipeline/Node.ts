@@ -1,5 +1,7 @@
 import { ref, type Ref } from 'vue'
-import { StepValidationError } from '../errors.ts'
+import { GenericValidationError } from '../errors/GenericValidationError.ts'
+
+import { StepValidationError } from '../errors/StepValidationError.ts'
 
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
@@ -11,6 +13,7 @@ import type {
   NodeRunner,
   NormalStepRunner,
   SingleRunnerOutput,
+  SingleRunnerOutputValidationError,
   SingleRunnerResult,
 } from './NodeRunner.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
@@ -148,7 +151,7 @@ export abstract class BaseNode<
 
   getWatcherTargets(): WatcherTarget[] {
     return [
-      this.config,
+      () => this.config,
       () => this.seed,
     ]
   }
@@ -491,7 +494,7 @@ function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): S
   return {
     output: result?.output ?? null,
     preview: result?.preview ?? null,
-    validationErrors: result?.validationErrors ?? [],
+    validationErrors: result?.validationErrors?.map(parseValidationError) ?? [],
   }
 }
 
@@ -551,4 +554,11 @@ export function assertInitialized<T extends AnyStepContext, R extends NodeRunner
   if (!node.initialized || !node.handler || node.config === undefined) {
     throw new Error('Node not initialized')
   }
+}
+
+function parseValidationError(error: SingleRunnerOutputValidationError) {
+  if (typeof error === 'string') {
+    return new GenericValidationError(error)
+  }
+  return error
 }

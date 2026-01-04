@@ -1,10 +1,16 @@
-import { StepValidationError } from '../errors.ts'
+import { StepValidationError } from '../errors/StepValidationError.ts'
 import type { AnyStepContext } from './Step.ts'
 
 export type SingleRunnerOutput<T extends AnyStepContext> =
   | null
   | undefined
-  | Partial<SingleRunnerResult<T>>
+  | {
+  preview: SingleRunnerResult<T>['preview'],
+  output: SingleRunnerResult<T>['output'],
+  validationErrors: SingleRunnerOutputValidationError[]
+}
+
+export type SingleRunnerOutputValidationError = StepValidationError | string
 
 export type SingleRunnerResult<T extends AnyStepContext> = {
   preview: ImageData | null,
