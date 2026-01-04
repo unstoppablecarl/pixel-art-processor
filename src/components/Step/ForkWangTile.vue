@@ -130,7 +130,7 @@ const images = computed((): StepImg[] => {
     :mutable="false"
   >
 
-    <template #body-outer v-if="!images.length">
+    <template #body v-if="!images.length">
       <StepImage :image-data="null" />
     </template>
 
