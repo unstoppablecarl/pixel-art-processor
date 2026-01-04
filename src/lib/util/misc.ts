@@ -1,5 +1,6 @@
 import tinycolor from 'tinycolor2'
-import type { NodeDataTypeColor, NodeDataTypeColors } from '../pipeline/_types.ts'
+import type { NodeDataTypeColors } from '../../steps.ts'
+import type { NodeDataTypeColor } from '../pipeline/_types.ts'
 import { deepUnwrap } from './vue-util.ts'
 
 const blue = makeBgColor('#CCEDFC')

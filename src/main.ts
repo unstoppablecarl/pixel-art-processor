@@ -1,21 +1,21 @@
 import { createPinia } from 'pinia'
 import { createApp } from 'vue'
-
 import App from './App.vue'
 import './styles/main.scss'
 import 'vue-color/style.css'
 import { installStepRegistry, makeStepRegistry } from './lib/pipeline/StepRegistry.ts'
 import { createPersistedState } from './lib/store/_pinia-persist-plugin.ts'
 import { injectNodeDataTypeCss } from './lib/util/misc.ts'
-import { STEP_DATA_TYPE_COLORS, STEP_DATA_TYPES, STEP_DEFINITIONS } from './steps.ts'
+import { loadStepDefinitions, STEP_DATA_TYPE_COLORS, STEP_DATA_TYPES } from './steps.ts'
 
 const app = createApp(App)
 const pinia = createPinia()
 
 pinia.use(createPersistedState())
 
-// ⚠️this has to run after init but before app.mount()
-installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
+const stepDefinitions = await loadStepDefinitions()
+installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
+
 injectNodeDataTypeCss(STEP_DATA_TYPE_COLORS)
 
 app.config.performance = __DEV__

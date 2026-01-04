@@ -2,7 +2,7 @@ import type { Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { type AnyStepDefinition, type StepMeta } from './_types.ts'
 
-export function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): AnyStepDefinition[] {
+export async function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyStepDefinition[]> {
 
   const errors = Object.entries(globResults)
     .map(([path, module]) => validateModule(path, module, stepDataTypes))

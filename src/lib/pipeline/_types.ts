@@ -1,5 +1,4 @@
 import { type Component, type Reactive, type WatchSource } from 'vue'
-import { STEP_DATA_TYPE_COLORS } from '../../steps.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { HeightMap } from '../step-data-types/HeightMap.ts'
 import { NormalMap } from '../step-data-types/NormalMap.ts'
@@ -67,4 +66,3 @@ export type Config = Record<string, any>
 export type WatcherTarget = WatchSource | Reactive<any>
 
 export type NodeDataTypeColor = { key: string, color: string, cssClass: string }
-export type NodeDataTypeColors = typeof STEP_DATA_TYPE_COLORS

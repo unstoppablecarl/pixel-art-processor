@@ -1,4 +1,5 @@
 import { type Component } from 'vue'
+import { loadStepDefinitions } from '../../steps.ts'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
@@ -150,18 +151,20 @@ export function useStepRegistry(): StepRegistry {
 }
 
 // Preserve on HMR disposal
-if (import.meta.hot && !import.meta.env.VITEST) {
-  import.meta.hot.dispose((data) => {
-    data.stepRegistry = REGISTRY
-  })
-
-  // Watch for step definition changes
-  import.meta.hot.accept(async () => {
-    // Re-import and re-install when steps change
-    const { STEP_DEFINITIONS, STEP_DATA_TYPES } = await import('../../steps.ts')
-    if (REGISTRY) {
-      console.log('[HMR] Step definitions updated, reloading registry...')
-      installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
-    }
-  })
-}
+// if (import.meta.hot && !import.meta.env.VITEST) {
+//   import.meta.hot.dispose((data) => {
+//     data.stepRegistry = REGISTRY
+//   })
+//
+//   // Watch for step definition changes
+//   import.meta.hot.accept(async () => {
+//     // Re-import and re-install when steps change
+//     const { STEP_DATA_TYPES } = await import('../../steps.ts')
+//     if (REGISTRY) {
+//       const stepDefinitions = await loadStepDefinitions()
+//
+//       console.log('[HMR] Step definitions updated, reloading registry...')
+//       installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
+//     }
+//   })
+// }

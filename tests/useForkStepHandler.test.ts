@@ -16,9 +16,10 @@ import { NormalMap } from '../src/lib/step-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
-import { STEP_DATA_TYPES, STEP_DEFINITIONS } from '../src/steps'
+import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps'
 
-installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES))
+const stepDefinitions = await loadStepDefinitions()
+installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
 
 function makeAppContext(cb: () => void) {
 
