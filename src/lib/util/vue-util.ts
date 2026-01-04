@@ -1,4 +1,5 @@
 import { isProxy, isReactive, isReadonly, isRef, toRaw, toValue, type UnwrapNestedRefs, type UnwrapRef } from 'vue'
+import { StepValidationError } from '../errors.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
   let rawValue: unknown = value
@@ -37,4 +38,12 @@ export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) && !isProxy(value) && !isRef(value)
+}
+
+export type StepImg = {
+  imageData: ImageData | null,
+  label?: string,
+  placeholderWidth?: number,
+  placeholderHeight?: number,
+  validationErrors?: StepValidationError[]
 }

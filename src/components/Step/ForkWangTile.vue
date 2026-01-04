@@ -26,7 +26,9 @@ import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { prng } from '../../lib/util/prng.ts'
-import StepCard, { type StepImage } from '../StepCard.vue'
+import type { StepImg } from '../../lib/util/vue-util.ts'
+import StepCard from '../StepCard.vue'
+import StepImage from '../StepImage.vue'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
@@ -108,7 +110,7 @@ const store = usePipelineStore()
 const outputDataRef = store.getFork(node.id).forkOutputData
 
 const config = node.config
-const images = computed((): StepImage[] => {
+const images = computed((): StepImg[] => {
   return outputDataRef.value.map(({ preview, validationErrors }, index) => {
     return {
       imageData: preview,
@@ -127,6 +129,11 @@ const images = computed((): StepImage[] => {
     :draggable="false"
     :mutable="false"
   >
+
+    <template #body-outer v-if="!images.length">
+      <StepImage :image-data="null" />
+    </template>
+
     <template #footer>
 
       <div class="section">

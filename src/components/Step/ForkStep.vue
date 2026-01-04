@@ -14,7 +14,8 @@ import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import StepCard, { type StepImage } from '../StepCard.vue'
+import type { StepImg } from '../../lib/util/vue-util.ts'
+import StepCard from '../StepCard.vue'
 import { computed } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -44,7 +45,7 @@ const prevNodePreview = computed(() => {
   }
 })
 
-const images = computed((): StepImage[] => {
+const images = computed((): StepImg[] => {
   if (!outputDataRef.value.length) {
     return [{
       label: 'Input (no branches)',

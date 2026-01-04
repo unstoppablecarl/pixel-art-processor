@@ -5,7 +5,8 @@ import { INVALID_INPUT_TYPE, StepValidationError } from '../lib/errors.ts'
 import { type AnyInitializedNode, isBranch, isFork, isStep } from '../lib/pipeline/Node.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
-import StepImg from './StepImg.vue'
+import type { StepImg } from '../lib/util/vue-util.ts'
+import StepImage from './StepImage.vue'
 import AddNodeAfterDropDown from './UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from './UI/SeedPopOver.vue'
 
@@ -25,7 +26,7 @@ const {
 } = defineProps<{
   node: AnyInitializedNode
   showDimensions?: boolean,
-  images?: StepImage[],
+  images?: StepImg[],
   showAddStepBtn?: boolean,
   draggable?: boolean,
   copyable?: boolean,
@@ -34,14 +35,6 @@ const {
   subHeader?: string,
   imgColumns?: number
 }>()
-
-export type StepImage = {
-  imageData: ImageData | null,
-  label?: string,
-  placeholderWidth?: number,
-  placeholderHeight?: number,
-  validationErrors?: StepValidationError[]
-}
 
 const dimensions = computed(() => {
   const { width, height } = node.getOutputSize()
@@ -53,7 +46,7 @@ function remove() {
   store.remove(node.id)
 }
 
-const nodeImages = computed(() => {
+const nodeImages = computed((): StepImg => {
   if (images) return images
 
   if (isFork(node)) {
@@ -175,17 +168,12 @@ const isMuted = computed(() => isStep(node) && node.muted)
       >
         <slot name="body-outer">
           <div class="card-body">
-            <div
-              v-for="({imageData, label, validationErrors: imgValidationErrors = []}) in nodeImages"
-              class="node-img-container"
-            >
-              <div class="node-img-label" v-if="label">{{ label }}</div>
-              {{}}
-              <StepImg :image-data="imageData" />
-              <div class="section" v-for="error in imgValidationErrors">
-                <component :is="error.component" :error="error" />
-              </div>
-            </div>
+            <StepImage
+              :image-data="imageData"
+              :label="label"
+              :validationErrors="validationErrors"
+              v-for="({imageData, label, validationErrors}) in nodeImages"
+            />
           </div>
         </slot>
 

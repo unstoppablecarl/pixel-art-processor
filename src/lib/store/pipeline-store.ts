@@ -480,7 +480,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     function getRootNodeOutputSize(): ImgSize {
       const root = rootNode()
-      return root ? root.getOutputSize() : { width: 0, height: 0 }
+      return root ? root.getOutputSize() : { width: 64, height: 64 }
     }
 
     function getLeafNodes(): AnyNode[] {
@@ -488,9 +488,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     return store
-  }
-
-  ,
+  },
   {
     persist: {
       key: 'pipeline',
