@@ -17,35 +17,6 @@ export const STEP_DATA_TYPES: DataStructureConstructor[] = [
 
 const stepModules = import.meta.glob(['./components/Step/**/*.vue'])
 
-let loadPromise: Promise<AnyStepDefinition[]> | null = null
-
-export function loadStepDefinitions(): Promise<AnyStepDefinition[]> {
-  if (!loadPromise) {
-    loadPromise = (async () => {
-      const loadedModules: Record<string, any> = {}
-
-      for (const [path, loader] of Object.entries(stepModules)) {
-        loadedModules[path] = await (loader as () => Promise<any>)()
-      }
-
-      return loadStepComponentsMetaData(loadedModules, STEP_DATA_TYPES)
-    })()
-  }
-
-  return loadPromise
-}
-
-if (import.meta.hot && !import.meta.env.VITEST) {
-  import.meta.hot.accept(async () => {
-    loadPromise = null
-
-    const stepDefinitions = await loadStepDefinitions()
-    const { installStepRegistry, makeStepRegistry } = await import('./lib/pipeline/StepRegistry.ts')
-    installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
-  })
-}
-
-
 const green = '#146c43'
 const pink = '#ab296a'
 const purple = '#59359a'
@@ -68,3 +39,30 @@ export function getNodeDataTypeCssClass(stepDataType: StepDataType) {
   return STEP_DATA_TYPE_COLORS.get(stepDataType)!.cssClass
 }
 
+
+// ⚠️ the code below only works if it is in this file
+let stepLoadPromise: Promise<AnyStepDefinition[]> | null = null
+
+export function loadStepDefinitions(): Promise<AnyStepDefinition[]> {
+  if (!stepLoadPromise) {
+    stepLoadPromise = (async () => {
+      const loadedModules: Record<string, any> = {}
+      for (const [path, loader] of Object.entries(stepModules)) {
+        loadedModules[path] = await (loader as () => Promise<any>)()
+      }
+      return loadStepComponentsMetaData(loadedModules, STEP_DATA_TYPES)
+    })()
+  }
+
+  return stepLoadPromise
+}
+
+if (import.meta.hot && !import.meta.env.VITEST) {
+  import.meta.hot.accept(async () => {
+    stepLoadPromise = null
+
+    const stepDefinitions = await loadStepDefinitions()
+    const { installStepRegistry, makeStepRegistry } = await import('./lib/pipeline/StepRegistry.ts')
+    installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
+  })
+}
