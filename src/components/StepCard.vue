@@ -167,16 +167,16 @@ const isMuted = computed(() => isStep(node) && node.muted)
         v-model="node.visible"
         lazy
       >
-        <slot name="body-outer">
-          <div class="card-body">
+        <div class="card-body">
+          <slot name="body">
             <StepImage
               v-for="({imageData, label, validationErrors: imgValidationErrors = []}) in nodeImages"
               :image-data="imageData"
               :label="label"
               :validationErrors="imgValidationErrors"
             />
-          </div>
-        </slot>
+          </slot>
+        </div>
 
         <div class="card-footer">
 
