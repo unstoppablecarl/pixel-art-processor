@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineEmits, useTemplateRef } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
+import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
 
 type Emits = {
@@ -15,7 +16,7 @@ const handleFileUpload = (event: Event) => {
   getFileAsArrayBuffer(event)
     .then(arrayBufferToImageData)
     .then((imageData) => {
-      fileInputEl.value.value = null
+      (fileInputEl.value as HTMLInputElement).value = ''
       model.value = imageData
     })
     .catch(error => {

@@ -5,9 +5,9 @@ export type SingleRunnerOutput<T extends AnyStepContext> =
   | null
   | undefined
   | {
-  preview: SingleRunnerResult<T>['preview'],
-  output: SingleRunnerResult<T>['output'],
-  validationErrors: SingleRunnerOutputValidationError[]
+  preview?: SingleRunnerResult<T>['preview'],
+  output?: SingleRunnerResult<T>['output'],
+  validationErrors?: SingleRunnerOutputValidationError[]
 }
 
 export type SingleRunnerOutputValidationError = StepValidationError | string

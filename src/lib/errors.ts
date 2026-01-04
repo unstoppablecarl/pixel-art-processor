@@ -34,7 +34,7 @@ export function getValidationErrorComponent(
   )
 }
 
-export function handleStepValidationError(error: Error): StepValidationError[] {
+export function handleStepValidationError(error: Error): StepValidationError {
   if (error instanceof StepValidationError) {
     return error
   }
