@@ -66,3 +66,6 @@ export type Config = Record<string, any>
 export type WatcherTarget = WatchSource | Reactive<any>
 
 export type NodeDataTypeColor = { key: string, color: string, cssClass: string }
+
+export type WithRequired<T, K extends keyof T> =
+  T & { [P in K]-?: NonNullable<T[P]> }
