@@ -3,6 +3,16 @@ import type { AnyStepMeta } from '../../lib/pipeline/_types.ts'
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
+export interface IStepMeta {
+  wangTileInfo?: {
+    sideIds: string[],
+    N: string,
+    S: string,
+    W: string,
+    E: string,
+  }
+}
+
 export const STEP_META: AnyStepMeta = {
   type: NodeType.FORK,
   def: 'fork_wang_tiles',
@@ -12,11 +22,12 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { reactive, computed } from 'vue'
+import { reactive, computed, watch } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { prng } from '../../lib/util/prng.ts'
+import { calculateChunkedArrayValidRanges } from '../../lib/util/prng/binary-array-chunks.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
 import StepCard from '../StepCard.vue'
 import StepImage from '../StepImage.vue'
@@ -87,8 +98,6 @@ const node = useForkHandler(nodeId, {
 
     chunks.forEach((v, i) => {
       if (!v === config.invert) {
-        // console.log(branchIndex % 4)
-
         edges[branchIndex % 4](i)
       }
     })
@@ -102,16 +111,6 @@ const node = useForkHandler(nodeId, {
 
 const store = usePipelineStore()
 const outputDataRef = store.getFork(node.id).forkOutputData
-
-function setBranchSeed(index: number, seed: number) {
-  node.setBranchGenerationSeed(store, index, seed)
-}
-
-function getBranchSeed(index: number) {
-  return node.getBranchGenerationSeed(store, index)
-}
-
-const config = node.config
 const images = computed((): StepImg[] => {
   return outputDataRef.value.map(({ preview, validationErrors }, index) => {
     return {
@@ -121,6 +120,62 @@ const images = computed((): StepImg[] => {
     }
   })
 })
+
+const setBranchSeed = (index: number, seed: number) => node.setBranchGenerationSeed(store, index, seed)
+const getBranchSeed = (index: number) => node.getBranchGenerationSeed(store, index)
+
+const config = node.config
+
+// Compute valid ranges reactively
+const validRanges = computed(() => {
+  return calculateChunkedArrayValidRanges(
+    config.size.value,
+    config.chunks.value,
+    config.minGapSize,
+    config.maxGapSize,
+    config.minChunkSize,
+    config.maxChunkSize,
+    config.padding,
+  )
+})
+
+// Clamp values when they go out of valid range
+watch(validRanges, (ranges) => {
+  // Clamp padding
+  if (config.padding < ranges.padding.min) {
+    config.padding = ranges.padding.min
+  } else if (config.padding > ranges.padding.max) {
+    config.padding = ranges.padding.max
+  }
+
+  // Clamp minChunkSize
+  if (config.minChunkSize < ranges.minChunkSize.min) {
+    config.minChunkSize = ranges.minChunkSize.min
+  } else if (config.minChunkSize > ranges.minChunkSize.max) {
+    config.minChunkSize = ranges.minChunkSize.max
+  }
+
+  // Clamp maxChunkSize
+  if (config.maxChunkSize < ranges.maxChunkSize.min) {
+    config.maxChunkSize = ranges.maxChunkSize.min
+  } else if (config.maxChunkSize > ranges.maxChunkSize.max) {
+    config.maxChunkSize = ranges.maxChunkSize.max
+  }
+
+  // Clamp minGapSize
+  if (config.minGapSize < ranges.minGapSize.min) {
+    config.minGapSize = ranges.minGapSize.min
+  } else if (config.minGapSize > ranges.minGapSize.max) {
+    config.minGapSize = ranges.minGapSize.max
+  }
+
+  // Clamp maxGapSize
+  if (config.maxGapSize < ranges.maxGapSize.min) {
+    config.maxGapSize = ranges.maxGapSize.min
+  } else if (config.maxGapSize > ranges.maxGapSize.max) {
+    config.maxGapSize = ranges.maxGapSize.max
+  }
+}, { deep: true })
 </script>
 <template>
   <StepCard
@@ -160,8 +215,8 @@ const images = computed((): StepImg[] => {
         <RangeBandSlider
           :id="`${nodeId}-gap-size`"
           label="Gap Size"
-          :min="0"
-          :max="config.size.value"
+          :min="validRanges.minGapSize.min"
+          :max="validRanges.maxGapSize.max"
           v-model:min-value="config.minGapSize"
           v-model:max-value="config.maxGapSize"
         />
@@ -169,8 +224,8 @@ const images = computed((): StepImg[] => {
         <RangeBandSlider
           :id="`${nodeId}-chunk-size`"
           label="Chunk Size"
-          :min="0"
-          :max="config.size.value"
+          :min="validRanges.minChunkSize.min"
+          :max="validRanges.maxChunkSize.max"
           v-model:min-value="config.minChunkSize"
           v-model:max-value="config.maxChunkSize"
         />
@@ -179,8 +234,8 @@ const images = computed((): StepImg[] => {
           :id="`${nodeId}-padding`"
           label="Padding"
           v-model:value="config.padding"
-          :min="0"
-          :max="Math.floor(config.size.value * 0.5)"
+          :min="validRanges.padding.min"
+          :max="validRanges.padding.max"
           :step="1"
         />
 

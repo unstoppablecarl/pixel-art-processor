@@ -156,6 +156,95 @@ export function generateChunkedArray(
   return result
 }
 
+export interface PropertyRange {
+  min: number;
+  max: number;
+}
+
+export interface ValidRanges {
+  padding: PropertyRange;
+  minChunkSize: PropertyRange;
+  maxChunkSize: PropertyRange;
+  minGapSize: PropertyRange;
+  maxGapSize: PropertyRange;
+}
+
+export function calculateChunkedArrayValidRanges(
+  length: number,
+  chunks: number,
+  minGapSize: number,
+  maxGapSize: number,
+  minChunkSize: number,
+  maxChunkSize: number,
+  padding: number,
+): ValidRanges {
+  const numChunkSegments = Math.ceil(chunks / 2)
+  const numGapSegments = Math.floor(chunks / 2)
+  const availableLength = length - 2 * padding
+
+  // Calculate required space constraints
+  const minRequiredSpace =
+    numChunkSegments * minChunkSize +
+    numGapSegments * minGapSize
+
+  // Ensure maxReq >= avail by enforcing minimum max values
+  const minMaxChunk = numChunkSegments > 0
+    ? Math.ceil((availableLength - numGapSegments * maxGapSize) / numChunkSegments)
+    : maxChunkSize
+  const minMaxGap = numGapSegments > 0
+    ? Math.ceil((availableLength - numChunkSegments * maxChunkSize) / numGapSegments)
+    : maxGapSize
+
+  // Calculate valid padding range
+  const maxPadding = Math.floor((length - minRequiredSpace) / 2)
+
+  // Calculate valid minChunkSize range
+  const maxMinChunkSize = Math.min(
+    maxChunkSize,
+    Math.floor((availableLength - numGapSegments * minGapSize) / numChunkSegments),
+  )
+
+  // Calculate valid maxChunkSize range
+  const maxMaxChunkSize = Math.floor(
+    (availableLength - numGapSegments * minGapSize) / numChunkSegments,
+  )
+
+  // Calculate valid minGapSize range
+  const maxMinGapSize = numGapSegments > 0
+    ? Math.min(
+      maxGapSize,
+      Math.floor((availableLength - numChunkSegments * minChunkSize) / numGapSegments),
+    )
+    : 0
+
+  // Calculate valid maxGapSize range
+  const maxMaxGapSize = numGapSegments > 0
+    ? Math.floor((availableLength - numChunkSegments * minChunkSize) / numGapSegments)
+    : maxGapSize
+
+  return {
+    padding: {
+      min: 0,
+      max: Math.max(0, maxPadding),
+    },
+    minChunkSize: {
+      min: 1,
+      max: Math.max(1, maxMinChunkSize),
+    },
+    maxChunkSize: {
+      min: Math.max(minChunkSize, minMaxChunk),
+      max: Math.max(minChunkSize, minMaxChunk, maxMaxChunkSize, 1),
+    },
+    minGapSize: {
+      min: numGapSegments > 0 ? 1 : 0,
+      max: Math.max(minGapSize, maxMinGapSize, numGapSegments > 0 ? 1 : 0),
+    },
+    maxGapSize: {
+      min: Math.max(minGapSize, minMaxGap),
+      max: Math.max(maxGapSize, minMaxGap, maxMaxGapSize, minGapSize),
+    },
+  }
+}
 export function binaryChunkedArrayToChunkLengths(arr: number[]): number[] {
   if (arr.length === 0) {
     return []
