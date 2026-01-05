@@ -119,6 +119,7 @@ describe('NodeRunner type collapse tests', () => {
       config: Ctx['RC']
       inputData: Ctx['Input'] | null
       branchIndex: number,
+      branchGenerationSeed: number,
       meta: IRunnerMeta,
     }) => Promise<any>
 

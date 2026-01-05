@@ -235,20 +235,6 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       return branch
     }
 
-    function removeBranch(forkId: NodeId, branchId: NodeId): void {
-      const fork = getFork(forkId)
-      const index = fork.branchIds.value.indexOf(branchId)
-      if (index !== -1) {
-        fork.branchIds.value.splice(index, 1)
-        // reindex remaining branches
-        fork.branchIds.value.forEach((bid, i) => {
-          const b = store.get(bid) as AnyBranchNode
-          b.branchIndex = i
-        })
-        fork.forkOutputData.value.splice(index, 1)
-      }
-    }
-
     function getDescendantIds(id: NodeId): NodeId[] {
       const result: NodeId[] = []
       const visited = new Set<NodeId>()
@@ -307,7 +293,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
         const branch = node as AnyBranchNode
         const parentId = branch.prevNodeId
         if (parentId) {
-          removeBranch(parentId, branch.id)
+          getFork(parentId).removeBranch(store, branch.id)
         }
         removeBranchOrForkAndDescendants(id)
         return

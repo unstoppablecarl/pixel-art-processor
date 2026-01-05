@@ -1,8 +1,6 @@
-import { ref, type Ref } from 'vue'
+import { type Reactive, reactive, ref, type Ref } from 'vue'
 import { GenericValidationError } from '../errors/GenericValidationError.ts'
-
 import { StepValidationError } from '../errors/StepValidationError.ts'
-
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
@@ -306,8 +304,9 @@ const ForkBase = WithStepOrFork(BaseNode)
 export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunner<T>> {
   type = NodeType.FORK
 
-  branchIds = ref<NodeId[]>([])
+  branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
   forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
+  branchGenerationSeeds: Reactive<Record<string, number>> = reactive({})
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
@@ -353,10 +352,17 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       config: this.config as T['RC'],
       inputData: prevOutput,
       branchIndex,
+      branchGenerationSeed: this.getBranchGenerationSeed(branchIndex),
       meta,
     })
 
     return parseResult<T>(output)
+  }
+
+  getBranchGenerationSeed(branchIndex: number): number {
+    this.branchGenerationSeeds[branchIndex] ??= 0
+
+    return this.branchGenerationSeeds[branchIndex]
   }
 
   serialize(): ForkNodeSerialized<T> {
@@ -373,6 +379,24 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       width: first?.width ?? 0,
       height: first?.height ?? 0,
     }
+  }
+
+  getWatcherTargets(): WatcherTarget[] {
+    return [...super.getWatcherTargets(), () => this.branchGenerationSeeds]
+  }
+
+  removeBranch(store: MinStore, branchId: NodeId): void {
+    const index = this.branchIds.value.indexOf(branchId)
+    if (index !== -1) {
+      this.branchIds.value.splice(index, 1)
+      // reindex remaining branches
+      this.branchIds.value.forEach((bid, i) => {
+        const b = store.get(bid) as AnyBranchNode
+        b.branchIndex = i
+      })
+      this.forkOutputData.value.splice(index, 1)
+    }
+    delete this.branchGenerationSeeds[branchId]
   }
 }
 

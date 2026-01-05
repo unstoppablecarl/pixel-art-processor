@@ -173,6 +173,7 @@ describe('fork handler type testing', async () => {
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
         branchIndex: number,
+        branchGenerationSeed: number,
         meta: RunnerMeta,
       }>()
 
@@ -209,6 +210,7 @@ describe('fork handler type testing', async () => {
           config: T['RC'],
           inputData: T['Input'] | null,
           branchIndex: number,
+          branchGenerationSeed: number,
           meta: IRunnerMeta,
         }) => Promise<
           SingleRunnerOutput<T>
@@ -319,6 +321,7 @@ describe('StepHandlerOptionsInfer inference', () => {
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
       branchIndex: number,
+      branchGenerationSeed: number,
       meta: RunnerMeta,
     }]>()
 
@@ -326,6 +329,7 @@ describe('StepHandlerOptionsInfer inference', () => {
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
       branchIndex: number,
+      branchGenerationSeed: number,
       meta: RunnerMeta,
     }]>()
 

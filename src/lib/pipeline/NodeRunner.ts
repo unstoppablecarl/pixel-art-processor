@@ -47,6 +47,7 @@ export interface ForkStepRunner<T extends AnyStepContext> {
     inputData: T['Input'] | null,
     meta: RunnerMeta,
     branchIndex: number,
+    branchGenerationSeed: number,
   }): Promise<SingleRunnerOutput<T>>
   __fork?: never
 }
