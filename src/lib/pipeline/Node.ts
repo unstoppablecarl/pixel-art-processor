@@ -448,7 +448,9 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
     console.log('zcxcxzzcx')
     this.handler.setPassThroughDataType(fork.handler!.outputDataType)
 
-    this.outputData = await this.getOutputFromPrev(store)
+    const { prevOutput, meta } = await this.getOutputFromPrev(store)
+    this.outputData = prevOutput
+    this.outputMeta = meta
     this.outputPreview = null
     this.validationErrors = []
   }
