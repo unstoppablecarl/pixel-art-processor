@@ -35,7 +35,11 @@ const encoded = computed(() => {
 </script>
 <template>
   <div class="node-img-container">
-    <div class="node-img-label" v-if="label">{{ label }}</div>
+    <div class="node-img-label" v-if="label">
+      <slot name="label" :label="label">
+        {{ label }}
+      </slot>
+    </div>
 
     <img
       :alt="label"

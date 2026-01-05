@@ -30,7 +30,7 @@ type SerializedState = {
   imgScale: number,
 }
 
-export type MinStore = Pick<PipelineStore, 'get' | 'nodes'>
+export type MinStore = Pick<PipelineStore, 'get' | 'nodes' | 'nodeIsPassthrough'>
 
 export interface PipelineStore {
   nodes: Record<NodeId, AnyNode>
@@ -63,7 +63,8 @@ export interface PipelineStore {
   duplicateStepNode(id: NodeId): NodeId
   duplicateBranchNode(id: NodeId): NodeId
   getRootNodeOutputSize(): ImgSize
-  getLeafNodes(): AnyNode[]
+  getLeafNodes(): AnyNode[],
+  nodeIsPassthrough<T extends AnyStepContext>(node: AnyNode<T>): boolean
 }
 
 export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
@@ -105,6 +106,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       duplicateBranchNode,
       getRootNodeOutputSize,
       getLeafNodes,
+      nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
     }
 
     function $reset() {

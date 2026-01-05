@@ -3,6 +3,8 @@ import type { DataStructureConstructor } from '../step-data-types/BaseDataStruct
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import { type AnyStepDefinition, type NodeDef, NodeType, type StepDefinitions } from './_types.ts'
+import type { AnyNode } from './Node.ts'
+import type { AnyStepContext } from './Step.ts'
 
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
 
@@ -109,6 +111,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     has,
     getNodeType: (def: string): NodeType => get(def).type,
     defToComponent: (def: string): Component => get(def).component,
+    nodeIsPassthrough: <T extends AnyStepContext>(node: AnyNode<T>): boolean => !!get(node.def).passthrough,
     canBeChildOf,
     validateCanBeChildOf,
     addableToArray,

@@ -47,9 +47,9 @@ const allNodes = computed(() => {
       </template>
     </template>
 
-    <div v-else class="empty-branch-placeholder">
-      Drop Here
-    </div>
+<!--    <div v-else class="empty-branch-placeholder">-->
+<!--      Drop Here-->
+<!--    </div>-->
   </div>
 
   <template v-if="allNodes.fork">

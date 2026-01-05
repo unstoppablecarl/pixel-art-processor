@@ -107,6 +107,15 @@ export abstract class BaseNode<
 
   abstract getOutputDataFromPrev(store: MinStore): Promise<T['Input'] | null>
 
+  protected setPassThroughDataTypeFromPrev(store: MinStore): void {
+    if (this.prevNodeId) {
+      const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
+      this.handler!.setPassThroughDataType(prev.handler!.outputDataType)
+    } else {
+      this.handler!.clearPassThroughDataType()
+    }
+  }
+
   serialize(): BaseNodeSerialized<T> {
 
     let config: T['SerializedConfig'] = undefined
@@ -205,15 +214,18 @@ export class StepNode<
 
   async runner(store: MinStore) {
     logNodeEvent(this.id, 'runner: start')
+
     if (this.muted) {
       this.outputData = await this.getOutputDataFromPrev(store)
       this.outputPreview = null
       this.validationErrors = []
 
-      if (!this.prevNodeId) return
-      const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
-      this.handler!.setPassThroughDataType(prev.handler!.outputDataType)
+      this.setPassThroughDataTypeFromPrev(store)
       return
+    }
+
+    if (store.nodeIsPassthrough(this)) {
+      this.setPassThroughDataTypeFromPrev(store)
     }
 
     const _handler = this.handler as IStepHandler<T, R>
@@ -288,6 +300,10 @@ export class ForkNode<
   }
 
   async runner(store: MinStore) {
+    if (store.nodeIsPassthrough(this)) {
+      this.setPassThroughDataTypeFromPrev(store)
+    }
+
     this.forkOutputData.value = await Promise.all(
       this.branchIds.value.map((_, i) => this.runBranch(store, i)),
     ) as SingleRunnerResult<T>[]

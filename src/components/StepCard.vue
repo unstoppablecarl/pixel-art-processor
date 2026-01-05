@@ -169,12 +169,28 @@ const isMuted = computed(() => isStep(node) && node.muted)
       >
         <div class="card-body">
           <slot name="body">
-            <StepImage
-              v-for="({imageData, label, validationErrors: imgValidationErrors = []}) in nodeImages"
-              :image-data="imageData"
-              :label="label"
-              :validationErrors="imgValidationErrors"
-            />
+
+            <template
+              v-for="({imageData, label, validationErrors: imgValidationErrors = []}, index) in nodeImages"
+            >
+              <StepImage
+                :image-data="imageData"
+                :label="label"
+                :validationErrors="imgValidationErrors"
+              >
+                <template v-for="(_, name) in $slots" #[name]="slotProps">
+                  <slot :name="name" v-bind="{...slotProps, index}" />
+                </template>
+              </StepImage>
+              <slot
+                name="after-image"
+                :index="index"
+                :label="label"
+                :validationErrors="imgValidationErrors"
+                :imageData="imageData"
+              />
+
+            </template>
           </slot>
         </div>
 
