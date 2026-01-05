@@ -445,7 +445,6 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
 
   async runner(store: MinStore) {
     const fork = this.parentFork(store)
-    console.log('zcxcxzzcx')
     this.handler.setPassThroughDataType(fork.handler!.outputDataType)
 
     const { prevOutput, meta } = await this.getOutputFromPrev(store)
