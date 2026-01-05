@@ -1,7 +1,6 @@
 import { ref, type Ref } from 'vue'
 import { GenericValidationError } from '../errors/GenericValidationError.ts'
 import { StepValidationError } from '../errors/StepValidationError.ts'
-import { PassThrough } from '../step-data-types/PassThrough.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
@@ -10,7 +9,6 @@ import {
   type NodeDef,
   type NodeId,
   NodeType,
-  type StepDataType,
   type WatcherTarget,
   type WithRequired,
 } from './_types.ts'
@@ -422,28 +420,14 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
     this.prevNodeId = options.prevNodeId
     this.branchIndex = options.branchIndex
     this.generationSeed = options.generationSeed ?? 0
-    let passthroughType: StepDataType | undefined = undefined
 
-    this.handler = {
-      get inputDataTypes() {
-        return passthroughType ? [passthroughType] : [PassThrough]
-      },
-
-      get outputDataType() {
-        return passthroughType ?? PassThrough
-      },
-
-      clearPassThroughDataType() {
-        passthroughType = undefined
-      },
-
-      setPassThroughDataType(type: StepDataType) {
-        passthroughType = type
-      },
+    this.handler = makeStepHandler<AnyStepContext, NormalStepRunner<AnyStepContext>>(this.def, {
+      passthrough: true,
+      run: (() => null) as unknown as NormalStepRunner<AnyStepContext>,
       serializeConfig() {
         // noop
       },
-    } as unknown as IStepHandler<T, NormalStepRunner<T>>
+    }) as unknown as IStepHandler<T, NormalStepRunner<T>>
   }
 
   serialize(): BranchNodeSerialized<T> {
@@ -461,7 +445,8 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
 
   async runner(store: MinStore) {
     const fork = this.parentFork(store)
-    this.handler.setPassThroughDataType(fork.handler?.outputDataType)
+    console.log('zcxcxzzcx')
+    this.handler.setPassThroughDataType(fork.handler!.outputDataType)
 
     this.outputData = await this.getOutputFromPrev(store)
     this.outputPreview = null

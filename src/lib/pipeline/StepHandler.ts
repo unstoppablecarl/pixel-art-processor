@@ -1,4 +1,4 @@
-import { reactive } from 'vue'
+import { reactive, shallowRef } from 'vue'
 import { type Optional } from '../_helpers.ts'
 import { InvalidInputTypeError } from '../errors/InvalidInputTypeError.ts'
 import { StepValidationError } from '../errors/StepValidationError.ts'
@@ -130,7 +130,7 @@ export function makeStepHandler<
   const defaultInput = isPassthrough ? [PassThrough] : options.inputDataTypes
   const defaultOutput = isPassthrough ? PassThrough : options.outputDataType
 
-  let passthroughType: StepDataType | undefined = undefined
+  const passthroughType = shallowRef<StepDataType | undefined>(undefined)
 
   return {
     config(): C {
@@ -175,19 +175,19 @@ export function makeStepHandler<
     ...options,
 
     get inputDataTypes() {
-      return passthroughType ? [passthroughType] : defaultInput
+      return passthroughType.value ? [passthroughType.value] : defaultInput
     },
 
     get outputDataType() {
-      return passthroughType ?? defaultOutput
+      return passthroughType.value ?? defaultOutput
     },
 
     clearPassThroughDataType() {
-      passthroughType = undefined
+      passthroughType.value = undefined
     },
 
     setPassThroughDataType(type: StepDataType) {
-      passthroughType = type
+      passthroughType.value = type
     },
   } as IStepHandler<T, R>
 }
