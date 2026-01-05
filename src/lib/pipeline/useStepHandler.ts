@@ -1,8 +1,14 @@
 import { watch } from 'vue'
-import { usePipelineStore } from '../store/pipeline-store.ts'
+import { type MinStore, usePipelineStore } from '../store/pipeline-store.ts'
 import { logNodeWatch } from '../util/misc.ts'
 import type { Config, NodeId, StepDataType } from './_types.ts'
-import type { InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
+import type {
+  GraphNode,
+  InitializedBranchNode,
+  InitializedForkNode,
+  InitializedNode,
+  InitializedStepNode,
+} from './Node.ts'
 import type { ForkStepRunner, NodeRunner, NormalStepRunner } from './NodeRunner.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
 import type { StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
@@ -17,11 +23,7 @@ function useCoreStepHandler<
   const store = usePipelineStore()
 
   const node = store.initializeNode<T>(nodeId, options as StepHandlerOptions<T>)
-
-  watch(node.getWatcherTargets(), () => {
-    logNodeWatch(node.id)
-    store.markDirty(node.id)
-  }, { deep: true })
+  setWatchers(node, store)
 
   return node as InitializedNode<T>
 }
@@ -63,4 +65,19 @@ export function useForkHandler<
   type T = StepContext<C, SC, RC, I, O>
 
   return useCoreStepHandler<T, ForkStepRunner<T>>(nodeId, options) as InitializedForkNode<T>
+}
+
+export function useBranchHandler(nodeId: NodeId) {
+  const store = usePipelineStore()
+  const node = store.get(nodeId)
+  setWatchers(node, store)
+
+  return node as InitializedBranchNode<AnyStepContext>
+}
+
+function setWatchers<T extends AnyStepContext>(node: GraphNode<T>, store: MinStore) {
+  watch(node.getWatcherTargets(), () => {
+    logNodeWatch(node.id)
+    store.markDirty(node.id)
+  }, { deep: true })
 }

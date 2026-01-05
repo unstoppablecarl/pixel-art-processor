@@ -30,7 +30,7 @@ type SerializedState = {
   imgScale: number,
 }
 
-export type MinStore = Pick<PipelineStore, 'get' | 'nodes' | 'nodeIsPassthrough'>
+export type MinStore = Pick<PipelineStore, 'get' | 'nodes' | 'nodeIsPassthrough' | 'markDirty'>
 
 export interface PipelineStore {
   nodes: Record<NodeId, AnyNode>

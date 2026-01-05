@@ -384,6 +384,18 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       this.forkOutputData.value.splice(index, 1)
     }
   }
+
+  setBranchGenerationSeed(store: MinStore, branchIndex: number, seed: number): void {
+    const branchId = this.branchIds.value[branchIndex]
+    const branch = store.get(branchId) as BranchNode<any>
+    branch.generationSeed = seed
+  }
+
+  getBranchGenerationSeed(store: MinStore, branchIndex: number): number {
+    const branchId = this.branchIds.value[branchIndex]
+    const branch = store.get(branchId) as BranchNode<any>
+    return branch.generationSeed
+  }
 }
 
 type BranchNodeProperties = {
@@ -470,6 +482,13 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
 
   initialize(handlerOptions: StepHandlerOptions<T>): void {
     // noop
+  }
+
+  getWatcherTargets(): WatcherTarget[] {
+    return [
+      () => this.seed,
+      () => this.generationSeed,
+    ]
   }
 }
 

@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
-import { computed, watch } from 'vue'
+import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { isBranch, isFork } from '../../lib/pipeline/Node.ts'
+import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
@@ -14,10 +15,10 @@ const { branchNodeId } = defineProps<{
   branchNodeId: NodeId,
 }>()
 
-const branch = computed(() => store.getBranch(branchNodeId))
+const branch = useBranchHandler(branchNodeId)
 
 const nodeIds = computed((): NodeId[] => {
-  if (!branch.value) return []
+  if (!branch) return []
   const ids: NodeId[] = []
   let currentId = store.get(branchNodeId).childIds(store)[0] as NodeId
 
@@ -35,10 +36,6 @@ const nodeIds = computed((): NodeId[] => {
   }
 
   return ids
-})
-
-watch(() => branch.value.seed, () => {
-  store.markDirty(branch.value.id)
 })
 </script>
 <template>
