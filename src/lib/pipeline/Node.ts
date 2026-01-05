@@ -305,6 +305,8 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
   forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
 
+  private branchGenerationSeed: Record<number, number> = {}
+
   constructor(options: ForkNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId ?? null
@@ -331,7 +333,11 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
   }
 
   async getBranchOutput(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<SingleRunnerResult<T>> {
-    if (this.forkOutputData.value[branchIndex] === undefined) {
+    const cached = this.forkOutputData.value[branchIndex] !== undefined
+      && this.branchGenerationSeed[branchIndex] === branchGenerationSeed
+
+    if (!cached) {
+      this.branchGenerationSeed[branchIndex] = branchGenerationSeed
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex, branchGenerationSeed)
     }
     return this.forkOutputData.value[branchIndex]
