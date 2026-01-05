@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineEmits, useTemplateRef } from 'vue'
+import { useTemplateRef } from 'vue'
 import { handleStepValidationError } from '../../lib/errors.ts'
 import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
