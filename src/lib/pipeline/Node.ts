@@ -1,4 +1,4 @@
-import { type Reactive, reactive, ref, type Ref } from 'vue'
+import { ref, type Ref } from 'vue'
 import { GenericValidationError } from '../errors/GenericValidationError.ts'
 import { StepValidationError } from '../errors/StepValidationError.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
@@ -306,7 +306,6 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
 
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
   forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
-  branchGenerationSeeds: Reactive<Record<string, number>> = reactive({})
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
@@ -324,25 +323,23 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
     }
 
     this.forkOutputData.value = await Promise.all(
-      this.branchIds.value.map((_, i) => this.runBranch(store, i)),
+      this.branchIds.value.map((branchId, i) => {
+        const branchGenerationSeed = store.get(branchId).generationSeed
+        return this.runBranch(store, i, branchGenerationSeed)
+      }),
     ) as SingleRunnerResult<T>[]
 
     this.validationErrors = this.forkOutputData.value.flatMap(({ validationErrors }) => validationErrors) ?? []
   }
 
-  async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
-    // logNodeEvent(this.id, 'getBranchOutput: start', { branchIndex })
+  async getBranchOutput(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<SingleRunnerResult<T>> {
     if (this.forkOutputData.value[branchIndex] === undefined) {
-      this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
-      // logNodeEvent(this.id, 'getBranchOutput: end', { branchIndex }, this.forkOutputData.value[branchIndex])
-    } else {
-      // logNodeEvent(this.id, 'getBranchOutput: end (cached)', { branchIndex }, this.forkOutputData.value[branchIndex])
+      this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex, branchGenerationSeed)
     }
-
     return this.forkOutputData.value[branchIndex]
   }
 
-  private async runBranch(store: MinStore, branchIndex: number): Promise<
+  private async runBranch(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<
     SingleRunnerResult<T>
   > {
     logNodeEvent(this.id, 'runBranch', { branchIndex })
@@ -352,17 +349,11 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       config: this.config as T['RC'],
       inputData: prevOutput,
       branchIndex,
-      branchGenerationSeed: this.getBranchGenerationSeed(branchIndex),
+      branchGenerationSeed,
       meta,
     })
 
     return parseResult<T>(output)
-  }
-
-  getBranchGenerationSeed(branchIndex: number): number {
-    this.branchGenerationSeeds[branchIndex] ??= 0
-
-    return this.branchGenerationSeeds[branchIndex]
   }
 
   serialize(): ForkNodeSerialized<T> {
@@ -381,10 +372,6 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
     }
   }
 
-  getWatcherTargets(): WatcherTarget[] {
-    return [...super.getWatcherTargets(), () => this.branchGenerationSeeds]
-  }
-
   removeBranch(store: MinStore, branchId: NodeId): void {
     const index = this.branchIds.value.indexOf(branchId)
     if (index !== -1) {
@@ -396,16 +383,16 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       })
       this.forkOutputData.value.splice(index, 1)
     }
-    delete this.branchGenerationSeeds[branchId]
   }
 }
 
 type BranchNodeProperties = {
   prevNodeId: NodeId,
   branchIndex: number,
+  generationSeed?: number,
 }
 export type AnyBranchNodeSerialized = BranchNodeSerialized<AnyStepContext>
-export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & BranchNodeProperties
+export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & Required<BranchNodeProperties>
 export type AnyBranchNode = BranchNode<AnyStepContext>
 export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & BranchNodeProperties
 
@@ -416,11 +403,13 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
   prevNodeId: NodeId
   branchIndex: number
   initialized = true
+  generationSeed: number
 
   constructor(options: BranchNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId
     this.branchIndex = options.branchIndex
+    this.generationSeed = options.generationSeed ?? 0
     let passthroughType: StepDataType | undefined = undefined
 
     this.handler = {
@@ -450,6 +439,7 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
       ...super.serialize(),
       prevNodeId: this.prevNodeId,
       branchIndex: this.branchIndex,
+      generationSeed: this.generationSeed,
     }
   }
 
@@ -470,7 +460,7 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
     logNodeEvent(this.id, 'getOutputFromPrev: start')
 
     const fork = this.parentFork(store)
-    const result = await fork.getBranchOutput(store, this.branchIndex)
+    const result = await fork.getBranchOutput(store, this.branchIndex, this.generationSeed)
     logNodeEvent(this.id, 'getOutputFromPrev: end', result)
     return {
       prevOutput: result.output,

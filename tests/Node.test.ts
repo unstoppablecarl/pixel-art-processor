@@ -276,7 +276,7 @@ describe('getOutputSize', () => {
       config: { value: 1 },
     })
 
-    new BranchNode<Ctx>({
+    const b0 = new BranchNode<Ctx>({
       id: nid('b0'),
       prevNodeId: f.id,
       def: passthroughDef,
@@ -295,6 +295,7 @@ describe('getOutputSize', () => {
     const store = makeStore({
       [nid('f')]: f,
       [nid('s0')]: s0,
+      [nid('b0')]: b0,
     })
 
     f.isDirty = true
