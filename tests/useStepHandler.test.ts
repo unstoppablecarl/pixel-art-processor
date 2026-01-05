@@ -138,30 +138,27 @@ describe('step handler type testing', async () => {
           output: new NormalMap(1, 1),
         }
       },
-      watcher(step, defaultWatcherTargets) {
-        type R = typeof step extends InitializedNode<any, infer R> ? R : never
-        type T = typeof step extends InitializedNode<infer U, infer R> ? U : never
-        expectTypeOf(step).toExtend<InitializedNode<T, R>>()
-        expectTypeOf<R>().toEqualTypeOf<NormalStepRunner<T>>()
-        expectTypeOf(step.config).toEqualTypeOf<InitializedNode<T, R>['config']>()
-
-        expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
-
-        return [
-          ...defaultWatcherTargets,
-        ]
-      },
-
+      watcher() {
+        return []
+      }
     })
 
     await Promise.resolve()
 
-    type RF = typeof step extends InitializedNode<any, infer R> ? R : never
-    type TF = typeof step extends InitializedNode<infer U, infer R> ? U : never
-    expectTypeOf(step).toExtend<InitializedNode<TF, RF>>()
-    expectTypeOf<RF>().toEqualTypeOf<NormalStepRunner<TF>>()
-    type NodeRunner = typeof step extends InitializedNode<infer T, infer R> ? R : never
-    expectTypeOf<NodeRunner>().toEqualTypeOf<NormalStepRunner<TF>>()
+    type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
+    type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
+    expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
+    expectTypeOf<RFromNode>().toExtend<NormalStepRunner<TFromNode>>()
+    expectTypeOf<RFromNode>()
+      .parameter(0)
+      .toEqualTypeOf<{
+        config: TFromNode['RC'],
+        inputData: TFromNode['Input'] | null,
+      }>()
+
+    expectTypeOf<RFromNode>()
+      .returns
+      .toEqualTypeOf<Promise<SingleRunnerOutput<TFromNode>>>()
 
     type T = typeof step extends InitializedNode<infer U> ? U : never
 
@@ -174,7 +171,7 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).not.toEqualTypeOf<InitializedNode<AnyStepContext>>()
       expectTypeOf(step).toExtend<InitializedNode<StepContext<C, SC, RC, I, O>>>()
 
-      expectTypeOf(step).toEqualTypeOf<InitializedStepNode<T, NormalStepRunner<T>>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedStepNode<T>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
     })
@@ -189,13 +186,12 @@ describe('step handler type testing', async () => {
         NormalStepRunner<T>
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<{
-        __normal?: never
-      } &
-        (({ config, inputData }: {
+        __normal?: never,
+        ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null
-        }) => Promise<SingleRunnerOutput<T>>)
-      >()
+        }): Promise<SingleRunnerOutput<T>>
+      }>()
 
       expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
         { config: RC, inputData: InputInstances | null }
@@ -218,11 +214,12 @@ describe('step handler type testing', async () => {
         (defaults: C) => RC
       >()
 
-      expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        IStepHandler<T, NormalStepRunner<T>>['watcher']
+      expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
+        IStepHandler<T, NormalStepRunner<T>>['watcherTargets']
       >()
-      expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        (step: InitializedNode<T, NormalStepRunner<T>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+
+      expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
+        () => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<

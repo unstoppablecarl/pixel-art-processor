@@ -36,10 +36,7 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
   config?: T['SerializedConfig'],
 }
 
-export abstract class BaseNode<
-  T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>
-> {
+export abstract class BaseNode<T extends AnyStepContext> {
   readonly abstract type: NodeType
   // serialized
   id: NodeId
@@ -162,6 +159,7 @@ export abstract class BaseNode<
     return [
       () => this.config,
       () => this.seed,
+      ...this.handler!.watcherTargets(),
     ]
   }
 }
@@ -175,11 +173,10 @@ export type StepNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T>
 export type AnyStepNode = StepNode<AnyStepContext>
 export type StepNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & Partial<StepNodeProperties>
 
-export class StepNode<
-  T extends AnyStepContext,
-  R extends NormalStepRunner<T> = NormalStepRunner<T>
-> extends BaseNode<T, R> {
+export class StepNode<T extends AnyStepContext> extends BaseNode<T> {
   type = NodeType.STEP
+  handler: IStepHandler<T, NormalStepRunner<T>> | undefined = undefined
+
   muted: boolean
 
   prevNodeId: NodeId | null
@@ -228,7 +225,7 @@ export class StepNode<
       this.setPassThroughDataTypeFromPrev(store)
     }
 
-    const _handler = this.handler as IStepHandler<T, R>
+    const _handler = this.handler as IStepHandler<T, NormalStepRunner<T>>
     const output = await _handler.run({
       config: this.config as T['RC'],
       inputData: await this.getOutputDataFromPrev(store),
@@ -273,11 +270,10 @@ export type ForkNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T>
 export type AnyForkNode = ForkNode<AnyStepContext>
 export type ForkNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & ForkNodeProperties
 
-export class ForkNode<
-  T extends AnyStepContext,
-  R extends ForkStepRunner<T> = ForkStepRunner<T>
-> extends BaseNode<T, R> {
+export class ForkNode<T extends AnyStepContext> extends BaseNode<T> {
   type = NodeType.FORK
+  handler: IStepHandler<T, ForkStepRunner<T>> | undefined = undefined
+
   branchIds = ref<NodeId[]>([])
   prevNodeId: NodeId | null
   forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
@@ -328,7 +324,7 @@ export class ForkNode<
   > {
     logNodeEvent(this.id, 'runBranch', { branchIndex })
     const inputData = await this.getOutputDataFromPrev(store)
-    const _handler = this.handler as IStepHandler<T, R>
+    const _handler = this.handler as IStepHandler<T, ForkStepRunner<T>>
     const output = await _handler.run({
       config: this.config as T['RC'],
       inputData,
@@ -373,18 +369,16 @@ export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<
 export type AnyBranchNode = BranchNode<AnyStepContext>
 export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & BranchNodeProperties
 
-export class BranchNode<
-  T extends AnyStepContext,
-  R extends NormalStepRunner<T> = NormalStepRunner<T>
-> extends BaseNode<T, R> {
+export class BranchNode<T extends AnyStepContext> extends BaseNode<T> {
   type = NodeType.BRANCH
+  handler: IStepHandler<T, NormalStepRunner<T>>
+
   outputData: T['Output'] | null = null
   outputPreview: ImageData | null = null
 
   prevNodeId: NodeId
   branchIndex: number
   initialized = true
-  handler: IStepHandler<T>
 
   constructor(options: BranchNodeOptions<T>) {
     super(options)
@@ -411,7 +405,7 @@ export class BranchNode<
       serializeConfig() {
         // noop
       },
-    } as unknown as IStepHandler<T>
+    } as unknown as IStepHandler<T, NormalStepRunner<T>>
   }
 
   isReady(store: MinStore) {
@@ -473,10 +467,34 @@ export class BranchNode<
 
 export type AnyNode<T extends AnyStepContext = AnyStepContext> = StepNode<T> | ForkNode<T> | BranchNode<T>
 export type GraphNode<T extends AnyStepContext> =
-  | StepNode<T, NormalStepRunner<T>>
-  | ForkNode<T, ForkStepRunner<T>>
-  | BranchNode<T, NormalStepRunner<T>>
+  | StepNode<T>
+  | ForkNode<T>
+  | BranchNode<T>
 
+export type InitializedStepNode<T extends AnyStepContext> =
+  StepNode<T> & {
+  config: NonNullable<StepNode<T>['config']>,
+  handler: IStepHandler<T, NormalStepRunner<T>>,
+}
+
+export type InitializedForkNode<T extends AnyStepContext> =
+  ForkNode<T> & {
+  config: NonNullable<ForkNode<T>['config']>,
+  handler: IStepHandler<T, ForkStepRunner<T>>,
+}
+
+export type InitializedBranchNode<T extends AnyStepContext> =
+  BranchNode<T> & {
+  config: NonNullable<BranchNode<T>['config']>,
+  handler: IStepHandler<T, NormalStepRunner<T>>,
+}
+
+export type InitializedNode<T extends AnyStepContext> =
+  | InitializedStepNode<T>
+  | InitializedForkNode<T>
+  | InitializedBranchNode<T>
+
+export type AnyInitializedNode = InitializedNode<AnyStepContext>
 export type AnyNodeSerialized = AnyStepNodeSerialized | AnyForkNodeSerialized | AnyBranchNodeSerialized
 
 export function deSerializeNode(data: AnyNodeSerialized): AnyNode {
@@ -514,56 +532,6 @@ function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): S
     validationErrors: result?.validationErrors?.map(parseValidationError) ?? [],
   }
 }
-
-type Initialized<
-  N extends BaseNode<any>,
-  T extends AnyStepContext,
-  R extends NodeRunner<T>
-> =
-  Omit<N, 'config' | 'handler'> & {
-  config: NonNullable<N['config']>,
-  handler: IStepHandler<T, R>,
-}
-
-export type InitializedStepNode<T extends AnyStepContext, R extends NodeRunner<T>> =
-  Initialized<StepNode<T>, T, R> & {
-  type: NodeType.STEP,
-  outputData: T['Output'] | null
-}
-
-export type InitializedForkNode<T extends AnyStepContext, R extends NodeRunner<T>> =
-  Initialized<ForkNode<T>, T, R> & {
-  type: NodeType.FORK,
-  outputData: T['Output'][]
-}
-
-export type InitializedBranchNode<T extends AnyStepContext, R extends NodeRunner<T>> =
-  Initialized<BranchNode<T>, T, R> & {
-  type: NodeType.BRANCH,
-  outputData: T['Output'] | null
-}
-
-export type AnyInitializedNode = InitializedNode<AnyStepContext, NodeRunner<AnyStepContext>>
-
-export type InitializedNormalNode<
-  T extends AnyStepContext,
-  R extends NodeRunner<T>
-> =
-  | InitializedStepNode<T, R>
-  | InitializedBranchNode<T, R>
-
-export type InitializedForkOnlyNode<
-  T extends AnyStepContext,
-  R extends NodeRunner<T>
-> = InitializedForkNode<T, R>
-
-export type InitializedNode<
-  T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>
-> =
-  | InitializedStepNode<T, R>
-  | InitializedForkNode<T, R>
-  | InitializedBranchNode<T, R>
 
 export function assertInitialized<T extends AnyStepContext, R extends NodeRunner<T>>(
   node: GraphNode<T>,

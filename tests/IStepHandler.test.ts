@@ -62,9 +62,8 @@ describe('IStepHandler<T> basic structure', () => {
       }
     },
 
-    watcher(step, defaults) {
-      expectTypeOf(step.config).toEqualTypeOf<RC>()
-      return defaults
+    watcherTargets() {
+      return []
     },
 
     validateInput(inputData, allowed) {

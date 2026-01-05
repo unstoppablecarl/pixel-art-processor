@@ -17,7 +17,7 @@ import {
 import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
 
 export type StepHandlerOptional =
-  | 'watcher'
+  | 'watcherTargets'
   | 'serializeConfig'
   | 'deserializeConfig'
   | 'config'
@@ -59,7 +59,7 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcher?: (step: InitializedNode<StepContext<C, SC, RC, I, O>, R>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcher?: (step: InitializedNode<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
   validateInput?: (
     inputData: StepInputTypesToInstances<I>,
@@ -79,8 +79,7 @@ export type StepHandlerOptionsInfer<
 
 export interface IStepHandler<
   T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>
-> {
+  R extends NodeRunner<T> = NodeRunner<T>> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
 
@@ -91,7 +90,7 @@ export interface IStepHandler<
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcher(step: InitializedNode<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[],
+  watcherTargets(): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -140,10 +139,8 @@ export function makeStepHandler<
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-    watcher(_step: InitializedNode<T, R>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
-      return [
-        ...defaultWatcherTargets,
-      ]
+    watcherTargets(): WatcherTarget[] {
+      return []
     },
     deserializeConfig(serializedConfig: SerializedConfig): C {
       return {

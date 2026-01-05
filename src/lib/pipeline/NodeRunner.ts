@@ -22,23 +22,20 @@ export type NodeRunner<T extends AnyStepContext> =
   | NormalStepRunner<T>
   | ForkStepRunner<T>
 
-export type NormalStepRunner<T extends AnyStepContext> = {
-  __normal?: never
-} &
-  ((options: {
+export interface NormalStepRunner<T extends AnyStepContext> {
+  (options: {
     config: T['RC'],
     inputData: T['Input'] | null,
-  }) => Promise<
-    SingleRunnerOutput<T>
-  >)
+  }): Promise<SingleRunnerOutput<T>>
+  __normal?: never,
+}
 
-export type ForkStepRunner<T extends AnyStepContext> = {
+export interface ForkStepRunner<T extends AnyStepContext> {
+  (options: {
+    config: T['RC'],
+    inputData: T['Input'] | null,
+    branchIndex: number,
+  }): Promise<SingleRunnerOutput<T>>
   __fork?: never
-} & ((options: {
-  config: T['RC'],
-  inputData: T['Input'] | null,
-  branchIndex: number,
-}) => Promise<
-  SingleRunnerOutput<T>
->)
+}
 

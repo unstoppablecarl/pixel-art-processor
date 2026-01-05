@@ -59,7 +59,7 @@ describe('StepHandlerOptional', () => {
     // This is a structural sanity check: if you change optional keys,
     // this will break and force you to update tests intentionally.
     type Expected =
-      | 'watcher'
+      | 'watcherTargets'
       | 'serializeConfig'
       | 'deserializeConfig'
       | 'reactiveConfig'
@@ -107,9 +107,8 @@ describe('StepHandlerOptions<T>', () => {
         }
       },
 
-      watcher(step, defaults) {
-        expectTypeOf(step.config).toEqualTypeOf<RC>()
-        return defaults
+      watcherTargets() {
+        return []
       },
 
       validateInput(input, allowed): StepValidationError[] {
@@ -236,8 +235,8 @@ describe('makeStepHandler<T>', () => {
     expectTypeOf(handler.run).toEqualTypeOf<NormalStepRunner<T>>()
 
     // ensure defaulted methods have the right types even if not provided in options
-    expectTypeOf(handler.watcher).toEqualTypeOf<
-      IStepHandler<T, NormalStepRunner<T>>['watcher']
+    expectTypeOf(handler.watcherTargets).toEqualTypeOf<
+      IStepHandler<T, NormalStepRunner<T>>['watcherTargets']
     >()
     expectTypeOf(handler.serializeConfig).toEqualTypeOf<
       IStepHandler<T>['serializeConfig']

@@ -23,7 +23,7 @@ function useCoreStepHandler<
     store.markDirty(node.id)
   }, { deep: true })
 
-  return node as InitializedNode<T, R>
+  return node as InitializedNode<T>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
@@ -43,7 +43,7 @@ export function useStepHandler<
   type T = StepContext<C, SC, RC, I, O>
   type R = NormalStepRunner<T>
 
-  return useCoreStepHandler<T, R>(nodeId, options) as InitializedStepNode<T, R>
+  return useCoreStepHandler<T, R>(nodeId, options) as InitializedStepNode<T>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
@@ -61,7 +61,6 @@ export function useForkHandler<
   >,
 ) {
   type T = StepContext<C, SC, RC, I, O>
-  type R = ForkStepRunner<T>
 
-  return useCoreStepHandler<T, ForkStepRunner<T>>(nodeId, options) as InitializedForkNode<T, R>
+  return useCoreStepHandler<T, ForkStepRunner<T>>(nodeId, options) as InitializedForkNode<T>
 }

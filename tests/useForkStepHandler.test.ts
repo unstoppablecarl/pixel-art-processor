@@ -141,11 +141,12 @@ describe('fork handler type testing', async () => {
         }
       },
       watcher(step, defaultWatcherTargets) {
-        type R = typeof step extends InitializedNode<any, infer R> ? R : never
-        type T = typeof step extends InitializedNode<infer U, infer R> ? U : never
-        expectTypeOf(step).toExtend<InitializedNode<T, R>>()
-        expectTypeOf<R>().toEqualTypeOf<ForkStepRunner<T>>()
-        expectTypeOf(step.config).toEqualTypeOf<InitializedNode<T, R>['config']>()
+        type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
+        type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
+        expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
+        expectTypeOf<RFromNode>().toExtend<ForkStepRunner<TFromNode>>()
+
+        expectTypeOf(step.config).toEqualTypeOf<InitializedNode<T>['config']>()
 
         expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
 
@@ -156,12 +157,21 @@ describe('fork handler type testing', async () => {
 
     })
 
-    type RF = typeof step extends InitializedNode<any, infer R> ? R : never
-    type TF = typeof step extends InitializedNode<infer U, infer R> ? U : never
-    expectTypeOf(step).toExtend<InitializedNode<TF, RF>>()
-    expectTypeOf<RF>().toEqualTypeOf<ForkStepRunner<TF>>()
-    type NodeRunner = typeof step extends InitializedNode<infer T, infer R> ? R : never
-    expectTypeOf<NodeRunner>().toEqualTypeOf<ForkStepRunner<TF>>()
+    type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
+    type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
+    expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
+    expectTypeOf<RFromNode>().toExtend<ForkStepRunner<TFromNode>>()
+    expectTypeOf<RFromNode>()
+      .parameter(0)
+      .toEqualTypeOf<{
+        config: TFromNode['RC'],
+        inputData: TFromNode['Input'] | null,
+        branchIndex: number,
+      }>()
+
+    expectTypeOf<RFromNode>()
+      .returns
+      .toEqualTypeOf<Promise<SingleRunnerOutput<TFromNode>>>()
 
     type T = typeof step extends InitializedNode<infer U> ? U : never
 
@@ -174,7 +184,7 @@ describe('fork handler type testing', async () => {
       expectTypeOf(step).not.toEqualTypeOf<InitializedNode<AnyStepContext>>()
       expectTypeOf(step).toExtend<InitializedNode<StepContext<C, SC, RC, I, O>>>()
 
-      expectTypeOf(step).toEqualTypeOf<InitializedForkNode<T, ForkStepRunner<T>>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedForkNode<T>>()
       expectTypeOf(step.forkOutputData).toExtend<Ref<SingleRunnerOutput<T>[]>>()
     })
 
@@ -221,11 +231,12 @@ describe('fork handler type testing', async () => {
         (defaults: C) => RC
       >()
 
-      expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        IStepHandler<T, ForkStepRunner<T>>['watcher']
+      expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
+        IStepHandler<T, ForkStepRunner<T>>['watcherTargets']
       >()
-      expectTypeOf(step.handler.watcher).toEqualTypeOf<
-        (step: InitializedNode<T, ForkStepRunner<T>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+
+      expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
+        () => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
