@@ -3,9 +3,15 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type Ref, shallowReactive, type ShallowReactive } from 'vue'
 import { StepValidationError } from '../src/lib/errors/StepValidationError.ts'
-import { type NodeDef, NodeType, type StepDataType, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
+import {
+  type NodeDef,
+  NodeType,
+  type IRunnerMeta,
+  type StepDataType,
+  type WatcherTarget,
+} from '../src/lib/pipeline/_types.ts'
 import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
-import type { ForkStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { ForkStepRunner, RunnerMeta, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
@@ -167,6 +173,7 @@ describe('fork handler type testing', async () => {
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
         branchIndex: number,
+        meta: RunnerMeta,
       }>()
 
     expectTypeOf<RFromNode>()
@@ -201,7 +208,8 @@ describe('fork handler type testing', async () => {
         (options: {
           config: T['RC'],
           inputData: T['Input'] | null,
-          branchIndex: number
+          branchIndex: number,
+          meta: IRunnerMeta,
         }) => Promise<
           SingleRunnerOutput<T>
         >
@@ -311,12 +319,14 @@ describe('StepHandlerOptionsInfer inference', () => {
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
       branchIndex: number,
+      meta: RunnerMeta,
     }]>()
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
       branchIndex: number,
+      meta: RunnerMeta,
     }]>()
 
   })

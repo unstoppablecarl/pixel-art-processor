@@ -1,5 +1,8 @@
 import { StepValidationError } from '../errors/StepValidationError.ts'
+import type { IRunnerMeta } from './_types.ts'
 import type { AnyStepContext } from './Step.ts'
+
+export type RunnerMeta = IRunnerMeta | null
 
 export type SingleRunnerOutput<T extends AnyStepContext> =
   | null
@@ -7,14 +10,21 @@ export type SingleRunnerOutput<T extends AnyStepContext> =
   | {
   preview?: SingleRunnerResult<T>['preview'],
   output?: SingleRunnerResult<T>['output'],
-  validationErrors?: SingleRunnerOutputValidationError[]
+  validationErrors?: SingleRunnerOutputValidationError[],
+  meta?: RunnerMeta
 }
 
 export type SingleRunnerOutputValidationError = StepValidationError | string
 
+export type RunnerPrevOutput<T extends AnyStepContext> = {
+  prevOutput: T['Output'] | null,
+  meta: RunnerMeta,
+}
+
 export type SingleRunnerResult<T extends AnyStepContext> = {
   preview: ImageData | null,
-  output: T['Output'] | null
+  output: T['Output'] | null,
+  meta: RunnerMeta,
   validationErrors: StepValidationError[]
 }
 
@@ -26,6 +36,7 @@ export interface NormalStepRunner<T extends AnyStepContext> {
   (options: {
     config: T['RC'],
     inputData: T['Input'] | null,
+    meta: RunnerMeta,
   }): Promise<SingleRunnerOutput<T>>
   __normal?: never,
 }
@@ -34,6 +45,7 @@ export interface ForkStepRunner<T extends AnyStepContext> {
   (options: {
     config: T['RC'],
     inputData: T['Input'] | null,
+    meta: RunnerMeta,
     branchIndex: number,
   }): Promise<SingleRunnerOutput<T>>
   __fork?: never

@@ -5,7 +5,7 @@ import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import { StepValidationError } from '../src/lib/errors/StepValidationError.ts'
 import { type NodeDef, NodeType, type StepDataType, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
-import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { NormalStepRunner, RunnerMeta, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
@@ -140,7 +140,7 @@ describe('step handler type testing', async () => {
       },
       watcher() {
         return []
-      }
+      },
     })
 
     await Promise.resolve()
@@ -154,6 +154,7 @@ describe('step handler type testing', async () => {
       .toEqualTypeOf<{
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
+        meta: RunnerMeta,
       }>()
 
     expectTypeOf<RFromNode>()
@@ -189,12 +190,13 @@ describe('step handler type testing', async () => {
         __normal?: never,
         ({ config, inputData }: {
           config: RC,
-          inputData: InputInstances | null
+          inputData: InputInstances | null,
+          meta: RunnerMeta,
         }): Promise<SingleRunnerOutput<T>>
       }>()
 
       expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
-        { config: RC, inputData: InputInstances | null }
+        { config: RC, inputData: InputInstances | null, meta: RunnerMeta }
       ]>()
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
         Promise<SingleRunnerOutput<T>>
@@ -292,12 +294,14 @@ describe('StepHandlerOptionsInfer inference', () => {
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: RC
-      inputData: StepInputTypesToInstances<[A, B]> | null
+      inputData: StepInputTypesToInstances<[A, B]> | null,
+      meta: RunnerMeta,
     }]>()
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
-      inputData: StepInputTypesToInstances<T['InputConstructors']> | null
+      inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
+      meta: RunnerMeta,
     }]>()
 
   })
