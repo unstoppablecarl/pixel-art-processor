@@ -285,7 +285,6 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T> {
     this.outputPreview = result.preview
     this.validationErrors = result.validationErrors
     logNodeEvent(this.id, 'runner: end', result)
-
   }
 
   getWatcherTargets(): WatcherTarget[] {
@@ -298,7 +297,7 @@ type ForkNodeProperties = {
   branchIds?: NodeId[],
 }
 export type AnyForkNodeSerialized = ForkNodeSerialized<AnyStepContext>
-export type ForkNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & ForkNodeProperties
+export type ForkNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & Required<ForkNodeProperties>
 export type AnyForkNode = ForkNode<AnyStepContext>
 export type ForkNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & ForkNodeProperties
 
