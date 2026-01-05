@@ -455,9 +455,8 @@ export class BranchNode<
 
     const fork = this.parentFork(store)
     const result = await fork.getBranchOutput(store, this.branchIndex)
-    const final = result?.output?.copy() ?? null
-    logNodeEvent(this.id, 'getOutputDataFromPrev: end', final)
-    return final
+    logNodeEvent(this.id, 'getOutputDataFromPrev: end', result)
+    return result
   }
 
   initialize(handlerOptions: StepHandlerOptions<T>): void {
@@ -507,9 +506,11 @@ const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => u
 const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
 
 function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): SingleRunnerResult<T> {
+  const output = result?.output ?? null
+  const preview = result?.preview ?? null
   return {
-    output: result?.output ?? null,
-    preview: result?.preview ?? null,
+    output: Object.freeze(output),
+    preview: Object.freeze(preview),
     validationErrors: result?.validationErrors?.map(parseValidationError) ?? [],
   }
 }

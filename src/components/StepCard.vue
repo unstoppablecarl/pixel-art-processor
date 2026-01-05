@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButton, BButtonGroup, BCollapse } from 'bootstrap-vue-next'
+import { BButton, BButtonGroup, BCollapse, BPopover } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import { getValidationErrorComponent } from '../lib/errors.ts'
 
@@ -113,14 +113,29 @@ const isMuted = computed(() => isStep(node) && node.muted)
     }">
 
       <div class="card-header hstack gap-1">
-        <span
-          v-if="draggable"
-          role="button"
-          class="btn btn-sm btn-secondary btn-grab"
-          draggable="false"
-          @pointerdown.stop
-        >:::
-        </span>
+        <!--        <span-->
+        <!--          v-if="draggable"-->
+        <!--          role="button"-->
+        <!--          class="btn btn-sm btn-secondary btn-grab"-->
+        <!--          draggable="false"-->
+        <!--          @pointerdown.stop-->
+        <!--        >:::-->
+        <!--        </span>-->
+        <BPopover>
+          <template #target>
+            <span class="btn btn-sm btn-outline-info" style="opacity: 0.66">?</span>
+          </template>
+
+          <div>
+            <strong>Input:</strong>
+            {{ node.handler?.inputDataTypes?.map((t: any) => t.displayName).join(', ') }}
+          </div>
+          <div>
+            <strong>Output:</strong>
+            {{ node.handler?.outputDataType?.displayName }}
+          </div>
+        </BPopover>
+
 
         <SeedPopOver class="ms-auto" v-if="showSeed" v-model="node.seed" />
         <BButtonGroup size="sm" class="node-header-buttons">
@@ -162,6 +177,7 @@ const isMuted = computed(() => isStep(node) && node.muted)
           :aria-expanded="node.visible ? 'true' : 'false'"
           @click="node.visible = !node.visible"
         />
+
       </div>
       <BCollapse
         v-model="node.visible"

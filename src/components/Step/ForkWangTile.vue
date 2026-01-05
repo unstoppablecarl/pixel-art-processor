@@ -1,14 +1,7 @@
 <script lang="ts">
-console.log('[STEP] Loading: fork_wang_tiles - START')
-
-import { NodeType } from '../../lib/pipeline/_types.ts'
-console.log('[STEP] fork_wang_tiles: Imported NodeType')
-
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
-console.log('[STEP] fork_wang_tiles: Imported BitMask')
-
 import type { AnyStepMeta } from '../../lib/pipeline/_types.ts'
-console.log('[STEP] fork_wang_tiles: Imported AnyStepMeta')
+import { NodeType } from '../../lib/pipeline/_types.ts'
+import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.FORK,
@@ -17,8 +10,6 @@ export const STEP_META: AnyStepMeta = {
   inputDataTypes: [],
   outputDataType: BitMask,
 }
-
-console.log('[STEP] fork_wang_tiles: STEP_META created and exported')
 </script>
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
