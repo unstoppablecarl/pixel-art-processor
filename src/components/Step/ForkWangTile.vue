@@ -20,6 +20,7 @@ import { prng } from '../../lib/util/prng.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
 import StepCard from '../StepCard.vue'
 import StepImage from '../StepImage.vue'
+import SeedPopOver from '../UI/SeedPopOver.vue'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
@@ -54,7 +55,9 @@ const node = useForkHandler(nodeId, {
   config() {
     return reactive({ ...CONFIG_DEFAULTS })
   },
-  async run({ config, branchIndex }) {
+  async run({ config, branchIndex, branchGenerationSeed }) {
+
+    prng.setSeed(branchGenerationSeed)
 
     const size = config.size.value
     const options = {
@@ -84,7 +87,7 @@ const node = useForkHandler(nodeId, {
 
     chunks.forEach((v, i) => {
       if (!v === config.invert) {
-        console.log(branchIndex % 4)
+        // console.log(branchIndex % 4)
 
         edges[branchIndex % 4](i)
       }
@@ -99,6 +102,14 @@ const node = useForkHandler(nodeId, {
 
 const store = usePipelineStore()
 const outputDataRef = store.getFork(node.id).forkOutputData
+
+function setBranchSeed(index: number, seed: number) {
+  node.setBranchGenerationSeed(store, index, seed)
+}
+
+function getBranchSeed(index: number) {
+  return node.getBranchGenerationSeed(store, index)
+}
 
 const config = node.config
 const images = computed((): StepImg[] => {
@@ -120,13 +131,20 @@ const images = computed((): StepImg[] => {
     :draggable="false"
     :mutable="false"
   >
-
     <template #body v-if="!images.length">
       <StepImage :image-data="null" />
     </template>
 
-    <template #footer>
+    <template #label="{label, index}">
+      {{ label }}
+      <SeedPopOver
+        label="Generator"
+        :model-value="getBranchSeed(index)"
+        @update:model-value="setBranchSeed(index, $event)"
+      />
+    </template>
 
+    <template #footer>
       <div class="section">
 
         <RangeSlider
