@@ -25,8 +25,9 @@ export const STEP_META: AnyStepMeta = {
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
-import { deepUnwrap, shallowArrayItemRef } from '../../lib/util/vue-util.ts'
+import { deepUnwrap, shallowArrayItemsRef } from '../../lib/util/vue-util.ts'
 import {
   makeBitMaskFromWangTile,
   makeWangTileEdgeConfigDefaults,
@@ -57,6 +58,18 @@ const node = useForkHandler(nodeId, {
       wangTiles: [] as WangTileEdgeConfig[],
     }
   },
+  watcherTargets(n) {
+    return [
+      {
+        name: 'size',
+        target: () => n.config.size,
+      },
+      {
+        name: 'seed',
+        target: () => n.seed,
+      },
+    ]
+  },
   async run({ config, branchIndex }) {
     if (branchIndex > tileset.value.tiles.length - 1) {
       return {
@@ -66,8 +79,7 @@ const node = useForkHandler(nodeId, {
       }
     }
 
-    const indexedWangTile = tileset.value.tiles[branchIndex]
-    const wangTile = populateIndexedWangTile(indexedWangTile, edges.value)
+    const wangTile = wangTileForBranch(branchIndex)
     const mask = makeBitMaskFromWangTile(config.size.value, wangTile)
 
     return {
@@ -79,28 +91,49 @@ const node = useForkHandler(nodeId, {
     }
   },
 })
+const config = node.config
 
-const edges = shallowArrayItemRef<BinaryArray>([])
+function wangTileForBranch(branchIndex: number) {
+  const indexedWangTile = tileset.value.tiles[branchIndex]
+  return populateIndexedWangTile(indexedWangTile, edges.value)
+}
+
+const edges = shallowArrayItemsRef<BinaryArray>([])
 
 const tileset = computed(() => {
   const edgeIndexes = Array.from(edges.value.keys())
   return WangTileset.createFromColors<number>(edgeIndexes)
 })
 
-const config = node.config
-
 function add() {
   node.config.wangTiles.push(makeWangTileEdgeConfigDefaults())
 }
 
-function duplicate(index: number) {
-  const copy = structuredClone(deepUnwrap(node.config.wangTiles[index]))
-  node.config.wangTiles.splice(index + 1, 0, copy)
+function duplicate(edgeIndex: number) {
+  const copy = structuredClone(deepUnwrap(node.config.wangTiles[edgeIndex]))
+  node.config.wangTiles.splice(edgeIndex + 1, 0, copy)
 }
 
-function remove(index: number) {
-  node.config.wangTiles.splice(index, 1)
-  edges.value.splice(index, 1)
+function remove(edgeIndex: number) {
+  node.config.wangTiles.splice(edgeIndex, 1)
+  edges.value.splice(edgeIndex, 1)
+}
+
+const store = usePipelineStore()
+
+function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
+  if (!value) return
+  edges.value[edgeIndex] = value
+
+  const tiles = tileset.value.tilesWithEdge(edgeIndex)
+  const affectedBranchIndexes = tiles.map(t => tileset.value.tiles.indexOf(t))
+
+  affectedBranchIndexes.forEach(bIndex => {
+    if (node.branchIds.value[bIndex]) {
+      node.clearBranchOutput(bIndex)
+      store.markDirty(node.branchIds.value[bIndex])
+    }
+  })
 }
 </script>
 <template>
@@ -144,7 +177,8 @@ function remove(index: number) {
           :size="config.size.value"
           :index="index"
           v-model:config="config.wangTiles[index]"
-          v-model:edges="edges"
+          :edge="edges[index]"
+          @update:edge="updateEdge(index, $event)"
           @remove="remove(index)"
           @duplicate="duplicate(index)"
         />

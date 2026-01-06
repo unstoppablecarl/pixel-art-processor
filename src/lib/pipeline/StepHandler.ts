@@ -59,7 +59,7 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcher?: (step: InitializedNode<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcherTargets?: (node: InitializedNode<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
 
   validateInput?: (
     inputData: StepInputTypesToInstances<I>,
@@ -79,7 +79,9 @@ export type StepHandlerOptionsInfer<
 
 export interface IStepHandler<
   T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>> {
+  R extends NodeRunner<T> = NodeRunner<T>,
+  N extends InitializedNode<T> = InitializedNode<T>
+> {
   inputDataTypes: T['InputConstructors'],
   outputDataType: T['OutputConstructors'],
 
@@ -90,7 +92,7 @@ export interface IStepHandler<
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcherTargets(defaultTargets: WatcherTarget[]): WatcherTarget[],
+  watcherTargets(node: N, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -111,7 +113,8 @@ export interface IStepHandler<
 
 export function makeStepHandler<
   T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>
+  R extends NodeRunner<T> = NodeRunner<T>,
+  N extends InitializedNode<T> = InitializedNode<T>
 >(
   def: string,
   options: StepHandlerOptions<T, R>,
@@ -139,7 +142,7 @@ export function makeStepHandler<
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-    watcherTargets(defaults: WatcherTarget[]): WatcherTarget[] {
+    watcherTargets(_node: N, defaults: WatcherTarget[]): WatcherTarget[] {
       return defaults
     },
     deserializeConfig(serializedConfig: SerializedConfig): C {

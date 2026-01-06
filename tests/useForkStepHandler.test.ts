@@ -146,7 +146,7 @@ describe('fork handler type testing', async () => {
           output: new NormalMap(1, 1),
         }
       },
-      watcher(step, defaultWatcherTargets) {
+      watcherTargets(step, defaultWatcherTargets) {
         type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
         type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
         expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
@@ -242,11 +242,11 @@ describe('fork handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        IStepHandler<T, ForkStepRunner<T>>['watcherTargets']
+        IStepHandler<T, ForkStepRunner<T>, InitializedForkNode<T>>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        (defaults: WatcherTarget[]) => WatcherTarget[]
+        (node: InitializedForkNode<T>, defaults: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<

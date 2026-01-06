@@ -45,7 +45,8 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
 
 export abstract class BaseNode<
   T extends AnyStepContext,
-  R extends NodeRunner<T>
+  R extends NodeRunner<T>,
+  N extends InitializedNode<T>
 > {
   readonly abstract type: NodeType
   // serialized
@@ -60,7 +61,7 @@ export abstract class BaseNode<
   seedSum = 0
   validationErrors: StepValidationError[] = []
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']> = null
-  handler: IStepHandler<T, R> | undefined
+  handler: IStepHandler<T, R, N> | undefined
 
   // system
   isDirty = false
@@ -148,7 +149,7 @@ export abstract class BaseNode<
   initialize(handlerOptions: StepHandlerOptions<T>): void {
     const handler = makeStepHandler<T>(this.def, handlerOptions)
 
-    this.handler = handler as IStepHandler<T, R>
+    this.handler = handler as IStepHandler<T, R, N>
 
     if (this.config === undefined) {
       this.config = handler.reactiveConfig(handler.config())
@@ -181,7 +182,7 @@ export abstract class BaseNode<
       },
     ]
 
-    return this.handler!.watcherTargets(defaults)
+    return this.handler!.watcherTargets(this as unknown as N, defaults)
   }
 }
 
@@ -209,7 +210,10 @@ function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
   return StepOrForkNode
 }
 
-abstract class StepOrBranchNode<T extends AnyStepContext> extends BaseNode<T, NormalStepRunner<T>> {
+abstract class StepOrBranchNode<
+  T extends AnyStepContext,
+  N extends InitializedStepNode<T> | InitializedBranchNode<T>
+> extends BaseNode<T, NormalStepRunner<T>, N> {
   outputData: T['Output'] | null = null
   outputPreview: ImageData | null = null
   outputMeta: IRunnerMeta | null = null
@@ -237,7 +241,10 @@ export type StepNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & Par
 
 const StepBase = WithStepOrFork(StepOrBranchNode)
 
-export class StepNode<T extends AnyStepContext> extends StepBase<T> {
+export class StepNode<
+  T extends AnyStepContext,
+  N extends InitializedStepNode<T> = InitializedStepNode<T>
+> extends StepBase<T, N> {
   type = NodeType.STEP
 
   muted: boolean
@@ -295,7 +302,7 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T> {
       name: 'muted',
       target: () => this.muted,
     }]
-    return this.handler!.watcherTargets(defaults)
+    return this.handler!.watcherTargets(this as unknown as N, defaults)
   }
 }
 
@@ -310,13 +317,11 @@ export type ForkNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & For
 
 const ForkBase = WithStepOrFork(BaseNode)
 
-export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunner<T>> {
+export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunner<T>, InitializedForkNode<T>> {
   type = NodeType.FORK
 
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
   forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
-
-  private branchGenerationSeed: Record<number, number> = {}
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
@@ -344,14 +349,20 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
   }
 
   async getBranchOutput(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<SingleRunnerResult<T>> {
-    const cached = this.forkOutputData.value[branchIndex] !== undefined
-      && this.branchGenerationSeed[branchIndex] === branchGenerationSeed
-
-    if (!cached) {
-      this.branchGenerationSeed[branchIndex] = branchGenerationSeed
-      this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex, branchGenerationSeed)
+    if (this.forkOutputData.value[branchIndex] === undefined) {
+      this.setBranchOutput(branchIndex, await this.runBranch(store, branchIndex, branchGenerationSeed))
     }
     return this.forkOutputData.value[branchIndex]
+  }
+
+  clearBranchOutput(branchIndex: number): void {
+    this.setBranchOutput(branchIndex, parseResult(null))
+  }
+
+  private setBranchOutput(branchIndex: number, result: SingleRunnerResult<T>): void {
+    this.forkOutputData.value[branchIndex] = result
+    // trigger reactivity
+    this.forkOutputData.value = [...this.forkOutputData.value]
   }
 
   private async runBranch(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<
@@ -423,7 +434,7 @@ export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<
 export type AnyBranchNode = BranchNode<AnyStepContext>
 export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & BranchNodeProperties
 
-export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
+export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, InitializedBranchNode<T>> {
   type = NodeType.BRANCH
   handler: IStepHandler<T, NormalStepRunner<T>>
 

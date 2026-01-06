@@ -53,7 +53,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 // only triggers on myArray.value[3] = { foo: 'bar' }
 // not myArray.value[3].foo = 'something'
-export function shallowArrayItemRef<T>(value: T[]): Ref<T[]> {
+export function shallowArrayItemsRef<T>(value: T[]): Ref<T[]> {
   return customRef<T[]>((track, trigger) => ({
     get() {
       track()

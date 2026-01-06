@@ -15,10 +15,10 @@ import StepImage from '../StepImage.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 import ForkWangTileEdgeConfig from './ForkWangTileEdgeConfig.vue'
 
-const emit = defineEmits(['remove', 'duplicate'])
+const emit = defineEmits(['remove', 'duplicate', 'generateEdge'])
 
 const config = defineModel<WangTileEdgeConfig>('config', { required: true })
-const edges = defineModel<BinaryArray[]>('edges', { required: true })
+const edge = defineModel<BinaryArray | undefined>('edge', { required: true })
 
 const {
   size,
@@ -30,27 +30,22 @@ const {
   size: number,
 }>()
 
-watch(() => config, () => {
-  edges.value[index] = generateWangTileEdgePattern(size, config.value)
-}, { deep: true, immediate: true })
-
-const preview = computed(() => {
-  const binaryArray = edges.value[index]
-  if (!binaryArray) return null
-
-  return wangTileEdgePreview(binaryArray).toImageData()
-})
-
 const store = usePipelineStore()
 
 const validationErrors = shallowRef<StepValidationError[]>([])
 
 watch(() => config, () => {
+  edge.value = generateWangTileEdgePattern(size, config.value)
+
   const forkOutputData = store.getFork(nodeId).forkOutputData
   validationErrors.value = forkOutputData.value[index]?.validationErrors ?? []
-
 }, { deep: true, immediate: true })
 
+const preview = computed(() => {
+  if (!edge.value) return null
+
+  return wangTileEdgePreview(edge.value).toImageData()
+})
 </script>
 <template>
   <div class="card-header">
@@ -106,15 +101,11 @@ watch(() => config, () => {
           :size="size"
         />
       </div>
-
-
     </div>
   </BCollapse>
-  <div class="card-footer">
-    <div class="section">
-      <template v-for="error in validationErrors">
-        <component :is="getValidationErrorComponent(error)" :error="error" />
-      </template>
+  <div class="card-footer" v-if="validationErrors.length">
+    <div class="section" v-for="error in validationErrors">
+      <component :is="getValidationErrorComponent(error)" :error="error" />
     </div>
   </div>
 </template>

@@ -56,4 +56,15 @@ export class WangTileset<T> {
     this.tiles = tiles
     this.byId = new Map(tiles.map(t => [t.id, t] as const))
   }
+
+  tilesWithEdge(value: T) {
+    return this.tiles.filter(t => {
+      return (
+        t.edges.N === value ||
+        t.edges.E === value ||
+        t.edges.W === value ||
+        t.edges.S === value
+      )
+    })
+  }
 }

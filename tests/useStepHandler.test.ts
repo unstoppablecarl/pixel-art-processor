@@ -138,7 +138,8 @@ describe('step handler type testing', async () => {
           output: new NormalMap(1, 1),
         }
       },
-      watcher() {
+      watcherTargets(n, defaults) {
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<T>>()
         return []
       },
     })
@@ -217,11 +218,11 @@ describe('step handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        IStepHandler<T, NormalStepRunner<T>>['watcherTargets']
+        IStepHandler<T, NormalStepRunner<T>, InitializedStepNode<T>>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        (defaults: WatcherTarget[]) => WatcherTarget[]
+        (node: InitializedStepNode<T>, defaults: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
