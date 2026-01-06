@@ -39,8 +39,9 @@ export function logNodeEventWarning(nodeId: string, event: string, ...args: any[
   log(orange, nodeId, event, ...args)
 }
 
-export function logNodeWatch(nodeId: string, ...args: any[]) {
-  logNodeEventWarning(nodeId, 'WATCH', ...args)
+export function logNodeWatch(nodeId: string, name: string, ...args: any[]) {
+  if (!logActive) return
+  console.log(`%c[${nodeId}] %cWATCH %c${name}`, `${blue}`, `${orange}`, `${purple}`, ...args.map((m) => deepUnwrap(m)))
 }
 
 export function logNodeDebug(nodeId: string, ...args: any[]) {

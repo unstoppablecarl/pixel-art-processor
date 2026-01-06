@@ -170,11 +170,18 @@ export abstract class BaseNode<
   }
 
   getWatcherTargets(): WatcherTarget[] {
-    return [
-      () => this.config,
-      () => this.seed,
-      ...this.handler!.watcherTargets(),
+    const defaults = [
+      {
+        name: 'config',
+        target: () => this.config,
+      },
+      {
+        name: 'seed',
+        target: () => this.seed,
+      },
     ]
+
+    return this.handler!.watcherTargets(defaults)
   }
 }
 
@@ -284,7 +291,11 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T> {
   }
 
   getWatcherTargets(): WatcherTarget[] {
-    return [...super.getWatcherTargets(), () => this.muted]
+    const defaults = [...super.getWatcherTargets(), {
+      name: 'muted',
+      target: () => this.muted,
+    }]
+    return this.handler!.watcherTargets(defaults)
   }
 }
 
@@ -478,8 +489,14 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T> {
 
   getWatcherTargets(): WatcherTarget[] {
     return [
-      () => this.seed,
-      () => this.generationSeed,
+      {
+        name: 'seed',
+        target: () => this.seed,
+      },
+      {
+        name: 'generationSeed',
+        target: () => this.generationSeed,
+      },
     ]
   }
 }

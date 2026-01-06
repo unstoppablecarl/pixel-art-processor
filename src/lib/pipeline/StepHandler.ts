@@ -90,7 +90,7 @@ export interface IStepHandler<
   reactiveConfig(defaults: T['C']): T['RC'],
 
   // watch config and trigger updates
-  watcherTargets(): WatcherTarget[],
+  watcherTargets(defaultTargets: WatcherTarget[]): WatcherTarget[],
 
   // apply loaded config to internal reactive config
   loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
@@ -139,8 +139,8 @@ export function makeStepHandler<
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-    watcherTargets(): WatcherTarget[] {
-      return []
+    watcherTargets(defaults: WatcherTarget[]): WatcherTarget[] {
+      return defaults
     },
     deserializeConfig(serializedConfig: SerializedConfig): C {
       return {

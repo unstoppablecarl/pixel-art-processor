@@ -76,8 +76,11 @@ export function useBranchHandler(nodeId: NodeId) {
 }
 
 function setWatchers<T extends AnyStepContext>(node: GraphNode<T>, store: MinStore) {
-  watch(node.getWatcherTargets(), () => {
-    logNodeWatch(node.id)
-    store.markDirty(node.id)
-  }, { deep: true })
+  node.getWatcherTargets()
+    .forEach(({ name, target }) => {
+      watch(target, () => {
+        logNodeWatch(node.id, name)
+        store.markDirty(node.id)
+      }, { deep: true })
+    })
 }

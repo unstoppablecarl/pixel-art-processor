@@ -246,7 +246,7 @@ describe('fork handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        () => WatcherTarget[]
+        (defaults: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
