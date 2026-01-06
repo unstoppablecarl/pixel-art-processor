@@ -55,12 +55,10 @@ export function generateChunkedArray(
   }
 
   if (availableLength < minPossibleTotal || availableLength > maxPossibleTotal) {
-    const msg1 = `Cannot achieve length ${availableLength} with ${chunks} chunks`
-    const msg2 = `Possible range: ${minPossibleTotal} to ${maxPossibleTotal}`
-    console.error(msg1)
-    console.error(msg2)
-    throw new Error(msg1 + ' ' + msg2)
-    // return result as BinaryArray
+    console.error(`Cannot achieve length ${availableLength} with ${chunks} chunks`)
+    console.error(`Possible range: ${minPossibleTotal} to ${maxPossibleTotal}`)
+
+    return result as BinaryArray
   }
 
   // Generate random chunk sizes with alternating constraints

@@ -5,7 +5,7 @@ import { getValidationErrorComponent } from '../lib/errors.ts'
 
 import { INVALID_INPUT_TYPE_ERROR } from '../lib/errors/InvalidInputTypeError.ts'
 import { StepValidationError } from '../lib/errors/StepValidationError.ts'
-import { type AnyInitializedNode, isBranch, isStep } from '../lib/pipeline/Node.ts'
+import { type AnyForkNode, type AnyInitializedNode, isBranch, isStep } from '../lib/pipeline/Node.ts'
 import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'
@@ -60,7 +60,12 @@ const nodeImages = computed((): StepImg[] => {
     }]
   }
 
-  throw new Error('fork must provide images via props.images')
+  return (node as AnyForkNode).forkOutputData.value.map(({ preview }, index) => {
+    return {
+      imageData: preview,
+      label: `Branch: ${index + 1}`,
+    }
+  })
 })
 
 const cssStyle = computed(() => {
