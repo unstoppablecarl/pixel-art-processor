@@ -322,6 +322,7 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
 
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
   forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
+  private dirtyBranchIndexes = new Set<number>()
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
@@ -339,33 +340,33 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
     }
 
     this.forkOutputData.value = await Promise.all(
-      this.branchIds.value.map((branchId, i) => {
-        const branchGenerationSeed = store.get(branchId).generationSeed
-        return this.runBranch(store, i, branchGenerationSeed)
+      this.branchIds.value.map((_, i) => {
+        return this.runBranch(store, i)
       }),
     ) as SingleRunnerResult<T>[]
 
-    this.validationErrors = this.forkOutputData.value.flatMap(({ validationErrors }) => validationErrors) ?? []
+    this.validationErrors = this.forkOutputData.value.flatMap((d) => d?.validationErrors ?? []) ?? []
   }
 
-  async getBranchOutput(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<SingleRunnerResult<T>> {
-    if (this.forkOutputData.value[branchIndex] === undefined) {
-      this.setBranchOutput(branchIndex, await this.runBranch(store, branchIndex, branchGenerationSeed))
+  async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
+    console.log('getBranchOutput', branchIndex)
+    if (this.dirtyBranchIndexes.has(branchIndex)) {
+      this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
+      // trigger reactivity
+      this.forkOutputData.value = [...this.forkOutputData.value]
+      this.dirtyBranchIndexes.delete(branchIndex)
     }
     return this.forkOutputData.value[branchIndex]
   }
 
-  clearBranchOutput(branchIndex: number): void {
-    this.setBranchOutput(branchIndex, parseResult(null))
+  // use when fork output data changes for only a specific branch
+  markBranchDirty(store: MinStore, branchIndex: number): void {
+    this.dirtyBranchIndexes.add(branchIndex)
+    const branchId = this.branchIds.value[branchIndex]
+    store.markDirty(branchId)
   }
 
-  private setBranchOutput(branchIndex: number, result: SingleRunnerResult<T>): void {
-    this.forkOutputData.value[branchIndex] = result
-    // trigger reactivity
-    this.forkOutputData.value = [...this.forkOutputData.value]
-  }
-
-  private async runBranch(store: MinStore, branchIndex: number, branchGenerationSeed: number): Promise<
+  private async runBranch(store: MinStore, branchIndex: number): Promise<
     SingleRunnerResult<T>
   > {
     logNodeEvent(this.id, 'runBranch', { branchIndex })
@@ -375,7 +376,6 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       config: this.config as T['RC'],
       inputData: prevOutput,
       branchIndex,
-      branchGenerationSeed,
       meta,
     })
 
@@ -410,24 +410,11 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       this.forkOutputData.value.splice(index, 1)
     }
   }
-
-  setBranchGenerationSeed(store: MinStore, branchIndex: number, seed: number): void {
-    const branchId = this.branchIds.value[branchIndex]
-    const branch = store.get(branchId) as BranchNode<any>
-    branch.generationSeed = seed
-  }
-
-  getBranchGenerationSeed(store: MinStore, branchIndex: number): number {
-    const branchId = this.branchIds.value[branchIndex]
-    const branch = store.get(branchId) as BranchNode<any>
-    return branch.generationSeed
-  }
 }
 
 type BranchNodeProperties = {
   prevNodeId: NodeId,
   branchIndex: number,
-  generationSeed?: number,
 }
 export type AnyBranchNodeSerialized = BranchNodeSerialized<AnyStepContext>
 export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<T> & Required<BranchNodeProperties>
@@ -441,13 +428,11 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
   prevNodeId: NodeId
   branchIndex: number
   initialized = true
-  generationSeed: number
 
   constructor(options: BranchNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId
     this.branchIndex = options.branchIndex
-    this.generationSeed = options.generationSeed ?? 0
 
     this.handler = makeStepHandler<AnyStepContext, NormalStepRunner<AnyStepContext>>(this.def, {
       passthrough: true,
@@ -463,7 +448,6 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
       ...super.serialize(),
       prevNodeId: this.prevNodeId,
       branchIndex: this.branchIndex,
-      generationSeed: this.generationSeed,
     }
   }
 
@@ -486,7 +470,7 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
     logNodeEvent(this.id, 'getOutputFromPrev: start')
 
     const fork = this.parentFork(store)
-    const result = await fork.getBranchOutput(store, this.branchIndex, this.generationSeed)
+    const result = await fork.getBranchOutput(store, this.branchIndex)
     logNodeEvent(this.id, 'getOutputFromPrev: end', result)
     return {
       prevOutput: result.output,
@@ -503,10 +487,6 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
       {
         name: 'seed',
         target: () => this.seed,
-      },
-      {
-        name: 'generationSeed',
-        target: () => this.generationSeed,
       },
     ]
   }

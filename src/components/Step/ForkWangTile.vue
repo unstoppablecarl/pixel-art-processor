@@ -130,8 +130,7 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
 
   affectedBranchIndexes.forEach(bIndex => {
     if (node.branchIds.value[bIndex]) {
-      node.clearBranchOutput(bIndex)
-      store.markDirty(node.branchIds.value[bIndex])
+      node.markBranchDirty(store, bIndex)
     }
   })
 }
