@@ -25,10 +25,8 @@ export const STEP_META: AnyStepMeta = {
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { arrayRemove } from '../../lib/util/misc.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
-import { shallowArrayItemRef, type StepImg } from '../../lib/util/vue-util.ts'
+import { deepUnwrap, shallowArrayItemRef } from '../../lib/util/vue-util.ts'
 import {
   makeBitMaskFromWangTile,
   makeWangTileEdgeConfigDefaults,
@@ -60,10 +58,10 @@ const node = useForkHandler(nodeId, {
     }
   },
   async run({ config, branchIndex }) {
-    if (branchIndex > edges.value.length - 1) {
+    if (branchIndex > tileset.value.tiles.length - 1) {
       return {
         validationErrors: [
-          `cannot generate data for Branch ${branchIndex + 1}. There are only ${edges.value.length} tile combinations.`,
+          `cannot generate data for Branch ${branchIndex + 1}. There are only ${tileset.value.tiles.length} tile combinations.`,
         ],
       }
     }
@@ -84,18 +82,6 @@ const node = useForkHandler(nodeId, {
 
 const edges = shallowArrayItemRef<BinaryArray>([])
 
-const store = usePipelineStore()
-const outputDataRef = store.getFork(node.id).forkOutputData
-const images = computed((): StepImg[] => {
-  return outputDataRef.value.map(({ preview, validationErrors }, index) => {
-    return {
-      imageData: preview,
-      label: `Branch: ${index + 1}`,
-      validationErrors,
-    }
-  })
-})
-
 const tileset = computed(() => {
   const edgeIndexes = Array.from(edges.value.keys())
   return WangTileset.createFromColors<number>(edgeIndexes)
@@ -107,26 +93,30 @@ function add() {
   node.config.wangTiles.push(makeWangTileEdgeConfigDefaults())
 }
 
+function duplicate(index: number) {
+  const copy = structuredClone(deepUnwrap(node.config.wangTiles[index]))
+  node.config.wangTiles.splice(index + 1, 0, copy)
+}
+
 function remove(index: number) {
-  arrayRemove(node.config.wangTiles, index)
-  arrayRemove(edges.value, index)
+  node.config.wangTiles.splice(index, 1)
+  edges.value.splice(index, 1)
 }
 </script>
 <template>
   <StepCard
     :node="node"
-    :images="images"
     :show-add-node-btn="false"
     :copyable="false"
     :draggable="false"
     :mutable="false"
   >
-    <template #body v-if="!images.length">
+    <template #body v-if="!config.wangTiles.length">
       <StepImage :image-data="null" />
     </template>
 
     <template #body-and-footer>
-      <div class="card-footer">
+      <div class="card-footer border-top-0">
         <div class="section section-divider">
           <RangeSlider
             :id="`${nodeId}-size`"
@@ -137,6 +127,15 @@ function remove(index: number) {
             v-model:max="config.size.max"
             v-model:step="config.size.step"
           />
+
+          <div class="hstack gap-2">
+            <div>
+              <strong>Edges:</strong> {{ config.wangTiles.length }}
+            </div>
+            <div>
+              <strong>Tiles:</strong> {{ Math.pow(config.wangTiles.length, 4) }}
+            </div>
+          </div>
         </div>
       </div>
       <template v-for="(_item, index) in config.wangTiles">
@@ -147,10 +146,11 @@ function remove(index: number) {
           v-model:config="config.wangTiles[index]"
           v-model:edges="edges"
           @remove="remove(index)"
+          @duplicate="duplicate(index)"
         />
 
       </template>
-      <div class="card-footer">
+      <div class="card-footer border-top-0">
         <div class="section hstack">
           <button role="button" class="btn btn-success ms-auto" @click="add()">Add</button>
         </div>

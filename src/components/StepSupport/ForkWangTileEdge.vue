@@ -1,6 +1,10 @@
 <script setup lang="ts">
-import { BCollapse } from 'bootstrap-vue-next'
-import { computed, watch } from 'vue'
+import { BButtonGroup, BCollapse } from 'bootstrap-vue-next'
+import { computed, shallowRef, watch } from 'vue'
+import { getValidationErrorComponent } from '../../lib/errors.ts'
+import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
 import {
   generateWangTileEdgePattern,
@@ -11,7 +15,7 @@ import StepImage from '../StepImage.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 import ForkWangTileEdgeConfig from './ForkWangTileEdgeConfig.vue'
 
-const emit = defineEmits(['remove'])
+const emit = defineEmits(['remove', 'duplicate'])
 
 const config = defineModel<WangTileEdgeConfig>('config', { required: true })
 const edges = defineModel<BinaryArray[]>('edges', { required: true })
@@ -22,7 +26,7 @@ const {
   index,
 } = defineProps<{
   index: number,
-  nodeId: string,
+  nodeId: NodeId,
   size: number,
 }>()
 
@@ -36,6 +40,17 @@ const preview = computed(() => {
 
   return wangTileEdgePreview(binaryArray).toImageData()
 })
+
+const store = usePipelineStore()
+
+const validationErrors = shallowRef<StepValidationError[]>([])
+
+watch(() => config, () => {
+  const forkOutputData = store.getFork(nodeId).forkOutputData
+  validationErrors.value = forkOutputData.value[index]?.validationErrors ?? []
+
+}, { deep: true, immediate: true })
+
 </script>
 <template>
   <div class="card-header">
@@ -48,9 +63,14 @@ const preview = computed(() => {
         label="Generator"
         v-model="config.seed"
       />
-      <button role="button" class="btn btn-xs btn-danger ms-1" @click="emit('remove')">
-        <span class="material-symbols-outlined">delete</span>
-      </button>
+      <BButtonGroup size="sm" class="ms-1">
+        <button role="button" class="btn btn-xs btn-secondary" @click="emit('duplicate')">
+          <span class="material-symbols-outlined">content_copy</span>
+        </button>
+        <button role="button" class="btn btn-xs btn-danger" @click="emit('remove')">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
+      </BButtonGroup>
       <button
         role="button"
         :class="'btn btn-collapse btn-transparent btn-xs ms-1 ' + (config.visible ? null : 'collapsed')"
@@ -59,15 +79,16 @@ const preview = computed(() => {
       />
     </div>
   </div>
+
+  <div class="card-body">
+    <StepImage
+      :image-data="preview"
+    />
+  </div>
   <BCollapse
     v-model="config.visible"
     lazy
   >
-    <div class="card-body">
-      <StepImage
-        :image-data="preview"
-      />
-    </div>
     <div class="card-footer">
       <div class="section">
 
@@ -86,6 +107,14 @@ const preview = computed(() => {
         />
       </div>
 
+
     </div>
   </BCollapse>
+  <div class="card-footer">
+    <div class="section">
+      <template v-for="error in validationErrors">
+        <component :is="getValidationErrorComponent(error)" :error="error" />
+      </template>
+    </div>
+  </div>
 </template>
