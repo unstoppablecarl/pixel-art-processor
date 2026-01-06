@@ -31,6 +31,7 @@
     }
 
     > .card-body,
+    > .collapse > .collapse > .card-body,
     > .collapse > .card-body {
       padding: var(--node-card-margin);
     }
@@ -151,6 +152,7 @@
     }
   }
 
+  > .collapse > .collapse > .card-body,
   > .collapse > .card-body {
     display: grid;
 
