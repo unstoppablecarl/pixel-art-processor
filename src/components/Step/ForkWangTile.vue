@@ -22,19 +22,23 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { reactive, computed, watch } from 'vue'
+import { BCollapse } from 'bootstrap-vue-next'
+import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { prng } from '../../lib/util/prng.ts'
-import { calculateChunkedArrayValidRanges } from '../../lib/util/prng/binary-array-chunks.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
+import {
+  generateWangTileEdgePattern,
+  makeWangTileConfigDefaults,
+  type WangTileColorConfig,
+} from '../../lib/wang-tiles/wang-tile-vue-helpers.ts'
+import { WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
 import StepCard from '../StepCard.vue'
 import StepImage from '../StepImage.vue'
+import ForkWangTileEdgeColor from '../StepSupport/ForkWangTileEdgeColor.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
-import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
-import NumberInput from '../UIForms/NumberInput.vue'
-import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
@@ -46,25 +50,16 @@ const CONFIG_DEFAULTS = {
     min: 8,
     max: 512,
   }),
-  chunks: rangeSliderConfig({
-    value: 7,
-    min: 1,
-    max: 30,
-  }),
-  shuffleSeed: 0,
 
-  invert: false,
-  minGapSize: 3,
-  maxGapSize: 13,
-  minChunkSize: 3,
-  maxChunkSize: 13,
-  padding: 4,
 }
 
 const node = useForkHandler(nodeId, {
   ...STEP_META,
   config() {
-    return reactive({ ...CONFIG_DEFAULTS })
+    return {
+      ...CONFIG_DEFAULTS,
+      wangTiles: [] as WangTileColorConfig[],
+    }
   },
   async run({ config, branchIndex, branchGenerationSeed }) {
 
@@ -126,56 +121,13 @@ const getBranchSeed = (index: number) => node.getBranchGenerationSeed(store, ind
 
 const config = node.config
 
-// Compute valid ranges reactively
-const validRanges = computed(() => {
-  return calculateChunkedArrayValidRanges(
-    config.size.value,
-    config.chunks.value,
-    config.minGapSize,
-    config.maxGapSize,
-    config.minChunkSize,
-    config.maxChunkSize,
-    config.padding,
-  )
-})
+function add() {
+  node.config.wangTiles.push(makeWangTileConfigDefaults())
+}
 
-// Clamp values when they go out of valid range
-watch(validRanges, (ranges) => {
-  // Clamp padding
-  if (config.padding < ranges.padding.min) {
-    config.padding = ranges.padding.min
-  } else if (config.padding > ranges.padding.max) {
-    config.padding = ranges.padding.max
-  }
-
-  // Clamp minChunkSize
-  if (config.minChunkSize < ranges.minChunkSize.min) {
-    config.minChunkSize = ranges.minChunkSize.min
-  } else if (config.minChunkSize > ranges.minChunkSize.max) {
-    config.minChunkSize = ranges.minChunkSize.max
-  }
-
-  // Clamp maxChunkSize
-  if (config.maxChunkSize < ranges.maxChunkSize.min) {
-    config.maxChunkSize = ranges.maxChunkSize.min
-  } else if (config.maxChunkSize > ranges.maxChunkSize.max) {
-    config.maxChunkSize = ranges.maxChunkSize.max
-  }
-
-  // Clamp minGapSize
-  if (config.minGapSize < ranges.minGapSize.min) {
-    config.minGapSize = ranges.minGapSize.min
-  } else if (config.minGapSize > ranges.minGapSize.max) {
-    config.minGapSize = ranges.minGapSize.max
-  }
-
-  // Clamp maxGapSize
-  if (config.maxGapSize < ranges.maxGapSize.min) {
-    config.maxGapSize = ranges.maxGapSize.min
-  } else if (config.maxGapSize > ranges.maxGapSize.max) {
-    config.maxGapSize = ranges.maxGapSize.max
-  }
-}, { deep: true })
+function remove(index: number) {
+  node.config.wangTiles.splice(index, 1)
+}
 </script>
 <template>
   <StepCard
@@ -199,70 +151,71 @@ watch(validRanges, (ranges) => {
       />
     </template>
 
-    <template #footer>
-      <div class="section">
+    <template #body-and-footer>
+      <div class="card-footer">
+        <div class="section section-divider">
 
-        <RangeSlider
-          :id="`${nodeId}-size`"
-          label="Size"
-          :defaults="CONFIG_DEFAULTS.size"
-          v-model:value="config.size.value"
-          v-model:min="config.size.min"
-          v-model:max="config.size.max"
-          v-model:step="config.size.step"
-        />
+          <RangeSlider
+            :id="`${nodeId}-size`"
+            label="Size"
+            :defaults="CONFIG_DEFAULTS.size"
+            v-model:value="config.size.value"
+            v-model:min="config.size.min"
+            v-model:max="config.size.max"
+            v-model:step="config.size.step"
+          />
+        </div>
+      </div>
+      <template v-for="(item, branchIndex) in config.wangTiles">
+        <div class="card-header">
+          <div class="section-heading-container hstack">
+            <span class="section-heading-text">
+              Wang Edge: {{ branchIndex + 1 }}
+            </span>
+            <button role="button" class="btn btn-xs btn-danger ms-auto" @click="remove(branchIndex)">
+              <span class="material-symbols-outlined">delete</span>
+            </button>
+            <button
+              role="button"
+              :class="'btn btn-collapse btn-transparent btn-xs ms-1 ' + (item.visible ? null : 'collapsed')"
+              :aria-expanded="item.visible ? 'true' : 'false'"
+              @click="item.visible = !item.visible"
+            />
+          </div>
+        </div>
+        <BCollapse
+          v-model="item.visible"
+          lazy
+        >
+          <div class="card-body">
+            <StepImage :image-data="outputDataRef?.[branchIndex]?.preview ?? null" />
+          </div>
+          <div class="card-footer">
+            <div class="section">
 
-        <RangeBandSlider
-          :id="`${nodeId}-gap-size`"
-          label="Gap Size"
-          :min="validRanges.minGapSize.min"
-          :max="validRanges.maxGapSize.max"
-          v-model:min-value="config.minGapSize"
-          v-model:max-value="config.maxGapSize"
-        />
+              <ForkWangTileEdgeColor
+                :chunks="item.chunks"
+                :shuffle-seed="item.shuffleSeed"
+                :invert="item.invert"
+                :min-gap-size="item.minGapSize"
+                :max-gap-size="item.maxGapSize"
+                :min-chunk-size="item.minChunkSize"
+                :max-chunk-size="item.maxChunkSize"
+                :padding="item.padding"
+                :node-id="nodeId"
+                :size="config.size.value"
+                :branch-index="branchIndex"
+              />
+            </div>
 
-        <RangeBandSlider
-          :id="`${nodeId}-chunk-size`"
-          label="Chunk Size"
-          :min="validRanges.minChunkSize.min"
-          :max="validRanges.maxChunkSize.max"
-          v-model:min-value="config.minChunkSize"
-          v-model:max-value="config.maxChunkSize"
-        />
+          </div>
+        </BCollapse>
 
-        <RangeSlider
-          :id="`${nodeId}-padding`"
-          label="Padding"
-          v-model:value="config.padding"
-          :min="validRanges.padding.min"
-          :max="validRanges.padding.max"
-          :step="1"
-        />
-
-        <CheckBoxInput
-          :id="`${nodeId}-invert`"
-          label="Invert"
-          v-model="config.invert"
-        />
-
-        <RangeSlider
-          :id="`${nodeId}-chunks`"
-          label="Chunks"
-          :defaults="CONFIG_DEFAULTS.chunks"
-          v-model:value="config.chunks.value"
-          v-model:min="config.chunks.min"
-          v-model:max="config.chunks.max"
-          v-model:step="config.chunks.step"
-        />
-
-        <NumberInput
-          :id="`${nodeId}-chunks-shuffle`"
-          label="Shuffle Seed"
-          :step="1"
-          :min="0"
-          v-model="config.shuffleSeed"
-          input-width="50%"
-        />
+      </template>
+      <div class="card-footer">
+        <div class="section hstack">
+          <button role="button" class="btn btn-success ms-auto" @click="add()">Add</button>
+        </div>
       </div>
     </template>
   </StepCard>

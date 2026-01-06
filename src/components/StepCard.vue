@@ -183,46 +183,48 @@ const isMuted = computed(() => isStep(node) && node.muted)
         v-model="node.visible"
         lazy
       >
-        <div class="card-body">
-          <slot name="body">
+        <slot name="body-and-footer">
+          <div class="card-body">
+            <slot name="body">
 
-            <template
-              v-for="({imageData, label, validationErrors: imgValidationErrors = []}, index) in nodeImages"
-            >
-              <StepImage
-                :image-data="imageData"
-                :label="label"
-                :validationErrors="imgValidationErrors"
+              <template
+                v-for="({imageData, label, validationErrors: imgValidationErrors = []}, index) in nodeImages"
               >
-                <template v-for="(_, name) in $slots" #[name]="slotProps">
-                  <slot :name="name" v-bind="{...slotProps, index}" />
-                </template>
-              </StepImage>
-              <slot
-                name="after-image"
-                :index="index"
-                :label="label"
-                :validationErrors="imgValidationErrors"
-                :imageData="imageData"
-              />
+                <StepImage
+                  :image-data="imageData"
+                  :label="label"
+                  :validationErrors="imgValidationErrors"
+                >
+                  <template v-for="(_, name) in $slots" #[name]="slotProps">
+                    <slot :name="name" v-bind="{...slotProps, index}" />
+                  </template>
+                </StepImage>
+                <slot
+                  name="after-image"
+                  :index="index"
+                  :label="label"
+                  :validationErrors="imgValidationErrors"
+                  :imageData="imageData"
+                />
 
-            </template>
-          </slot>
-        </div>
-
-        <div class="card-footer">
-
-          <div class="section" v-if="showDimensions && dimensions">
-            <span class="btn-sm-py text-muted me-auto ms-1">
-              Image Size: {{ dimensions }}
-            </span>
+              </template>
+            </slot>
           </div>
 
-          <div class="section" v-for="error in node.validationErrors">
-            <component :is="getValidationErrorComponent(error)" :error="error" />
+          <div class="card-footer">
+
+            <div class="section" v-if="showDimensions && dimensions">
+              <span class="btn-sm-py text-muted me-auto ms-1">
+                Image Size: {{ dimensions }}
+              </span>
+            </div>
+
+            <div class="section" v-for="error in node.validationErrors">
+              <component :is="getValidationErrorComponent(error)" :error="error" />
+            </div>
+            <slot name="footer"></slot>
           </div>
-          <slot name="footer"></slot>
-        </div>
+        </slot>
       </BCollapse>
     </div>
   </div>

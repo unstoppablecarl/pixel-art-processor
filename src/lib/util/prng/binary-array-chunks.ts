@@ -13,6 +13,7 @@ export type GenerateChunkedArrayOptions = {
   makePrng: (seed: number) => () => number
 }
 
+export type BinaryArray = (1 | 0)[]
 export function generateChunkedArray(
   {
     prng,
@@ -162,11 +163,12 @@ export interface PropertyRange {
 }
 
 export interface ValidRanges {
-  padding: PropertyRange;
-  minChunkSize: PropertyRange;
-  maxChunkSize: PropertyRange;
-  minGapSize: PropertyRange;
-  maxGapSize: PropertyRange;
+  chunks: PropertyRange,
+  padding: PropertyRange,
+  minChunkSize: PropertyRange,
+  maxChunkSize: PropertyRange,
+  minGapSize: PropertyRange,
+  maxGapSize: PropertyRange,
 }
 
 export function calculateChunkedArrayValidRanges(
@@ -181,6 +183,9 @@ export function calculateChunkedArrayValidRanges(
   const numChunkSegments = Math.ceil(chunks / 2)
   const numGapSegments = Math.floor(chunks / 2)
   const availableLength = length - 2 * padding
+
+  const minChunkSegmentSize = Math.min(minChunkSize, minGapSize)
+  const maxChunks = minChunkSegmentSize > 0 ? Math.floor(availableLength / minChunkSegmentSize) : 1
 
   // Calculate required space constraints
   const minRequiredSpace =
@@ -223,6 +228,8 @@ export function calculateChunkedArrayValidRanges(
     : maxGapSize
 
   return {
+    chunks: { min: 1, max: Math.max(1, maxChunks) },
+
     padding: {
       min: 0,
       max: Math.max(0, maxPadding),
@@ -245,6 +252,7 @@ export function calculateChunkedArrayValidRanges(
     },
   }
 }
+
 export function binaryChunkedArrayToChunkLengths(arr: number[]): number[] {
   if (arr.length === 0) {
     return []
