@@ -18,10 +18,9 @@ const padding = defineModel<number>('padding', { required: true })
 const invert = defineModel<boolean>('invert', { required: true })
 const shuffleSeed = defineModel<number>('shuffleSeed', { required: true })
 
-const { size, nodeId, branchIndex } = defineProps<{
+const { size, nodeId } = defineProps<{
   nodeId: string,
   size: number,
-  branchIndex: number
 }>()
 
 // Compute valid ranges reactively

@@ -204,7 +204,6 @@ function remove(index: number) {
                 :padding="item.padding"
                 :node-id="nodeId"
                 :size="config.size.value"
-                :branch-index="branchIndex"
               />
             </div>
 
