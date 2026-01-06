@@ -75,11 +75,12 @@ const node = useStepHandler(nodeId, {
     const verticalChunks = prng.generateChunkedBinaryArray({
       chunks: config.verticalChunks.value,
       shuffleSeed: config.verticalShuffleSeed,
+      invert: config.invertVertical,
       ...options,
     })
 
     verticalChunks.forEach((v, i) => {
-      if (!v === config.invertVertical) {
+      if (v) {
         mask.set(0, i, 1)
         mask.set(size.value - 1, i, 1)
       }
@@ -88,11 +89,12 @@ const node = useStepHandler(nodeId, {
     const horizontalChunks = prng.generateChunkedBinaryArray({
       chunks: config.horizontalChunks.value,
       shuffleSeed: config.horizontalShuffleSeed,
+      invert: config.invertHorizontal,
       ...options,
     })
 
     horizontalChunks.forEach((v, i) => {
-      if (!v === config.invertHorizontal) {
+      if (v) {
         mask.set(i, 0, 1)
         mask.set(i, size.value - 1, 1)
       }

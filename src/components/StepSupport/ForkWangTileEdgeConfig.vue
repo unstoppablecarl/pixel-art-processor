@@ -18,8 +18,9 @@ const padding = defineModel<number>('padding', { required: true })
 const invert = defineModel<boolean>('invert', { required: true })
 const shuffleSeed = defineModel<number>('shuffleSeed', { required: true })
 
-const { size, nodeId } = defineProps<{
+const { size, nodeId, index } = defineProps<{
   nodeId: string,
+  index: number,
   size: number,
 }>()
 
@@ -76,7 +77,7 @@ watch(validRanges, (ranges) => {
 </script>
 <template>
     <RangeBandSlider
-      :id="`${nodeId}-gap-size`"
+      :id="`${nodeId}-${index}-gap-size`"
       label="Gap Size"
       :min="validRanges.minGapSize.min"
       :max="validRanges.maxGapSize.max"
@@ -85,7 +86,7 @@ watch(validRanges, (ranges) => {
     />
 
     <RangeBandSlider
-      :id="`${nodeId}-chunk-size`"
+      :id="`${nodeId}-${index}-chunk-size`"
       label="Chunk Size"
       :min="validRanges.minChunkSize.min"
       :max="validRanges.maxChunkSize.max"
@@ -94,7 +95,7 @@ watch(validRanges, (ranges) => {
     />
 
     <RangeSlider
-      :id="`${nodeId}-padding`"
+      :id="`${nodeId}-${index}-padding`"
       label="Padding"
       v-model:value="padding"
       :min="validRanges.padding.min"
@@ -103,13 +104,13 @@ watch(validRanges, (ranges) => {
     />
 
     <CheckBoxInput
-      :id="`${nodeId}-invert`"
+      :id="`${nodeId}-${index}-invert`"
       label="Invert"
       v-model="invert"
     />
 
     <RangeSlider
-      :id="`${nodeId}-chunks`"
+      :id="`${nodeId}-${index}-chunks`"
       label="Chunks"
       v-model:value="chunks"
       :step="1"
@@ -118,7 +119,7 @@ watch(validRanges, (ranges) => {
     />
 
     <NumberInput
-      :id="`${nodeId}-chunks-shuffle`"
+      :id="`${nodeId}-${index}-chunks-shuffle`"
       label="Shuffle Seed"
       :step="1"
       :min="0"

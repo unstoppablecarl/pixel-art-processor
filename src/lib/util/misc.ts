@@ -113,3 +113,10 @@ export function injectNodeDataTypeCss(stepDataTypeColors: NodeDataTypeColors) {
   }
   injectCss(buildNodeDataTypeCss(items))
 }
+
+export function arrayRemove(array: any[], item: any): void {
+  const index = array.indexOf(item)
+  if (index !== -1) {
+    array.toSpliced(index, 1)
+  }
+}

@@ -1,4 +1,4 @@
-import { generateChunkedArray, type GenerateChunkedArrayOptions } from './prng/binary-array-chunks.ts'
+import { type BinaryArray, generateChunkedArray, type GenerateChunkedArrayOptions } from './prng/binary-array-chunks.ts'
 import { Mulberry32 } from './prng/mulberry32-prng.ts'
 import { shuffleArray, shuffleArrayWithPositionOddEvenConstraint } from './prng/random-array.ts'
 import { sampleMultiple } from './prng/random-weighted-array.ts'
@@ -75,7 +75,7 @@ export function makePrng(initialSeed = 0) {
     shuffleArrayWithPositionOddEvenConstraint<T>(arr: T[]): T[] {
       return shuffleArrayWithPositionOddEvenConstraint<T>(this as Prng, arr)
     },
-    generateChunkedBinaryArray(options: Omit<GenerateChunkedArrayOptions, 'prng' | 'makePrng'>): number[] {
+    generateChunkedBinaryArray(options: Omit<GenerateChunkedArrayOptions, 'prng' | 'makePrng'>): BinaryArray {
       return generateChunkedArray({
         prng: () => PRNG.next(),
         ...options,

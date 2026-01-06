@@ -1,5 +1,7 @@
 export type TileId = string & { readonly __tileId: unique symbol };
 
+export type WangTileEdge = keyof WangTile<any>['edges']
+
 export interface WangTile<T> {
   readonly id: TileId;
   readonly edges: {
@@ -8,6 +10,18 @@ export interface WangTile<T> {
     readonly S: T;
     readonly W: T;
   };
+}
+
+export function populateIndexedWangTile<T>(tile: WangTile<number>, values: T[]): WangTile<T> {
+  return {
+    id: tile.id,
+    edges: {
+      N: values[tile.edges.N],
+      E: values[tile.edges.E],
+      S: values[tile.edges.S],
+      W: values[tile.edges.W],
+    },
+  }
 }
 
 export class WangTileset<T> {

@@ -10,10 +10,12 @@ export type GenerateChunkedArrayOptions = {
   maxChunkSize: number,
   padding: number,
   shuffleSeed: number,
+  invert: boolean,
   makePrng: (seed: number) => () => number
 }
 
-export type BinaryArray = (1 | 0)[]
+export type BinaryArray = Uint8Array<ArrayBuffer> & { readonly __brand: 'BinaryArray' };
+
 export function generateChunkedArray(
   {
     prng,
@@ -26,16 +28,20 @@ export function generateChunkedArray(
     padding,
     shuffleSeed,
     makePrng,
+    invert,
   }: GenerateChunkedArrayOptions,
-): number[] {
+): BinaryArray {
+
+  const START_VALUE = invert ? 0 : 1
+  const PADDING_VALUE = invert ? 1 : 0
   // Initialize array with all zeros
-  const result = new Array(length).fill(0)
+  const result = new Uint8Array(length).fill(PADDING_VALUE)
 
   // Calculate available space for chunks (excluding padding)
   const availableLength = length - 2 * padding
 
   if (availableLength <= 0 || chunks === 0) {
-    return result
+    return result as BinaryArray
   }
 
   // Validate that the constraints can produce the required length
@@ -49,14 +55,17 @@ export function generateChunkedArray(
   }
 
   if (availableLength < minPossibleTotal || availableLength > maxPossibleTotal) {
-    console.error(`Cannot achieve length ${availableLength} with ${chunks} chunks`)
-    console.error(`Possible range: ${minPossibleTotal} to ${maxPossibleTotal}`)
-    return result
+    const msg1 = `Cannot achieve length ${availableLength} with ${chunks} chunks`
+    const msg2 = `Possible range: ${minPossibleTotal} to ${maxPossibleTotal}`
+    console.error(msg1)
+    console.error(msg2)
+    throw new Error(msg1 + ' ' + msg2)
+    // return result as BinaryArray
   }
 
   // Generate random chunk sizes with alternating constraints
   let chunkSizes: number[] = []
-  let currentValue = 1 // Start with 1s (chunks) after padding
+  let currentValue = START_VALUE
 
   for (let i = 0; i < chunks; i++) {
     const isChunk = i % 2 === 0
@@ -134,7 +143,7 @@ export function generateChunkedArray(
 
   // Place chunks in the array, alternating between 1 and 0
   let currentPos = padding
-  currentValue = 1
+  currentValue = START_VALUE
 
   for (const size of chunkSizes) {
     for (let i = 0; i < size; i++) {
@@ -154,7 +163,7 @@ export function generateChunkedArray(
     console.error(`Result length ${actualLength} does not match expected ${length}`)
   }
 
-  return result
+  return result as BinaryArray
 }
 
 export interface PropertyRange {

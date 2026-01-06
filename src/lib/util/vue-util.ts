@@ -1,4 +1,15 @@
-import { isProxy, isReactive, isReadonly, isRef, toRaw, toValue, type UnwrapNestedRefs, type UnwrapRef } from 'vue'
+import {
+  customRef,
+  isProxy,
+  isReactive,
+  isReadonly,
+  isRef,
+  type Ref,
+  toRaw,
+  toValue,
+  type UnwrapNestedRefs,
+  type UnwrapRef,
+} from 'vue'
 import { StepValidationError } from '../errors/StepValidationError.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
@@ -38,6 +49,27 @@ export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) && !isProxy(value) && !isRef(value)
+}
+
+// only triggers on myArray.value[3] = { foo: 'bar' }
+// not myArray.value[3].foo = 'something'
+export function shallowArrayItemRef<T>(value: T[]): Ref<T[]> {
+  return customRef<T[]>((track, trigger) => ({
+    get() {
+      track()
+      return new Proxy(value, {
+        set(target, prop, val) {
+          target[prop as any] = val
+          trigger()
+          return true
+        },
+      })
+    },
+    set(newValue: T[]) {
+      value = newValue
+      trigger()
+    },
+  }))
 }
 
 export type StepImg = {
