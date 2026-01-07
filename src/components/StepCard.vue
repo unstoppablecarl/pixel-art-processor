@@ -60,10 +60,11 @@ const nodeImages = computed((): StepImg[] => {
     }]
   }
 
-  return (node as AnyForkNode).forkOutputData.value.map(({ preview }, index) => {
+  return (node as AnyForkNode).forkOutputData.value.map((item, index) => {
     return {
-      imageData: preview,
+      imageData: item?.preview ?? null,
       label: `Branch: ${index + 1}`,
+      validationErrors: item?.validationErrors ?? [],
     }
   })
 })
