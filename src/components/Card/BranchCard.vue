@@ -4,17 +4,20 @@ import { computed } from 'vue'
 import { getValidationErrorComponent } from '../../lib/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { type InitializedBranchNode, isBranch, isFork } from '../../lib/pipeline/Node.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
+const stepRegistry = useStepRegistry()
 
 const { branch } = defineProps<{
   branch: InitializedBranchNode<any>,
 }>()
 
+const displayName = computed(() => stepRegistry.get(branch.def).displayName)
 const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
   const ids: NodeId[] = []
@@ -44,7 +47,7 @@ const nodeIds = computed((): NodeId[] => {
     }"
   >
     <div class="card-header hstack" v-if="branch">
-      <div class="me-auto pe-2">Branch {{ branch.branchIndex + 1 }}</div>
+      <div class="me-auto pe-2">{{ displayName }}: {{ branch.branchIndex + 1 }}</div>
 
       <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
 

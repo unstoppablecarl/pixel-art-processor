@@ -1,5 +1,5 @@
 import { ref, type Ref } from 'vue'
-import type { MinStore } from '../store/pipeline-store.ts'
+import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
@@ -84,7 +84,7 @@ export abstract class BaseNode<
     }
   }
 
-  isReady(store: MinStore) {
+  isReady(store: PipelineStore) {
     if (this.isProcessing) return false
     if (!this.initialized) return false
     if (!this.isDirty) return false
@@ -100,7 +100,7 @@ export abstract class BaseNode<
       && this.initialized
   }
 
-  async processRunner(store: MinStore) {
+  async processRunner(store: PipelineStore) {
     logNodeEvent(this.id, 'processRunner: start')
 
     this.isProcessing = true
@@ -114,17 +114,17 @@ export abstract class BaseNode<
     logNodeEvent(this.id, 'processRunner: end', deepUnwrap(this))
   }
 
-  protected abstract resolveRunner(store: MinStore): Promise<void>
+  protected abstract resolveRunner(store: PipelineStore): Promise<void>
 
-  abstract childIds(store: MinStore): NodeId[]
+  abstract childIds(store: PipelineStore): NodeId[]
 
   abstract getOutputSize(): ImgSize
 
-  abstract getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<any>>
+  abstract getOutputFromPrev(store: PipelineStore): Promise<SingleRunnerResult<any>>
 
   abstract getWatcherTargets(): WatcherTarget[]
 
-  protected setPassThroughDataTypeFromPrev(store: MinStore): void {
+  protected setPassThroughDataTypeFromPrev(store: PipelineStore): void {
     if (this.prevNodeId) {
       const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
       this.handler!.setPassThroughDataType(prev.handler!.outputDataType)
@@ -167,7 +167,7 @@ export abstract class BaseNode<
     this.initialized = true
   }
 
-  getSeedSum(store: MinStore): number {
+  getSeedSum(store: PipelineStore): number {
     this.seedSum = this.seed
     if (this.prevNodeId) {
       this.seedSum += store.get(this.prevNodeId).seedSum
@@ -188,7 +188,7 @@ export abstract class BaseNode<
     ]
   }
 
-  getPrev(store: MinStore): PrevNode | undefined {
+  getPrev(store: PipelineStore): PrevNode | undefined {
     if (!this.prevNodeId) return
     return store.get(this.prevNodeId) as PrevNode
   }
@@ -198,7 +198,7 @@ type AbstractConstructor = abstract new (...args: any[]) => any
 
 function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
   abstract class StepOrForkNode extends Base {
-    async getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<any>> {
+    async getOutputFromPrev(store: PipelineStore): Promise<SingleRunnerResult<any>> {
       if (!this.prevNodeId) {
         return parseResult(null)
       }
@@ -226,7 +226,7 @@ abstract class StepOrBranchNode<
   outputPreview: ImageData | null = null
   outputMeta: IRunnerResultMeta = {}
 
-  childIds(store: MinStore): NodeId[] {
+  childIds(store: PipelineStore): NodeId[] {
     const result = Object.values(store.nodes).find(n => n.prevNodeId === this.id) as AnyNode
     return result ? [result.id] : []
   }
@@ -273,7 +273,7 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T, IStepHandler
     )
   }
 
-  async resolveRunner(store: MinStore) {
+  async resolveRunner(store: PipelineStore) {
     logNodeEvent(this.id, 'resolveRunner: start')
 
     if (this.muted) {
@@ -347,11 +347,11 @@ export class ForkNode<
     this.branchIds.value = options.branchIds ?? []
   }
 
-  childIds(store: MinStore) {
+  childIds(store: PipelineStore) {
     return this.branchIds.value
   }
 
-  async resolveRunner(store: MinStore) {
+  async resolveRunner(store: PipelineStore) {
     if (store.nodeIsPassthrough(this)) {
       this.setPassThroughDataTypeFromPrev(store)
     }
@@ -363,7 +363,7 @@ export class ForkNode<
     ) as SingleRunnerResult<T>[]
   }
 
-  async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
+  async getBranchOutput(store: PipelineStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
     if (this.forkOutputData.value[branchIndex] === undefined) {
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
       // trigger reactivity
@@ -374,13 +374,13 @@ export class ForkNode<
   }
 
   // use when fork output data changes for only a specific branch
-  markBranchDirty(store: MinStore, branchIndex: number): void {
+  markBranchDirty(store: PipelineStore, branchIndex: number): void {
     this.forkOutputData.value[branchIndex] = undefined
     const branchId = this.branchIds.value[branchIndex]
     store.markDirty(branchId)
   }
 
-  private async runBranch(store: MinStore, branchIndex: number): Promise<
+  private async runBranch(store: PipelineStore, branchIndex: number): Promise<
     SingleRunnerResult<T>
   > {
     logNodeEvent(this.id, 'runBranch', { branchIndex })
@@ -411,7 +411,7 @@ export class ForkNode<
     }
   }
 
-  removeBranch(store: MinStore, branchId: NodeId): void {
+  removeBranch(store: PipelineStore, branchId: NodeId): void {
     const index = this.branchIds.value.indexOf(branchId)
     if (index !== -1) {
       this.branchIds.value.splice(index, 1)
@@ -465,11 +465,11 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
     }
   }
 
-  getPrev(store: MinStore): AnyForkNode {
+  getPrev(store: PipelineStore): AnyForkNode {
     return store.get(this.prevNodeId) as AnyForkNode
   }
 
-  async resolveRunner(store: MinStore) {
+  async resolveRunner(store: PipelineStore) {
     logNodeEvent(this.id, 'resolveRunner: start')
     const fork = this.getPrev(store)
     this.handler!.setPassThroughDataType(fork.handler!.outputDataType)
@@ -491,7 +491,7 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
     logNodeEvent(this.id, 'resolveRunner: end', result)
   }
 
-  async getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<T>> {
+  async getOutputFromPrev(store: PipelineStore): Promise<SingleRunnerResult<T>> {
     logNodeEvent(this.id, 'getOutputFromPrev: start')
 
     const fork = this.getPrev(store)
@@ -507,6 +507,16 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
   initializeBranch(options: BranchHandlerOptions<T>) {
     const handler = makeBranchHandler<T>(this.def, options)
     this.initialize(handler)
+  }
+
+  getSiblings(store: PipelineStore, filter?: (siblingBranch: AnyBranchNode) => boolean): AnyBranchNode[] {
+    const fork = this.getPrev(store)
+    const siblings = fork.branchIds.value.map(store.getBranch)
+
+    if (filter) {
+      return siblings.filter(filter)
+    }
+    return siblings
   }
 }
 

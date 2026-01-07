@@ -7,7 +7,7 @@ import type { AnyStepContext } from '../src/lib/pipeline/Step'
 import type { StepHandlerOptions } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
 import { PassThrough } from '../src/lib/step-data-types/PassThrough'
-import type { MinStore } from '../src/lib/store/pipeline-store'
+import type { PipelineStore } from '../src/lib/store/pipeline-store'
 import { deepUnwrap } from '../src/lib/util/vue-util.ts'
 
 // ------------------------------------------------------------
@@ -28,7 +28,7 @@ interface Ctx extends AnyStepContext {
   SerializedConfig: { value: number }
 }
 
-function makeStore(nodes: Record<NodeId, any>): MinStore {
+function makeStore(nodes: Record<NodeId, any>): PipelineStore {
   return {
     nodes,
     get(id: NodeId) {
@@ -37,7 +37,7 @@ function makeStore(nodes: Record<NodeId, any>): MinStore {
     nodeIsPassthrough() {
       return false
     },
-  } as unknown as MinStore
+  } as unknown as PipelineStore
 }
 
 function defineStep({

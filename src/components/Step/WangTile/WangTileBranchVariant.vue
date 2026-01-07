@@ -19,6 +19,11 @@ const { branchId } = defineProps<{
 
 const branch = useBranchHandler(branchId, {
   ...STEP_META,
+  config() {
+    return {
+      parentBranchId: null,
+    }
+  },
 })
 
 </script>
