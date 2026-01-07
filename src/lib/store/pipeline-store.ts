@@ -429,6 +429,18 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return chain
     }
 
+    function findInAncestorNodes(id: NodeId, check: (node: AnyNode) => boolean): boolean {
+      let currentId: NodeId | null = id
+      while (currentId) {
+        const current = get(currentId)
+        if (!check(current)) {
+          return false
+        }
+        currentId = current.prevNodeId
+      }
+      return true
+    }
+
     return {
       nodes,
       idIncrement,
@@ -462,6 +474,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       getRootNodeOutputSize,
       getLeafNodes,
       getAncestorNodeIds,
+      findInAncestorNodes,
       nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
     }
   },

@@ -26,6 +26,7 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
       outputDataType,
       passthrough,
       branchDefs,
+      isValidDescendantDef,
     } = (module as any).STEP_META as StepMeta<any, any> & { branchDefs: string[] }
 
     return {
@@ -37,6 +38,7 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
       outputDataType,
       passthrough,
       branchDefs,
+      isValidDescendantDef,
     } as AnyStepDefinition
   })
 }

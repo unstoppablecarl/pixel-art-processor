@@ -1,11 +1,12 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../../lib/pipeline/_types.ts'
+import { type AnyStepDefinition, type AnyStepMeta, NodeType } from '../../../lib/pipeline/_types.ts'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.BRANCH,
   def: 'wang_tile_branch',
   displayName: 'Wang Tile: Branch',
   passthrough: true,
+  isValidDescendantDef: (def: AnyStepDefinition) => def.type === NodeType.STEP,
 }
 </script>
 <script setup lang="ts">
@@ -44,7 +45,8 @@ function remove() {
         <div class="section">
           <div class="input-group">
             <span class="input-group-text">Variant Count</span>
-            <input class="form-control" v-model="branch.config.variantCount" type="number" min="1" style="width: 100px" />
+            <input class="form-control" v-model="branch.config.variantCount" type="number" min="1"
+                   style="width: 100px" />
             <button role="button" class="btn btn-secondary btn-sm" @click="remove()">
               <span class="material-symbols-outlined">remove</span>
             </button>

@@ -39,7 +39,9 @@ export type StepMeta<
 type StepMetaBase = {
   def: string,
   displayName: string,
+  isValidDescendantDef?: (def: AnyStepDefinition) => boolean,
 }
+
 export type StepOrBranchStepMeta<
   I extends readonly StepDataType[],
   O extends StepDataType,
@@ -64,7 +66,7 @@ type StepDefinitionBase = {
   def: NodeDef,
   displayName: string,
   readonly component: Component,
-}
+} & Pick<StepMetaBase, 'isValidDescendantDef'>
 
 export type StepOrBranchDefinition<
   I extends readonly StepDataType[],

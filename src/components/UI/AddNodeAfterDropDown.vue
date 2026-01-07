@@ -20,7 +20,7 @@ const addableNodes = computed(() => {
   const node = store.get(nodeId)
 
   const result = stepRegistry.addableToArray()
-    .filter(({ def }) => stepRegistry.canBeChildOf(def, node.def))
+    .filter(({ def }) => stepRegistry.canBeChildOf(store, def, node.id))
     .map((
         {
           def,

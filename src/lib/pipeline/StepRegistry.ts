@@ -1,8 +1,16 @@
 import { type Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
+import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyStepDefinition, type ForkDefinition, type NodeDef, NodeType, type StepDefinitions } from './_types.ts'
+import {
+  type AnyStepDefinition,
+  type ForkDefinition,
+  type NodeDef,
+  type NodeId,
+  NodeType,
+  type StepDefinitions,
+} from './_types.ts'
 import type { AnyNode } from './Node.ts'
 import type { AnyStepContext } from './Step.ts'
 
@@ -49,10 +57,25 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return Object.values(STEP_DEFINITIONS)
   }
 
-  function canBeChildOf(childDef: NodeDef, parentDef: NodeDef) {
+  // check if parent has any ancestors that would make the child an invalid child of parent
+  function _hasInvalidAncestor(store: PipelineStore, childDef: NodeDef, parentId: NodeId): boolean {
+    const childDefinition = get(childDef)
+    return store.findInAncestorNodes(parentId, (node) => {
+      return !(get(node.def).isValidDescendantDef?.(childDefinition) ?? true)
+    })
+  }
+
+  function _canBeChildOf(childDef: NodeDef, parentDef: NodeDef): boolean {
     if (isStep(parentDef)) return !isBranch(childDef)
     if (isBranch(parentDef)) return isStep(childDef)
     if (isFork(parentDef)) return (get(parentDef) as ForkDefinition<any, any>).branchDefs.includes(childDef)
+    throw new Error('Invalid definition type')
+  }
+
+  function canBeChildOf(store: PipelineStore, childDef: NodeDef, parentId: NodeId): boolean {
+    const parent = store.get(parentId)
+
+    return _canBeChildOf(childDef, parent.def) && !_hasInvalidAncestor(store, childDef, parentId)
   }
 
   function validateCanBeChildOf(childDef: NodeDef, parentDef: NodeDef) {
