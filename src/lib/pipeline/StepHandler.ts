@@ -1,19 +1,15 @@
-import { reactive, shallowRef } from 'vue'
-import { type Optional } from '../_helpers.ts'
-import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
-import { StepValidationError } from './errors/StepValidationError.ts'
+import { reactive } from 'vue'
+import type { Optional } from '../_helpers.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
+import type { PipelineStore } from '../store/pipeline-store.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import type { Config, StepDataConfig, StepDataType, WatcherTarget } from './_types.ts'
-import type { InitializedNode } from './Node.ts'
-import type { NodeRunner } from './NodeRunner.ts'
-import {
-  type AnyStepContext,
-  type ReactiveConfigType,
-  type StepContext,
-  type StepInputTypesToInstances,
-} from './Step.ts'
+import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
+import { StepValidationError } from './errors/StepValidationError.ts'
+import type { InitializedBranchNode, InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
+import type { ForkStepRunner, NodeRunner, NormalStepRunner } from './NodeRunner.ts'
+import type { AnyStepContext, ReactiveConfigType, StepContext, StepInputTypesToInstances } from './Step.ts'
 import { type StepRegistry, useStepRegistry } from './StepRegistry.ts'
 
 export type StepHandlerOptional =
@@ -24,22 +20,86 @@ export type StepHandlerOptional =
   | 'reactiveConfig'
   | 'loadConfig'
   | 'validateInput'
+  | 'onRemove'
 
 export type StepHandlerOptionsOmit =
   | 'setPassThroughDataType'
   | 'clearPassThroughDataType'
 
+export interface IStepHandlerBase<
+  T extends AnyStepContext,
+  R extends NodeRunner<T>,
+> {
+  inputDataTypes: T['InputConstructors']
+  outputDataType: T['OutputConstructors']
+
+  config(): T['C']
+  reactiveConfig(defaults: T['C']): T['RC']
+
+  loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void
+  serializeConfig(config: T['C']): T['SerializedConfig']
+  deserializeConfig(serializedConfig: T['SerializedConfig']): T['C']
+
+  validateInput(
+    inputData: T['Input'],
+    inputDataTypes: T['InputConstructors'],
+  ): StepValidationError[]
+
+  run: R
+
+  setPassThroughDataType(type: StepDataType): void
+  clearPassThroughDataType(): void
+
+  watcherTargets?(
+    node: InitializedNode<T>,
+    defaultWatcherTargets: WatcherTarget[],
+  ): WatcherTarget[]
+
+  onRemove?(
+    store: PipelineStore,
+    node: InitializedNode<T>,
+  ): void
+}
+
+export interface INodeHandler<
+  T extends AnyStepContext,
+  R extends NodeRunner<T>,
+  N extends InitializedNode<T>,
+> extends IStepHandlerBase<T, R> {
+  watcherTargets(
+    node: N,
+    defaultWatcherTargets: WatcherTarget[],
+  ): WatcherTarget[]
+
+  onRemove(
+    store: PipelineStore,
+    node: N,
+  ): void
+}
+
+export type IStepHandler<T extends AnyStepContext> =
+  INodeHandler<T, NormalStepRunner<T>, InitializedStepNode<T>>
+
+export type IForkHandler<T extends AnyStepContext> =
+  INodeHandler<T, ForkStepRunner<T>, InitializedForkNode<T>>
+
+export type IBranchHandler<T extends AnyStepContext> =
+  INodeHandler<T, NormalStepRunner<T>, InitializedBranchNode<T>>
+
+export type AnyNodeHandler<T extends AnyStepContext> =
+  | IStepHandler<T>
+  | IForkHandler<T>
+  | IBranchHandler<T>
+
 export type StepHandlerOptions<
   T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>
-> = Omit<
-  Optional<
-    IStepHandler<T, R>, StepHandlerOptional
-  >,
-  | StepHandlerOptionsOmit
-  | 'inputDataTypes'
-  | 'outputDataType'
-> & StepDataConfig<T['InputConstructors'], T['OutputConstructors']>
+  R extends NodeRunner<T>,
+> =
+  Omit<
+    Optional<IStepHandlerBase<T, R>, StepHandlerOptional>,
+    StepHandlerOptionsOmit | 'inputDataTypes' | 'outputDataType'
+  >
+  & StepDataConfig<T['InputConstructors'], T['OutputConstructors']>
 
 // ⚠️ property order matters here ⚠️
 // anything that references SC must come after serializeConfig()
@@ -51,7 +111,7 @@ export type StepHandlerOptionsInfer<
   O extends StepDataType,
   R extends NodeRunner<StepContext<C, SC, RC, I, O>>,
 > = {
-  config?: () => C,
+  config?: () => C
   reactiveConfig?: (defaults: C) => RC
 
   serializeConfig?: (config: C) => SC
@@ -59,68 +119,40 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcherTargets?: (node: InitializedNode<StepContext<C, SC, RC, I, O>>, defaultWatcherTargets: WatcherTarget[]) => WatcherTarget[]
+  watcherTargets?: (
+    node: InitializedNode<StepContext<C, SC, RC, I, O>>,
+    defaultWatcherTargets: WatcherTarget[],
+  ) => WatcherTarget[]
 
   validateInput?: (
     inputData: StepInputTypesToInstances<I>,
     inputTypes: I,
   ) => StepValidationError[]
 
+  onRemove?: (
+    store: PipelineStore,
+    node: InitializedNode<StepContext<C, SC, RC, I, O>>,
+  ) => void
+
   run: R
 } & ({
-  passthrough?: false,
+  passthrough?: false
   inputDataTypes: I
   outputDataType: O
 } | {
-  passthrough: true,
-  inputDataTypes?: undefined,
-  outputDataType?: undefined,
+  passthrough: true
+  inputDataTypes?: undefined
+  outputDataType?: undefined
 })
 
-export interface IStepHandler<
+function makeBaseHandler<
   T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>,
-  N extends InitializedNode<T> = InitializedNode<T>
-> {
-  inputDataTypes: T['InputConstructors'],
-  outputDataType: T['OutputConstructors'],
-
-  // fresh default config instance
-  config(): T['C']
-
-  // wraps default config in reactivity
-  reactiveConfig(defaults: T['C']): T['RC'],
-
-  // watch config and trigger updates
-  watcherTargets(node: N, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
-
-  // apply loaded config to internal reactive config
-  loadConfig(config: T['RC'], serializedConfig: T['SerializedConfig']): void,
-
-  // convert config to storage
-  serializeConfig(config: T['C']): T['SerializedConfig'],
-
-  // convert config from storage
-  deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
-
-  validateInput(inputData: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
-
-  run: R,
-
-  setPassThroughDataType: (passthroughType: StepDataType) => void,
-  clearPassThroughDataType: () => void,
-}
-
-export function makeStepHandler<
-  T extends AnyStepContext,
-  R extends NodeRunner<T> = NodeRunner<T>,
-  N extends InitializedNode<T> = InitializedNode<T>
+  R extends NodeRunner<T>,
 >(
   def: string,
   options: StepHandlerOptions<T, R>,
   stepRegistry: StepRegistry = useStepRegistry(),
-): IStepHandler<T, R> {
-
+): IStepHandlerBase<T, R> {
   type RC = T['RC']
   type SerializedConfig = T['SerializedConfig']
   type C = T['C']
@@ -133,40 +165,45 @@ export function makeStepHandler<
   const defaultInput = isPassthrough ? [PassThrough] : options.inputDataTypes
   const defaultOutput = isPassthrough ? PassThrough : options.outputDataType
 
-  const passthroughType = shallowRef<StepDataType | undefined>(undefined)
+  let passthroughType: StepDataType | undefined = undefined
 
-  return {
+  const base: IStepHandlerBase<T, R> = {
     config(): C {
-      return {}
+      // default empty config; most handlers will override
+      return {} as C
     },
+
     reactiveConfig(defaults: C): RC {
       return reactive(defaults) as RC
     },
-    watcherTargets(_node: N, defaults: WatcherTarget[]): WatcherTarget[] {
-      return defaults
+
+    loadConfig(config: RC, serializedConfig: SerializedConfig): void {
+      const deserialized = this.deserializeConfig(serializedConfig)
+      Object.assign(config as object, deserialized)
     },
+
     deserializeConfig(serializedConfig: SerializedConfig): C {
       return {
         ...serializedConfig,
       } as C
     },
-    serializeConfig(config: RC): SerializedConfig {
+
+    serializeConfig(config: C): SerializedConfig {
       const unwrapped = deepUnwrap(config)
       return {
         ...unwrapped,
       } as SerializedConfig
     },
-    loadConfig(config: RC, serializedConfig: SerializedConfig): void {
-      const deserialized = this.deserializeConfig(serializedConfig)
-      Object.assign(config, deserialized)
-    },
+
     validateInput(
       inputData: Input | null,
       inputDataTypes: InputConstructors,
     ): StepValidationError[] {
       if (inputData === null) return []
 
-      if ((inputDataTypes as any[]).some(c => (inputData as any) instanceof c)) return []
+      if ((inputDataTypes as any[]).some(c => (inputData as any) instanceof c)) {
+        return []
+      }
 
       const receivedType = (inputData as BaseDataStructure).constructor as StepDataType
       return [
@@ -174,23 +211,72 @@ export function makeStepHandler<
       ]
     },
 
-    // ⚠️make sure options is exactly here
+    // Node-agnostic defaults; these get wrapped for node-specific handlers.
+    watcherTargets(
+      _node: InitializedNode<T>,
+      defaultWatcherTargets: WatcherTarget[],
+    ): WatcherTarget[] {
+      return options.watcherTargets?.(_node, defaultWatcherTargets) ?? defaultWatcherTargets
+    },
+
+    onRemove(store: PipelineStore, node: InitializedNode<T>): void {
+      options.onRemove?.(store, node)
+    },
+
+    // user-provided bits (run, custom config, etc.)
     ...options,
 
     get inputDataTypes() {
-      return passthroughType.value ? [passthroughType.value] : defaultInput
+      return passthroughType ? [passthroughType] : defaultInput
     },
 
     get outputDataType() {
-      return passthroughType.value ?? defaultOutput
+      return passthroughType ?? defaultOutput
     },
 
     clearPassThroughDataType() {
-      passthroughType.value = undefined
+      passthroughType = undefined
     },
 
     setPassThroughDataType(type: StepDataType) {
-      passthroughType.value = type
+      passthroughType = type
     },
-  } as IStepHandler<T, R>
+  }
+
+  return base
+}
+
+function adaptHandler<
+  T extends AnyStepContext,
+  R extends NodeRunner<T>,
+  N extends InitializedNode<T>,
+>(base: IStepHandlerBase<T, R>): INodeHandler<T, R, N> {
+  return base as INodeHandler<T, R, N>
+}
+
+export function makeStepHandler<T extends AnyStepContext>(
+  def: string,
+  options: StepHandlerOptions<T, NormalStepRunner<T>>,
+  stepRegistry: StepRegistry = useStepRegistry(),
+): IStepHandler<T> {
+  const base = makeBaseHandler<T, NormalStepRunner<T>>(def, options, stepRegistry)
+  return adaptHandler<T, NormalStepRunner<T>, InitializedStepNode<T>>(base)
+}
+
+export function makeForkHandler<T extends AnyStepContext>(
+  def: string,
+  options: StepHandlerOptions<T, ForkStepRunner<T>>,
+  stepRegistry: StepRegistry = useStepRegistry(),
+): IForkHandler<T> {
+  const base = makeBaseHandler<T, ForkStepRunner<T>>(def, options, stepRegistry)
+  return adaptHandler<T, ForkStepRunner<T>, InitializedForkNode<T>>(base)
+}
+
+export function makeBranchHandler<T extends AnyStepContext>(
+  def: string,
+  options: StepHandlerOptions<T, NormalStepRunner<T>>,
+  stepRegistry: StepRegistry = useStepRegistry(),
+): IBranchHandler<T> {
+  const base = makeBaseHandler<T, NormalStepRunner<T>>(def, options, stepRegistry)
+  return adaptHandler<T, NormalStepRunner<T>, InitializedBranchNode<T>>(base)
 }

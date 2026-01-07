@@ -3,6 +3,7 @@ import { Component } from 'vue'
 import type { AnyStepDefinition, NodeDef, NodeId, StepDataType } from '../src/lib/pipeline/_types'
 import { NodeType } from '../src/lib/pipeline/_types'
 import { BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
+import type { NormalStepRunner } from '../src/lib/pipeline/NodeRunner.ts'
 import type { AnyStepContext } from '../src/lib/pipeline/Step'
 import type { StepHandlerOptions } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
@@ -92,7 +93,7 @@ defineStep({
 // Handler options matching definitions
 // ------------------------------------------------------------
 
-const passthroughHandlerOptions: StepHandlerOptions<Ctx> = {
+const passthroughHandlerOptions: StepHandlerOptions<Ctx, NormalStepRunner<Ctx>> = {
   passthrough: true,
   run: vi.fn(async ({ inputData }) => ({
     output: (inputData),
@@ -102,7 +103,7 @@ const passthroughHandlerOptions: StepHandlerOptions<Ctx> = {
   })),
 }
 
-const typedHandlerOptions: StepHandlerOptions<Ctx> = {
+const typedHandlerOptions: StepHandlerOptions<Ctx, NormalStepRunner<Ctx>> = {
   passthrough: false,
   inputDataTypes: [PassThrough],
   outputDataType: PassThrough,
@@ -125,7 +126,7 @@ describe('Node type sanity', () => {
       def: passthroughDef,
       config: { value: 1 },
     })
-    s.initialize(passthroughHandlerOptions)
+    s.initializeStep(passthroughHandlerOptions)
     expect(s.type).toBe(NodeType.STEP)
   })
 })
@@ -141,7 +142,7 @@ describe('isReady / outputReady', () => {
       def: passthroughDef,
       config: { value: 1 },
     })
-    s.initialize(passthroughHandlerOptions)
+    s.initializeStep(passthroughHandlerOptions)
 
     s.isDirty = false
     s.isProcessing = false
@@ -167,8 +168,8 @@ describe('isReady / outputReady', () => {
 
     s1.prevNodeId = nid('s0')
 
-    s0.initialize(passthroughHandlerOptions)
-    s1.initialize(passthroughHandlerOptions)
+    s0.initializeStep(passthroughHandlerOptions)
+    s1.initializeStep(passthroughHandlerOptions)
 
     s0.isDirty = false
     s0.isProcessing = false
@@ -234,7 +235,7 @@ describe('seedSum accumulation', () => {
       [nid('s1')]: s1,
     })
 
-    s0.initialize(passthroughHandlerOptions)
+    s0.initializeStep(passthroughHandlerOptions)
 
     s0.getSeedSum(store)
 
@@ -259,7 +260,7 @@ describe('getOutputSize', () => {
       def: passthroughDef,
       config: { value: 1 },
     })
-    s.initialize(passthroughHandlerOptions)
+    s.initializeStep(passthroughHandlerOptions)
 
     s.outputData = { width: 50, height: 30 } as any
     expect(s.getOutputSize()).toEqual({ width: 50, height: 30 })
@@ -287,8 +288,8 @@ describe('getOutputSize', () => {
 
     f.prevNodeId = nid('s0')
 
-    s0.initialize(passthroughHandlerOptions)
-    f.initialize(passthroughHandlerOptions)
+    s0.initializeStep(passthroughHandlerOptions)
+    f.initializeFork(passthroughHandlerOptions)
 
     s0.outputData = { width: 10, height: 20 } as any
     s0.isDirty = false
@@ -333,7 +334,7 @@ describe('ForkNode serialize', () => {
       prevNodeId: nid('s0'),
     })
 
-    f.initialize(passthroughHandlerOptions)
+    f.initializeFork(passthroughHandlerOptions)
 
     const ser = f.serialize()
     expect(ser.prevNodeId).toBe(nid('s0'))
@@ -354,7 +355,7 @@ describe('BranchNode serialize', () => {
       branchIndex: 2,
     })
 
-    b.initialize(passthroughHandlerOptions)
+    b.initializeBranch(passthroughHandlerOptions)
 
     const ser = b.serialize()
     expect(ser.prevNodeId).toBe(nid('f'))
@@ -382,8 +383,8 @@ describe('Passthrough nodes', () => {
 
     s1.prevNodeId = nid('s0')
 
-    s0.initialize(passthroughHandlerOptions)
-    s1.initialize(passthroughHandlerOptions)
+    s0.initializeStep(passthroughHandlerOptions)
+    s1.initializeStep(passthroughHandlerOptions)
 
     s0.outputData = 9
     s0.isDirty = false
@@ -421,8 +422,8 @@ describe('Typed input/output nodes', () => {
 
     s1.prevNodeId = nid('s0')
 
-    s0.initialize(typedHandlerOptions)
-    s1.initialize(typedHandlerOptions)
+    s0.initializeStep(typedHandlerOptions)
+    s1.initializeStep(typedHandlerOptions)
 
     s0.outputData = 20
     s0.isDirty = false

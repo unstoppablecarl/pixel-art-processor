@@ -10,14 +10,12 @@ import {
   BranchNode,
   deSerializeNode,
   ForkNode,
-  type GraphNode,
   isBranch,
   isFork,
   isStep,
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
-import { type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
@@ -314,12 +312,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       }
     }
 
-    function initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T> {
-      const node = get(id) as unknown as GraphNode<T>
-      node.initialize(handlerOptions)
-      return node
-    }
-
     function _cloneNodeInstance(original: AnyNode): AnyNode {
       const serialized = original.serialize()
       serialized.id = _defToId(serialized.def)
@@ -468,7 +460,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       markDirty,
       runNode,
       loadNode,
-      initializeNode,
       duplicateStepNode,
       duplicateBranchNode,
       getRootNodeOutputSize,

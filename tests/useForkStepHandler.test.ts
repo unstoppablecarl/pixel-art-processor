@@ -7,7 +7,13 @@ import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationEr
 import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
 import type { ForkStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
-import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
+import type {
+  IForkHandler,
+  INodeHandler,
+  IStepHandler,
+  StepHandlerOptions,
+  StepHandlerOptionsInfer,
+} from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { useForkHandler } from '../src/lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
@@ -118,7 +124,8 @@ describe('fork handler type testing', async () => {
       },
       watcherTargets(step, defaultWatcherTargets) {
         type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
-        type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
+        type HandlerFromNode = typeof step['handler']
+        type RFromNode = HandlerFromNode extends INodeHandler<any, infer R, any> ? R : never
         expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
         expectTypeOf<RFromNode>().toExtend<ForkStepRunner<TFromNode>>()
 
@@ -134,16 +141,17 @@ describe('fork handler type testing', async () => {
     })
 
     type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
-    type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
+    type HandlerFromNode = typeof step['handler']
+    type RFromNode = HandlerFromNode extends INodeHandler<any, infer R, any> ? R : never
     expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
-    expectTypeOf<RFromNode>().toExtend<ForkStepRunner<TFromNode>>()
+    expectTypeOf<RFromNode>().toEqualTypeOf<ForkStepRunner<TFromNode>>()
     expectTypeOf<RFromNode>()
       .parameter(0)
       .toEqualTypeOf<{
-        config: TFromNode['RC'],
-        inputData: TFromNode['Input'] | null,
-        branchIndex: number,
+        config: TFromNode['RC']
+        inputData: TFromNode['Input'] | null
         meta: IRunnerResultMeta,
+        branchIndex: number
       }>()
 
     expectTypeOf<RFromNode>()
@@ -169,7 +177,7 @@ describe('fork handler type testing', async () => {
       expect(step.handler).to.not.eq(undefined)
 
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        IStepHandler<T, ForkStepRunner<T>>['run']
+        IForkHandler<T>['run']
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<
         ForkStepRunner<T>
@@ -211,7 +219,7 @@ describe('fork handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        IStepHandler<T, ForkStepRunner<T>, InitializedForkNode<T>>['watcherTargets']
+        IForkHandler<T>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<

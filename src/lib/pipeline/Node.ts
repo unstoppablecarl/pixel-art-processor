@@ -12,15 +12,18 @@ import {
 } from './_types.ts'
 import { GenericValidationError } from './errors/GenericValidationError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
-import type {
-  ForkStepRunner,
-  NodeRunner,
-  NormalStepRunner,
-  SingleRunnerOutput,
-  SingleRunnerResult,
-} from './NodeRunner.ts'
+import type { NormalStepRunner, SingleRunnerOutput, SingleRunnerResult } from './NodeRunner.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
-import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
+import {
+  type AnyNodeHandler,
+  type IBranchHandler,
+  type IForkHandler,
+  type IStepHandler,
+  makeBranchHandler,
+  makeForkHandler,
+  makeStepHandler,
+  type StepHandlerOptions,
+} from './StepHandler.ts'
 import { useStepRegistry } from './StepRegistry.ts'
 
 export type BaseNodeSerialized<T extends AnyStepContext> = {
@@ -43,8 +46,7 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
 
 export abstract class BaseNode<
   T extends AnyStepContext,
-  R extends NodeRunner<T>,
-  N extends InitializedNode<T>,
+  H extends AnyNodeHandler<T>,
   PrevNode extends AnyNode
 > {
   readonly abstract type: NodeType
@@ -60,7 +62,7 @@ export abstract class BaseNode<
   seedSum = 0
   validationErrors: StepValidationError[] = []
   loadSerialized: StepLoaderSerialized<T['SerializedConfig']> = null
-  handler: IStepHandler<T, R, N> | undefined
+  handler: H | undefined
 
   // system
   isDirty = false
@@ -118,6 +120,8 @@ export abstract class BaseNode<
 
   abstract getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<any>>
 
+  abstract getWatcherTargets(): WatcherTarget[]
+
   protected setPassThroughDataTypeFromPrev(store: MinStore): void {
     if (this.prevNodeId) {
       const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
@@ -145,12 +149,12 @@ export abstract class BaseNode<
     }
   }
 
-  initialize(handlerOptions: StepHandlerOptions<T>): void {
-    const handler = makeStepHandler<T>(this.def, handlerOptions)
+  protected initialize(
+    handler: H,
+  ) {
+    this.handler = handler
 
-    this.handler = handler as IStepHandler<T, R, N>
-
-    if (this.config === undefined) {
+    if (!this.config) {
       this.config = handler.reactiveConfig(handler.config())
     }
 
@@ -169,8 +173,8 @@ export abstract class BaseNode<
     return this.seedSum
   }
 
-  getWatcherTargets(): WatcherTarget[] {
-    const defaults = [
+  protected getBaseWatcherTargets(): WatcherTarget[] {
+    return [
       {
         name: 'config',
         target: () => this.config,
@@ -180,8 +184,6 @@ export abstract class BaseNode<
         target: () => this.seed,
       },
     ]
-
-    return this.handler!.watcherTargets(this as unknown as N, defaults)
   }
 
   getPrev(store: MinStore): PrevNode | undefined {
@@ -215,9 +217,9 @@ function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
 
 abstract class StepOrBranchNode<
   T extends AnyStepContext,
-  N extends InitializedStepNode<T> | InitializedBranchNode<T>,
+  H extends IStepHandler<T> | IBranchHandler<T>,
   PrevNode extends AnyNode
-> extends BaseNode<T, NormalStepRunner<T>, N, PrevNode> {
+> extends BaseNode<T, H, PrevNode> {
   outputData: T['Output'] | null = null
   outputPreview: ImageData | null = null
   outputMeta: IRunnerResultMeta = {}
@@ -245,10 +247,7 @@ export type StepNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & Par
 
 const StepBase = WithStepOrFork(StepOrBranchNode)
 
-export class StepNode<
-  T extends AnyStepContext,
-  N extends InitializedStepNode<T> = InitializedStepNode<T>
-> extends StepBase<T, N, AnyForkNode | AnyStepNode> {
+export class StepNode<T extends AnyStepContext> extends StepBase<T, IStepHandler<T>, AnyForkNode | AnyStepNode> {
   type = NodeType.STEP
 
   muted: boolean
@@ -308,11 +307,15 @@ export class StepNode<
   }
 
   getWatcherTargets(): WatcherTarget[] {
-    const defaults = [...super.getWatcherTargets(), {
+    const defaults = [...super.getBaseWatcherTargets(), {
       name: 'muted',
       target: () => this.muted,
     }]
-    return this.handler!.watcherTargets(this as unknown as N, defaults)
+    return this.handler!.watcherTargets(this as InitializedStepNode<T>, defaults)
+  }
+
+  initializeStep(options: StepHandlerOptions<T, IStepHandler<T>['run']>) {
+    this.initialize(makeStepHandler<T>(this.def, options))
   }
 }
 
@@ -327,7 +330,9 @@ export type ForkNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & For
 
 const ForkBase = WithStepOrFork(BaseNode)
 
-export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunner<T>, InitializedForkNode<T>, AnyStepNode | AnyBranchNode> {
+export class ForkNode<
+  T extends AnyStepContext,
+> extends ForkBase<T, IForkHandler<T>, AnyStepNode | AnyBranchNode> {
   type = NodeType.FORK
 
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
@@ -377,8 +382,7 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
   > {
     logNodeEvent(this.id, 'runBranch', { branchIndex })
     const { output: prevOutput, meta } = await this.getOutputFromPrev(store)
-    const _handler = this.handler as IStepHandler<T, ForkStepRunner<T>>
-    const output = await _handler.run({
+    const output = await this.handler!.run({
       config: this.config as T['RC'],
       inputData: prevOutput,
       branchIndex,
@@ -416,6 +420,14 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
       this.forkOutputData.value.splice(index, 1)
     }
   }
+
+  getWatcherTargets(): WatcherTarget[] {
+    return this.handler!.watcherTargets(this as InitializedForkNode<T>, super.getBaseWatcherTargets())
+  }
+
+  initializeFork(options: StepHandlerOptions<T, IForkHandler<T>['run']>) {
+    this.initialize(makeForkHandler<T>(this.def, options))
+  }
 }
 
 type BranchNodeProperties = {
@@ -427,7 +439,7 @@ export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<
 export type AnyBranchNode = BranchNode<AnyStepContext>
 export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & BranchNodeProperties
 
-export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, InitializedBranchNode<T>, AnyForkNode> {
+export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IBranchHandler<T>, AnyForkNode> {
   type = NodeType.BRANCH
 
   prevNodeId: NodeId
@@ -458,10 +470,9 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
     const fork = this.getPrev(store)
     this.handler!.setPassThroughDataType(fork.handler!.outputDataType)
 
-    const _handler = this.handler as IStepHandler<T, NormalStepRunner<T>>
     const { output: inputData, meta, validationErrors: forkValidationErrors } = await this.getOutputFromPrev(store)
 
-    const output = await _handler.run({
+    const output = await this.handler!.run({
       config: this.config as T['RC'],
       inputData,
       meta,
@@ -483,6 +494,14 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
     const result = await fork.getBranchOutput(store, this.branchIndex)
     logNodeEvent(this.id, 'getOutputFromPrev: end', result)
     return result as SingleRunnerResult<T>
+  }
+
+  getWatcherTargets(): WatcherTarget[] {
+    return this.handler!.watcherTargets(this as InitializedBranchNode<T>, super.getBaseWatcherTargets())
+  }
+
+  initializeBranch(options: StepHandlerOptions<T, IBranchHandler<T>['run']>) {
+    this.initialize(makeBranchHandler<T>(this.def, options))
   }
 }
 

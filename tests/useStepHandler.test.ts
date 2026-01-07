@@ -7,7 +7,12 @@ import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationEr
 import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
-import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
+import type {
+  INodeHandler,
+  IStepHandler,
+  StepHandlerOptions,
+  StepHandlerOptionsInfer,
+} from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
@@ -123,14 +128,15 @@ describe('step handler type testing', async () => {
     await Promise.resolve()
 
     type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
-    type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
+    type HandlerFromNode = typeof step['handler']
+    type RFromNode = HandlerFromNode extends INodeHandler<any, infer R, any> ? R : never
     expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
-    expectTypeOf<RFromNode>().toExtend<NormalStepRunner<TFromNode>>()
+    expectTypeOf<RFromNode>().toEqualTypeOf<NormalStepRunner<TFromNode>>()
     expectTypeOf<RFromNode>()
       .parameter(0)
       .toEqualTypeOf<{
-        config: TFromNode['RC'],
-        inputData: TFromNode['Input'] | null,
+        config: TFromNode['RC']
+        inputData: TFromNode['Input'] | null
         meta: IRunnerResultMeta,
       }>()
 
@@ -158,7 +164,7 @@ describe('step handler type testing', async () => {
       expect(step.handler).to.not.eq(undefined)
 
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        IStepHandler<T, NormalStepRunner<T>>['run']
+        IStepHandler<T>['run']
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<
         NormalStepRunner<T>
@@ -194,7 +200,7 @@ describe('step handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        IStepHandler<T, NormalStepRunner<T>, InitializedStepNode<T>>['watcherTargets']
+        IStepHandler<T>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<

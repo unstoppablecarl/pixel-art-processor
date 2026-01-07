@@ -2,12 +2,14 @@ import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
 import type { IRunnerResultMeta } from '../src/lib/pipeline/_types.ts'
+import type { InitializedStepNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
+import type { PipelineStore } from '../src/lib/store/pipeline-store.ts'
 
 class A extends BitMask {
 }
@@ -39,7 +41,7 @@ type T = StepContext<
 >
 
 describe('IStepHandler<T> basic structure', () => {
-  const handler: IStepHandler<T, NormalStepRunner<T>> = {
+  const handler: IStepHandler<T> = {
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
 
@@ -91,6 +93,10 @@ describe('IStepHandler<T> basic structure', () => {
     clearPassThroughDataType() {
 
     },
+    onRemove(store, node) {
+      expectTypeOf(store).toEqualTypeOf<PipelineStore>()
+      expectTypeOf(node).toEqualTypeOf<InitializedStepNode<T>>()
+    }
   }
 
   it('has correct inputDataTypes', () => {

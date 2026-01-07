@@ -1,34 +1,20 @@
 import { watch } from 'vue'
 import type { Optional } from '../_helpers.ts'
-import { usePipelineStore } from '../store/pipeline-store.ts'
+import { type PipelineStore, usePipelineStore } from '../store/pipeline-store.ts'
 import { logNodeWatch } from '../util/misc.ts'
 import type { Config, NodeId, StepDataType } from './_types.ts'
-import type { InitializedBranchNode, InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
-import type { ForkStepRunner, NodeRunner, NormalStepRunner } from './NodeRunner.ts'
-import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
-import type { StepHandlerOptions, StepHandlerOptionsInfer } from './StepHandler.ts'
-
-function useCoreStepHandler<
-  T extends AnyStepContext,
-  R extends NodeRunner<T>
->(
-  nodeId: NodeId,
-  options: StepHandlerOptions<T, R>,
-) {
-  const store = usePipelineStore()
-
-  const node = store.initializeNode<T>(nodeId, options as StepHandlerOptions<T>)
-
-  node.getWatcherTargets()
-    .forEach(({ name, target }) => {
-      watch(target, () => {
-        logNodeWatch(node.id, name)
-        store.markDirty(node.id)
-      }, { deep: true })
-    })
-
-  return node as InitializedNode<T>
-}
+import {
+  type AnyNode,
+  BranchNode,
+  ForkNode,
+  type InitializedBranchNode,
+  type InitializedForkNode,
+  type InitializedStepNode,
+  StepNode,
+} from './Node.ts'
+import type { ForkStepRunner, NormalStepRunner } from './NodeRunner.ts'
+import { type ReactiveConfigType, type StepContext } from './Step.ts'
+import { type StepHandlerOptions, type StepHandlerOptionsInfer } from './StepHandler.ts'
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
 export function useStepHandler<
@@ -45,9 +31,13 @@ export function useStepHandler<
   >,
 ) {
   type T = StepContext<C, SC, RC, I, O>
-  type R = NormalStepRunner<T>
 
-  return useCoreStepHandler<T, R>(nodeId, options) as InitializedStepNode<T>
+  const store = usePipelineStore()
+  const node = store.get(nodeId) as unknown as StepNode<T>
+  node.initializeStep(options)
+  createWatchers(store, node)
+
+  return node as InitializedStepNode<T>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
@@ -66,7 +56,12 @@ export function useForkHandler<
 ) {
   type T = StepContext<C, SC, RC, I, O>
 
-  return useCoreStepHandler<T, ForkStepRunner<T>>(nodeId, options) as InitializedForkNode<T>
+  const store = usePipelineStore()
+  const node = store.get(nodeId) as unknown as ForkNode<T>
+  node.initializeFork(options)
+  createWatchers(store, node)
+
+  return node as InitializedForkNode<T>
 }
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
@@ -98,5 +93,20 @@ export function useBranchHandler<
     ...options,
   } as StepHandlerOptions<T, NormalStepRunner<T>>
 
-  return useCoreStepHandler<T, NormalStepRunner<T>>(nodeId, merged) as InitializedBranchNode<T>
+  const store = usePipelineStore()
+  const node = store.get(nodeId) as unknown as BranchNode<T>
+  node.initializeBranch(merged)
+  createWatchers(store, node)
+
+  return node as InitializedBranchNode<T>
+}
+
+function createWatchers(store: PipelineStore, node: AnyNode) {
+  node.getWatcherTargets()
+    .forEach(({ name, target }) => {
+      watch(target, () => {
+        logNodeWatch(node.id, name)
+        store.markDirty(node.id)
+      }, { deep: true })
+    })
 }

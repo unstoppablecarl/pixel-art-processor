@@ -66,6 +66,7 @@ describe('StepHandlerOptional', () => {
       | 'config'
       | 'loadConfig'
       | 'validateInput'
+      | 'onRemove'
 
     expectTypeOf<OptionalKeys>().toEqualTypeOf<Expected>()
   })
@@ -219,10 +220,10 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler<T, NormalStepRunner<T>>(DEF, options, fakeStepRegistry)
+    const handler = makeStepHandler<T>(DEF, options, fakeStepRegistry)
 
     // Shape of handler: must be a full IStepHandler<T>
-    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T, NormalStepRunner<T>>>()
+    expectTypeOf(handler).toEqualTypeOf<IStepHandler<T>>()
 
     // validate core fields
     expectTypeOf(handler.inputDataTypes).toEqualTypeOf<readonly [typeof A, typeof B]>()
@@ -236,7 +237,7 @@ describe('makeStepHandler<T>', () => {
 
     // ensure defaulted methods have the right types even if not provided in options
     expectTypeOf(handler.watcherTargets).toEqualTypeOf<
-      IStepHandler<T, NormalStepRunner<T>>['watcherTargets']
+      IStepHandler<T>['watcherTargets']
     >()
     expectTypeOf(handler.serializeConfig).toEqualTypeOf<
       IStepHandler<T>['serializeConfig']
@@ -286,7 +287,7 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler<T, NormalStepRunner<T>>(DEF, options, fakeStepRegistry)
+    const handler = makeStepHandler<T>(DEF, options, fakeStepRegistry)
 
     expectTypeOf(handler.run).toEqualTypeOf<
       NormalStepRunner<T>
