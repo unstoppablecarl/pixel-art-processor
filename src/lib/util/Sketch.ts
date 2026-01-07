@@ -1,4 +1,4 @@
-import type { BoundsLike } from '../data/Bounds.ts'
+import type { BoundsLike } from './data/Bounds.ts'
 import type { Point } from '../step-data-types/BaseDataStructure.ts'
 
 export class Sketch {

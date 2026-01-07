@@ -1,4 +1,4 @@
-import { Bounds } from '../../data/Bounds.ts'
+import { Bounds } from '../../util/data/Bounds.ts'
 import type { Point } from '../BaseDataStructure.ts'
 import { BitMask } from '../BitMask.ts'
 

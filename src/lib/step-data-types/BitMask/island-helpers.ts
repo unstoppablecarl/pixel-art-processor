@@ -1,4 +1,4 @@
-import type { BoundsLike } from '../../data/Bounds.ts'
+import type { BoundsLike } from '../../util/data/Bounds.ts'
 import { CARDINAL_DIRECTIONS, type Point } from '../BaseDataStructure.ts'
 import type { BitMask } from '../BitMask.ts'
 import { Island, IslandType } from './Island.ts'

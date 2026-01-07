@@ -1,4 +1,4 @@
-import { Bounds, type BoundsLike } from '../data/Bounds.ts'
+import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
 import { type RGBA, setImageDataPixelColor } from '../util/ImageData.ts'
 
 export type Point = {
