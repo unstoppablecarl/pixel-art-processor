@@ -36,6 +36,8 @@ export type PipelineStore = ReturnType<typeof usePipelineStore>
 
 export const usePipelineStore = defineStore('pipeline', () => {
     const stepRegistry = useStepRegistry()
+    const queue = makeNodeRunnerQueue({ runNode, getAncestorNodeIds })
+
     const nodes = reactive<Record<string, AnyNode>>({})
     const idIncrement = ref(0)
     const globalSeed = ref(3)
@@ -279,8 +281,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
 
       node.prevNodeId = afterId
     }
-
-    const queue = makeNodeRunnerQueue({ runNode, getAncestorNodeIds })
 
     // the only place to mark a node for processing
     function markDirty(id: NodeId) {
