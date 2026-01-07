@@ -8,7 +8,7 @@ const queueMicrotaskFn: (cb: () => void) => void =
     ? queueMicrotask
     : (cb: () => void) => Promise.resolve().then(cb)
 
-export function makeNodeRunnerQueue(store: PipelineStore) {
+export function makeNodeRunnerQueue(store: Pick<PipelineStore, 'runNode' | 'getAncestorNodeIds'>) {
   const pendingDirty = new Set<NodeId>()
   let flushScheduled = false
 
@@ -38,24 +38,13 @@ export function makeNodeRunnerQueue(store: PipelineStore) {
     }
   }
 
-  function getAncestorNodeIds(id: NodeId): NodeId[] {
-    const chain: NodeId[] = []
-    let cur: NodeId | null = id
-
-    while (cur) {
-      chain.push(cur)
-      cur = store.get(cur).prevNodeId
-    }
-    return chain
-  }
-
   function findHighestDirtyAncestors(dirtyIds: Set<NodeId>): Set<NodeId> {
     // Step 1: For each dirty node, walk all the way up to the true root
     // and record the full ancestor chain.
     const chains: Map<NodeId, NodeId[]> = new Map()
 
     for (const id of dirtyIds) {
-      chains.set(id, getAncestorNodeIds(id))
+      chains.set(id, store.getAncestorNodeIds(id))
     }
 
     // Step 2: For each chain, find the highest ancestor that is dirty.

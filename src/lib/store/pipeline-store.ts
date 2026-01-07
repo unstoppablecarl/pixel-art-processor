@@ -1,16 +1,20 @@
 import { defineStore } from 'pinia'
-import { reactive, ref, type Ref, shallowReactive, watch } from 'vue'
+import { reactive, ref, shallowReactive, watch } from 'vue'
 import { type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
 import {
-  type AnyBranchNode, type AnyForkNode,
+  type AnyBranchNode,
+  type AnyForkNode,
   type AnyNode,
-  type AnyNodeSerialized, type AnyStepNode, BranchNode,
-  deSerializeNode, ForkNode,
+  type AnyNodeSerialized,
+  type AnyStepNode,
+  BranchNode,
+  deSerializeNode,
+  ForkNode,
   type GraphNode,
   isBranch,
   isFork,
-  isStep, StepNode,
-
+  isStep,
+  StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
 import { type StepHandlerOptions } from '../pipeline/StepHandler.ts'
@@ -28,82 +32,14 @@ type SerializedState = {
 
 export type MinStore = Pick<PipelineStore, 'get' | 'nodes' | 'nodeIsPassthrough' | 'markDirty'>
 
-export interface PipelineStore {
-  nodes: Record<NodeId, AnyNode>
-  idIncrement: Ref<number>,
-  globalSeed: Ref<number>,
-  imgScale: Ref<number>,
+export type PipelineStore = ReturnType<typeof usePipelineStore>
 
-  $reset(): void,
-  $serializeState(): void,
-  $restoreState(data: SerializedState): void,
-
-  get(id: NodeId): AnyNode
-  getBranch(id: NodeId): AnyBranchNode
-  getFork(id: NodeId): AnyForkNode
-  getStep(id: NodeId): AnyStepNode
-  getIfExists(id: NodeId): AnyNode | undefined
-  has(id: NodeId): boolean
-  markRootDirty(): void
-  rootNode(): AnyNode | undefined
-  markDirty(id: NodeId): void
-  runNode(id: NodeId): Promise<void>
-  add(def: NodeDef, afterId: NodeId | null): AnyNode
-  addStep(def: NodeDef, prevNodeId: NodeId | null): AnyStepNode
-  addFork(def: NodeDef, prevNodeId: NodeId | null): AnyForkNode
-  addBranch(def: NodeDef, parentForkId: NodeId): AnyBranchNode
-  remove(id: NodeId): void
-  moveStepNode(id: NodeId, afterId: NodeId | null): void
-  loadNode(serialized: AnyNodeSerialized): void
-  initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T>
-  duplicateStepNode(id: NodeId): NodeId
-  duplicateBranchNode(id: NodeId): NodeId
-  getRootNodeOutputSize(): ImgSize
-  getLeafNodes(): AnyNode[],
-  nodeIsPassthrough<T extends AnyStepContext>(node: AnyNode<T>): boolean
-}
-
-export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
+export const usePipelineStore = defineStore('pipeline', () => {
     const stepRegistry = useStepRegistry()
     const nodes = reactive<Record<string, AnyNode>>({})
     const idIncrement = ref(0)
     const globalSeed = ref(3)
     const imgScale = ref(4)
-
-    const store: PipelineStore = {
-      nodes,
-      idIncrement,
-      globalSeed,
-      imgScale,
-
-      $reset,
-      $serializeState,
-      $restoreState,
-
-      rootNode,
-      markRootDirty,
-      get,
-      getIfExists,
-      getStep,
-      getFork,
-      getBranch,
-      has,
-      add,
-      addStep,
-      addFork,
-      addBranch,
-      remove,
-      moveStepNode,
-      markDirty,
-      runNode,
-      loadNode,
-      initializeNode,
-      duplicateStepNode,
-      duplicateBranchNode,
-      getRootNodeOutputSize,
-      getLeafNodes,
-      nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
-    }
 
     function $reset() {
       Object.keys(nodes).forEach(key => delete nodes[key])
@@ -242,6 +178,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
         const node = getIfExists(currentId)
         if (!node) return
 
+        const store = usePipelineStore()
         for (const childId of node.childIds(store)) {
           result.push(childId)
           walk(childId)
@@ -262,6 +199,8 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     function detachStep(node: AnyStepNode) {
+      const store = usePipelineStore()
+
       const parentId = node.prevNodeId
       const childId = node.childIds(store)[0] ?? null
 
@@ -289,6 +228,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
         const branch = node as AnyBranchNode
         const parentId = branch.prevNodeId
         if (parentId) {
+          const store = usePipelineStore()
           getFork(parentId).removeBranch(store, branch.id)
         }
         removeBranchOrForkAndDescendants(id)
@@ -330,6 +270,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const after = get(afterId)
       if (isFork(after)) throw new Error('Cannot attach step after a ForkNode')
 
+      const store = usePipelineStore()
       // Insert node between after and its old child
       const oldChildId = after.childIds(store)[0]
       if (oldChildId) {
@@ -339,7 +280,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       node.prevNodeId = afterId
     }
 
-    const queue = makeNodeRunnerQueue(store)
+    const queue = makeNodeRunnerQueue({ runNode, getAncestorNodeIds })
 
     // the only place to mark a node for processing
     function markDirty(id: NodeId) {
@@ -354,6 +295,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
 
     async function runNode(id: NodeId) {
       const node = get(id)
+      const store = usePipelineStore()
 
       // will be handled upstream
       if (!node.isReady(store)) {
@@ -392,6 +334,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const newId = clone.id
       nodes[newId] = clone
       map.set(id, newId)
+      const store = usePipelineStore()
 
       for (const childId of original.childIds(store)) {
         const childClone = _cloneSubtree(childId, map)
@@ -434,6 +377,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       // 1. Deep‑clone subtree
       const cloneMap = new Map<NodeId, NodeId>()
       const cloneRoot = _cloneSubtree(id, cloneMap)
+      const store = usePipelineStore()
 
       // Duplicate branch inside its fork's branchIds[]
       const parentFork = original.getPrev(store)
@@ -468,16 +412,62 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
     }
 
     function getLeafNodes(): AnyNode[] {
+      const store = usePipelineStore()
+
       return Object.values(nodes).filter(n => n.childIds(store).length === 0)
     }
 
-    return store
+    function getAncestorNodeIds(id: NodeId): NodeId[] {
+      const chain: NodeId[] = []
+      let cur: NodeId | null = id
+      const store = usePipelineStore()
+
+      while (cur) {
+        chain.push(cur)
+        cur = store.get(cur).prevNodeId
+      }
+      return chain
+    }
+
+    return {
+      nodes,
+      idIncrement,
+      globalSeed,
+      imgScale,
+
+      $reset,
+      $serializeState,
+      $restoreState,
+
+      rootNode,
+      markRootDirty,
+      get,
+      getIfExists,
+      getStep,
+      getFork,
+      getBranch,
+      has,
+      add,
+      addStep,
+      addFork,
+      addBranch,
+      remove,
+      moveStepNode,
+      markDirty,
+      runNode,
+      loadNode,
+      initializeNode,
+      duplicateStepNode,
+      duplicateBranchNode,
+      getRootNodeOutputSize,
+      getLeafNodes,
+      getAncestorNodeIds,
+      nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
+    }
   },
   {
     persist: {
       key: 'pipeline',
-    }
-    ,
-  }
-  ,
+    },
+  },
 )
