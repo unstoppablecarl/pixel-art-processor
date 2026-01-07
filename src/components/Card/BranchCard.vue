@@ -69,7 +69,8 @@ const nodeIds = computed((): NodeId[] => {
     </div>
 
     <div class="card-body" v-if="branch.forkValidationErrors.length">
-      <div class="section-heading text-danger" v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+      <div class="section-heading text-danger"
+           v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
         Fork Output
       </div>
       <div class="section" v-for="error in branch.forkValidationErrors">
@@ -78,7 +79,8 @@ const nodeIds = computed((): NodeId[] => {
     </div>
 
     <div class="card-body" v-if="branch.validationErrors.length">
-      <div class="section-heading text-danger" v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+      <div class="section-heading text-danger"
+           v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
         Branch Output
       </div>
       <div class="section" v-for="error in branch.validationErrors">
@@ -86,12 +88,17 @@ const nodeIds = computed((): NodeId[] => {
       </div>
     </div>
 
-    <div class="card-body">
-      <div class="branch">
-        <PipelineBranch
-          :node-ids="nodeIds"
-        />
+    <slot name="before-nodes">
+    </slot>
+
+    <slot name="nodes">
+      <div class="card-body">
+        <div class="branch">
+          <PipelineBranch
+            :node-ids="nodeIds"
+          />
+        </div>
       </div>
-    </div>
+    </slot>
   </div>
 </template>

@@ -5,18 +5,18 @@ const {
   label,
   step = 1,
   min = 0,
-  max,
-  inputWidth,
+  max = Infinity,
+  inputWidth = '',
 } = defineProps<{
   id: string,
   label: string,
-  step: number,
-  min: number,
+  step?: number,
+  min?: number,
   max?: number,
   inputWidth?: string,
 }>()
 
-const modelValue = defineModel<number>()
+const modelValue = defineModel<number>({ required: true })
 
 </script>
 <template>
