@@ -36,7 +36,7 @@ import {
   type WangTileEdgeConfig,
 } from '../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import { populateIndexedWangTile, WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
-import StepCard from '../StepCard.vue'
+import StepCard from '../Card/StepCard.vue'
 import StepImage from '../StepImage.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 import RangeSlider from '../UIForms/RangeSlider.vue'

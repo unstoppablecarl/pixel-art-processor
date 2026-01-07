@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { BButton, BButtonGroup, BCollapse, BPopover } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import { getValidationErrorComponent } from '../lib/errors.ts'
+import { getValidationErrorComponent } from '../../lib/errors.ts'
 
-import { INVALID_INPUT_TYPE_ERROR } from '../lib/pipeline/errors/InvalidInputTypeError.ts'
-import { StepValidationError } from '../lib/pipeline/errors/StepValidationError.ts'
-import { type AnyForkNode, type AnyInitializedNode, isBranch, isStep } from '../lib/pipeline/Node.ts'
-import { useStepRegistry } from '../lib/pipeline/StepRegistry.ts'
-import { usePipelineStore } from '../lib/store/pipeline-store.ts'
-import type { StepImg } from '../lib/util/vue-util.ts'
-import StepImage from './StepImage.vue'
-import AddNodeAfterDropDown from './UI/AddNodeAfterDropDown.vue'
-import SeedPopOver from './UI/SeedPopOver.vue'
+import { INVALID_INPUT_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputTypeError.ts'
+import { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
+import { type AnyForkNode, type AnyInitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
+import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import type { StepImg } from '../../lib/util/vue-util.ts'
+import StepImage from '../StepImage.vue'
+import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
+import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
 

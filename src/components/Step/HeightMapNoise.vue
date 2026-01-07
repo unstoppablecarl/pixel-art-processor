@@ -17,7 +17,7 @@ import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../l
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import StepCard from '../StepCard.vue'
+import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const store = usePipelineStore()

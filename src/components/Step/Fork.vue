@@ -16,7 +16,7 @@ import { isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
-import StepCard from '../StepCard.vue'
+import StepCard from '../Card/StepCard.vue'
 import { computed } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()

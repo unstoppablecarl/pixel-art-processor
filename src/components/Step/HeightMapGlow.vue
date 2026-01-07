@@ -19,7 +19,7 @@ import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
-import StepCard from '../StepCard.vue'
+import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()

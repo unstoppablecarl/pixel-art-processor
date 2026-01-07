@@ -18,7 +18,7 @@ import type { StepValidationError } from '../../lib/pipeline/errors/StepValidati
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
-import StepCard from '../StepCard.vue'
+import StepCard from '../Card/StepCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
