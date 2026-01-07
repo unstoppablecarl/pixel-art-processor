@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { BButtonGroup, BCollapse } from 'bootstrap-vue-next'
-import { computed, shallowRef, watch } from 'vue'
-import { getValidationErrorComponent } from '../../lib/errors.ts'
-import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
+import { computed, watch } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
 import {
   generateWangTileEdgePattern,
@@ -30,15 +27,8 @@ const {
   size: number,
 }>()
 
-const store = usePipelineStore()
-
-const validationErrors = shallowRef<StepValidationError[]>([])
-
-watch(() => config, () => {
+watch(config, () => {
   edge.value = generateWangTileEdgePattern(size, config.value)
-
-  const forkOutputData = store.getFork(nodeId).forkOutputData
-  validationErrors.value = forkOutputData.value[index]?.validationErrors ?? []
 }, { deep: true, immediate: true })
 
 const preview = computed(() => {
@@ -103,9 +93,5 @@ const preview = computed(() => {
       </div>
     </div>
   </BCollapse>
-  <div class="card-footer" v-if="validationErrors.length">
-    <div class="section" v-for="error in validationErrors">
-      <component :is="getValidationErrorComponent(error)" :error="error" />
-    </div>
-  </div>
+
 </template>

@@ -18,13 +18,12 @@ const branchIds = computed(() => {
   <div class="fork-branches">
     <div class="fork-branch-header-spacer">&nbsp;</div>
 
-    <div
+    <template
       v-for="(branchId, branchIndex) in branchIds"
       :key="`${forkNodeId}-branch-${branchIndex}`"
-      class="card card-fork-branch"
     >
       <PipelineForkBranch :branch-node-id="branchId" />
-    </div>
+    </template>
 
     <button role="button" class="btn btn-sm btn-secondary" @click="store.add(BRANCH_DEF, forkNodeId)">
       <span class="material-symbols-outlined">add</span> Branch

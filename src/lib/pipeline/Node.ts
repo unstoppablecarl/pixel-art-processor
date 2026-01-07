@@ -195,6 +195,7 @@ function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
         return {
           prevOutput: null,
           meta: null,
+          validationErrors: [],
         }
       }
 
@@ -203,6 +204,7 @@ function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
       return {
         prevOutput: prev.outputData,
         meta: prev.outputMeta,
+        validationErrors: [],
       }
     }
   }
@@ -321,8 +323,7 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
   type = NodeType.FORK
 
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
-  forkOutputData: Ref<SingleRunnerResult<T>[]> = ref([])
-  private dirtyBranchIndexes = new Set<number>()
+  forkOutputData: Ref<(SingleRunnerResult<T> | undefined)[]> = ref([])
 
   constructor(options: ForkNodeOptions<T>) {
     super(options)
@@ -344,24 +345,21 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
         return this.runBranch(store, i)
       }),
     ) as SingleRunnerResult<T>[]
-
-    this.validationErrors = this.forkOutputData.value.flatMap((d) => d?.validationErrors ?? []) ?? []
   }
 
   async getBranchOutput(store: MinStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
-    console.log('getBranchOutput', branchIndex)
-    if (this.dirtyBranchIndexes.has(branchIndex)) {
+    if (this.forkOutputData.value[branchIndex] === undefined) {
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
       // trigger reactivity
       this.forkOutputData.value = [...this.forkOutputData.value]
-      this.dirtyBranchIndexes.delete(branchIndex)
     }
-    return this.forkOutputData.value[branchIndex]
+
+    return this.forkOutputData.value[branchIndex] as SingleRunnerResult<T>
   }
 
   // use when fork output data changes for only a specific branch
   markBranchDirty(store: MinStore, branchIndex: number): void {
-    this.dirtyBranchIndexes.add(branchIndex)
+    this.forkOutputData.value[branchIndex] = undefined
     const branchId = this.branchIds.value[branchIndex]
     store.markDirty(branchId)
   }
@@ -459,11 +457,11 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
     const fork = this.parentFork(store)
     this.handler.setPassThroughDataType(fork.handler!.outputDataType)
 
-    const { prevOutput, meta } = await this.getOutputFromPrev(store)
+    const { prevOutput, meta, validationErrors } = await this.getOutputFromPrev(store)
     this.outputData = prevOutput
     this.outputMeta = meta
     this.outputPreview = null
-    this.validationErrors = []
+    this.validationErrors = validationErrors
   }
 
   async getOutputFromPrev(store: MinStore): Promise<RunnerPrevOutput<T>> {
@@ -475,6 +473,7 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
     return {
       prevOutput: result.output,
       meta: result.meta,
+      validationErrors: result.validationErrors,
     }
   }
 

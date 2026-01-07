@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
+import { getValidationErrorComponent } from '../../lib/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { isBranch, isFork } from '../../lib/pipeline/Node.ts'
 import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
@@ -39,36 +40,49 @@ const nodeIds = computed((): NodeId[] => {
 })
 </script>
 <template>
-  <div class="card-header hstack" v-if="branch">
-    <div class="me-auto pe-2">Branch {{ branch.branchIndex + 1 }}</div>
+  <div
+    :class="{
+      'card card-fork-branch': true,
+      'border-danger': branch.validationErrors.length,
+    }"
+  >
+    <div class="card-header hstack" v-if="branch">
+      <div class="me-auto pe-2">Branch {{ branch.branchIndex + 1 }}</div>
 
-    <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
+      <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
 
-    <BButtonGroup class="fork-branch-controls">
-      <button role="button" class="btn btn-sm btn-danger d-inline-block"
-              @click="store.remove(branch.id)">
-        <span class="material-symbols-outlined">delete</span>
-      </button>
+      <BButtonGroup class="fork-branch-controls">
+        <button role="button" class="btn btn-sm btn-danger d-inline-block"
+                @click="store.remove(branch.id)">
+          <span class="material-symbols-outlined">delete</span>
+        </button>
 
-      <button role="button" class="btn btn-sm btn-secondary d-inline-block"
-              @click="store.duplicateBranchNode(branchNodeId)">
-        <span class="material-symbols-outlined">content_copy</span>
-      </button>
+        <button role="button" class="btn btn-sm btn-secondary d-inline-block"
+                @click="store.duplicateBranchNode(branchNodeId)">
+          <span class="material-symbols-outlined">content_copy</span>
+        </button>
 
-      <template v-if="!nodeIds.length">
-        <AddNodeAfterDropDown
-          size="sm"
-          :node-id="branchNodeId"
+        <template v-if="!nodeIds.length">
+          <AddNodeAfterDropDown
+            size="sm"
+            :node-id="branchNodeId"
+          />
+        </template>
+      </BButtonGroup>
+    </div>
+
+    <div class="card-body" v-if="branch.validationErrors.length">
+      <div class="section" v-for="error in branch.validationErrors">
+        <component :is="getValidationErrorComponent(error)" :error="error" />
+      </div>
+    </div>
+
+    <div class="card-body">
+      <div class="branch">
+        <PipelineBranch
+          :node-ids="nodeIds"
         />
-      </template>
-    </BButtonGroup>
-  </div>
-
-  <div class="card-body">
-    <div class="branch">
-      <PipelineBranch
-        :node-ids="nodeIds"
-      />
+      </div>
     </div>
   </div>
 </template>

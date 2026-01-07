@@ -19,6 +19,7 @@ export type SingleRunnerOutputValidationError = StepValidationError | string
 export type RunnerPrevOutput<T extends AnyStepContext> = {
   prevOutput: T['Output'] | null,
   meta: RunnerMeta,
+  validationErrors: StepValidationError[]
 }
 
 export type SingleRunnerResult<T extends AnyStepContext> = {
