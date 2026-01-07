@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { Component } from 'vue'
-import type { NodeDef, NodeId, StepDataType } from '../src/lib/pipeline/_types'
+import type { AnyStepDefinition, NodeDef, NodeId, StepDataType } from '../src/lib/pipeline/_types'
 import { NodeType } from '../src/lib/pipeline/_types'
 
 import { BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node'
@@ -48,22 +48,25 @@ function defineStep({
                       passthrough,
                       inputDataTypes,
                       outputDataType,
+                      branchDefs = [],
                     }: {
-  def: NodeDef
+  def: string
   displayName?: string
   type?: NodeType
+  branchDefs?: string[]
 } & (
   | { passthrough: true; inputDataTypes?: undefined; outputDataType?: undefined }
   | { passthrough?: false; inputDataTypes: readonly StepDataType[]; outputDataType: StepDataType }
   )) {
   return useStepRegistry().defineStep({
     displayName,
-    def,
+    def: def as NodeDef,
     type,
     inputDataTypes,
     outputDataType,
+    branchDefs: branchDefs,
     component: {} as unknown as Component,
-  })
+  } as AnyStepDefinition)
 }
 
 // ------------------------------------------------------------

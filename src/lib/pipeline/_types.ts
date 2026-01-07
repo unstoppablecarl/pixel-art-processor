@@ -34,11 +34,54 @@ export type AnyStepMeta = StepMeta<any, any>
 export type StepMeta<
   I extends readonly StepDataType[],
   O extends StepDataType,
-> = {
-  type: NodeType,
+> = StepOrBranchStepMeta<I, O> | ForkStepMeta<I, O>
+
+type StepMetaBase = {
   def: string,
   displayName: string,
-} & StepDataConfig<I, O>
+}
+export type StepOrBranchStepMeta<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = StepMetaBase & StepDataConfig<I, O> & {
+  type: NodeType.BRANCH | NodeType.STEP,
+}
+
+export type ForkStepMeta<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = StepMetaBase & StepDataConfig<I, O> & {
+  type: NodeType.FORK,
+  branchDefs: string[],
+}
+
+export type StepDefinition<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = StepOrBranchDefinition<I, O> | ForkDefinition<I, O>
+
+type StepDefinitionBase = {
+  def: NodeDef,
+  displayName: string,
+  readonly component: Component,
+}
+
+export type StepOrBranchDefinition<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = StepDefinitionBase &
+  StepDataConfig<I, O> & {
+  type: NodeType.BRANCH | NodeType.STEP,
+}
+
+export type ForkDefinition<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> = StepDefinitionBase &
+  StepDataConfig<I, O> & {
+  type: NodeType.FORK,
+  branchDefs: NodeDef[],
+}
 
 export type StepDataConfig<
   I extends readonly StepDataType[],
@@ -52,13 +95,6 @@ export type StepDataConfig<
   inputDataTypes?: undefined,
   outputDataType?: undefined,
 }
-
-export type StepDefinition<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = {
-  readonly component: Component,
-} & Omit<StepMeta<I, O>, 'def'> & { def: NodeDef }
 
 export type AnyStepDefinition = StepDefinition<any, any>
 
@@ -74,5 +110,5 @@ export type NodeDataTypeColor = { key: string, color: string, cssClass: string }
 export type WithRequired<T, K extends keyof T> =
   T & { [P in K]-?: NonNullable<T[P]> }
 
-export interface IRunnerMeta {
+export interface IRunnerResultMeta {
 }

@@ -2,6 +2,7 @@
 import type { AnyStepMeta } from '../../lib/pipeline/_types.ts'
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { STEP_META as branchStepMeta } from './Branch.vue'
 
 export interface IStepMeta {
   wangTileInfo?: {
@@ -19,6 +20,7 @@ export const STEP_META: AnyStepMeta = {
   displayName: 'Fork: Wang Tiles',
   inputDataTypes: [],
   outputDataType: BitMask,
+  branchDefs: [branchStepMeta.def],
 }
 </script>
 <script setup lang="ts">

@@ -1,7 +1,7 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import { type AnyBranchNode, type AnyForkNode, type AnyStepNode } from '../src/lib/pipeline/Node.ts'
-import { BRANCH_DEF, installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deepUnwrap } from '../src/lib/util/vue-util.ts'
 import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps.ts'
@@ -21,7 +21,7 @@ function addForkAfter(store: PipelineStore, prevId: string | null = null): AnyFo
 }
 
 function addBranchTo(store: PipelineStore, forkId: string): AnyBranchNode {
-  return store.addBranch(BRANCH_DEF as any, forkId as any)
+  return store.addBranch('branch' as any, forkId as any)
 }
 
 describe('PipelineStore remove() and move()', () => {

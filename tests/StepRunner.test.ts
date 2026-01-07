@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
-import type { IRunnerMeta, StepDataType } from '../src/lib/pipeline/_types.ts'
+import type { IRunnerResultMeta, StepDataType } from '../src/lib/pipeline/_types.ts'
 import type { AnyStepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import {
   type ForkStepRunner,
@@ -107,7 +107,7 @@ describe('NodeRunner type collapse tests', () => {
     type Expected = (options: {
       config: Ctx['RC']
       inputData: Ctx['Input'] | null,
-      meta: IRunnerMeta,
+      meta: IRunnerResultMeta,
     }) => Promise<any>
 
     expectTypeOf<N>().toExtend<Expected>()
@@ -120,7 +120,7 @@ describe('NodeRunner type collapse tests', () => {
       inputData: Ctx['Input'] | null
       branchIndex: number,
       branchGenerationSeed: number,
-      meta: IRunnerMeta,
+      meta: IRunnerResultMeta,
     }) => Promise<any>
 
     expectTypeOf<F>().toExtend<Expected>()

@@ -2,26 +2,15 @@ import { type Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
 import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import { type AnyStepDefinition, type NodeDef, NodeType, type StepDefinitions } from './_types.ts'
+import { type AnyStepDefinition, type ForkDefinition, type NodeDef, NodeType, type StepDefinitions } from './_types.ts'
 import type { AnyNode } from './Node.ts'
 import type { AnyStepContext } from './Step.ts'
 
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
 
-export const BRANCH_DEF = 'branch_node' as NodeDef
-export const BRANCH_STEP_DEF = {
-  type: NodeType.BRANCH,
-  def: BRANCH_DEF,
-  displayName: 'Branch',
-  passthrough: true,
-  component: {} as Component,
-}
-
 export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
   const STEP_DEFINITIONS: StepDefinitions = {}
   const dataTypeRegistry: StepDataTypeRegistry = new StepDataTypeRegistry(stepDataTypes)
-
-  stepDefinitions = [BRANCH_STEP_DEF, ...stepDefinitions]
 
   function defineStep(definition: AnyStepDefinition) {
     if (STEP_DEFINITIONS[definition.def]) {
@@ -57,13 +46,13 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   const isStep = (def: string): boolean => get(def).type === NodeType.STEP
 
   function addableToArray() {
-    return Object.values(STEP_DEFINITIONS).filter(({ def }) => def !== BRANCH_DEF)
+    return Object.values(STEP_DEFINITIONS)
   }
 
   function canBeChildOf(childDef: NodeDef, parentDef: NodeDef) {
     if (isStep(parentDef)) return !isBranch(childDef)
     if (isBranch(parentDef)) return isStep(childDef)
-    if (isFork(parentDef)) return isBranch(childDef)
+    if (isFork(parentDef)) return (get(parentDef) as ForkDefinition<any, any>).branchDefs.includes(childDef)
   }
 
   function validateCanBeChildOf(childDef: NodeDef, parentDef: NodeDef) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BButtonGroup, BDropdown, BDropdownHeader, BDropdownItem, BTooltip } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
-import type { NodeDef, NodeId, StepDataType, StepMeta } from '../../lib/pipeline/_types.ts'
+import type { AnyStepDefinition, NodeDef, NodeId, StepDataType } from '../../lib/pipeline/_types.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
@@ -28,7 +28,7 @@ const addableNodes = computed(() => {
           inputDataTypes,
           outputDataType,
           passthrough,
-        }: StepMeta<any, any>) => {
+        }: AnyStepDefinition) => {
 
         const input: StepDataType[] = passthrough ? [PassThrough] : inputDataTypes
         const output: StepDataType = passthrough ? PassThrough : outputDataType

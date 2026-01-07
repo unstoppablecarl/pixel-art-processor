@@ -1,14 +1,24 @@
+<script lang="ts">
+import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+
+export const STEP_META: AnyStepMeta = {
+  type: NodeType.BRANCH,
+  def: 'wang_tile_branch',
+  displayName: 'Wang Tile: Branch',
+  passthrough: true,
+}
+</script>
 <script setup lang="ts">
-import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
+import { BButtonGroup } from 'bootstrap-vue-next'
 import { getValidationErrorComponent } from '../../lib/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { isBranch, isFork } from '../../lib/pipeline/Node.ts'
 import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import PipelineBranch from '../Processor/PipelineBranch.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
-import PipelineBranch from './PipelineBranch.vue'
 
 const store = usePipelineStore()
 

@@ -1,12 +1,13 @@
 <script lang="ts">
 import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
-
+import { STEP_META as branchStepMeta } from './Branch.vue'
 
 export const STEP_META: AnyStepMeta = {
   type: NodeType.FORK,
   def: 'fork_step',
   displayName: 'Fork',
   passthrough: true,
+  branchDefs: [branchStepMeta.def],
 }
 </script>
 <script setup lang="ts">
@@ -26,7 +27,7 @@ const node = useForkHandler(nodeId, {
     return {}
   },
   async run({ inputData, branchIndex }) {
-    console.log('ForkStep run', branchIndex, inputData)
+    console.log('Fork run', branchIndex, inputData)
     return {
       output: inputData,
       preview: inputData?.toImageData(),
@@ -54,11 +55,11 @@ const images = computed((): StepImg[] => {
     }]
   }
 
-  return outputDataRef.value.map(({ preview, validationErrors }, index) => {
+  return outputDataRef.value.map((item, index) => {
     return {
-      imageData: preview,
+      imageData: item?.preview ?? null,
       label: `Branch: ${index + 1}`,
-      validationErrors,
+      validationErrors: item?.validationErrors ?? [],
     }
   })
 })
@@ -74,6 +75,5 @@ const images = computed((): StepImg[] => {
     :sub-header="`: x ${node.branchIds.value.length}`"
     :images="images"
   >
-
   </StepCard>
 </template>

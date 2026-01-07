@@ -1,17 +1,17 @@
 import { ref, type Ref } from 'vue'
-import { GenericValidationError } from './errors/GenericValidationError.ts'
-import { StepValidationError } from './errors/StepValidationError.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
-  type IRunnerMeta,
+  type IRunnerResultMeta,
   type NodeDef,
   type NodeId,
   NodeType,
   type WatcherTarget,
   type WithRequired,
 } from './_types.ts'
+import { GenericValidationError } from './errors/GenericValidationError.ts'
+import { StepValidationError } from './errors/StepValidationError.ts'
 import type {
   ForkStepRunner,
   NodeRunner,
@@ -46,7 +46,8 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
 export abstract class BaseNode<
   T extends AnyStepContext,
   R extends NodeRunner<T>,
-  N extends InitializedNode<T>
+  N extends InitializedNode<T>,
+  PrevNode extends AnyNode
 > {
   readonly abstract type: NodeType
   // serialized
@@ -184,6 +185,11 @@ export abstract class BaseNode<
 
     return this.handler!.watcherTargets(this as unknown as N, defaults)
   }
+
+  getPrev(store: MinStore): PrevNode | undefined {
+    if (!this.prevNodeId) return
+    return store.get(this.prevNodeId) as PrevNode
+  }
 }
 
 type AbstractConstructor = abstract new (...args: any[]) => any
@@ -214,11 +220,12 @@ function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
 
 abstract class StepOrBranchNode<
   T extends AnyStepContext,
-  N extends InitializedStepNode<T> | InitializedBranchNode<T>
-> extends BaseNode<T, NormalStepRunner<T>, N> {
+  N extends InitializedStepNode<T> | InitializedBranchNode<T>,
+  PrevNode extends AnyNode
+> extends BaseNode<T, NormalStepRunner<T>, N, PrevNode> {
   outputData: T['Output'] | null = null
   outputPreview: ImageData | null = null
-  outputMeta: IRunnerMeta | null = null
+  outputMeta: IRunnerResultMeta | null = null
 
   childIds(store: MinStore): NodeId[] {
     const result = Object.values(store.nodes).find(n => n.prevNodeId === this.id) as AnyNode
@@ -246,7 +253,7 @@ const StepBase = WithStepOrFork(StepOrBranchNode)
 export class StepNode<
   T extends AnyStepContext,
   N extends InitializedStepNode<T> = InitializedStepNode<T>
-> extends StepBase<T, N> {
+> extends StepBase<T, N, AnyForkNode | AnyStepNode> {
   type = NodeType.STEP
 
   muted: boolean
@@ -319,7 +326,7 @@ export type ForkNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & For
 
 const ForkBase = WithStepOrFork(BaseNode)
 
-export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunner<T>, InitializedForkNode<T>> {
+export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunner<T>, InitializedForkNode<T>, AnyStepNode | AnyBranchNode> {
   type = NodeType.FORK
 
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
@@ -419,7 +426,7 @@ export type BranchNodeSerialized<T extends AnyStepContext> = BaseNodeSerialized<
 export type AnyBranchNode = BranchNode<AnyStepContext>
 export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & BranchNodeProperties
 
-export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, InitializedBranchNode<T>> {
+export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, InitializedBranchNode<T>, AnyForkNode> {
   type = NodeType.BRANCH
   handler: IStepHandler<T, NormalStepRunner<T>>
 
@@ -544,14 +551,6 @@ function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): S
     preview: Object.freeze(preview),
     meta: structuredClone(output?.meta ?? null),
     validationErrors: result?.validationErrors?.map(parseValidationError) ?? [],
-  }
-}
-
-export function assertInitialized<T extends AnyStepContext, R extends NodeRunner<T>>(
-  node: GraphNode<T>,
-): asserts node is GraphNode<T> & { handler: IStepHandler<T, R>, config: NonNullable<GraphNode<T>['config']> } {
-  if (!node.initialized || !node.handler || node.config === undefined) {
-    throw new Error('Node not initialized')
   }
 }
 

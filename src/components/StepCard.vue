@@ -60,7 +60,17 @@ const nodeImages = computed((): StepImg[] => {
     }]
   }
 
-  return (node as AnyForkNode).forkOutputData.value.map((item, index) => {
+  const fork = node as AnyForkNode
+  if (!fork.forkOutputData.value.length) {
+    return [{
+      label: 'Input (no branches)',
+      imageData: fork.getPrev(store)?.outputPreview!,
+      validationErrors: [],
+    }]
+  }
+
+
+  return fork.forkOutputData.value.map((item, index) => {
     return {
       imageData: item?.preview ?? null,
       label: `Branch: ${index + 1}`,

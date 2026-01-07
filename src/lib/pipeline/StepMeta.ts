@@ -1,6 +1,6 @@
 import type { Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { type AnyStepDefinition, type StepMeta } from './_types.ts'
+import { type AnyStepDefinition, NodeType, type StepMeta } from './_types.ts'
 
 export async function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyStepDefinition[]> {
 
@@ -25,7 +25,8 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
       inputDataTypes,
       outputDataType,
       passthrough,
-    } = (module as any).STEP_META as StepMeta<any, any>
+      branchDefs,
+    } = (module as any).STEP_META as StepMeta<any, any> & { branchDefs: string[] }
 
     return {
       def,
@@ -35,6 +36,7 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
       inputDataTypes,
       outputDataType,
       passthrough,
+      branchDefs,
     } as AnyStepDefinition
   })
 }
@@ -59,6 +61,12 @@ function validateModule(path: string, module: any, stepDataTypes: DataStructureC
 
   if (!STEP_META.type) {
     errors.push(`STEP_META.type not set`)
+  }
+
+  if (STEP_META.type === NodeType.FORK) {
+    if (!STEP_META?.branchDefs?.length) {
+      errors.push(`STEP_META.branchDefs required for forks`)
+    }
   }
 
   if (!STEP_META.displayName) {

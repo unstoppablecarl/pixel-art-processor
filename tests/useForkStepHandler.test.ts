@@ -1,20 +1,14 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { Component, type Ref, shallowReactive, type ShallowReactive } from 'vue'
+import { type Ref, shallowReactive, type ShallowReactive } from 'vue'
+import { type IRunnerResultMeta, NodeType, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
-import {
-  type NodeDef,
-  NodeType,
-  type IRunnerMeta,
-  type StepDataType,
-  type WatcherTarget,
-} from '../src/lib/pipeline/_types.ts'
 import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
 import type { ForkStepRunner, RunnerMeta, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
-import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { useForkHandler } from '../src/lib/pipeline/useStepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
@@ -23,6 +17,7 @@ import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
 import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps'
+import { defineTestStep } from './_helpers.ts'
 
 const stepDefinitions = await loadStepDefinitions()
 installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
@@ -50,31 +45,6 @@ function makeAppContext(cb: () => void) {
   return wrapper
 }
 
-function defineStep(
-  {
-    def,
-    displayName = 'Testing',
-    type = NodeType.STEP,
-    inputDataTypes,
-    outputDataType,
-  }: {
-    def: string,
-    displayName?: string,
-    type?: NodeType,
-    inputDataTypes: readonly StepDataType[],
-    outputDataType: StepDataType
-  },
-) {
-  return useStepRegistry().defineStep({
-    displayName,
-    def: def as NodeDef,
-    type,
-    inputDataTypes,
-    outputDataType,
-    component: {} as unknown as Component,
-  })
-}
-
 describe('fork handler type testing', async () => {
 
   makeAppContext(() => {
@@ -96,7 +66,7 @@ describe('fork handler type testing', async () => {
     type I = typeof inputDataTypes
     type O = typeof outputDataType
 
-    const stepDef = defineStep({
+    const stepDef = defineTestStep({
       def: 'foo',
       type: NodeType.FORK,
       inputDataTypes,
@@ -173,7 +143,6 @@ describe('fork handler type testing', async () => {
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
         branchIndex: number,
-        branchGenerationSeed: number,
         meta: RunnerMeta,
       }>()
 
@@ -211,7 +180,7 @@ describe('fork handler type testing', async () => {
           inputData: T['Input'] | null,
           branchIndex: number,
           branchGenerationSeed: number,
-          meta: IRunnerMeta,
+          meta: IRunnerResultMeta,
         }) => Promise<
           SingleRunnerOutput<T>
         >
@@ -321,7 +290,6 @@ describe('StepHandlerOptionsInfer inference', () => {
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
       branchIndex: number,
-      branchGenerationSeed: number,
       meta: RunnerMeta,
     }]>()
 
@@ -329,7 +297,6 @@ describe('StepHandlerOptionsInfer inference', () => {
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
       branchIndex: number,
-      branchGenerationSeed: number,
       meta: RunnerMeta,
     }]>()
 
