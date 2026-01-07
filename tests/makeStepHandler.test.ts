@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
-import type { StepValidationError } from '../src/lib/errors/StepValidationError.ts'
+import type { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 
 import {

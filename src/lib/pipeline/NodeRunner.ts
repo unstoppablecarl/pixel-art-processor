@@ -1,4 +1,4 @@
-import { StepValidationError } from '../errors/StepValidationError.ts'
+import { StepValidationError } from './errors/StepValidationError.ts'
 import type { IRunnerMeta } from './_types.ts'
 import type { AnyStepContext } from './Step.ts'
 

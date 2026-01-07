@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type Ref, shallowReactive, type ShallowReactive } from 'vue'
-import { StepValidationError } from '../src/lib/errors/StepValidationError.ts'
+import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import {
   type NodeDef,
   NodeType,

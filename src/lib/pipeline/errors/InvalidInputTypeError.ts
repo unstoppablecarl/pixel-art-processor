@@ -1,4 +1,4 @@
-import type { StepDataType } from '../pipeline/_types.ts'
+import type { StepDataType } from '../_types.ts'
 import { StepValidationError } from './StepValidationError.ts'
 
 export const INVALID_INPUT_TYPE_ERROR = 'INVALID_INPUT_TYPE_ERROR'

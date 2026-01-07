@@ -14,7 +14,7 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { StepValidationError } from '../../lib/errors/StepValidationError.ts'
+import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'

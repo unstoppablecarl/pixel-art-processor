@@ -10,7 +10,7 @@ import {
   type UnwrapNestedRefs,
   type UnwrapRef,
 } from 'vue'
-import { StepValidationError } from '../errors/StepValidationError.ts'
+import { StepValidationError } from '../pipeline/errors/StepValidationError.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
   let rawValue: unknown = value

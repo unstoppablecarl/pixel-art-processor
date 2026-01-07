@@ -1,6 +1,6 @@
 import { ref, type Ref } from 'vue'
-import { GenericValidationError } from '../errors/GenericValidationError.ts'
-import { StepValidationError } from '../errors/StepValidationError.ts'
+import { GenericValidationError } from './errors/GenericValidationError.ts'
+import { StepValidationError } from './errors/StepValidationError.ts'
 import type { MinStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'

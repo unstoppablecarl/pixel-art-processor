@@ -1,8 +1,8 @@
 import type { Component } from 'vue'
 import GenericValidationErrorMessage from '../components/ValidationErrors/GenericValidationErrorMessage.vue'
 import InvalidInputTypeMessage from '../components/ValidationErrors/InvalidInputTypeMessage.vue'
-import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
-import { StepValidationError } from './errors/StepValidationError.ts'
+import { InvalidInputTypeError } from './pipeline/errors/InvalidInputTypeError.ts'
+import { StepValidationError } from './pipeline/errors/StepValidationError.ts'
 
 type ErrorCtor = new (...args: any[]) => StepValidationError
 
