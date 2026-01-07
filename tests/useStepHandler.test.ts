@@ -2,10 +2,10 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type ShallowReactive, shallowReactive } from 'vue'
-import { type NodeDef, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
+import { type IRunnerResultMeta, type NodeDef, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
-import type { NormalStepRunner, RunnerMeta, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
@@ -131,7 +131,7 @@ describe('step handler type testing', async () => {
       .toEqualTypeOf<{
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
-        meta: RunnerMeta,
+        meta: IRunnerResultMeta,
       }>()
 
     expectTypeOf<RFromNode>()
@@ -168,12 +168,12 @@ describe('step handler type testing', async () => {
         ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null,
-          meta: RunnerMeta,
+          meta: IRunnerResultMeta,
         }): Promise<SingleRunnerOutput<T>>
       }>()
 
       expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
-        { config: RC, inputData: InputInstances | null, meta: RunnerMeta }
+        { config: RC, inputData: InputInstances | null, meta: IRunnerResultMeta }
       ]>()
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
         Promise<SingleRunnerOutput<T>>
@@ -272,13 +272,13 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
-      meta: RunnerMeta,
+      meta: IRunnerResultMeta,
     }]>()
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
-      meta: RunnerMeta,
+      meta: IRunnerResultMeta,
     }]>()
 
   })

@@ -1,7 +1,8 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
-import type { NormalStepRunner, RunnerMeta, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { IRunnerResultMeta } from '../src/lib/pipeline/_types.ts'
+import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
@@ -115,7 +116,7 @@ describe('IStepHandler<T> basic structure', () => {
     expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null,
-      meta: RunnerMeta,
+      meta: IRunnerResultMeta,
     }]>()
 
     expectTypeOf(handler.run).returns.toEqualTypeOf<

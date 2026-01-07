@@ -1,8 +1,8 @@
 <script lang="ts">
-import type { AnyStepMeta } from '../../lib/pipeline/_types.ts'
-import { NodeType } from '../../lib/pipeline/_types.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
-import { STEP_META as branchStepMeta } from './Branch.vue'
+import type { AnyStepMeta } from '../../../lib/pipeline/_types.ts'
+import { NodeType } from '../../../lib/pipeline/_types.ts'
+import { BitMask } from '../../../lib/step-data-types/BitMask.ts'
+import { STEP_META as branchStepMeta } from '../Branch.vue'
 
 export interface IStepMeta {
   wangTileInfo?: {
@@ -25,22 +25,22 @@ export const STEP_META: AnyStepMeta = {
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
-import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
-import { deepUnwrap, shallowArrayItemsRef } from '../../lib/util/vue-util.ts'
+import type { NodeId } from '../../../lib/pipeline/_types.ts'
+import { useForkHandler } from '../../../lib/pipeline/useStepHandler.ts'
+import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
+import type { BinaryArray } from '../../../lib/util/prng/binary-array-chunks.ts'
+import { deepUnwrap, shallowArrayItemsRef } from '../../../lib/util/vue-util.ts'
 import {
   makeBitMaskFromWangTile,
   makeWangTileEdgeConfigDefaults,
   type WangTileEdgeConfig,
-} from '../../lib/wang-tiles/wang-tile-vue-helpers.ts'
-import { populateIndexedWangTile, WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
-import StepCard from '../Card/StepCard.vue'
-import StepImage from '../StepImage.vue'
-import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
-import RangeSlider from '../UIForms/RangeSlider.vue'
-import ForkWangTileEdge from '../StepSupport/ForkWangTileEdge.vue'
+} from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
+import { populateIndexedWangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
+import StepCard from '../../Card/StepCard.vue'
+import StepImage from '../../StepImage.vue'
+import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
+import RangeSlider from '../../UIForms/RangeSlider.vue'
+import ForkWangTileEdge from '../../StepSupport/ForkWangTileEdge.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 

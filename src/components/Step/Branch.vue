@@ -1,5 +1,6 @@
 <script lang="ts">
 import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+
 export const STEP_META: AnyStepMeta = {
   type: NodeType.BRANCH,
   def: 'branch',
@@ -16,7 +17,9 @@ const { branchId } = defineProps<{
   branchId: NodeId,
 }>()
 
-const branch = useBranchHandler(branchId)
+const branch = useBranchHandler(branchId, {
+  ...STEP_META,
+})
 
 </script>
 <template>

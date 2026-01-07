@@ -68,7 +68,19 @@ const nodeIds = computed((): NodeId[] => {
       </BButtonGroup>
     </div>
 
+    <div class="card-body" v-if="branch.forkValidationErrors.length">
+      <div class="section-heading text-danger" v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+        Fork Output
+      </div>
+      <div class="section" v-for="error in branch.forkValidationErrors">
+        <component :is="getValidationErrorComponent(error)" :error="error" />
+      </div>
+    </div>
+
     <div class="card-body" v-if="branch.validationErrors.length">
+      <div class="section-heading text-danger" v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+        Branch Output
+      </div>
       <div class="section" v-for="error in branch.validationErrors">
         <component :is="getValidationErrorComponent(error)" :error="error" />
       </div>

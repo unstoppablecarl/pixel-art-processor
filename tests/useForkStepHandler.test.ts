@@ -5,7 +5,7 @@ import { type Ref, shallowReactive, type ShallowReactive } from 'vue'
 import { type IRunnerResultMeta, NodeType, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
-import type { ForkStepRunner, RunnerMeta, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { ForkStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type { IStepHandler, StepHandlerOptions, StepHandlerOptionsInfer } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
@@ -143,7 +143,7 @@ describe('fork handler type testing', async () => {
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
         branchIndex: number,
-        meta: RunnerMeta,
+        meta: IRunnerResultMeta,
       }>()
 
     expectTypeOf<RFromNode>()
@@ -290,14 +290,14 @@ describe('StepHandlerOptionsInfer inference', () => {
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
       branchIndex: number,
-      meta: RunnerMeta,
+      meta: IRunnerResultMeta,
     }]>()
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
       branchIndex: number,
-      meta: RunnerMeta,
+      meta: IRunnerResultMeta,
     }]>()
 
   })

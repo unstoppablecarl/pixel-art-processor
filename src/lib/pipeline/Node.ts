@@ -16,9 +16,7 @@ import type {
   ForkStepRunner,
   NodeRunner,
   NormalStepRunner,
-  RunnerPrevOutput,
   SingleRunnerOutput,
-  SingleRunnerOutputValidationError,
   SingleRunnerResult,
 } from './NodeRunner.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
@@ -118,7 +116,7 @@ export abstract class BaseNode<
 
   abstract getOutputSize(): ImgSize
 
-  abstract getOutputFromPrev(store: MinStore): Promise<T['Input'] | null>
+  abstract getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<any>>
 
   protected setPassThroughDataTypeFromPrev(store: MinStore): void {
     if (this.prevNodeId) {
@@ -196,21 +194,18 @@ type AbstractConstructor = abstract new (...args: any[]) => any
 
 function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
   abstract class StepOrForkNode extends Base {
-    async getOutputFromPrev(store: MinStore): Promise<RunnerPrevOutput<any>> {
+    async getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<any>> {
       if (!this.prevNodeId) {
-        return {
-          prevOutput: null,
-          meta: null,
-          validationErrors: [],
-        }
+        return parseResult(null)
       }
 
       const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
 
       return {
-        prevOutput: prev.outputData,
+        output: prev.outputData,
         meta: prev.outputMeta,
-        validationErrors: [],
+        preview: prev.outputPreview,
+        validationErrors: prev.validationErrors,
       }
     }
   }
@@ -225,7 +220,7 @@ abstract class StepOrBranchNode<
 > extends BaseNode<T, NormalStepRunner<T>, N, PrevNode> {
   outputData: T['Output'] | null = null
   outputPreview: ImageData | null = null
-  outputMeta: IRunnerResultMeta | null = null
+  outputMeta: IRunnerResultMeta = {}
 
   childIds(store: MinStore): NodeId[] {
     const result = Object.values(store.nodes).find(n => n.prevNodeId === this.id) as AnyNode
@@ -275,27 +270,29 @@ export class StepNode<
     logNodeEvent(this.id, 'runner: start')
 
     if (this.muted) {
-      const { prevOutput, meta } = await this.getOutputFromPrev(store)
+      const { output, meta } = await this.getOutputFromPrev(store)
 
-      this.outputData = prevOutput
+      this.outputData = output
       this.outputPreview = null
       this.validationErrors = []
       this.outputMeta = meta
 
       this.setPassThroughDataTypeFromPrev(store)
       return
-    }
-
-    if (store.nodeIsPassthrough(this)) {
-      this.setPassThroughDataTypeFromPrev(store)
+    } else {
+      if (store.nodeIsPassthrough(this)) {
+        this.setPassThroughDataTypeFromPrev(store)
+      } else {
+        this.handler!.clearPassThroughDataType()
+      }
     }
 
     const _handler = this.handler as IStepHandler<T, NormalStepRunner<T>>
-    const { prevOutput, meta } = await this.getOutputFromPrev(store)
+    const { output: inputData, meta } = await this.getOutputFromPrev(store)
 
     const output = await _handler.run({
       config: this.config as T['RC'],
-      inputData: prevOutput,
+      inputData,
       meta,
     })
 
@@ -303,6 +300,7 @@ export class StepNode<
     this.outputData = result.output
     this.outputPreview = result.preview
     this.validationErrors = result.validationErrors
+    this.outputMeta = result.meta
     logNodeEvent(this.id, 'runner: end', result)
   }
 
@@ -375,7 +373,7 @@ export class ForkNode<T extends AnyStepContext> extends ForkBase<T, ForkStepRunn
     SingleRunnerResult<T>
   > {
     logNodeEvent(this.id, 'runBranch', { branchIndex })
-    const { prevOutput, meta } = await this.getOutputFromPrev(store)
+    const { output: prevOutput, meta } = await this.getOutputFromPrev(store)
     const _handler = this.handler as IStepHandler<T, ForkStepRunner<T>>
     const output = await _handler.run({
       config: this.config as T['RC'],
@@ -428,24 +426,16 @@ export type BranchNodeOptions<T extends AnyStepContext> = BaseNodeOptions<T> & B
 
 export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, InitializedBranchNode<T>, AnyForkNode> {
   type = NodeType.BRANCH
-  handler: IStepHandler<T, NormalStepRunner<T>>
 
   prevNodeId: NodeId
   branchIndex: number
-  initialized = true
+
+  forkValidationErrors: StepValidationError[] = []
 
   constructor(options: BranchNodeOptions<T>) {
     super(options)
     this.prevNodeId = options.prevNodeId
     this.branchIndex = options.branchIndex
-
-    this.handler = makeStepHandler<AnyStepContext, NormalStepRunner<AnyStepContext>>(this.def, {
-      passthrough: true,
-      run: (() => null) as unknown as NormalStepRunner<AnyStepContext>,
-      serializeConfig() {
-        // noop
-      },
-    }) as unknown as IStepHandler<T, NormalStepRunner<T>>
   }
 
   serialize(): BranchNodeSerialized<T> {
@@ -456,45 +446,40 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, In
     }
   }
 
-  parentFork(store: MinStore): AnyForkNode {
+  getPrev(store: MinStore): AnyForkNode {
     return store.get(this.prevNodeId) as AnyForkNode
   }
 
   async runner(store: MinStore) {
-    const fork = this.parentFork(store)
-    this.handler.setPassThroughDataType(fork.handler!.outputDataType)
+    logNodeEvent(this.id, 'runner: start')
+    const fork = this.getPrev(store)
+    this.handler!.setPassThroughDataType(fork.handler!.outputDataType)
 
-    const { prevOutput, meta, validationErrors } = await this.getOutputFromPrev(store)
-    this.outputData = prevOutput
-    this.outputMeta = meta
-    this.outputPreview = null
-    this.validationErrors = validationErrors
+    const _handler = this.handler as IStepHandler<T, NormalStepRunner<T>>
+    const { output: inputData, meta, validationErrors: forkValidationErrors } = await this.getOutputFromPrev(store)
+
+    const output = await _handler.run({
+      config: this.config as T['RC'],
+      inputData,
+      meta,
+    })
+
+    const result = parseResult<T>(output)
+    this.outputData = result.output
+    this.outputPreview = result.preview
+    this.validationErrors = result.validationErrors
+    this.outputMeta = result.meta
+    this.forkValidationErrors = forkValidationErrors
+    logNodeEvent(this.id, 'runner: end', result)
   }
 
-  async getOutputFromPrev(store: MinStore): Promise<RunnerPrevOutput<T>> {
+  async getOutputFromPrev(store: MinStore): Promise<SingleRunnerResult<T>> {
     logNodeEvent(this.id, 'getOutputFromPrev: start')
 
-    const fork = this.parentFork(store)
+    const fork = this.getPrev(store)
     const result = await fork.getBranchOutput(store, this.branchIndex)
     logNodeEvent(this.id, 'getOutputFromPrev: end', result)
-    return {
-      prevOutput: result.output,
-      meta: result.meta,
-      validationErrors: result.validationErrors,
-    }
-  }
-
-  initialize(handlerOptions: StepHandlerOptions<T>): void {
-    // noop
-  }
-
-  getWatcherTargets(): WatcherTarget[] {
-    return [
-      {
-        name: 'seed',
-        target: () => this.seed,
-      },
-    ]
+    return result as SingleRunnerResult<T>
   }
 }
 
@@ -549,14 +534,13 @@ function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): S
   return {
     output: Object.freeze(output),
     preview: Object.freeze(preview),
-    meta: structuredClone(output?.meta ?? null),
+    meta: Object.freeze(structuredClone(output?.meta ?? {})),
     validationErrors: result?.validationErrors?.map(parseValidationError) ?? [],
   }
 }
 
-function parseValidationError(error: SingleRunnerOutputValidationError) {
-  if (typeof error === 'string') {
-    return new GenericValidationError(error)
-  }
+function parseValidationError(error: StepValidationError | string) {
+  if (typeof error === 'string') return new GenericValidationError(error)
+
   return error
 }

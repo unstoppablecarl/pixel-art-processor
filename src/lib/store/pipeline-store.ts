@@ -440,7 +440,7 @@ export const usePipelineStore = defineStore('pipeline', (): PipelineStore => {
       const cloneRoot = _cloneSubtree(id, cloneMap)
 
       // Duplicate branch inside its fork's branchIds[]
-      const parentFork = original.parentFork(store)
+      const parentFork = original.getPrev(store)
 
       const idx = parentFork.branchIds.value.indexOf(original.id)
       if (idx === -1) {
