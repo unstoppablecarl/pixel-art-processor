@@ -306,7 +306,7 @@ describe('getOutputSize', () => {
 
     expect(deepUnwrap(f.forkOutputData)).toEqual([
         {
-          'meta': null,
+          'meta': {},
           'output': {
             'width': 10,
             'height': 20,
