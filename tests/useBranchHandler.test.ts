@@ -4,17 +4,18 @@ import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type ShallowReactive, shallowReactive } from 'vue'
 import { type IRunnerResultMeta, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
-import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
+import { type InitializedBranchNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type {
+  BranchHandlerOptions,
+  IBranchHandler,
   INodeHandler,
   IStepHandler,
-  StepHandlerOptions,
   StepHandlerOptionsInfer,
 } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
+import { useBranchHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
@@ -47,7 +48,7 @@ function makeAppContext(cb: () => void) {
   return wrapper
 }
 
-describe('step handler type testing', async () => {
+describe('branch handler type testing', async () => {
 
   makeAppContext(async () => {
 
@@ -77,7 +78,7 @@ describe('step handler type testing', async () => {
 
     const store = usePipelineStore()
     const newStep = store.add(stepDef.def, null)
-    const step = useStepHandler(newStep.id, {
+    const step = useBranchHandler(newStep.id, {
       inputDataTypes,
       outputDataType,
       config() {
@@ -119,7 +120,7 @@ describe('step handler type testing', async () => {
         }
       },
       watcherTargets(n, defaults) {
-        expectTypeOf(n).toEqualTypeOf<InitializedStepNode<T>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedBranchNode<T>>()
         return []
       },
     })
@@ -154,7 +155,7 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).not.toEqualTypeOf<InitializedNode<AnyStepContext>>()
       expectTypeOf(step).toExtend<InitializedNode<StepContext<C, SC, RC, I, O>>>()
 
-      expectTypeOf(step).toEqualTypeOf<InitializedStepNode<T>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedBranchNode<T>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
     })
@@ -199,11 +200,11 @@ describe('step handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        IStepHandler<T>['watcherTargets']
+        IBranchHandler<T>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        (node: InitializedStepNode<T>, defaults: WatcherTarget[]) => WatcherTarget[]
+        (node: InitializedBranchNode<T>, defaults: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
@@ -266,7 +267,7 @@ describe('StepHandlerOptionsInfer inference', () => {
 
   it('preserves the generic parameters', () => {
     expectTypeOf<Infer>().toExtend<
-      StepHandlerOptions<T>
+      BranchHandlerOptions<T>
     >()
 
     expectTypeOf<Infer['config']>().returns.toEqualTypeOf<RawConfig>()

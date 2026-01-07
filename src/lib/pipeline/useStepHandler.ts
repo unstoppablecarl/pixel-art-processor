@@ -12,9 +12,15 @@ import {
   type InitializedStepNode,
   StepNode,
 } from './Node.ts'
-import type { ForkStepRunner, NormalStepRunner } from './NodeRunner.ts'
 import { type ReactiveConfigType, type StepContext } from './Step.ts'
-import { type StepHandlerOptions, type StepHandlerOptionsInfer } from './StepHandler.ts'
+import {
+  type BranchHandlerOptions,
+  type BranchHandlerOptionsInfer,
+  type ForkHandlerOptionsInfer,
+  makeBranchHandler,
+  makeForkHandler,
+  type StepHandlerOptionsInfer,
+} from './StepHandler.ts'
 
 // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
 export function useStepHandler<
@@ -25,16 +31,14 @@ export function useStepHandler<
   O extends StepDataType,
 >(
   nodeId: NodeId,
-  options: StepHandlerOptionsInfer<
-    C, SC, RC, I, O,
-    NormalStepRunner<StepContext<C, SC, RC, I, O>>
-  >,
+  options: StepHandlerOptionsInfer<C, SC, RC, I, O>,
 ) {
   type T = StepContext<C, SC, RC, I, O>
 
   const store = usePipelineStore()
   const node = store.get(nodeId) as unknown as StepNode<T>
   node.initializeStep(options)
+
   createWatchers(store, node)
 
   return node as InitializedStepNode<T>
@@ -49,16 +53,13 @@ export function useForkHandler<
   O extends StepDataType
 >(
   nodeId: NodeId,
-  options: StepHandlerOptionsInfer<
-    C, SC, RC, I, O,
-    ForkStepRunner<StepContext<C, SC, RC, I, O>>
-  >,
+  options: ForkHandlerOptionsInfer<C, SC, RC, I, O>,
 ) {
   type T = StepContext<C, SC, RC, I, O>
 
   const store = usePipelineStore()
   const node = store.get(nodeId) as unknown as ForkNode<T>
-  node.initializeFork(options)
+  node.initializeFork(makeForkHandler<T>(node.def, options))
   createWatchers(store, node)
 
   return node as InitializedForkNode<T>
@@ -74,10 +75,7 @@ export function useBranchHandler<
 >(
   nodeId: NodeId,
   options: Optional<
-    StepHandlerOptionsInfer<
-      C, SC, RC, I, O,
-      NormalStepRunner<StepContext<C, SC, RC, I, O>>
-    >,
+    BranchHandlerOptionsInfer<C, SC, RC, I, O>,
     'run'
   >,
 ) {
@@ -91,11 +89,11 @@ export function useBranchHandler<
       }
     },
     ...options,
-  } as StepHandlerOptions<T, NormalStepRunner<T>>
+  } as BranchHandlerOptions<T>
 
   const store = usePipelineStore()
   const node = store.get(nodeId) as unknown as BranchNode<T>
-  node.initializeBranch(merged)
+  node.initializeBranch(makeBranchHandler<T>(node.def, merged))
   createWatchers(store, node)
 
   return node as InitializedBranchNode<T>

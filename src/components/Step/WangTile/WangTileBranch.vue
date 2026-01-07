@@ -25,6 +25,10 @@ const branch = useBranchHandler(branchId, {
       variantCount: 0,
     }
   },
+  onRemove(store, branch) {
+      const fork = branch.getPrev(store)
+
+  },
 })
 
 function add() {

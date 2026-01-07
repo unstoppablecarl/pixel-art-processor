@@ -3,7 +3,7 @@ import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
 import type { IRunnerResultMeta } from '../src/lib/pipeline/_types.ts'
 import type { InitializedStepNode } from '../src/lib/pipeline/Node.ts'
-import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
@@ -96,7 +96,7 @@ describe('IStepHandler<T> basic structure', () => {
     onRemove(store, node) {
       expectTypeOf(store).toEqualTypeOf<PipelineStore>()
       expectTypeOf(node).toEqualTypeOf<InitializedStepNode<T>>()
-    }
+    },
   }
 
   it('has correct inputDataTypes', () => {
@@ -132,7 +132,7 @@ describe('IStepHandler<T> basic structure', () => {
 })
 
 describe('StepHandlerOptions<T>', () => {
-  const opts: StepHandlerOptions<T, NormalStepRunner<T>> = {
+  const opts: StepHandlerOptions<T> = {
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
     config() {

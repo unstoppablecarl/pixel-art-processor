@@ -3,7 +3,6 @@ import { Component } from 'vue'
 import type { AnyStepDefinition, NodeDef, NodeId, StepDataType } from '../src/lib/pipeline/_types'
 import { NodeType } from '../src/lib/pipeline/_types'
 import { BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
-import type { NormalStepRunner } from '../src/lib/pipeline/NodeRunner.ts'
 import type { AnyStepContext } from '../src/lib/pipeline/Step'
 import type { StepHandlerOptions } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
@@ -93,7 +92,7 @@ defineStep({
 // Handler options matching definitions
 // ------------------------------------------------------------
 
-const passthroughHandlerOptions: StepHandlerOptions<Ctx, NormalStepRunner<Ctx>> = {
+const passthroughHandlerOptions: StepHandlerOptions<Ctx> = {
   passthrough: true,
   run: vi.fn(async ({ inputData }) => ({
     output: (inputData),
@@ -103,7 +102,7 @@ const passthroughHandlerOptions: StepHandlerOptions<Ctx, NormalStepRunner<Ctx>> 
   })),
 }
 
-const typedHandlerOptions: StepHandlerOptions<Ctx, NormalStepRunner<Ctx>> = {
+const typedHandlerOptions: StepHandlerOptions<Ctx> = {
   passthrough: false,
   inputDataTypes: [PassThrough],
   outputDataType: PassThrough,

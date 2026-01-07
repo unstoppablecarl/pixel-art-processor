@@ -75,7 +75,7 @@ describe('StepHandlerOptional', () => {
 describe('StepHandlerOptions<T>', () => {
   it('requires non-optional IStepHandler fields and process, while making StepHandlerOptional keys optional', () => {
     // Minimal valid options: only required fields + process()
-    const minimalOptions: StepHandlerOptions<T, NormalStepRunner<T>> = {
+    const minimalOptions: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
       async run(args) {
@@ -94,7 +94,7 @@ describe('StepHandlerOptions<T>', () => {
     expectTypeOf(minimalOptions.config).toEqualTypeOf<(() => RawConfig) | undefined>()
 
     // Now a "maximal" options object using all optional fields
-    const fullOptions: StepHandlerOptions<T, NormalStepRunner<T>> = {
+    const fullOptions: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as readonly [typeof A, typeof B],
       outputDataType: COut,
 
@@ -192,7 +192,7 @@ const fakeStepRegistry = {
 
 describe('makeStepHandler<T>', () => {
   it('returns an IStepHandler<T>-compatible object merging defaults and options', () => {
-    const options: StepHandlerOptions<T, NormalStepRunner<T>> = {
+    const options: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
 
@@ -277,7 +277,7 @@ describe('makeStepHandler<T>', () => {
   })
 
   it('produces a process return type by default', () => {
-    const options: StepHandlerOptions<T, NormalStepRunner<T>> = {
+    const options: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
       async run(args) {

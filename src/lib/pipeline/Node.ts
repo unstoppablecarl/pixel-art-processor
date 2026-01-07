@@ -15,7 +15,9 @@ import { StepValidationError } from './errors/StepValidationError.ts'
 import type { NormalStepRunner, SingleRunnerOutput, SingleRunnerResult } from './NodeRunner.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
 import {
-  type AnyNodeHandler,
+  type AnyINodeHandler,
+  type BranchHandlerOptions,
+  type ForkHandlerOptions,
   type IBranchHandler,
   type IForkHandler,
   type IStepHandler,
@@ -46,7 +48,7 @@ export type BaseNodeOptions<T extends AnyStepContext> = {
 
 export abstract class BaseNode<
   T extends AnyStepContext,
-  H extends AnyNodeHandler<T>,
+  H extends AnyINodeHandler<T>,
   PrevNode extends AnyNode
 > {
   readonly abstract type: NodeType
@@ -149,7 +151,7 @@ export abstract class BaseNode<
     }
   }
 
-  protected initialize(
+  initialize(
     handler: H,
   ) {
     this.handler = handler
@@ -314,8 +316,9 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T, IStepHandler
     return this.handler!.watcherTargets(this as InitializedStepNode<T>, defaults)
   }
 
-  initializeStep(options: StepHandlerOptions<T, IStepHandler<T>['run']>) {
-    this.initialize(makeStepHandler<T>(this.def, options))
+  initializeStep(options: StepHandlerOptions<T>) {
+    const handler = makeStepHandler<T>(this.def, options)
+    this.initialize(handler)
   }
 }
 
@@ -425,8 +428,9 @@ export class ForkNode<
     return this.handler!.watcherTargets(this as InitializedForkNode<T>, super.getBaseWatcherTargets())
   }
 
-  initializeFork(options: StepHandlerOptions<T, IForkHandler<T>['run']>) {
-    this.initialize(makeForkHandler<T>(this.def, options))
+  initializeFork(options: ForkHandlerOptions<T>) {
+    const handler = makeForkHandler<T>(this.def, options)
+    this.initialize(handler)
   }
 }
 
@@ -500,8 +504,9 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
     return this.handler!.watcherTargets(this as InitializedBranchNode<T>, super.getBaseWatcherTargets())
   }
 
-  initializeBranch(options: StepHandlerOptions<T, IBranchHandler<T>['run']>) {
-    this.initialize(makeBranchHandler<T>(this.def, options))
+  initializeBranch(options: BranchHandlerOptions<T>) {
+    const handler = makeBranchHandler<T>(this.def, options)
+    this.initialize(handler)
   }
 }
 

@@ -8,11 +8,11 @@ import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipel
 import type { ForkStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyStepContext, type StepContext, type StepInputTypesToInstances } from '../src/lib/pipeline/Step'
 import type {
+  ForkHandlerOptions,
+  ForkHandlerOptionsInfer,
   IForkHandler,
   INodeHandler,
   IStepHandler,
-  StepHandlerOptions,
-  StepHandlerOptionsInfer,
 } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 import { useForkHandler } from '../src/lib/pipeline/useStepHandler.ts'
@@ -20,15 +20,12 @@ import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
-import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
+import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
-import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps'
 import { defineTestStep } from './_helpers.ts'
 
-const stepDefinitions = await loadStepDefinitions()
-installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
-
 function makeAppContext(cb: () => void) {
+  installStepRegistry(makeStepRegistry())
 
   const App = {
     setup() {
@@ -53,7 +50,7 @@ function makeAppContext(cb: () => void) {
 
 describe('fork handler type testing', async () => {
 
-  makeAppContext(() => {
+  makeAppContext(async () => {
 
     const inputDataTypes = [HeightMap, BitMask] as const
     const outputDataType = NormalMap
@@ -79,7 +76,7 @@ describe('fork handler type testing', async () => {
       outputDataType,
     })
 
-    const store = usePipelineStore() as unknown as PipelineStore
+    const store = usePipelineStore()
     const newStep = store.add(stepDef.def, null)
     const step = useForkHandler(newStep.id, {
       inputDataTypes,
@@ -103,6 +100,7 @@ describe('fork handler type testing', async () => {
       },
       deserializeConfig(config) {
         expectTypeOf(config).toExtend<SC>()
+        expect(config).not.toEqual(undefined)
 
         return {
           ...config,
@@ -122,23 +120,13 @@ describe('fork handler type testing', async () => {
           output: new NormalMap(1, 1),
         }
       },
-      watcherTargets(step, defaultWatcherTargets) {
-        type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
-        type HandlerFromNode = typeof step['handler']
-        type RFromNode = HandlerFromNode extends INodeHandler<any, infer R, any> ? R : never
-        expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
-        expectTypeOf<RFromNode>().toExtend<ForkStepRunner<TFromNode>>()
-
-        expectTypeOf(step.config).toEqualTypeOf<InitializedNode<T>['config']>()
-
-        expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
-
-        return [
-          ...defaultWatcherTargets,
-        ]
+      watcherTargets(n, defaults) {
+        expectTypeOf(n).toEqualTypeOf<InitializedForkNode<T>>()
+        return []
       },
-
     })
+
+    await Promise.resolve()
 
     type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
     type HandlerFromNode = typeof step['handler']
@@ -276,18 +264,17 @@ describe('StepHandlerOptionsInfer inference', () => {
     C
   >
 
-  type Infer = StepHandlerOptionsInfer<
+  type Infer = ForkHandlerOptionsInfer<
     RawConfig,
     SerializedConfig,
     RC,
     readonly [A, B],
-    C,
-    ForkStepRunner<T>
+    C
   >
 
   it('preserves the generic parameters', () => {
     expectTypeOf<Infer>().toExtend<
-      StepHandlerOptions<T, ForkStepRunner<T>>
+      ForkHandlerOptions<T>
     >()
 
     expectTypeOf<Infer['config']>().returns.toEqualTypeOf<RawConfig>()

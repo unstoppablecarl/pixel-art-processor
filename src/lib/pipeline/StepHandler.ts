@@ -77,21 +77,15 @@ export interface INodeHandler<
   ): void
 }
 
-export type IStepHandler<T extends AnyStepContext> =
-  INodeHandler<T, NormalStepRunner<T>, InitializedStepNode<T>>
-
-export type IForkHandler<T extends AnyStepContext> =
-  INodeHandler<T, ForkStepRunner<T>, InitializedForkNode<T>>
-
-export type IBranchHandler<T extends AnyStepContext> =
-  INodeHandler<T, NormalStepRunner<T>, InitializedBranchNode<T>>
-
-export type AnyNodeHandler<T extends AnyStepContext> =
+export type IStepHandler<T extends AnyStepContext> = INodeHandler<T, NormalStepRunner<T>, InitializedStepNode<T>>
+export type IForkHandler<T extends AnyStepContext> = INodeHandler<T, ForkStepRunner<T>, InitializedForkNode<T>>
+export type IBranchHandler<T extends AnyStepContext> = INodeHandler<T, NormalStepRunner<T>, InitializedBranchNode<T>>
+export type AnyINodeHandler<T extends AnyStepContext> =
   | IStepHandler<T>
   | IForkHandler<T>
   | IBranchHandler<T>
 
-export type StepHandlerOptions<
+type BaseHandlerOptions<
   T extends AnyStepContext,
   R extends NodeRunner<T>,
 > =
@@ -101,15 +95,23 @@ export type StepHandlerOptions<
   >
   & StepDataConfig<T['InputConstructors'], T['OutputConstructors']>
 
+export type AnyHandlerOptions<T extends AnyStepContext> =
+  | StepHandlerOptions<T>
+  | ForkHandlerOptions<T>
+  | BranchHandlerOptions<T>
+
+export type StepHandlerOptions<T extends AnyStepContext> = BaseHandlerOptions<T, NormalStepRunner<T>>
+export type ForkHandlerOptions<T extends AnyStepContext> = BaseHandlerOptions<T, ForkStepRunner<T>>
+export type BranchHandlerOptions<T extends AnyStepContext> = BaseHandlerOptions<T, NormalStepRunner<T>>
+
 // ⚠️ property order matters here ⚠️
 // anything that references SC must come after serializeConfig()
-export type StepHandlerOptionsInfer<
+type BaseHandlerOptionsInfer<
   C extends Config,
   SC extends Config,
   RC extends ReactiveConfigType<C>,
   I extends readonly StepDataType[],
   O extends StepDataType,
-  R extends NodeRunner<StepContext<C, SC, RC, I, O>>,
 > = {
   config?: () => C
   reactiveConfig?: (defaults: C) => RC
@@ -119,22 +121,11 @@ export type StepHandlerOptionsInfer<
 
   loadConfig?: (config: RC, serialized: SC) => void
 
-  watcherTargets?: (
-    node: InitializedNode<StepContext<C, SC, RC, I, O>>,
-    defaultWatcherTargets: WatcherTarget[],
-  ) => WatcherTarget[]
-
   validateInput?: (
     inputData: StepInputTypesToInstances<I>,
     inputTypes: I,
   ) => StepValidationError[]
 
-  onRemove?: (
-    store: PipelineStore,
-    node: InitializedNode<StepContext<C, SC, RC, I, O>>,
-  ) => void
-
-  run: R
 } & ({
   passthrough?: false
   inputDataTypes: I
@@ -145,12 +136,80 @@ export type StepHandlerOptionsInfer<
   outputDataType?: undefined
 })
 
+export type StepHandlerOptionsInfer<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> =
+  BaseHandlerOptionsInfer<
+    C, SC, RC, I, O
+  > & {
+  watcherTargets?: (
+    node: InitializedStepNode<StepContext<C, SC, RC, I, O>>,
+    defaults: WatcherTarget[],
+  ) => WatcherTarget[]
+
+  onRemove?: (
+    store: PipelineStore,
+    node: InitializedStepNode<StepContext<C, SC, RC, I, O>>,
+  ) => void
+
+  run: NormalStepRunner<StepContext<C, SC, RC, I, O>>,
+}
+
+export type ForkHandlerOptionsInfer<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> =
+  BaseHandlerOptionsInfer<
+    C, SC, RC, I, O
+  > & {
+  watcherTargets?: (
+    node: InitializedForkNode<StepContext<C, SC, RC, I, O>>,
+    defaults: WatcherTarget[],
+  ) => WatcherTarget[]
+
+  onRemove?: (
+    store: PipelineStore,
+    node: InitializedForkNode<StepContext<C, SC, RC, I, O>>,
+  ) => void
+
+  run: ForkStepRunner<StepContext<C, SC, RC, I, O>>,
+
+}
+
+export type BranchHandlerOptionsInfer<
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> =
+  BaseHandlerOptionsInfer<C, SC, RC, I, O> & {
+  watcherTargets?: (
+    node: InitializedBranchNode<StepContext<C, SC, RC, I, O>>,
+    defaults: WatcherTarget[],
+  ) => WatcherTarget[]
+
+  onRemove?: (
+    store: PipelineStore,
+    node: InitializedBranchNode<StepContext<C, SC, RC, I, O>>,
+  ) => void
+
+  run: NormalStepRunner<StepContext<C, SC, RC, I, O>>,
+}
+
 function makeBaseHandler<
   T extends AnyStepContext,
   R extends NodeRunner<T>,
 >(
   def: string,
-  options: StepHandlerOptions<T, R>,
+  options: BaseHandlerOptions<T, R>,
   stepRegistry: StepRegistry = useStepRegistry(),
 ): IStepHandlerBase<T, R> {
   type RC = T['RC']
@@ -256,7 +315,7 @@ function adaptHandler<
 
 export function makeStepHandler<T extends AnyStepContext>(
   def: string,
-  options: StepHandlerOptions<T, NormalStepRunner<T>>,
+  options: StepHandlerOptions<T>,
   stepRegistry: StepRegistry = useStepRegistry(),
 ): IStepHandler<T> {
   const base = makeBaseHandler<T, NormalStepRunner<T>>(def, options, stepRegistry)
@@ -265,7 +324,7 @@ export function makeStepHandler<T extends AnyStepContext>(
 
 export function makeForkHandler<T extends AnyStepContext>(
   def: string,
-  options: StepHandlerOptions<T, ForkStepRunner<T>>,
+  options: ForkHandlerOptions<T>,
   stepRegistry: StepRegistry = useStepRegistry(),
 ): IForkHandler<T> {
   const base = makeBaseHandler<T, ForkStepRunner<T>>(def, options, stepRegistry)
@@ -274,7 +333,7 @@ export function makeForkHandler<T extends AnyStepContext>(
 
 export function makeBranchHandler<T extends AnyStepContext>(
   def: string,
-  options: StepHandlerOptions<T, NormalStepRunner<T>>,
+  options: BranchHandlerOptions<T>,
   stepRegistry: StepRegistry = useStepRegistry(),
 ): IBranchHandler<T> {
   const base = makeBaseHandler<T, NormalStepRunner<T>>(def, options, stepRegistry)
