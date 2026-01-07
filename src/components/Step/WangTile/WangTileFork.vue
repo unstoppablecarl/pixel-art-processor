@@ -2,7 +2,7 @@
 import type { AnyStepMeta } from '../../../lib/pipeline/_types.ts'
 import { NodeType } from '../../../lib/pipeline/_types.ts'
 import { BitMask } from '../../../lib/step-data-types/BitMask.ts'
-import { STEP_META as branchStepMeta } from '../Branch.vue'
+import { STEP_META as branchStepMeta } from './WangTileBranch.vue'
 
 export interface IStepMeta {
   wangTileInfo?: {

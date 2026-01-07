@@ -23,5 +23,9 @@ const branch = useBranchHandler(branchId, {
 
 </script>
 <template>
-  <BranchCard :branch="branch" />
+  <BranchCard :branch="branch">
+    <template #nodes>
+      // @TODO preview of last node in branch chain
+    </template>
+  </BranchCard>
 </template>

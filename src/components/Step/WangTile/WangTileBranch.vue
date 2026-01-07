@@ -18,10 +18,42 @@ const { branchId } = defineProps<{
 }>()
 
 const branch = useBranchHandler(branchId, {
-  ...STEP_META
+  ...STEP_META,
+  config() {
+    return {
+      variantCount: 0,
+    }
+  },
 })
 
+function add() {
+  branch.config.variantCount++
+  // @TODO duplicate this branch's nodes into a WangTileBranchVariant
+}
+
+function remove() {
+  branch.config.variantCount--
+  // @TODO remove one of this branch's nodes into a WangTileBranchVariant
+
+}
 </script>
 <template>
-  <BranchCard :branch="branch" />
+  <BranchCard :branch="branch">
+    <template #before-nodes>
+      <div class="card-body">
+        <div class="section">
+          <div class="input-group">
+            <span class="input-group-text">Variant Count</span>
+            <input class="form-control" v-model="branch.config.variantCount" type="number" min="1" style="width: 100px" />
+            <button role="button" class="btn btn-secondary btn-sm" @click="remove()">
+              <span class="material-symbols-outlined">remove</span>
+            </button>
+            <button role="button" class="btn btn-secondary btn-sm" @click="add()">
+              <span class="material-symbols-outlined">add</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+  </BranchCard>
 </template>

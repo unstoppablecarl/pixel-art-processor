@@ -2,20 +2,18 @@ import { defineStore } from 'pinia'
 import { reactive, ref, type Ref, shallowReactive, watch } from 'vue'
 import { type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
 import {
-  type AnyBranchNode,
-  type AnyForkNode,
   type AnyNode,
   type AnyNodeSerialized,
-  type AnyStepNode,
-  BranchNode,
   deSerializeNode,
-  ForkNode,
   type GraphNode,
   isBranch,
   isFork,
   isStep,
-  StepNode,
+
 } from '../pipeline/Node.ts'
+import { type AnyBranchNode, BranchNode } from '../pipeline/Node/BranchNode.ts'
+import { type AnyForkNode, ForkNode } from '../pipeline/Node/ForkNode.ts'
+import { type AnyStepNode, StepNode } from '../pipeline/Node/StepNode.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
 import { type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'

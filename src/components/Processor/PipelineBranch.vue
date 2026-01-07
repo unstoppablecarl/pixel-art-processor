@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { type AnyForkNode, isFork } from '../../lib/pipeline/Node.ts'
+import { isFork } from '../../lib/pipeline/Node.ts'
+import type { AnyForkNode } from '../../lib/pipeline/Node/ForkNode.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
