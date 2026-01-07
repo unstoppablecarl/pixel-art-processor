@@ -1,11 +1,9 @@
-export abstract class StepValidationError extends Error {
+export abstract class StepValidationError {
 
   abstract slug: string
 
   constructor(
     public title: string,
-    message: string,
-  ) {
-    super(message)
-  }
+    public message: string,
+  ) {}
 }
