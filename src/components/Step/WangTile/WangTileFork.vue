@@ -4,7 +4,7 @@ import { NodeType } from '../../../lib/pipeline/_types.ts'
 import { BitMask } from '../../../lib/step-data-types/BitMask.ts'
 import { STEP_META as branchStepMeta } from './WangTileBranch.vue'
 
-export interface IStepMeta {
+export interface IRunnerResultMeta {
   wangTileInfo?: {
     sideIds: string[],
     N: string,

@@ -466,6 +466,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       getLeafNodes,
       getAncestorNodeIds,
       findInAncestorNodes,
+      getDescendantIds,
       nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
     }
   },

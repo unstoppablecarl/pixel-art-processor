@@ -35,6 +35,13 @@ export function logNodeEvent(nodeId: string, event: string, ...args: any[]) {
   log(green, nodeId, event, ...args)
 }
 
+export function logNodeFunction<T>(nodeId: string, func: string, cb: () => T) {
+  logNodeEvent(nodeId, `${func}: start`)
+  const result = cb()
+  logNodeEvent(nodeId, `${func}: end`, result)
+  return result
+}
+
 export function logNodeEventWarning(nodeId: string, event: string, ...args: any[]) {
   log(orange, nodeId, event, ...args)
 }
@@ -120,4 +127,13 @@ export function arrayRemove(array: any[], item: any): void {
   if (index !== -1) {
     array.toSpliced(index, 1)
   }
+}
+
+export function deepFreeze<T extends Record<string | symbol, any>>(obj: T): T {
+  if (!obj || typeof obj !== 'object') return obj
+
+  Object.freeze(obj)
+  Object.values(obj).forEach(deepFreeze)
+
+  return obj
 }

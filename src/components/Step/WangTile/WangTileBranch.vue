@@ -51,17 +51,16 @@ function remove() {
 }
 
 const variantCount = computed<number, number>({
-  get: () => branch.getPrev(store).branchIds.value.length,
+  get: () => getSiblingBranchVariants().length,
   set(value: number) {
-    const diff = value - branch.getPrev(store).branchIds.value.length
+    const diff = value - getSiblingBranchVariants().length
     if (diff > 0) {
       for (let i = 0; i < diff; i++) {
         add()
       }
     } else if (diff < 0) {
-      for (let i = 0; i < diff * -1; i++) {
+      for (let i = 0; i < diff * -1; i++)
         remove()
-      }
     }
   },
 })

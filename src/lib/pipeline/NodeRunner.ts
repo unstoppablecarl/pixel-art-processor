@@ -1,19 +1,24 @@
+import { deepFreeze } from '../util/misc.ts'
 import type { IRunnerResultMeta } from './_types.ts'
+import { GenericValidationError } from './errors/GenericValidationError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
 import type { AnyStepContext } from './Step.ts'
+
+type Preview = ImageData | null
 
 export type SingleRunnerOutput<T extends AnyStepContext> =
   | null
   | undefined
   | {
-  preview?: SingleRunnerResult<T>['preview'],
-  output?: SingleRunnerResult<T>['output'],
+  preview?: Preview,
+  output?: T['Output'] | null,
   validationErrors?: (StepValidationError | string)[],
-  meta?: SingleRunnerResult<T>['meta'] | null
+  meta?: IRunnerResultMeta | null
 }
 
 export type SingleRunnerResult<T extends AnyStepContext> = {
-  preview: ImageData | null,
+  readonly [certifiedResult]: true,
+  preview: Preview,
   output: T['Output'] | null,
   meta: IRunnerResultMeta,
   validationErrors: StepValidationError[]
@@ -29,10 +34,8 @@ export type NormalStepRunnerInput<T extends AnyStepContext> = {
   meta: IRunnerResultMeta,
 }
 
-export interface NormalStepRunner<T extends AnyStepContext> {
-  (options: NormalStepRunnerInput<T>): Promise<SingleRunnerOutput<T>>
-  __normal?: never,
-}
+export type NormalStepRunner<T extends AnyStepContext> =
+  (options: NormalStepRunnerInput<T>) => Promise<SingleRunnerOutput<T>>
 
 export type ForkStepRunnerInput<T extends AnyStepContext> = {
   config: T['RC'],
@@ -40,8 +43,30 @@ export type ForkStepRunnerInput<T extends AnyStepContext> = {
   meta: IRunnerResultMeta,
   branchIndex: number,
 }
-export interface ForkStepRunner<T extends AnyStepContext> {
-  (options: ForkStepRunnerInput<T>): Promise<SingleRunnerOutput<T>>
-  __fork?: never
+
+export type ForkStepRunner<T extends AnyStepContext> =
+  (options: ForkStepRunnerInput<T>) => Promise<SingleRunnerOutput<T>>
+
+const certifiedResult = Symbol(__DEV__ ? 'certified runner result' : '')
+
+// SingleRunnerResult should only be created by this function
+export function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): SingleRunnerResult<T> {
+  const output = result?.output ?? null
+  const preview = result?.preview ?? null
+  const meta = result?.meta ?? {}
+  const validationErrors = result?.validationErrors?.map(parseValidationError) ?? []
+
+  return {
+    [certifiedResult]: true,
+    output: output ? deepFreeze(output) : null,
+    preview: preview ? deepFreeze(preview) : null,
+    meta: deepFreeze(meta),
+    validationErrors: deepFreeze(validationErrors),
+  }
 }
 
+function parseValidationError(error: StepValidationError | string) {
+  if (typeof error === 'string') return new GenericValidationError(error)
+
+  return error
+}

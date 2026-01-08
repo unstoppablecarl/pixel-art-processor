@@ -1,7 +1,6 @@
-import { ref, type Ref } from 'vue'
+import { readonly, type Ref, ref } from 'vue'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
-import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type IRunnerResultMeta,
   type NodeDef,
@@ -10,9 +9,8 @@ import {
   type WatcherTarget,
   type WithRequired,
 } from './_types.ts'
-import { GenericValidationError } from './errors/GenericValidationError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
-import type { NormalStepRunner, SingleRunnerOutput, SingleRunnerResult } from './NodeRunner.ts'
+import { type NormalStepRunner, parseResult, type SingleRunnerResult } from './NodeRunner.ts'
 import type { AnyStepContext, StepLoaderSerialized } from './Step.ts'
 import {
   type AnyINodeHandler,
@@ -101,7 +99,7 @@ export abstract class BaseNode<
   }
 
   async processRunner(store: PipelineStore) {
-    logNodeEvent(this.id, 'processRunner: start')
+    // await this.logFunction('processRunner', async () => {
 
     this.isProcessing = true
     const startTime = performance.now()
@@ -111,7 +109,7 @@ export abstract class BaseNode<
     this.isProcessing = false
     this.isDirty = false
     this.lastExecutionTimeMS = performance.now() - startTime
-    logNodeEvent(this.id, 'processRunner: end', deepUnwrap(this))
+    // })
   }
 
   protected abstract resolveRunner(store: PipelineStore): Promise<void>
@@ -151,9 +149,7 @@ export abstract class BaseNode<
     }
   }
 
-  initialize(
-    handler: H,
-  ) {
+  protected initialize(handler: H): void {
     this.handler = handler
 
     if (!this.config) {
@@ -188,6 +184,13 @@ export abstract class BaseNode<
     ]
   }
 
+  protected async logFunction<T>(func: string, cb: () => Promise<T>): Promise<T> {
+    logNodeEvent(this.id, `[${this.type}] ${func}: start`)
+    const result = await cb()
+    logNodeEvent(this.id, `[${this.type}] ${func}: end`, result)
+    return result
+  }
+
   getPrev(store: PipelineStore): PrevNode | undefined {
     if (!this.prevNodeId) return
     return store.get(this.prevNodeId) as PrevNode
@@ -205,12 +208,12 @@ function WithStepOrFork<TBase extends AbstractConstructor>(Base: TBase) {
 
       const prev = store.get(this.prevNodeId) as AnyStepNode | AnyBranchNode
 
-      return {
+      return parseResult({
         output: prev.outputData,
         meta: prev.outputMeta,
         preview: prev.outputPreview,
         validationErrors: prev.validationErrors,
-      }
+      })
     }
   }
 
@@ -267,45 +270,45 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T, IStepHandler
     }
   }
 
-  async run(options: Parameters<NormalStepRunner<T>>[0]): Promise<SingleRunnerResult<T>> {
-    return parseResult(
-      await this.handler!.run(options),
-    )
+  async runRaw(options: Parameters<NormalStepRunner<T>>[0]): Promise<SingleRunnerResult<T>> {
+    return this.logFunction('step.run', async () => parseResult(
+      await this.handler!.run(readonly(options)),
+    ))
   }
 
-  async resolveRunner(store: PipelineStore) {
-    logNodeEvent(this.id, 'resolveRunner: start')
+  protected async resolveRunner(store: PipelineStore) {
+    await this.logFunction('resolveRunner', async () => {
 
-    if (this.muted) {
-      const { output, meta } = await this.getOutputFromPrev(store)
+      if (this.muted) {
+        const { output, meta } = await this.getOutputFromPrev(store)
 
-      this.outputData = output
-      this.outputPreview = null
-      this.validationErrors = []
-      this.outputMeta = meta
+        this.outputData = output
+        this.outputPreview = null
+        this.validationErrors = []
+        this.outputMeta = meta
 
-      this.setPassThroughDataTypeFromPrev(store)
-      return
-    } else {
-      if (store.nodeIsPassthrough(this)) {
         this.setPassThroughDataTypeFromPrev(store)
+        return
       } else {
-        this.handler!.clearPassThroughDataType()
+        if (store.nodeIsPassthrough(this)) {
+          this.setPassThroughDataTypeFromPrev(store)
+        } else {
+          this.handler!.clearPassThroughDataType()
+        }
       }
-    }
 
-    const { output: inputData, meta } = await this.getOutputFromPrev(store)
+      const { output: inputData, meta } = await this.getOutputFromPrev(store)
 
-    const result = await this.run({
-      config: this.config as T['RC'],
-      inputData,
-      meta,
+      const result = await this.runRaw({
+        config: this.config as T['RC'],
+        inputData,
+        meta,
+      })
+      this.outputData = result.output
+      this.outputPreview = result.preview
+      this.validationErrors = result.validationErrors
+      this.outputMeta = result.meta
     })
-    this.outputData = result.output
-    this.outputPreview = result.preview
-    this.validationErrors = result.validationErrors
-    this.outputMeta = result.meta
-    logNodeEvent(this.id, 'resolveRunner: end', result)
   }
 
   getWatcherTargets(): WatcherTarget[] {
@@ -351,7 +354,7 @@ export class ForkNode<
     return this.branchIds.value
   }
 
-  async resolveRunner(store: PipelineStore) {
+  protected async resolveRunner(store: PipelineStore) {
     if (store.nodeIsPassthrough(this)) {
       this.setPassThroughDataTypeFromPrev(store)
     }
@@ -383,16 +386,17 @@ export class ForkNode<
   private async runBranch(store: PipelineStore, branchIndex: number): Promise<
     SingleRunnerResult<T>
   > {
-    logNodeEvent(this.id, 'runBranch', { branchIndex })
-    const { output: prevOutput, meta } = await this.getOutputFromPrev(store)
-    const output = await this.handler!.run({
-      config: this.config as T['RC'],
-      inputData: prevOutput,
-      branchIndex,
-      meta,
-    })
+    return this.logFunction('runBranch', async () => {
+      const { output: prevOutput, meta } = await this.getOutputFromPrev(store)
+      const output = await this.handler!.run(readonly({
+        config: this.config as T['RC'],
+        inputData: prevOutput,
+        branchIndex,
+        meta,
+      }))
 
-    return parseResult<T>(output)
+      return parseResult<T>(output)
+    })
   }
 
   serialize(): ForkNodeSerialized<T> {
@@ -469,35 +473,34 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
     return store.get(this.prevNodeId) as AnyForkNode
   }
 
-  async resolveRunner(store: PipelineStore) {
-    logNodeEvent(this.id, 'resolveRunner: start')
-    const fork = this.getPrev(store)
-    this.handler!.setPassThroughDataType(fork.handler!.outputDataType)
+  protected async resolveRunner(store: PipelineStore) {
+    await this.logFunction('resolveRunner', async () => {
+      const fork = this.getPrev(store)
+      this.handler!.setPassThroughDataType(fork.handler!.outputDataType)
 
-    const { output: inputData, meta, validationErrors: forkValidationErrors } = await this.getOutputFromPrev(store)
+      const { output: inputData, meta, validationErrors: forkValidationErrors } = await this.getOutputFromPrev(store)
 
-    const output = await this.handler!.run({
+      const output = await this.handler!.run({
       config: this.config as T['RC'],
-      inputData,
-      meta,
-    })
+        inputData,
+        meta,
+      })
 
-    const result = parseResult<T>(output)
-    this.outputData = result.output
-    this.outputPreview = result.preview
-    this.validationErrors = result.validationErrors
-    this.outputMeta = result.meta
-    this.forkValidationErrors = forkValidationErrors
-    logNodeEvent(this.id, 'resolveRunner: end', result)
+      const result = parseResult<T>(output)
+      this.outputData = result.output
+      this.outputPreview = result.preview
+      this.validationErrors = result.validationErrors
+      this.outputMeta = result.meta
+      this.forkValidationErrors = forkValidationErrors
+    })
   }
 
   async getOutputFromPrev(store: PipelineStore): Promise<SingleRunnerResult<T>> {
-    logNodeEvent(this.id, 'getOutputFromPrev: start')
-
+    // return this.logFunction('getOutputFromPrev', async () => {
     const fork = this.getPrev(store)
     const result = await fork.getBranchOutput(store, this.branchIndex)
-    logNodeEvent(this.id, 'getOutputFromPrev: end', result)
     return result as SingleRunnerResult<T>
+    // })
   }
 
   getWatcherTargets(): WatcherTarget[] {
@@ -563,21 +566,3 @@ export const isBranch = (n: AnyNode | AnyInitializedNode): n is BranchNode<any> 
 const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.STEP
 const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.FORK
 const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
-
-function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): SingleRunnerResult<T> {
-  const output = result?.output ?? null
-  const preview = result?.preview ?? null
-
-  return {
-    output: Object.freeze(output),
-    preview: Object.freeze(preview),
-    meta: Object.freeze(structuredClone(output?.meta ?? {})),
-    validationErrors: result?.validationErrors?.map(parseValidationError) ?? [],
-  }
-}
-
-function parseValidationError(error: StepValidationError | string) {
-  if (typeof error === 'string') return new GenericValidationError(error)
-
-  return error
-}
