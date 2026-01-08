@@ -46,7 +46,11 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   readonly bounds: Bounds
   cacheBust: number
 
-  readonly data: D
+  protected _data: D
+
+  get data() {
+    return this._data
+  }
 
   // Hook for subclasses with complex storage (like BitMask)
   // set to false if direct array access does not work
@@ -59,11 +63,11 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   ) {
     if (width <= 0 || height <= 0) throw new Error(`Invalid dimensions: ${width}, ${height}`)
     this.bounds = new Bounds(0, width, 0, height)
-    this.data = this.initData(width, height)
+    this._data = this.initData(width, height)
     if (sourceData) {
-      this.data.set(sourceData)
+      this._data.set(sourceData)
     } else {
-      this.data.fill(0)
+      this._data.fill(0)
     }
     this.cacheBust = Date.now()
   }
@@ -133,9 +137,14 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
       this.height,
     )
 
-    copyInstance.data.set(this.data)
+    copyInstance._data.set(this._data)
     copyInstance.cacheBust = this.cacheBust
     return copyInstance
+  }
+
+  lock() {
+    this._data = readonlyTypedArray(this._data)
+    return this
   }
 
   abstract toImageData(): ImageData;
@@ -158,11 +167,11 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   // Fast path for direct array access - subclasses can override for packed storage
   protected getRaw(idx: number): T {
-    return this.data[idx] as T
+    return this._data[idx] as T
   }
 
   protected setRaw(idx: number, value: T): void {
-    this.data[idx] = value as any
+    this._data[idx] = value as any
   }
 
   each(cb: (x: number, y: number, v: T) => void): void {
@@ -372,7 +381,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
       maxX: x1,
       minY: y0,
       maxY: y1,
-    } = this.bounds.trimNewBounds({minX, maxX, minY, maxY})
+    } = this.bounds.trimNewBounds({ minX, maxX, minY, maxY })
     const width = this.width
 
     if (this.canUseDirectAccess) {
@@ -709,7 +718,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   }
 
   clear(): void {
-    this.data.fill(0)
+    this._data.fill(0)
   }
 
   /**
@@ -759,4 +768,19 @@ export interface DataStructureConstructor<
   T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
 > {
   new(width: number, height: number, ...args: any[]): T
+}
+
+function readonlyTypedArray(arr: any) {
+  return new Proxy(arr, {
+    get: (target, prop) => Reflect.get(target, prop),
+    set() {
+      if (__DEV__) {
+        throw new Error('Cannot modify locked object use obj.copy()')
+      }
+      return false
+    },
+    defineProperty: () => false,
+    deleteProperty: () => false,
+    setPrototypeOf: () => false,
+  })
 }

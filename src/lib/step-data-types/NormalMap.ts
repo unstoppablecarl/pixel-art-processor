@@ -21,19 +21,19 @@ export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray, stri
   get(x: number, y: number): Normal {
     const index = (y * this.width + x) * 4
     return {
-      x: (this.data[index]! / 255) * 2 - 1,
-      y: (this.data[index + 1]! / 255) * 2 - 1,
-      z: (this.data[index + 2]! / 255) * 2 - 1,
+      x: (this._data[index]! / 255) * 2 - 1,
+      y: (this._data[index + 1]! / 255) * 2 - 1,
+      z: (this._data[index + 2]! / 255) * 2 - 1,
     }
   }
 
   // Encode normal to pixel
   set(x: number, y: number, normal: Normal): void {
     const index = (y * this.width + x) * 4
-    this.data[index] = ((normal.x + 1) * 0.5 * 255) | 0
-    this.data[index + 1] = ((normal.y + 1) * 0.5 * 255) | 0
-    this.data[index + 2] = ((normal.z + 1) * 0.5 * 255) | 0
-    this.data[index + 3] = 255
+    this._data[index] = ((normal.x + 1) * 0.5 * 255) | 0
+    this._data[index + 1] = ((normal.y + 1) * 0.5 * 255) | 0
+    this._data[index + 2] = ((normal.z + 1) * 0.5 * 255) | 0
+    this._data[index + 3] = 255
   }
 
   static fromHeightmap(heightMap: HeightMap, strength: number): NormalMap {
@@ -79,7 +79,7 @@ export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray, stri
   ) {
 
     const baseData = textureImageData.data
-    const normalData = this.data
+    const normalData = this._data
     const imgData = copyImageData(textureImageData)
 
     const data = imgData.data
@@ -113,7 +113,7 @@ export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray, stri
   }
 
   toImageData(): ImageData {
-    const dataCopy = new Uint8ClampedArray(this.data)
+    const dataCopy = new Uint8ClampedArray(this._data)
     return new ImageData(dataCopy, this.width, this.height)
   }
 

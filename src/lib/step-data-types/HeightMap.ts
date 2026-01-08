@@ -10,17 +10,17 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
   }
 
   get(x: number, y: number): number {
-    return this.data[y * this.width + x]!
+    return this._data[y * this.width + x]!
   }
 
   set(x: number, y: number, value: number): void {
-    this.data[y * this.width + x] = value
+    this._data[y * this.width + x] = value
   }
 
   static fromImageData(imageData: ImageData, toGrayscaleValue: (color: RGBA) => number = standardLuminanceFormula): HeightMap {
     const heightmap = new HeightMap(imageData.width, imageData.height)
     const pixels = imageData.data
-    const data = heightmap.data
+    const data = heightmap._data
 
     let heightIdx = 0
     let pixelIdx = 0
@@ -40,7 +40,7 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
   toImageData(): ImageData {
     const imageData = new ImageData(this.width, this.height)
     const pixels = imageData.data
-    const data = this.data
+    const data = this._data
 
     let heightIdx = 0
     let pixelIdx = 0

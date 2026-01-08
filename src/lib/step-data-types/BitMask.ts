@@ -26,7 +26,7 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
 
     const byteIndex = i >> 3
     const mask = 1 << (i & 7)
-    return (this.data[byteIndex]! & mask) !== 0 ? 1 : 0
+    return (this._data[byteIndex]! & mask) !== 0 ? 1 : 0
   }
 
   set(x: number, y: number, value: Bit): void {
@@ -34,25 +34,25 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
     const byteIndex = i >> 3
     const mask = 1 << (i & 7)
     if (value) {
-      this.data[byteIndex]! |= mask
+      this._data[byteIndex]! |= mask
     } else {
-      this.data[byteIndex]! &= ~mask
+      this._data[byteIndex]! &= ~mask
     }
   }
 
   protected getRaw(idx: number): Bit {
     const byteIndex = idx >> 3
     const mask = 1 << (idx & 7)
-    return (this.data[byteIndex]! & mask) !== 0 ? 1 : 0
+    return (this._data[byteIndex]! & mask) !== 0 ? 1 : 0
   }
 
   protected setRaw(idx: number, value: Bit): void {
     const byteIndex = idx >> 3
     const mask = 1 << (idx & 7)
     if (value) {
-      this.data[byteIndex]! |= mask
+      this._data[byteIndex]! |= mask
     } else {
-      this.data[byteIndex]! &= ~mask
+      this._data[byteIndex]! &= ~mask
     }
   }
 
@@ -129,7 +129,7 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
   }
 
   invert() {
-    this.data.set(this.invertData(this.data))
+    this._data.set(this.invertData(this._data))
   }
 
   protected invertData(data: Uint8Array): Uint8Array {
