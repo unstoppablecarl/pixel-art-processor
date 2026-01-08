@@ -7,8 +7,8 @@ export class InvalidInputTypeError extends StepValidationError {
   slug = INVALID_INPUT_TYPE_ERROR
 
   constructor(
-    public expectedTypes: readonly StepDataType[],
-    public receivedType: StepDataType,
+    readonly expectedTypes: readonly StepDataType[],
+    readonly receivedType: StepDataType,
   ) {
     super('Invalid Input Data Type', `Accepted: ${expectedTypes.join('/')}, Received: ${receivedType}`)
   }

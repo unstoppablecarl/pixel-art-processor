@@ -8,7 +8,7 @@ export class GenericValidationError extends StepValidationError {
   slug = GENERIC_VALIDATION_ERROR
 
   constructor(
-    public message: string,
+    readonly message: string,
   ) {
     super('Error', message)
     this.slug += '_' + genericErrorIncrement++
