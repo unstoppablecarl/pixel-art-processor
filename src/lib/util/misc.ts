@@ -129,11 +129,39 @@ export function arrayRemove(array: any[], item: any): void {
   }
 }
 
-export function deepFreeze<T extends Record<string | symbol, any>>(obj: T): T {
+// export function readonlyTypedArray(arr: any, error = 'Cannot modify readonly TypedArray') {
+//   return new Proxy(arr, {
+//     get: (target, prop) => Reflect.get(target, prop),
+//     set() {
+//       if (__DEV__) {
+//         throw new Error(error)
+//       }
+//       return false
+//     },
+//     defineProperty: () => false,
+//     deleteProperty: () => false,
+//     setPrototypeOf: () => false,
+//   })
+// }
+
+export function deepFreeze<T>(obj: T): T {
   if (!obj || typeof obj !== 'object') return obj
 
+  // Wrap TypedArrays in readonly proxy
+  // if (ArrayBuffer.isView(obj)) {
+  //   return readonlyTypedArray(obj as any)
+  // }
+
+  // if (obj instanceof ArrayBuffer) {
+  //   return obj
+  // }
+
   Object.freeze(obj)
-  Object.values(obj).forEach(deepFreeze)
+
+  // Recursively freeze all properties
+  for (const key of Object.keys(obj)) {
+    (obj as any)[key] = deepFreeze((obj as any)[key])
+  }
 
   return obj
 }

@@ -50,16 +50,16 @@ export type ForkStepRunner<T extends AnyStepContext> =
 const certifiedResult = Symbol(__DEV__ ? 'certified runner result' : '')
 
 // SingleRunnerResult should only be created by this function
-export function parseResult<T extends AnyStepContext>(result: SingleRunnerOutput<T>): SingleRunnerResult<T> {
-  const output = result?.output ?? null
-  const preview = result?.preview ?? null
-  const meta = result?.meta ?? {}
-  const validationErrors = result?.validationErrors?.map(parseValidationError) ?? []
+export function parseResult<T extends AnyStepContext>(out: SingleRunnerOutput<T>): SingleRunnerResult<T> {
+  const output = out?.output ?? null
+  const preview = out?.preview ?? null
+  const meta = out?.meta ?? {}
+  const validationErrors = out?.validationErrors?.map(parseValidationError) ?? []
 
   return {
     [certifiedResult]: true,
-    output: output ? deepFreeze(output) : null,
-    preview: preview ? deepFreeze(preview) : null,
+    output: output ? output.lock() : null,
+    preview: preview,
     meta: deepFreeze(meta),
     validationErrors: deepFreeze(validationErrors),
   }
