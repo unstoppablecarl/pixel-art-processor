@@ -43,7 +43,7 @@ enum QueryType {
 }
 
 export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>, SerializedT = T> {
-  readonly bounds: Bounds
+  readonly bounds: Readonly<Bounds>
   cacheBust: number
 
   protected _data: D
