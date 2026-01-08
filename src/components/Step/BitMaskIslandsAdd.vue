@@ -28,6 +28,7 @@ import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { BTab, BTabs } from 'bootstrap-vue-next'
+import { ref } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -84,19 +85,46 @@ const node = useStepHandler(nodeId, {
 })
 
 const config = node.config
+const settingsVisible = ref(true)
 
+function toggleExpand() {
+  if (!settingsVisible.value) {
+    config.activeTabIndex = 0
+  }
+  settingsVisible.value = !settingsVisible.value
+}
 </script>
 <template>
   <StepCard :node="node">
     <template #footer>
       <BTabs
-        content-class="mt-3 p-2"
         v-model:index="config.activeTabIndex"
+        no-body
       >
         <BTab
+          :id="`${nodeId}-settings`"
           title="Settings"
-          id="settings"
+        />
+
+        <BTab
+          :id="`${nodeId}-display`"
+          title="Display"
+        />
+
+        <BTab
+          :id="`${nodeId}-show-hide-settings`"
+          title-link-class="nav-link-collapse"
+          title-item-class="ms-auto"
+          @click="toggleExpand()"
         >
+          <template #title>
+            &nbsp;
+          </template>
+        </BTab>
+      </BTabs>
+
+      <div v-auto-animate>
+        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 0">
           <RangeBandSlider
             v-model:minValue="config.minDistance "
             v-model:maxValue="config.maxDistance "
@@ -135,15 +163,14 @@ const config = node.config
             :max="1"
             :step="0.01"
           />
+        </div>
 
-        </BTab>
-        <BTab
-          title="Display"
-          id="display"
-        >
+        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 1">
           <CheckboxColorList :items="islandCheckboxColors(config)" />
-        </BTab>
-      </BTabs>
+        </div>
+
+      </div>
+
     </template>
   </StepCard>
 </template>

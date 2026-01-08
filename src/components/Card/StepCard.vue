@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButton, BButtonGroup, BCollapse, BPopover } from 'bootstrap-vue-next'
+import { BButton, BButtonGroup, BPopover } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
 import { getValidationErrorComponent } from '../../lib/errors.ts'
 
@@ -196,65 +196,64 @@ const settingsVisible = ref(true)
         />
 
       </div>
-      <BCollapse
-        v-model="node.visible"
-        lazy
-      >
-        <slot name="body-and-footer">
-          <div class="card-body">
-            <slot name="body">
+      <div v-auto-animate>
+        <div v-if="node.visible">
+          <slot name="body-and-footer">
+            <div class="card-body">
+              <slot name="body">
 
-              <template
-                v-for="({imageData, label, validationErrors: imgValidationErrors = []}, index) in nodeImages"
-              >
-                <StepImage
-                  :image-data="imageData"
-                  :label="label"
-                  :validationErrors="imgValidationErrors"
+                <template
+                  v-for="({imageData, label, validationErrors: imgValidationErrors = []}, index) in nodeImages"
                 >
-                  <template v-for="(_, name) in $slots" #[name]="slotProps">
-                    <slot :name="name" v-bind="{...slotProps, index}" />
-                  </template>
-                </StepImage>
-                <slot
-                  name="after-image"
-                  :index="index"
-                  :label="label"
-                  :validationErrors="imgValidationErrors"
-                  :imageData="imageData"
+                  <StepImage
+                    :image-data="imageData"
+                    :label="label"
+                    :validationErrors="imgValidationErrors"
+                  >
+                    <template v-for="(_, name) in $slots" #[name]="slotProps">
+                      <slot :name="name" v-bind="{...slotProps, index}" />
+                    </template>
+                  </StepImage>
+                  <slot
+                    name="after-image"
+                    :index="index"
+                    :label="label"
+                    :validationErrors="imgValidationErrors"
+                    :imageData="imageData"
+                  />
+
+                </template>
+              </slot>
+            </div>
+
+            <div class="card-footer">
+              <div class="section hstack" v-if="showDimensions && dimensions">
+                <span class="btn-sm-py text-muted me-auto ms-1">
+                  Image Size: {{ dimensions }}
+                </span>
+
+                <BButton
+                  :class="'btn-collapse btn-xs ms-1 ' + (settingsVisible ? null : 'collapsed')"
+                  size="sm"
+                  variant="transparent"
+                  :aria-expanded="settingsVisible ? 'true' : 'false'"
+                  @click="settingsVisible = !settingsVisible"
                 />
+              </div>
 
-              </template>
-            </slot>
-          </div>
+              <div class="section" v-for="error in node.validationErrors">
+                <component :is="getValidationErrorComponent(error)" :error="error" />
+              </div>
 
-          <div class="card-footer">
-            <div class="section hstack" v-if="showDimensions && dimensions">
-              <span class="btn-sm-py text-muted me-auto ms-1">
-                Image Size: {{ dimensions }}
-              </span>
-
-              <BButton
-                :class="'btn-collapse btn-xs ms-1 ' + (settingsVisible ? null : 'collapsed')"
-                size="sm"
-                variant="transparent"
-                :aria-expanded="settingsVisible ? 'true' : 'false'"
-                @click="settingsVisible = !settingsVisible"
-              />
+              <div v-auto-animate>
+                <div v-if="settingsVisible">
+                  <slot name="footer"></slot>
+                </div>
+              </div>
             </div>
-
-            <div class="section" v-for="error in node.validationErrors">
-              <component :is="getValidationErrorComponent(error)" :error="error" />
-            </div>
-            <BCollapse
-              v-model="settingsVisible"
-              lazy
-            >
-              <slot name="footer"></slot>
-            </BCollapse>
-          </div>
-        </slot>
-      </BCollapse>
+          </slot>
+        </div>
+      </div>
     </div>
   </div>
 </template>
