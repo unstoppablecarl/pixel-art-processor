@@ -272,7 +272,7 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T, IStepHandler
 
   async runRaw(options: Parameters<NormalStepRunner<T>>[0]): Promise<SingleRunnerResult<T>> {
     return this.logFunction('step.run', async () => parseResult(
-      await this.handler!.run(readonly(options)),
+      await this.handler!.run(options),
     ))
   }
 
