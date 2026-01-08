@@ -1,14 +1,19 @@
-.btn-collapse {
+:root {
   --#{$prefix}accordion-transition: #{$accordion-transition};
   --#{$prefix}accordion-btn-bg: #{$accordion-button-bg};
-  --#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon)};
+  //--#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon)};
+  //--#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon)};
   --#{$prefix}accordion-btn-icon-width: #{$accordion-icon-width};
   --#{$prefix}accordion-btn-icon-transform: #{$accordion-icon-transform};
   --#{$prefix}accordion-btn-icon-transition: #{$accordion-icon-transition};
-  --#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon)};
   --#{$prefix}accordion-active-color: #{$accordion-button-active-color};
   --#{$prefix}accordion-active-bg: #{$accordion-button-active-bg};
 
+  --#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon-dark)};
+  --#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon-dark)};
+}
+
+.btn-collapse {
   position: relative;
   display: flex;
   align-items: center;
@@ -33,7 +38,7 @@
     width: var(--#{$prefix}accordion-btn-icon-width);
     height: var(--#{$prefix}accordion-btn-icon-width);
     margin-left: auto;
-    content: "";
+    content: '';
     background-image: var(--#{$prefix}accordion-btn-icon);
     background-repeat: no-repeat;
     background-size: var(--#{$prefix}accordion-btn-icon-width);
@@ -54,14 +59,40 @@
   }
 }
 
-.btn-collapse-light {
+
+.btn-collapse:not(.btn-transparent-dark)::after {
   --#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon-dark)};
   --#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon-dark)};
 }
 
-@include color-mode(dark) {
-  .btn-collapse:not(.btn-transparent-dark)::after {
-    --#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon-dark)};
-    --#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon-dark)};
+
+.nav-link-collapse {
+  --px: 0.5rem;
+  position: relative;
+  display: block;
+  width: calc(var(--#{$prefix}accordion-btn-icon-width) + var(--px) * 2 + var(--bs-nav-tabs-border-width) * 2);
+  padding-left: var(--px);
+  padding-right: var(--px);
+  @include transition(var(--#{$prefix}accordion-transition));
+
+  &:before {
+    content: '';
+    position: absolute;
+    left: var(--px);
+    top: 50%;
+    background-image: var(--#{$prefix}accordion-btn-icon);
+    background-repeat: no-repeat;
+    width: var(--#{$prefix}accordion-btn-icon-width);
+    height: 1rem;
+    background-size: var(--#{$prefix}accordion-btn-icon-width);
+
+    transform: translateY(-50%) rotate(180deg);
+    transition: transform 0.2s ease-in-out;
+  }
+
+  &.active {
+    &:before {
+      transform: translateY(-50%); /* Rotate like accordion */
+    }
   }
 }

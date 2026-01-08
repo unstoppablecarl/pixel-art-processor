@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BButton, BButtonGroup, BCollapse, BPopover } from 'bootstrap-vue-next'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import { getValidationErrorComponent } from '../../lib/errors.ts'
 
 import { INVALID_INPUT_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputTypeError.ts'
@@ -69,7 +69,6 @@ const nodeImages = computed((): StepImg[] => {
     }]
   }
 
-
   return fork.forkOutputData.value.map((item, index) => {
     return {
       imageData: item?.preview ?? null,
@@ -109,6 +108,8 @@ function toggleMute() {
 }
 
 const isMuted = computed(() => isStep(node) && node.muted)
+const settingsVisible = ref(true)
+
 </script>
 <template>
   <div ref="stepEl" class="node" :style="cssStyle">
@@ -228,17 +229,29 @@ const isMuted = computed(() => isStep(node) && node.muted)
           </div>
 
           <div class="card-footer">
-
-            <div class="section" v-if="showDimensions && dimensions">
+            <div class="section hstack" v-if="showDimensions && dimensions">
               <span class="btn-sm-py text-muted me-auto ms-1">
                 Image Size: {{ dimensions }}
               </span>
+
+              <BButton
+                :class="'btn-collapse btn-xs ms-1 ' + (settingsVisible ? null : 'collapsed')"
+                size="sm"
+                variant="transparent"
+                :aria-expanded="settingsVisible ? 'true' : 'false'"
+                @click="settingsVisible = !settingsVisible"
+              />
             </div>
 
             <div class="section" v-for="error in node.validationErrors">
               <component :is="getValidationErrorComponent(error)" :error="error" />
             </div>
-            <slot name="footer"></slot>
+            <BCollapse
+              v-model="settingsVisible"
+              lazy
+            >
+              <slot name="footer"></slot>
+            </BCollapse>
           </div>
         </slot>
       </BCollapse>
