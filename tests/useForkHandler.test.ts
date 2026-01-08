@@ -70,7 +70,7 @@ describe('fork handler type testing', async () => {
     type O = typeof outputDataType
 
     const stepDef = defineTestStep({
-      def: 'foo',
+      def: 'test fork',
       type: NodeType.FORK,
       inputDataTypes,
       outputDataType,
@@ -172,10 +172,9 @@ describe('fork handler type testing', async () => {
       >()
       expectTypeOf(step.handler.run).toExtend<
         (options: {
-          config: T['RC'],
-          inputData: T['Input'] | null,
+          config: RC,
+          inputData: InputInstances | null,
           branchIndex: number,
-          branchGenerationSeed: number,
           meta: IRunnerResultMeta,
         }) => Promise<
           SingleRunnerOutput<T>

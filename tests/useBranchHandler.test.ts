@@ -167,6 +167,7 @@ describe('branch handler type testing', async () => {
       expectTypeOf(step).toEqualTypeOf<InitializedBranchNode<T>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
+      expectTypeOf(step.outputMeta).toEqualTypeOf<IRunnerResultMeta>()
     })
 
     it('creates correct handler', () => {
@@ -179,7 +180,6 @@ describe('branch handler type testing', async () => {
         NormalStepRunner<T>
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<{
-        __normal?: never,
         ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null,

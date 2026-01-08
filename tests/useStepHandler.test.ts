@@ -70,7 +70,7 @@ describe('step handler type testing', async () => {
     type O = typeof outputDataType
 
     const stepDef = defineTestStep({
-      def: 'foo',
+      def: 'test step',
       inputDataTypes,
       outputDataType,
     })
@@ -157,6 +157,7 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).toEqualTypeOf<InitializedStepNode<T>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
+      expectTypeOf(step.outputMeta).toEqualTypeOf<IRunnerResultMeta>()
     })
 
     it('creates correct handler', () => {
@@ -169,7 +170,6 @@ describe('step handler type testing', async () => {
         NormalStepRunner<T>
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<{
-        __normal?: never,
         ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null,
