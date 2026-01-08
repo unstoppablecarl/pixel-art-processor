@@ -36,7 +36,7 @@ export function useStepHandler<
   type T = StepContext<C, SC, RC, I, O>
 
   const store = usePipelineStore()
-  const node = store.get(nodeId) as unknown as StepNode<T>
+  const node = store.getStep(nodeId) as StepNode<T>
   node.initializeStep(options)
 
   createWatchers(store, node)
@@ -58,7 +58,7 @@ export function useForkHandler<
   type T = StepContext<C, SC, RC, I, O>
 
   const store = usePipelineStore()
-  const node = store.get(nodeId) as unknown as ForkNode<T>
+  const node = store.getFork(nodeId) as ForkNode<T>
   node.initializeFork(makeForkHandler<T>(node.def, options))
   createWatchers(store, node)
 
@@ -92,7 +92,7 @@ export function useBranchHandler<
   } as BranchHandlerOptions<T>
 
   const store = usePipelineStore()
-  const node = store.get(nodeId) as unknown as BranchNode<T>
+  const node = store.getBranch(nodeId) as BranchNode<T>
   node.initializeBranch(makeBranchHandler<T>(node.def, merged))
   createWatchers(store, node)
 

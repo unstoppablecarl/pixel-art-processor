@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type ShallowReactive, shallowReactive } from 'vue'
-import { type IRunnerResultMeta, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
+import { type IRunnerResultMeta, NodeType, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedBranchNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
@@ -70,14 +70,23 @@ describe('branch handler type testing', async () => {
     type I = typeof inputDataTypes
     type O = typeof outputDataType
 
-    const stepDef = defineTestStep({
-      def: 'foo',
+    const forkDef = defineTestStep({
+      def: 'test fork',
+      type: NodeType.FORK,
+      inputDataTypes,
+      outputDataType,
+    })
+
+    const branchDef = defineTestStep({
+      def: 'test branch',
+      type: NodeType.BRANCH,
       inputDataTypes,
       outputDataType,
     })
 
     const store = usePipelineStore()
-    const newStep = store.add(stepDef.def, null)
+    const fork = store.addFork(forkDef.def, null)
+    const newStep = store.addBranch(branchDef.def, fork.id)
     const step = useBranchHandler(newStep.id, {
       inputDataTypes,
       outputDataType,
