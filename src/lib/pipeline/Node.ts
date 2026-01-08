@@ -297,11 +297,16 @@ export class StepNode<T extends AnyStepContext> extends StepBase<T, IStepHandler
         }
       }
 
-      const { output: inputData, meta } = await this.getOutputFromPrev(store)
+      const {
+        output: inputData,
+        preview: inputPreview,
+        meta,
+      } = await this.getOutputFromPrev(store)
 
       const result = await this.runRaw({
         config: this.config as T['RC'],
         inputData,
+        inputPreview,
         meta,
       })
       this.outputData = result.output
@@ -391,10 +396,15 @@ export class ForkNode<
     SingleRunnerResult<T>
   > {
     return this.logFunction('runBranch', async () => {
-      const { output: prevOutput, meta } = await this.getOutputFromPrev(store)
+      const {
+        output: inputData,
+        preview: inputPreview,
+        meta
+      } = await this.getOutputFromPrev(store)
       const output = await this.handler!.run(readonly({
         config: this.config as T['RC'],
-        inputData: prevOutput,
+        inputData,
+        inputPreview,
         branchIndex,
         meta,
       }))
@@ -482,11 +492,23 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
       const fork = this.getPrev(store)
       this.handler!.setPassThroughDataType(fork.handler!.outputDataType)
 
-      const { output: inputData, meta, validationErrors: forkValidationErrors } = await this.getOutputFromPrev(store)
+      const {
+        output: inputData,
+        preview: inputPreview,
+        meta,
+        validationErrors: forkValidationErrors
+      } = await this.getOutputFromPrev(store)
+
+      logNodeEvent(this.id, 'resolveRunner: input', {
+        config: this.config as T['RC'],
+        inputData,
+        meta,
+      } as any)
 
       const output = await this.handler!.run({
         config: this.config as T['RC'],
         inputData,
+        inputPreview,
         meta,
       })
 

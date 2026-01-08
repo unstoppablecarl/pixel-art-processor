@@ -123,6 +123,7 @@ describe('IStepHandler<T> basic structure', () => {
     expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
 

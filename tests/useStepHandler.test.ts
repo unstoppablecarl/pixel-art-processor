@@ -107,9 +107,10 @@ describe('step handler type testing', async () => {
         }
       },
 
-      async run({ config, inputData }) {
+      async run({ config, inputData, inputPreview }) {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(inputData).toEqualTypeOf<InputInstances | null>()
+        expectTypeOf(inputPreview).toEqualTypeOf<ImageData | null>()
 
         if (!config.maskImageData) return
 
@@ -137,7 +138,8 @@ describe('step handler type testing', async () => {
       .parameter(0)
       .toEqualTypeOf<{
         config: TFromNode['RC']
-        inputData: TFromNode['Input'] | null
+        inputData: TFromNode['Input'] | null,
+        inputPreview: ImageData | null,
         meta: IRunnerResultMeta,
       }>()
 
@@ -175,13 +177,17 @@ describe('step handler type testing', async () => {
         ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null,
+          inputPreview: ImageData | null,
           meta: IRunnerResultMeta,
         }): Promise<SingleRunnerOutput<T>>
       }>()
 
-      expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
-        { config: RC, inputData: InputInstances | null, meta: IRunnerResultMeta }
-      ]>()
+      expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[{
+        config: RC,
+        inputData: InputInstances | null,
+        inputPreview: ImageData | null,
+        meta: IRunnerResultMeta
+      }]>()
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
         Promise<SingleRunnerOutput<T>>
       >()
@@ -278,12 +284,14 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
 

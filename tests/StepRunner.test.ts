@@ -107,6 +107,7 @@ describe('NodeRunner type collapse tests', () => {
     type Expected = (options: {
       config: Ctx['RC']
       inputData: Ctx['Input'] | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }) => Promise<any>
 
@@ -118,6 +119,7 @@ describe('NodeRunner type collapse tests', () => {
     type Expected = (options: {
       config: Ctx['RC']
       inputData: Ctx['Input'] | null
+      inputPreview: ImageData | null,
       branchIndex: number,
       branchGenerationSeed: number,
       meta: IRunnerResultMeta,

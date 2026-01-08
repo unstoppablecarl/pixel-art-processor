@@ -108,9 +108,10 @@ describe('fork handler type testing', async () => {
         }
       },
 
-      async run({ config, inputData, branchIndex }) {
+      async run({ config, inputData, inputPreview, branchIndex }) {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(inputData).toEqualTypeOf<InputInstances | null>()
+        expectTypeOf(inputPreview).toEqualTypeOf<ImageData | null>()
         expectTypeOf(branchIndex).toEqualTypeOf<number>()
 
         if (!config.maskImageData) return
@@ -139,7 +140,8 @@ describe('fork handler type testing', async () => {
       .parameter(0)
       .toEqualTypeOf<{
         config: TFromNode['RC']
-        inputData: TFromNode['Input'] | null
+        inputData: TFromNode['Input'] | null,
+        inputPreview: ImageData | null,
         meta: IRunnerResultMeta,
         branchIndex: number
       }>()
@@ -176,6 +178,7 @@ describe('fork handler type testing', async () => {
         (options: {
           config: RC,
           inputData: InputInstances | null,
+          inputPreview: ImageData | null,
           branchIndex: number,
           meta: IRunnerResultMeta,
         }) => Promise<
@@ -186,6 +189,7 @@ describe('fork handler type testing', async () => {
         {
           config: RC,
           inputData: InputInstances | null,
+          inputPreview: ImageData | null,
           branchIndex: number
         }
       ]>()
@@ -285,6 +289,7 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
+      inputPreview: ImageData | null,
       branchIndex: number,
       meta: IRunnerResultMeta,
     }]>()
@@ -292,6 +297,7 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
+      inputPreview: ImageData | null,
       branchIndex: number,
       meta: IRunnerResultMeta,
     }]>()

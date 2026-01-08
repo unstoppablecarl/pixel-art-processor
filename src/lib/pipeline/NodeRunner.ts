@@ -30,6 +30,7 @@ export type NodeRunner<T extends AnyStepContext> =
 export type NormalStepRunnerInput<T extends AnyStepContext> = {
   config: T['RC'],
   inputData: T['Input'] | null,
+  inputPreview: Preview,
   meta: IRunnerResultMeta,
 }
 
@@ -39,6 +40,7 @@ export type NormalStepRunner<T extends AnyStepContext> =
 export type ForkStepRunnerInput<T extends AnyStepContext> = {
   config: T['RC'],
   inputData: T['Input'] | null,
+  inputPreview: Preview,
   meta: IRunnerResultMeta,
   branchIndex: number,
 }
