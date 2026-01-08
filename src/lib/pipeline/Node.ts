@@ -366,6 +366,10 @@ export class ForkNode<
     ) as SingleRunnerResult<T>[]
   }
 
+  getCachedBranchOutput(branchIndex: number): SingleRunnerResult<T> | null {
+    return this.forkOutputData.value[branchIndex] ?? null
+  }
+
   async getBranchOutput(store: PipelineStore, branchIndex: number): Promise<SingleRunnerResult<T>> {
     if (this.forkOutputData.value[branchIndex] === undefined) {
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)

@@ -1,4 +1,3 @@
-import { deepFreeze } from '../util/misc.ts'
 import type { IRunnerResultMeta } from './_types.ts'
 import { GenericValidationError } from './errors/GenericValidationError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
@@ -60,8 +59,8 @@ export function parseResult<T extends AnyStepContext>(out: SingleRunnerOutput<T>
     [certifiedResult]: true,
     output: output ? output.lock() : null,
     preview: preview,
-    meta: deepFreeze(meta),
-    validationErrors: deepFreeze(validationErrors),
+    meta: meta,
+    validationErrors: validationErrors,
   }
 }
 

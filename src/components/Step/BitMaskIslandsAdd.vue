@@ -123,7 +123,7 @@ function toggleExpand() {
         </BTab>
       </BTabs>
 
-      <div v-auto-animate>
+      <div class="auto-animate" v-auto-animate>
         <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 0">
           <RangeBandSlider
             v-model:minValue="config.minDistance "

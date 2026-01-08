@@ -38,9 +38,17 @@ const nodeIds = computed((): NodeId[] => {
 
   return ids
 })
+
+const cssStyle = computed(() => {
+  const width = branch.outputPreview?.width ?? store.getFallbackOutputWidth(branch)
+  return [
+    `--node-img-width: ${width}px;`,
+  ].join(' ')
+})
 </script>
 <template>
   <div
+    :style="cssStyle"
     :class="{
       'card card-fork-branch': true,
       'border-danger': branch.validationErrors.length,

@@ -88,7 +88,7 @@ const node = useForkHandler(nodeId, {
       output: mask,
       preview: mask.toImageData(),
       meta: {
-        wangTile,
+        wangTileInfo: wangTile,
       },
     }
   },
@@ -176,12 +176,12 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
         <ForkWangTileEdge
           :node-id="nodeId"
           :size="config.size.value"
-          :index="index"
-          v-model:config="config.wangTiles[index]"
-          :edge="edges[index]"
-          @update:edge="updateEdge(index, $event)"
-          @remove="remove(index)"
-          @duplicate="duplicate(index)"
+          :index="index-1"
+          v-model:config="config.wangTiles[index-1]"
+          :edge="edges[index-1]"
+          @update:edge="updateEdge(index-1, $event)"
+          @remove="remove(index-1)"
+          @duplicate="duplicate(index-1)"
         />
 
       </template>

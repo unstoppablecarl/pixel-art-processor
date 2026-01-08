@@ -433,6 +433,10 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return true
     }
 
+    function getFallbackOutputWidth(node: AnyNode) {
+      return node.getOutputSize().width || getRootNodeOutputSize().width
+    }
+
     return {
       nodes,
       idIncrement,
@@ -468,6 +472,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       findInAncestorNodes,
       getDescendantIds,
       nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
+      getFallbackOutputWidth,
     }
   },
   {

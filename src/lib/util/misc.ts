@@ -160,6 +160,7 @@ export function deepFreeze<T>(obj: T): T {
 
   // Recursively freeze all properties
   for (const key of Object.keys(obj)) {
+    if (Object.isFrozen((obj as any)[key])) continue
     (obj as any)[key] = deepFreeze((obj as any)[key])
   }
 
