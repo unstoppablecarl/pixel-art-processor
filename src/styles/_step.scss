@@ -178,6 +178,9 @@
 .card-fork-branch {
   .node-img-container {
     padding: var(--node-img-gap);
+    .node-img-label {
+      padding-bottom: 5px;
+    }
   }
 }
 
