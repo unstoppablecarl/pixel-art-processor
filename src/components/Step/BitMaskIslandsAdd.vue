@@ -48,7 +48,7 @@ const node = useStepHandler(nodeId, {
   async run({ config, inputData }) {
     if (!inputData) return
 
-    const mask = inputData as BitMask
+    const mask = inputData.copy() as BitMask
     const C = config
 
     const points = addPointsPoissonDisk(
