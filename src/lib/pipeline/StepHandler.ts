@@ -66,6 +66,7 @@ export interface INodeHandler<
   R extends NodeRunner<T>,
   N extends InitializedNode<T>,
 > extends IStepHandlerBase<T, R> {
+  __handlerBrand: N['type']
   watcherTargets(
     node: N,
     defaultWatcherTargets: WatcherTarget[],

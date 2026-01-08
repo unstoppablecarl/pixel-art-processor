@@ -17,7 +17,7 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
     throw new Error('Step Component Errors: ' + errors.join('\n'))
   }
 
-  return Object.entries(globResults).map(([path, module]) => {
+  return Object.entries(globResults).map(([_path, module]) => {
     const {
       def,
       type,

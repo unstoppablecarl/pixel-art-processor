@@ -172,7 +172,7 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
           </div>
         </div>
       </div>
-      <template v-for="(_item, index) in config.wangTiles">
+      <template v-for="index in config.wangTiles.length">
         <ForkWangTileEdge
           :node-id="nodeId"
           :size="config.size.value"

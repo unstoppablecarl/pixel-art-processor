@@ -133,7 +133,7 @@ export abstract class BaseNode<
 
   serialize(): BaseNodeSerialized<T> {
 
-    let config: T['SerializedConfig'] = undefined
+    let config: T['SerializedConfig']
     if (this.handler) {
       config = this.handler.serializeConfig(this.config)
     } else {
@@ -350,7 +350,7 @@ export class ForkNode<
     this.branchIds.value = options.branchIds ?? []
   }
 
-  childIds(store: PipelineStore) {
+  childIds(_store: PipelineStore) {
     return this.branchIds.value
   }
 
@@ -481,7 +481,7 @@ export class BranchNode<T extends AnyStepContext> extends StepOrBranchNode<T, IB
       const { output: inputData, meta, validationErrors: forkValidationErrors } = await this.getOutputFromPrev(store)
 
       const output = await this.handler!.run({
-      config: this.config as T['RC'],
+        config: this.config as T['RC'],
         inputData,
         meta,
       })
@@ -529,9 +529,12 @@ export type GraphNode<T extends AnyStepContext> =
   | ForkNode<T>
   | BranchNode<T>
 
-export type InitializedStepNode<T extends AnyStepContext> = WithRequired<StepNode<T>, 'config' | 'handler'>
-export type InitializedForkNode<T extends AnyStepContext> = WithRequired<ForkNode<T>, 'config' | 'handler'>
-export type InitializedBranchNode<T extends AnyStepContext> = WithRequired<BranchNode<T>, 'config' | 'handler'>
+export type InitializedStepNode<T extends AnyStepContext> = { __brand: 'step' }
+  & WithRequired<StepNode<T>, 'config' | 'handler'>
+export type InitializedForkNode<T extends AnyStepContext> = { __brand: 'fork' }
+  & WithRequired<ForkNode<T>, 'config' | 'handler'>
+export type InitializedBranchNode<T extends AnyStepContext> = { __brand: 'branch' }
+  & WithRequired<BranchNode<T>, 'config' | 'handler'>
 
 export type InitializedNode<T extends AnyStepContext> =
   | InitializedStepNode<T>

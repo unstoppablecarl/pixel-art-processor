@@ -122,6 +122,8 @@ describe('fork handler type testing', async () => {
       },
       watcherTargets(n, defaults) {
         expectTypeOf(n).toEqualTypeOf<InitializedForkNode<T>>()
+        expectTypeOf(defaults).toEqualTypeOf<WatcherTarget[]>()
+
         return []
       },
     })

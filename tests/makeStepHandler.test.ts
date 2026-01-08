@@ -102,7 +102,7 @@ describe('StepHandlerOptions<T>', () => {
         return {} as RC
       },
 
-      async run(args) {
+      async run(_args) {
         return {
           output: {} as InstanceType<typeof COut>,
         }
@@ -211,11 +211,11 @@ describe('makeStepHandler<T>', () => {
         }
       },
 
-      serializeConfig(config) {
+      serializeConfig(_config) {
         return {} as SerializedConfig
       },
 
-      deserializeConfig(serializedConfig) {
+      deserializeConfig(_serializedConfig) {
         return {} as RawConfig
       },
     }
@@ -262,7 +262,7 @@ describe('makeStepHandler<T>', () => {
       config() {
         return {} as ReactiveConfigType<RawConfig>
       },
-      async run(args: { config: ReactiveConfigType<RawConfig> }) {
+      async run(_args: { config: ReactiveConfigType<RawConfig> }) {
         return {
           output: {} as COut,
         }
@@ -280,7 +280,7 @@ describe('makeStepHandler<T>', () => {
     const options: StepHandlerOptions<T> = {
       inputDataTypes: [A, B] as const,
       outputDataType: COut,
-      async run(args) {
+      async run(_args) {
         return {
           output: {} as InstanceType<typeof COut>,
         }

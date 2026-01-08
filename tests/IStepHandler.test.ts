@@ -1,7 +1,7 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
-import type { IRunnerResultMeta } from '../src/lib/pipeline/_types.ts'
+import { type IRunnerResultMeta, NodeType } from '../src/lib/pipeline/_types.ts'
 import type { InitializedStepNode } from '../src/lib/pipeline/Node.ts'
 import type { SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
@@ -42,6 +42,7 @@ type T = StepContext<
 
 describe('IStepHandler<T> basic structure', () => {
   const handler: IStepHandler<T> = {
+    __handlerBrand: NodeType.STEP,
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
 
@@ -69,7 +70,7 @@ describe('IStepHandler<T> basic structure', () => {
       return []
     },
 
-    validateInput(inputData, allowed) {
+    validateInput(_inputData, _allowed) {
       return []
     },
 
@@ -138,7 +139,7 @@ describe('StepHandlerOptions<T>', () => {
     config() {
       return {} as RC
     },
-    async run(args) {
+    async run(_args) {
       return {
         output: {} as InstanceType<typeof COut>,
       }

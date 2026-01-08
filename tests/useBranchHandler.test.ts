@@ -130,6 +130,8 @@ describe('branch handler type testing', async () => {
       },
       watcherTargets(n, defaults) {
         expectTypeOf(n).toEqualTypeOf<InitializedBranchNode<T>>()
+        expectTypeOf(defaults).toEqualTypeOf<WatcherTarget[]>()
+
         return []
       },
     })

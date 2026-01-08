@@ -120,6 +120,8 @@ describe('step handler type testing', async () => {
       },
       watcherTargets(n, defaults) {
         expectTypeOf(n).toEqualTypeOf<InitializedStepNode<T>>()
+        expectTypeOf(defaults).toEqualTypeOf<WatcherTarget[]>()
+
         return []
       },
     })

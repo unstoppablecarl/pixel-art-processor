@@ -64,6 +64,7 @@ function defineStep({
     inputDataTypes,
     outputDataType,
     branchDefs: branchDefs,
+    passthrough,
     component: {} as unknown as Component,
   } as AnyStepDefinition)
 }

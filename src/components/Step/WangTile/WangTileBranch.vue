@@ -28,7 +28,7 @@ const branch = useBranchHandler(branchId, {
   config() {
     return {}
   },
-  onRemove(store, branch) {
+  onRemove(store) {
     getSiblingBranchVariants().forEach((sibling) => store.remove(sibling.id))
   },
 })
