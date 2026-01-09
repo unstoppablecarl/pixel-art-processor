@@ -4,17 +4,20 @@ import { computed } from 'vue'
 import { getValidationErrorComponent } from '../../lib/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { type InitializedBranchNode, isBranch, isFork } from '../../lib/pipeline/Node.ts'
+import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
+const stepRegistry = useStepRegistry()
 
 const { branch } = defineProps<{
   branch: InitializedBranchNode<any>,
 }>()
 
+const displayName = computed(() => stepRegistry.get(branch.def).displayName)
 const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
   const ids: NodeId[] = []
@@ -35,16 +38,24 @@ const nodeIds = computed((): NodeId[] => {
 
   return ids
 })
+
+const cssStyle = computed(() => {
+  const width = branch.outputPreview?.width ?? store.getFallbackOutputWidth(branch)
+  return [
+    `--node-img-width: ${width}px;`,
+  ].join(' ')
+})
 </script>
 <template>
   <div
+    :style="cssStyle"
     :class="{
       'card card-fork-branch': true,
       'border-danger': branch.validationErrors.length,
     }"
   >
     <div class="card-header hstack" v-if="branch">
-      <div class="me-auto pe-2">Branch {{ branch.branchIndex + 1 }}</div>
+      <div class="me-auto pe-2">{{ displayName }}: {{ branch.branchIndex + 1 }}</div>
 
       <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
 

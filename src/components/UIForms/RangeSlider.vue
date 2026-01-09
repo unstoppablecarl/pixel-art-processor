@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { BCollapse } from 'bootstrap-vue-next'
 import {
   computed,
   getCurrentInstance,
@@ -203,8 +202,8 @@ const preparedValue = computed(() => Number(value.value).toFixed(decimals))
       </div>
     </div>
 
-    <BCollapse v-model="settingsVisible">
-      <div class="card my-2">
+    <div class="auto-animate" v-auto-animate>
+      <div class="card my-2" v-if="settingsVisible">
         <div class="card-header text-bg-dark d-flex">
           <div class="flex-grow-1">
             Settings
@@ -293,8 +292,7 @@ const preparedValue = computed(() => Number(value.value).toFixed(decimals))
 
         </div>
       </div>
-    </BCollapse>
-
+    </div>
     <div class="slider-wrapper">
 
       <input

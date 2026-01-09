@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type ShallowReactive, shallowReactive } from 'vue'
-import { type IRunnerResultMeta, type NodeDef, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
+import { type IRunnerResultMeta, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
@@ -14,7 +14,7 @@ import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
-import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
+import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
 import { defineTestStep } from './_helpers.ts'
 
@@ -65,12 +65,12 @@ describe('step handler type testing', async () => {
     type O = typeof outputDataType
 
     const stepDef = defineTestStep({
-      def: 'foo' as NodeDef,
+      def: 'test step',
       inputDataTypes,
       outputDataType,
     })
 
-    const store = usePipelineStore() as unknown as PipelineStore
+    const store = usePipelineStore()
     const newStep = store.add(stepDef.def, null)
     const step = useStepHandler(newStep.id, {
       inputDataTypes,
@@ -94,7 +94,6 @@ describe('step handler type testing', async () => {
       },
       deserializeConfig(config) {
         expectTypeOf(config).toExtend<SC>()
-
         expect(config).not.toEqual(undefined)
 
         return {
@@ -103,9 +102,10 @@ describe('step handler type testing', async () => {
         }
       },
 
-      async run({ config, inputData }) {
+      async run({ config, inputData, inputPreview }) {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(inputData).toEqualTypeOf<InputInstances | null>()
+        expectTypeOf(inputPreview).toEqualTypeOf<ImageData | null>()
 
         if (!config.maskImageData) return
 
@@ -131,6 +131,7 @@ describe('step handler type testing', async () => {
       .toEqualTypeOf<{
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
+        inputPreview: ImageData | null,
         meta: IRunnerResultMeta,
       }>()
 
@@ -152,6 +153,7 @@ describe('step handler type testing', async () => {
       expectTypeOf(step).toEqualTypeOf<InitializedStepNode<T>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
+      expectTypeOf(step.outputMeta).toEqualTypeOf<IRunnerResultMeta>()
     })
 
     it('creates correct handler', () => {
@@ -168,13 +170,17 @@ describe('step handler type testing', async () => {
         ({ config, inputData }: {
           config: RC,
           inputData: InputInstances | null,
+          inputPreview: ImageData | null,
           meta: IRunnerResultMeta,
         }): Promise<SingleRunnerOutput<T>>
       }>()
 
-      expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[
-        { config: RC, inputData: InputInstances | null, meta: IRunnerResultMeta }
-      ]>()
+      expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[{
+        config: RC,
+        inputData: InputInstances | null,
+        inputPreview: ImageData | null,
+        meta: IRunnerResultMeta
+      }]>()
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
         Promise<SingleRunnerOutput<T>>
       >()
@@ -272,12 +278,14 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
 
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
 

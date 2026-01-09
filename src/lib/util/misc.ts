@@ -35,6 +35,13 @@ export function logNodeEvent(nodeId: string, event: string, ...args: any[]) {
   log(green, nodeId, event, ...args)
 }
 
+export function logNodeFunction<T>(nodeId: string, func: string, cb: () => T) {
+  logNodeEvent(nodeId, `${func}: start`)
+  const result = cb()
+  logNodeEvent(nodeId, `${func}: end`, result)
+  return result
+}
+
 export function logNodeEventWarning(nodeId: string, event: string, ...args: any[]) {
   log(orange, nodeId, event, ...args)
 }
@@ -120,4 +127,42 @@ export function arrayRemove(array: any[], item: any): void {
   if (index !== -1) {
     array.toSpliced(index, 1)
   }
+}
+
+// export function readonlyTypedArray(arr: any, error = 'Cannot modify readonly TypedArray') {
+//   return new Proxy(arr, {
+//     get: (target, prop) => Reflect.get(target, prop),
+//     set() {
+//       if (__DEV__) {
+//         throw new Error(error)
+//       }
+//       return false
+//     },
+//     defineProperty: () => false,
+//     deleteProperty: () => false,
+//     setPrototypeOf: () => false,
+//   })
+// }
+
+export function deepFreeze<T>(obj: T): T {
+  if (!obj || typeof obj !== 'object') return obj
+
+  // Wrap TypedArrays in readonly proxy
+  // if (ArrayBuffer.isView(obj)) {
+  //   return readonlyTypedArray(obj as any)
+  // }
+
+  // if (obj instanceof ArrayBuffer) {
+  //   return obj
+  // }
+
+  Object.freeze(obj)
+
+  // Recursively freeze all properties
+  for (const key of Object.keys(obj)) {
+    if (Object.isFrozen((obj as any)[key])) continue
+    (obj as any)[key] = deepFreeze((obj as any)[key])
+  }
+
+  return obj
 }

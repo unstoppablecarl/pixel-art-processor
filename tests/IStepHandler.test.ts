@@ -67,7 +67,7 @@ describe('IStepHandler<T> basic structure', () => {
       return []
     },
 
-    validateInput(inputData, allowed) {
+    validateInput(_inputData, _allowed) {
       return []
     },
 
@@ -116,6 +116,7 @@ describe('IStepHandler<T> basic structure', () => {
     expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null,
+      inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
 
@@ -132,7 +133,7 @@ describe('StepHandlerOptions<T>', () => {
     config() {
       return {} as RC
     },
-    async run(args) {
+    async run(_args) {
       return {
         output: {} as InstanceType<typeof COut>,
       }

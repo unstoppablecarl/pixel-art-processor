@@ -14,15 +14,12 @@ import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
-import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
+import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
-import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps'
 import { defineTestStep } from './_helpers.ts'
 
-const stepDefinitions = await loadStepDefinitions()
-installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
-
 function makeAppContext(cb: () => void) {
+  installStepRegistry(makeStepRegistry())
 
   const App = {
     setup() {
@@ -47,7 +44,7 @@ function makeAppContext(cb: () => void) {
 
 describe('fork handler type testing', async () => {
 
-  makeAppContext(() => {
+  makeAppContext(async () => {
 
     const inputDataTypes = [HeightMap, BitMask] as const
     const outputDataType = NormalMap
@@ -67,13 +64,13 @@ describe('fork handler type testing', async () => {
     type O = typeof outputDataType
 
     const stepDef = defineTestStep({
-      def: 'foo',
+      def: 'test fork',
       type: NodeType.FORK,
       inputDataTypes,
       outputDataType,
     })
 
-    const store = usePipelineStore() as unknown as PipelineStore
+    const store = usePipelineStore()
     const newStep = store.add(stepDef.def, null)
     const step = useForkHandler(newStep.id, {
       inputDataTypes,
@@ -97,6 +94,7 @@ describe('fork handler type testing', async () => {
       },
       deserializeConfig(config) {
         expectTypeOf(config).toExtend<SC>()
+        expect(config).not.toEqual(undefined)
 
         return {
           ...config,
@@ -104,9 +102,10 @@ describe('fork handler type testing', async () => {
         }
       },
 
-      async run({ config, inputData, branchIndex }) {
+      async run({ config, inputData, inputPreview, branchIndex }) {
         expectTypeOf(config).toExtend<RC>()
         expectTypeOf(inputData).toEqualTypeOf<InputInstances | null>()
+        expectTypeOf(inputPreview).toEqualTypeOf<ImageData | null>()
         expectTypeOf(branchIndex).toEqualTypeOf<number>()
 
         if (!config.maskImageData) return
@@ -116,22 +115,15 @@ describe('fork handler type testing', async () => {
           output: new NormalMap(1, 1),
         }
       },
-      watcherTargets(step, defaultWatcherTargets) {
-        type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
-        type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
-        expectTypeOf(step).toExtend<InitializedNode<TFromNode>>()
-        expectTypeOf<RFromNode>().toExtend<ForkStepRunner<TFromNode>>()
+      watcherTargets(n, defaults) {
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<T>>()
+        expectTypeOf(defaults).toEqualTypeOf<WatcherTarget[]>()
 
-        expectTypeOf(step.config).toEqualTypeOf<InitializedNode<T>['config']>()
-
-        expectTypeOf(defaultWatcherTargets).toExtend<WatcherTarget[]>()
-
-        return [
-          ...defaultWatcherTargets,
-        ]
+        return []
       },
-
     })
+
+    await Promise.resolve()
 
     type TFromNode = typeof step extends InitializedNode<infer T> ? T : never
     type RFromNode = typeof step['handler'] extends IStepHandler<any, infer R> ? R : never
@@ -142,8 +134,9 @@ describe('fork handler type testing', async () => {
       .toEqualTypeOf<{
         config: TFromNode['RC'],
         inputData: TFromNode['Input'] | null,
-        branchIndex: number,
+        inputPreview: ImageData | null,
         meta: IRunnerResultMeta,
+        branchIndex: number
       }>()
 
     expectTypeOf<RFromNode>()
@@ -176,10 +169,10 @@ describe('fork handler type testing', async () => {
       >()
       expectTypeOf(step.handler.run).toExtend<
         (options: {
-          config: T['RC'],
-          inputData: T['Input'] | null,
+          config: RC,
+          inputData: InputInstances | null,
+          inputPreview: ImageData | null,
           branchIndex: number,
-          branchGenerationSeed: number,
           meta: IRunnerResultMeta,
         }) => Promise<
           SingleRunnerOutput<T>
@@ -189,6 +182,7 @@ describe('fork handler type testing', async () => {
         {
           config: RC,
           inputData: InputInstances | null,
+          inputPreview: ImageData | null,
           branchIndex: number
         }
       ]>()
@@ -289,6 +283,7 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: RC
       inputData: StepInputTypesToInstances<[A, B]> | null,
+      inputPreview: ImageData | null,
       branchIndex: number,
       meta: IRunnerResultMeta,
     }]>()
@@ -296,6 +291,7 @@ describe('StepHandlerOptionsInfer inference', () => {
     expectTypeOf<Infer['run']>().parameters.toEqualTypeOf<[{
       config: T['RC']
       inputData: StepInputTypesToInstances<T['InputConstructors']> | null,
+      inputPreview: ImageData | null,
       branchIndex: number,
       meta: IRunnerResultMeta,
     }]>()

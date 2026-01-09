@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButtonGroup, BCollapse } from 'bootstrap-vue-next'
+import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, watch } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
@@ -70,11 +70,9 @@ const preview = computed(() => {
       :image-data="preview"
     />
   </div>
-  <BCollapse
-    v-model="config.visible"
-    lazy
-  >
-    <div class="card-footer">
+
+  <div class="auto-animate" v-auto-animate>
+    <div class="card-footer" v-if="config.visible">
       <div class="section">
 
         <ForkWangTileEdgeConfig
@@ -92,6 +90,5 @@ const preview = computed(() => {
         />
       </div>
     </div>
-  </BCollapse>
-
+  </div>
 </template>
