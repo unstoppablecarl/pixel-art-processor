@@ -1,11 +1,11 @@
 import { reactive, shallowRef } from 'vue'
 import { type Optional } from '../_helpers.ts'
-import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
-import { StepValidationError } from './errors/StepValidationError.ts'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../step-data-types/PassThrough.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
-import type { Config, StepDataConfig, StepDataType, WatcherTarget } from './_types.ts'
+import type { Config, NodeId, StepDataConfig, StepDataType, WatcherTarget } from './_types.ts'
+import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
+import { StepValidationError } from './errors/StepValidationError.ts'
 import type { InitializedNode } from './Node.ts'
 import type { NodeRunner } from './NodeRunner.ts'
 import {
@@ -66,6 +66,10 @@ export type StepHandlerOptionsInfer<
     inputTypes: I,
   ) => StepValidationError[]
 
+  onRemoving?: (node: InitializedNode<StepContext<C, SC, RC, I, O>>) => void
+  onRemoved?: (id: NodeId) => void
+  onAdded?: (node: InitializedNode<StepContext<C, SC, RC, I, O>>) => void
+
   run: R
 } & ({
   passthrough?: false,
@@ -104,6 +108,10 @@ export interface IStepHandler<
   deserializeConfig(serializedConfig: T['SerializedConfig']): T['C'],
 
   validateInput(inputData: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
+
+  onRemoving?: (node: InitializedNode<T>) => void
+  onRemoved?: (id: NodeId) => void
+  onAdded?: (node: InitializedNode<T>) => void
 
   run: R,
 

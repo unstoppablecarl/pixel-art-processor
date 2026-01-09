@@ -89,9 +89,10 @@ export function useBranchHandler<
   type T = StepContext<C, SC, RC, I, O>
 
   const merged = {
-    async run({ inputData, meta }) {
+    async run({ inputData, meta, inputPreview }) {
       return {
         output: inputData,
+        preview: inputPreview,
         meta,
       }
     },

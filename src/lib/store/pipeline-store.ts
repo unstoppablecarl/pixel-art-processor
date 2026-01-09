@@ -11,6 +11,7 @@ import {
   deSerializeNode,
   ForkNode,
   type GraphNode,
+  type InitializedNode,
   isBranch,
   isFork,
   isStep,
@@ -29,8 +30,6 @@ type SerializedState = {
   globalSeed: number,
   imgScale: number,
 }
-
-export type MinStore = Pick<PipelineStore, 'get' | 'nodes' | 'nodeIsPassthrough' | 'markDirty'>
 
 export type PipelineStore = ReturnType<typeof usePipelineStore>
 
@@ -220,9 +219,12 @@ export const usePipelineStore = defineStore('pipeline', () => {
     function remove(id: NodeId): void {
       const node = get(id)
 
+      node.handler!.onRemoving?.(node as InitializedNode<any>)
+
       if (isStep(node)) {
         detachStep(node)
         delete nodes[id]
+        node.handler!.onRemoved?.(id)
         return
       }
 
@@ -234,11 +236,13 @@ export const usePipelineStore = defineStore('pipeline', () => {
           getFork(parentId).removeBranch(store, branch.id)
         }
         removeBranchOrForkAndDescendants(id)
+        node.handler!.onRemoved?.(id)
         return
       }
 
       if (isFork(node)) {
         removeBranchOrForkAndDescendants(id)
+        node.handler!.onRemoved?.(id)
         return
       }
 
@@ -317,6 +321,8 @@ export const usePipelineStore = defineStore('pipeline', () => {
     function initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T> {
       const node = get(id) as unknown as GraphNode<T>
       node.initialize(handlerOptions)
+      node.handler?.onAdded?.(node as InitializedNode<T>)
+
       return node
     }
 

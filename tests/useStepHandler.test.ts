@@ -2,7 +2,7 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type ShallowReactive, shallowReactive } from 'vue'
-import { type IRunnerResultMeta, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
+import { type IRunnerResultMeta, type NodeId, type WatcherTarget } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
 import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
@@ -117,6 +117,15 @@ describe('step handler type testing', async () => {
       watcherTargets(n, defaults) {
         expectTypeOf(n).toEqualTypeOf<InitializedNode<T>>()
         return []
+      },
+      onRemoving(n) {
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<T>>()
+      },
+      onRemoved(id) {
+        expectTypeOf(id).toEqualTypeOf<NodeId>()
+      },
+      onAdded(n) {
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<T>>()
       },
     })
 
