@@ -6,6 +6,7 @@ import type { AnyStepContext } from './Step.ts'
 type Preview = ImageData | null
 
 export type SingleRunnerOutput<T extends AnyStepContext> =
+  | void
   | null
   | undefined
   | {
@@ -24,22 +25,22 @@ export type SingleRunnerResult<T extends AnyStepContext> = {
 }
 
 export type NodeRunner<T extends AnyStepContext> =
-  | NormalStepRunner<T>
-  | ForkStepRunner<T>
+  | NormalRunner<T>
+  | ForkRunner<T>
 
-export type NormalStepRunnerInput<T extends AnyStepContext> = {
+export type NormalRunnerInput<T extends AnyStepContext> = {
   config: T['RC'],
   inputData: T['Input'] | null,
   inputPreview: Preview,
   meta: IRunnerResultMeta,
 }
 
-export type NormalStepRunner<T extends AnyStepContext> = {
+export interface NormalRunner<T extends AnyStepContext> {
   __normal?: never,
-  (options: NormalStepRunnerInput<T>): Promise<SingleRunnerOutput<T>>
+  (options: NormalRunnerInput<T>): Promise<SingleRunnerOutput<T>>
 }
 
-export type ForkStepRunnerInput<T extends AnyStepContext> = {
+export type ForkRunnerInput<T extends AnyStepContext> = {
   config: T['RC'],
   inputData: T['Input'] | null,
   inputPreview: Preview,
@@ -47,9 +48,9 @@ export type ForkStepRunnerInput<T extends AnyStepContext> = {
   branchIndex: number,
 }
 
-export type ForkStepRunner<T extends AnyStepContext> = {
+export interface ForkRunner<T extends AnyStepContext> {
   __fork?: never,
-  (options: ForkStepRunnerInput<T>): Promise<SingleRunnerOutput<T>>
+  (options: ForkRunnerInput<T>): Promise<SingleRunnerOutput<T>>
 }
 
 const certifiedResult = Symbol(__DEV__ ? 'certified runner result' : '')

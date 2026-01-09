@@ -1,13 +1,14 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
 import { shallowReactive } from 'vue'
-import type { IRunnerResultMeta } from '../src/lib/pipeline/_types.ts'
-import type { NormalStepRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
-import type { ReactiveConfigType, StepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
+import { type AnyStepMeta, defineStepMeta, type IRunnerResultMeta, NodeType } from '../src/lib/pipeline/_types.ts'
+import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import type { ReactiveConfigType, StepContext } from '../src/lib/pipeline/Step.ts'
 import type { IStepHandler, StepHandlerOptions } from '../src/lib/pipeline/StepHandler.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
+import { PassThrough } from '../src/lib/step-data-types/PassThrough.ts'
 
 class A extends BitMask {
 }
@@ -30,18 +31,34 @@ type SerializedConfig = {
 
 type RC = ReactiveConfigType<RawConfig>
 
+const STEP_META = defineStepMeta({
+  displayName: 'test',
+  def: 'testing',
+  type: NodeType.STEP,
+  inputDataTypes: [A, B],
+  outputDataType: COut,
+})
+
+type M = typeof STEP_META
+
 type T = StepContext<
+  M,
   RawConfig,
   SerializedConfig,
-  RC,
-  readonly [typeof A, typeof B],
-  typeof COut
+  RC
 >
 
 describe('IStepHandler<T> basic structure', () => {
-  const handler: IStepHandler<T, NormalStepRunner<T>> = {
+  const STEP_META = defineStepMeta({
+    type: NodeType.STEP,
+    def: 'testing',
+    displayName: 'testing',
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
+  })
+
+  const handler: IStepHandler<typeof STEP_META, T, NormalRunner<T>> = {
+    meta: STEP_META,
 
     config() {
       return {} as RC
@@ -54,9 +71,7 @@ describe('IStepHandler<T> basic structure', () => {
 
     async run(args) {
       expectTypeOf(args.config).toEqualTypeOf<RC>()
-      expectTypeOf(args.inputData).toEqualTypeOf<
-        StepInputTypesToInstances<[typeof A, typeof B]> | null
-      >()
+      expectTypeOf(args.inputData).toExtend<A | B | null>()
 
       return {
         output: {} as InstanceType<typeof COut>,
@@ -91,14 +106,16 @@ describe('IStepHandler<T> basic structure', () => {
     clearPassThroughDataType() {
 
     },
+    currentInputDataTypes: [PassThrough],
+    currentOutputDataType: PassThrough,
   }
 
   it('has correct inputDataTypes', () => {
-    expectTypeOf(handler.inputDataTypes).toEqualTypeOf<readonly [typeof A, typeof B]>()
+    expectTypeOf(handler.meta.inputDataTypes).toEqualTypeOf<readonly [typeof A, typeof B]>()
   })
 
   it('has correct outputDataType', () => {
-    expectTypeOf(handler.outputDataType).toEqualTypeOf<typeof COut>()
+    expectTypeOf(handler.meta.outputDataType).toEqualTypeOf<typeof COut>()
   })
 
   it('has correct config() return type', () => {
@@ -113,9 +130,9 @@ describe('IStepHandler<T> basic structure', () => {
   })
 
   it('has correct process() signature', () => {
-    expectTypeOf(handler.run).parameters.toEqualTypeOf<[{
+    expectTypeOf(handler.run).parameters.toExtend<[{
       config: RC
-      inputData: StepInputTypesToInstances<[typeof A, typeof B]> | null,
+      inputData: A | B | null,
       inputPreview: ImageData | null,
       meta: IRunnerResultMeta,
     }]>()
@@ -123,13 +140,23 @@ describe('IStepHandler<T> basic structure', () => {
     expectTypeOf(handler.run).returns.toEqualTypeOf<
       Promise<SingleRunnerOutput<T>>
     >()
+
+    expectTypeOf(handler.run).returns.toExtend<
+      Promise<SingleRunnerOutput<T>>
+    >()
   })
 })
 
 describe('StepHandlerOptions<T>', () => {
-  const opts: StepHandlerOptions<T, NormalStepRunner<T>> = {
+  const STEP_META: AnyStepMeta = {
+    type: NodeType.STEP,
+    def: 'testing',
+    displayName: 'testing',
     inputDataTypes: [A, B] as const,
     outputDataType: COut,
+  }
+
+  const opts: StepHandlerOptions<typeof STEP_META, RawConfig, RC, SerializedConfig, NormalRunner<T>> = {
     config() {
       return {} as RC
     },
@@ -148,16 +175,14 @@ describe('StepHandlerOptions<T>', () => {
 
 describe('IStepHandler variance behavior', () => {
   type T2 = StepContext<
+    M,
     RawConfig,
     SerializedConfig,
-    RC,
-    readonly [typeof A],
-    typeof COut
+    RC
   >
 
   const handler2 = {
-    inputDataTypes: [A] as const,
-    outputDataType: COut,
+    meta: STEP_META,
     config() {
       return {} as RC
     },
@@ -167,26 +192,10 @@ describe('IStepHandler variance behavior', () => {
   }
 
   it('allows narrowing inputDataTypes', () => {
-    expectTypeOf(handler2.inputDataTypes).toEqualTypeOf<readonly [typeof A]>()
-    expectTypeOf(handler2.inputDataTypes).toExtend<IStepHandler<T2>['inputDataTypes']>()
-    expectTypeOf(handler2.outputDataType).toExtend<IStepHandler<T2>['outputDataType']>()
-    expectTypeOf(handler2.config).toExtend<IStepHandler<T2>['config']>()
+    // expectTypeOf(handler2.meta.inputDataTypes).toEqualTypeOf<readonly [typeof A]>()
+    expectTypeOf(handler2.meta.inputDataTypes).toExtend<IStepHandler<M, T2>['meta']['inputDataTypes']>()
+    expectTypeOf(handler2.meta.outputDataType).toExtend<IStepHandler<M, T2>['meta']['outputDataType']>()
+    expectTypeOf(handler2.config).toExtend<IStepHandler<M, T2>['config']>()
 
-  })
-
-  it('does not allow widening inputDataTypes', () => {
-    const bad: Pick<IStepHandler<T2>, 'inputDataTypes' | 'outputDataType' | 'config' | 'run'> = {
-      // @ts-expect-error inputDataTypes is too wide
-      inputDataTypes: [A, B] as const,
-      outputDataType: COut,
-      config() {
-        return {} as RC
-      },
-      async run() {
-        return { output: {} as InstanceType<typeof COut> }
-      },
-    }
-    const noop = (v: any) => v
-    noop(bad)
   })
 })

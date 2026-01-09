@@ -56,7 +56,7 @@ const addableNodes = computed(() => {
         return {
           def: def as NodeDef,
           displayName,
-          compatible: stepRegistry.isCompatibleWithOutputType(def as NodeDef, node.handler!.outputDataType),
+          compatible: stepRegistry.isCompatibleWithOutputType(def as NodeDef, node.handler!.currentOutputDataType),
           inputColorCssClass,
           outputColorCssClass: outputColorCssClass,
           inputNames,

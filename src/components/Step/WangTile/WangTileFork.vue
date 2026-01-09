@@ -52,8 +52,7 @@ const CONFIG_DEFAULTS = {
   }),
 }
 
-const node = useForkHandler(nodeId, {
-  ...STEP_META,
+const node = useForkHandler(nodeId,  STEP_META,{
   config() {
     return {
       ...CONFIG_DEFAULTS,

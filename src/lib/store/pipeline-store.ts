@@ -1,24 +1,22 @@
 import { defineStore } from 'pinia'
 import { reactive, ref, shallowReactive, watch } from 'vue'
-import { type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
+import { type AnyStepMeta, type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
 import {
   type AnyBranchNode,
   type AnyForkNode,
+  type AnyInitializedNode,
   type AnyNode,
   type AnyNodeSerialized,
   type AnyStepNode,
   BranchNode,
   deSerializeNode,
   ForkNode,
-  type GraphNode,
-  type InitializedNode,
   isBranch,
   isFork,
   isStep,
   StepNode,
 } from '../pipeline/Node.ts'
 import type { AnyStepContext } from '../pipeline/Step.ts'
-import { type StepHandlerOptions } from '../pipeline/StepHandler.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
@@ -78,27 +76,27 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return `${def}_${idIncrement.value++}` as NodeId
     }
 
-    function get(id: NodeId): AnyNode {
+    function get<M extends AnyStepMeta = AnyStepMeta, T extends AnyStepContext = AnyStepContext>(id: NodeId): AnyNode<M, T> {
       if (!nodes[id]) throw new Error('node not found: ' + id)
-      return nodes[id] as AnyNode
+      return nodes[id] as AnyNode<M, T>
     }
 
-    function getStep<T extends AnyStepContext>(id: NodeId): StepNode<T> {
+    function getStep<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId): StepNode<M, T> {
       const step = get(id)
       if (!isStep(step)) throw new Error(`${id} is not a step`)
-      return step as StepNode<T>
+      return step as StepNode<M, T>
     }
 
-    function getFork<T extends AnyStepContext>(id: NodeId): ForkNode<T> {
+    function getFork<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId): ForkNode<M, T> {
       const fork = get(id)
       if (!isFork(fork)) throw new Error(`${id} is not a fork`)
-      return fork as ForkNode<T>
+      return fork as ForkNode<M, T>
     }
 
-    function getBranch<T extends AnyStepContext>(id: NodeId): BranchNode<T> {
+    function getBranch<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId): BranchNode<M, T> {
       const branch = get(id)
       if (!isBranch(branch)) throw new Error(`${id} is not a branch`)
-      return branch as BranchNode<T>
+      return branch as BranchNode<M, T>
     }
 
     function getIfExists(id: NodeId): AnyNode | undefined {
@@ -219,12 +217,12 @@ export const usePipelineStore = defineStore('pipeline', () => {
     function remove(id: NodeId): void {
       const node = get(id)
 
-      node.handler!.onRemoving?.(node as InitializedNode<any>)
+      node.handler!?.onRemoving?.(node as AnyInitializedNode)
 
       if (isStep(node)) {
         detachStep(node)
         delete nodes[id]
-        node.handler!.onRemoved?.(id)
+        node.handler!?.onRemoved?.(id)
         return
       }
 
@@ -236,13 +234,13 @@ export const usePipelineStore = defineStore('pipeline', () => {
           getFork(parentId).removeBranch(store, branch.id)
         }
         removeBranchOrForkAndDescendants(id)
-        node.handler!.onRemoved?.(id)
+        node.handler!?.onRemoved?.(id)
         return
       }
 
       if (isFork(node)) {
         removeBranchOrForkAndDescendants(id)
-        node.handler!.onRemoved?.(id)
+        node.handler!?.onRemoved?.(id)
         return
       }
 
@@ -310,21 +308,36 @@ export const usePipelineStore = defineStore('pipeline', () => {
       node.isDirty = false
       prng.setSeed(node.getSeedSum(store))
 
+      if (isBranch(node)) {
+
+      }
+
       await node.processRunner(store)
 
       // After running, children become dirty
-      for (const childId of node.childIds(store)) {
+      const childIds = node.childIds(store)
+
+      const endOfBranch = isFork(node) || isStep(node) && !childIds.length
+      if (endOfBranch) {
+        const parentBranch = findInAncestorNodes(node.id, (n) => isBranch(n)) as AnyBranchNode
+        if (parentBranch) {
+          // parentBranch.handler!.onBranchEndResolved?.(node)
+        }
+      }
+
+      for (const childId of childIds) {
         markDirty(childId)
       }
     }
 
-    function initializeNode<T extends AnyStepContext>(id: NodeId, handlerOptions: StepHandlerOptions<T>): GraphNode<T> {
-      const node = get(id) as unknown as GraphNode<T>
-      node.initialize(handlerOptions)
-      node.handler?.onAdded?.(node as InitializedNode<T>)
-
-      return node
-    }
+    // function initializeNode<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId, handler: IStepHandler<M, T>): AnyNode<T> {
+    //   const node = get(id) as unknown as AnyNode<T>
+    //
+    //   node.initialize(handler)
+    //   // node.handler?.onAdded?.(node as InitializedNode<T>)
+    //
+    //   return node
+    // }
 
     function _cloneNodeInstance(original: AnyNode): AnyNode {
       const serialized = original.serialize()
@@ -435,16 +448,18 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return chain
     }
 
-    function findInAncestorNodes(id: NodeId, check: (node: AnyNode) => boolean): boolean {
+    function findInAncestorNodes(id: NodeId, check: (node: AnyNode) => boolean): AnyNode | undefined {
       let currentId: NodeId | null = id
       while (currentId) {
-        const current = get(currentId)
-        if (!check(current)) {
-          return false
-        }
+        const current = get(currentId) as AnyNode
+        if (check(current)) return current
         currentId = current.prevNodeId
       }
-      return true
+      return
+    }
+
+    function hasInAncestorNodes(id: NodeId, check: (node: AnyNode) => boolean): boolean {
+      return !!findInAncestorNodes(id, check)
     }
 
     function getFallbackOutputWidth(node: AnyNode) {
@@ -482,12 +497,12 @@ export const usePipelineStore = defineStore('pipeline', () => {
       markDirty,
       runNode,
       loadNode,
-      initializeNode,
       duplicateStepNode,
       duplicateBranchNode,
       getRootNodeOutputSize,
       getLeafNodes,
       getAncestorNodeIds,
+      hasInAncestorNodes,
       findInAncestorNodes,
       getDescendantIds,
       nodeIsPassthrough: stepRegistry.nodeIsPassthrough,

@@ -29,74 +29,93 @@ export type StepDataTypeInstance =
   | PassThrough
 
 export type StepDefinitions = Record<string, AnyStepDefinition>
-export type AnyStepMeta = StepMeta<any, any>
+
+export function defineStepMeta<M extends StepMeta<any, any>>(meta: M): M {
+  return meta
+}
+
+export type AnyStepMeta = StepMeta<readonly StepDataType[], StepDataType>
 
 export type StepMeta<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = StepOrBranchStepMeta<I, O> | ForkStepMeta<I, O>
+  I extends readonly StepDataType[] = readonly StepDataType[],
+  O extends StepDataType = StepDataType
+> =
+  | (StepMetaBase & StepNodeSpecific & IO<I, O>)
+  | (StepMetaBase & BranchNodeSpecific & IO<I, O>)
+  | (StepMetaBase & ForkNodeSpecific & IO<I, O>)
 
-type StepMetaBase = {
-  def: string,
-  displayName: string,
-  isValidDescendantDef?: (def: AnyStepDefinition) => boolean,
+
+export type StepMetaBase = {
+  def: string
+  displayName: string
+  isValidDescendantDef?: (def: AnyStepDefinition) => boolean
 }
 
-export type StepOrBranchStepMeta<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = StepMetaBase & StepDataConfig<I, O> & {
-  type: NodeType.BRANCH | NodeType.STEP,
+type StepNodeSpecific = {
+  type: NodeType.STEP
 }
 
-export type ForkStepMeta<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = StepMetaBase & StepDataConfig<I, O> & {
-  type: NodeType.FORK,
-  branchDefs: string[],
+type BranchNodeSpecific = {
+  type: NodeType.BRANCH
 }
 
-export type StepDefinition<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = StepOrBranchDefinition<I, O> | ForkDefinition<I, O>
+type ForkNodeSpecific = {
+  type: NodeType.FORK
+  branchDefs: readonly string[]
+}
+
+
+type PassthroughIO = {
+  passthrough: true
+  inputDataTypes?: undefined
+  outputDataType?: undefined
+}
+
+type NormalIO<
+  I extends readonly StepDataType[] = readonly StepDataType[],
+  O extends StepDataType = StepDataType
+> = {
+  passthrough?: false
+  inputDataTypes: I
+  outputDataType: O
+}
+
+type IO<
+  I extends readonly StepDataType[] = readonly StepDataType[],
+  O extends StepDataType = StepDataType
+> = PassthroughIO | NormalIO<I, O>
+
 
 type StepDefinitionBase = {
-  def: NodeDef,
-  displayName: string,
-  readonly component: Component,
+  def: NodeDef
+  displayName: string
+  readonly component: Component
 } & Pick<StepMetaBase, 'isValidDescendantDef'>
 
-export type StepOrBranchDefinition<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = StepDefinitionBase &
-  StepDataConfig<I, O> & {
-  type: NodeType.BRANCH | NodeType.STEP,
+type StepDefinitionSpecific = {
+  type: NodeType.STEP
 }
 
-export type ForkDefinition<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = StepDefinitionBase &
-  StepDataConfig<I, O> & {
-  type: NodeType.FORK,
-  branchDefs: NodeDef[],
+type BranchDefinitionSpecific = {
+  type: NodeType.BRANCH
 }
 
-export type StepDataConfig<
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-> = {
-  passthrough?: false,
-  inputDataTypes: I,
-  outputDataType: O
-} | {
-  passthrough: true,
-  inputDataTypes?: undefined,
-  outputDataType?: undefined,
+type ForkDefinitionSpecific = {
+  type: NodeType.FORK
+  branchDefs: NodeDef[]
 }
+
+// export type AnyStepDefinition = StepDefinitionBase & StepDefinitionSpecific
+export type AnyForkDefinition = StepDefinitionBase & ForkDefinitionSpecific
+export type AnyBranchDefinition = StepDefinitionBase & StepDefinitionSpecific
+
+export type StepDefinition<
+  I extends readonly StepDataType[] = readonly StepDataType[],
+  O extends StepDataType = StepDataType
+> =
+  | (StepDefinitionBase & StepDefinitionSpecific & IO<I, O>)
+  | (StepDefinitionBase & BranchDefinitionSpecific & IO<I, O>)
+  | (StepDefinitionBase & ForkDefinitionSpecific & IO<I, O>)
 
 export type AnyStepDefinition = StepDefinition<any, any>
 
@@ -114,3 +133,25 @@ export type WithRequired<T, K extends keyof T> =
 
 export interface IRunnerResultMeta {
 }
+
+export type EffectiveInputConstructors<M extends StepMeta<any, any>> =
+// force distribution over union
+  M extends unknown
+    ? // first, handle passthrough
+    M extends { passthrough: true }
+      ? readonly [typeof PassThrough]
+      : // otherwise, just use the StepMeta generic
+      M extends StepMeta<infer I, any>
+        ? I
+        : never
+    : never
+
+export type EffectiveOutputConstructor<M extends StepMeta<any, any>> =
+// force distribution over union
+  M extends unknown
+    ? M extends { passthrough: true }
+      ? typeof PassThrough
+      : M extends StepMeta<any, infer O>
+        ? O
+        : never
+    : never

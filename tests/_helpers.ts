@@ -10,10 +10,12 @@ export function defineTestStep(
     inputDataTypes,
     outputDataType,
     branchDefs = [],
+    passthrough = false
   }: {
     def: string,
     displayName?: string,
     type?: NodeType,
+    passthrough?: boolean,
     inputDataTypes: readonly StepDataType[],
     outputDataType: StepDataType,
     branchDefs?: string[]

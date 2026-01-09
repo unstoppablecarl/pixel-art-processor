@@ -28,9 +28,9 @@ const branch = useBranchHandler(branchId, {
   config() {
     return {}
   },
-  // onRemove(store) {
-  //   getSiblingBranchVariants().forEach((sibling) => store.remove(sibling.id))
-  // },
+  onRemoving(node) {
+    getSiblingBranchVariants().forEach((sibling) => store.remove(sibling.id))
+  },
 })
 
 function getSiblingBranchVariants() {

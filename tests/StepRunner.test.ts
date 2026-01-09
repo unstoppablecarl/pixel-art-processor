@@ -3,8 +3,8 @@ import { describe, it } from 'vitest'
 import type { IRunnerResultMeta, StepDataType } from '../src/lib/pipeline/_types.ts'
 import type { AnyStepContext, StepInputTypesToInstances } from '../src/lib/pipeline/Step.ts'
 import {
-  type ForkStepRunner,
-  type NormalStepRunner, type SingleRunnerResult,
+  type ForkRunner,
+  type NormalRunner, type SingleRunnerResult,
   type NodeRunner,
 } from '../src/lib/pipeline/NodeRunner.ts'
 import type { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
@@ -28,11 +28,11 @@ type IsEqual<A, B> =
 
 describe('NodeRunner union structure', () => {
   it('NormalStepRunner<T> is assignable to NodeRunner<T>', () => {
-    expectTypeOf<NormalStepRunner<T>>().toExtend<NodeRunner<T>>()
+    expectTypeOf<NormalRunner<T>>().toExtend<NodeRunner<T>>()
   })
 
   it('ForkStepRunner<T> is assignable to NodeRunner<T>', () => {
-    expectTypeOf<ForkStepRunner<T>>().toExtend<NodeRunner<T>>()
+    expectTypeOf<ForkRunner<T>>().toExtend<NodeRunner<T>>()
   })
 })
 
@@ -43,14 +43,14 @@ describe('NodeRunner union structure', () => {
 describe('Manual narrowing of NodeRunner<T>', () => {
   it('can narrow to NormalStepRunner<T>', () => {
     const run = {} as NodeRunner<T>
-    const normal = run as NormalStepRunner<T>
-    expectTypeOf(normal).toExtend<NormalStepRunner<T>>()
+    const normal = run as NormalRunner<T>
+    expectTypeOf(normal).toExtend<NormalRunner<T>>()
   })
 
   it('can narrow to ForkStepRunner<T>', () => {
     const run = {} as NodeRunner<T>
-    const fork = run as ForkStepRunner<T>
-    expectTypeOf(fork).toExtend<ForkStepRunner<T>>()
+    const fork = run as ForkRunner<T>
+    expectTypeOf(fork).toExtend<ForkRunner<T>>()
   })
 })
 
@@ -59,7 +59,7 @@ type MockStepContext<RC, Input extends readonly StepDataType[],
   Output extends StepDataType, > = {
   RC: RC
   C: RC
-  SerializedConfig: RC
+  SC: RC
 
   InputConstructors: Input,
   OutputConstructors: Output,
@@ -75,7 +75,7 @@ type Ctx = MockStepContext<
 
 describe('NodeRunner type collapse tests', () => {
   it('NormalStepRunner<T> should NOT collapse to NodeRunner<T>', () => {
-    type N = NormalStepRunner<Ctx>
+    type N = NormalRunner<Ctx>
     type U = NodeRunner<Ctx>
 
     // If N collapses to U, this becomes false
@@ -90,8 +90,8 @@ describe('NodeRunner type collapse tests', () => {
 
   it('NodeRunner<T> is exactly the union of Normal and Fork and they remain distinct', () => {
     type U = NodeRunner<Ctx>
-    type N = NormalStepRunner<Ctx>
-    type F = ForkStepRunner<Ctx>
+    type N = NormalRunner<Ctx>
+    type F = ForkRunner<Ctx>
 
     // 1) U is exactly N | F
     type ExactUnion = N | F
@@ -103,7 +103,7 @@ describe('NodeRunner type collapse tests', () => {
   })
 
   it('NormalStepRunner<Ctx> has the correct call signature', () => {
-    type N = NormalStepRunner<Ctx>
+    type N = NormalRunner<Ctx>
     type Expected = (options: {
       config: Ctx['RC']
       inputData: Ctx['Input'] | null,
@@ -115,7 +115,7 @@ describe('NodeRunner type collapse tests', () => {
   })
 
   it('ForkStepRunner<Ctx> has the correct call signature', () => {
-    type F = ForkStepRunner<Ctx>
+    type F = ForkRunner<Ctx>
     type Expected = (options: {
       config: Ctx['RC']
       inputData: Ctx['Input'] | null

@@ -5,7 +5,7 @@ import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import {
   type AnyStepDefinition,
-  type ForkDefinition,
+  type AnyStepMeta,
   type NodeDef,
   type NodeId,
   NodeType,
@@ -49,6 +49,12 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return definition.inputDataTypes.includes(stepDataType)
   }
 
+  const getFork = (def: NodeDef) => {
+    const r = get(def)
+    if (r.type !== NodeType.FORK) throw new Error(`def ${def} is not a fork`)
+    return r
+  }
+
   const isFork = (def: string): boolean => get(def).type === NodeType.FORK
   const isBranch = (def: string): boolean => get(def).type === NodeType.BRANCH
   const isStep = (def: string): boolean => get(def).type === NodeType.STEP
@@ -60,7 +66,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   // check if parent has any ancestors that would make the child an invalid child of parent
   function _hasInvalidAncestor(store: PipelineStore, childDef: NodeDef, parentId: NodeId): boolean {
     const childDefinition = get(childDef)
-    return store.findInAncestorNodes(parentId, (node) => {
+    return store.hasInAncestorNodes(parentId, (node) => {
       return !(get(node.def).isValidDescendantDef?.(childDefinition) ?? true)
     })
   }
@@ -68,7 +74,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   function _canBeChildOf(childDef: NodeDef, parentDef: NodeDef): boolean {
     if (isStep(parentDef)) return !isBranch(childDef)
     if (isBranch(parentDef)) return isStep(childDef)
-    if (isFork(parentDef)) return (get(parentDef) as ForkDefinition<any, any>).branchDefs.includes(childDef)
+    if (isFork(parentDef)) return (getFork(parentDef)).branchDefs.includes(childDef)
     throw new Error('Invalid definition type')
   }
 
@@ -90,29 +96,11 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     }
   }
 
-  function validateDefRegistration(def: string, options: {
-    passthrough?: boolean,
-    inputDataTypes?: any,
-    outputDataType?: any
-  }) {
-
-    let inputDataTypes: undefined | DataStructureConstructor[]
-    let outputDataType: undefined | DataStructureConstructor
-
-    if (!options.passthrough) {
-      ({ inputDataTypes, outputDataType } = options)
-    }
-
-    const definition = get(def)
-
-    if (!objectsAreEqual(inputDataTypes, definition.inputDataTypes)) {
-      console.error({ registeredInputDataTypes: inputDataTypes, moduleInputDataTypes: definition.inputDataTypes })
-      throw new Error(`step def: ${def} registered inputDataTypes do not match module inputDataTypes`)
-    }
-
-    if (!objectsAreEqual(outputDataType, definition.outputDataType)) {
-      console.error({ registeredInputDataTypes: outputDataType, moduleInputDataTypes: definition.outputDataType })
-      throw new Error(`step def: ${def} registered outputDataType do not match module outputDataType`)
+  function validateDefRegistration(meta: AnyStepMeta) {
+    const definition = get(meta.def)
+    if (!objectsAreEqual(meta, definition)) {
+      console.error({ meta, definition })
+      throw new Error(`step def: ${meta.def} registered does not match registry`)
     }
   }
 
@@ -123,7 +111,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     has,
     getNodeType: (def: string): NodeType => get(def).type,
     defToComponent: (def: string): Component => get(def).component,
-    nodeIsPassthrough: <T extends AnyStepContext>(node: AnyNode<T>): boolean => !!get(node.def).passthrough,
+    nodeIsPassthrough: <M extends AnyStepMeta, T extends AnyStepContext>(node: AnyNode<M, T>): boolean => !!get(node.def).passthrough,
     canBeChildOf,
     validateCanBeChildOf,
     addableToArray,

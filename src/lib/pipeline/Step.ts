@@ -1,26 +1,35 @@
 import { type Reactive, type ShallowReactive } from 'vue'
 
-import type { Config, StepDataType } from './_types.ts'
+import type {
+  AnyStepMeta,
+  Config,
+  EffectiveInputConstructors,
+  EffectiveOutputConstructor,
+  StepDataType, StepMeta,
+} from './_types.ts'
 
-export type AnyStepContext = StepContext<any, any, any, any, any>
+export type AnyStepContext =   StepContext<AnyStepMeta, Config, Config, ReactiveConfigType<Config>>
 
-export type StepContext<
+export interface StepContext<
+  M extends StepMeta<any, any>,
   C extends Config,
-  SerializedConfig extends Config,
-  RC extends ReactiveConfigType<C>,
-  Input extends readonly StepDataType[],
-  Output extends StepDataType,
-> = {
-  C: C,
-  SerializedConfig: SerializedConfig,
-  RC: RC,
-  InputConstructors: Input,
-  OutputConstructors: Output,
-  Output: InstanceType<Output>,
-  Input: StepInputTypesToInstances<Input>,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>
+> {
+  C: C
+  SC: SC
+  RC: RC
+
+  InputConstructors: EffectiveInputConstructors<M>
+  Input: StepInputTypesToInstances<EffectiveInputConstructors<M>>
+  Output: InstanceType<EffectiveOutputConstructor<M>>
 }
 
-export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;
+
+
+// export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;
+export type ReactiveConfigType<C extends Config> =
+  ShallowReactive<C> & Reactive<C>;
 
 export type StepLoaderSerialized<
   SerializedConfig extends Config
