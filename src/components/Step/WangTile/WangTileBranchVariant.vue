@@ -10,11 +10,13 @@ export const STEP_META = defineStepMeta({
 })
 </script>
 <script setup lang="ts">
+import { reactive } from 'vue'
 import type { IRunnerResultMeta, NodeId } from '../../../lib/pipeline/_types.ts'
 import { StepValidationError } from '../../../lib/pipeline/errors/StepValidationError.ts'
 import { parseResult } from '../../../lib/pipeline/NodeRunner.ts'
 import type { AnyStepContext } from '../../../lib/pipeline/Step.ts'
 import { useBranchHandler } from '../../../lib/pipeline/useStepHandler.ts'
+import type { PassThrough } from '../../../lib/step-data-types/PassThrough.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
 import StepImage from '../../StepImage.vue'
@@ -37,6 +39,7 @@ const branch = useBranchHandler(branchId, STEP_META, {
       parentBranchId: null as NodeId | null,
     }
   },
+  reactiveConfig: reactive,
   async run({ config, inputData, meta }) {
     const parentBranch = store.get(config.parentBranchId!)
 
@@ -58,7 +61,7 @@ const branch = useBranchHandler(branchId, STEP_META, {
     }
 
     return {
-      output: prevOutput.output,
+      output: prevOutput.output as PassThrough,
       meta: prevOutput.meta,
     }
   },
