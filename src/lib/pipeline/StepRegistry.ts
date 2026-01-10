@@ -97,7 +97,10 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   }
 
   function validateDefRegistration(meta: AnyStepMeta) {
-    const definition = get(meta.def)
+    const definition = {...get(meta.def)} as AnyStepMeta
+    // @ts-expect-error
+    delete definition['component']!
+
     if (!objectsAreEqual(meta, definition)) {
       console.error({ meta, definition })
       throw new Error(`step def: ${meta.def} registered does not match registry`)

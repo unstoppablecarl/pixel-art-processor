@@ -82,9 +82,9 @@ describe('step handler type testing', async () => {
       outputDataType: NormalMap,
     })
 
-    useStepRegistry().validateDefRegistration(STEP_META)
 
     useStepRegistry().defineStep({ ...STEP_META, component: {} as unknown as Component } as AnyStepDefinition)
+    useStepRegistry().validateDefRegistration(STEP_META)
 
     type M = typeof STEP_META
 
