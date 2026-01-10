@@ -1,18 +1,18 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.STEP,
   def: 'bitmask_islands_smooth',
   displayName: 'BitMask Islands: Smooth',
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
-}
-
+})
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
+import { reactive } from 'vue'
 import {
   DEFAULT_SHOW_ADDED,
   DEFAULT_SHOW_ISLANDS,
@@ -53,10 +53,7 @@ const ITERATION_DEFAULTS = rangeSliderConfig({
   value: 1,
 })
 
-const node = useStepHandler(nodeId, {
-  ...STEP_META,
-  inputDataTypes: [BitMask],
-  outputDataType: BitMask,
+const node = useStepHandler(nodeId, STEP_META, {
   config() {
     return {
       minDistance: 4,
@@ -75,6 +72,7 @@ const node = useStepHandler(nodeId, {
       ...DEFAULT_SHOW_REMOVED.CONFIG,
     }
   },
+  reactiveConfig: reactive,
   async run({ config, inputData }) {
     if (!inputData) return
 

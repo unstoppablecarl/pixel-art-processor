@@ -1,8 +1,15 @@
 import { watch } from 'vue'
+import type { Optional } from '../_helpers.ts'
 import { usePipelineStore } from '../store/pipeline-store.ts'
 import { logNodeWatch } from '../util/misc.ts'
 import type { AnyStepMeta, Config, NodeId, StepDataType, StepMeta } from './_types.ts'
-import type { AnyNode, InitializedForkNode, InitializedNode, InitializedStepNode } from './Node.ts'
+import type {
+  AnyNode,
+  InitializedBranchNode,
+  InitializedForkNode,
+  InitializedNode,
+  InitializedStepNode,
+} from './Node.ts'
 import type { ForkRunner, NormalRunner } from './NodeRunner.ts'
 import { type AnyStepContext, type ReactiveConfigType, type StepContext } from './Step.ts'
 import { type IStepHandler, makeStepHandler, type StepHandlerOptions } from './StepHandler.ts'
@@ -71,48 +78,39 @@ export function useForkHandler<
   return useCoreStepHandler<M, T>(nodeId, handler) as InitializedForkNode<M, T>
 }
 
-//
-// // ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
-// export function useBranchHandler<
-//   M extends AnyStepMeta,
-//   C extends Config,
-//   SC extends Config,
-//   RC extends ReactiveConfigType<C>,
-// >(
-//   nodeId: NodeId,
-//   meta: M,
-//   handlerOptions: Optional<StepHandlerOptionsInfer<
-//     C,
-//     SC,
-//     RC,
-//     M['inputDataTypes'],
-//     M['outputDataType'],
-//     NormalRunner<StepContext<C, SC, RC, M['inputDataTypes'], M['outputDataType']>>
-//   >, 'run'>,
-// ) {
-//
-//   type T = StepContext<
-//     C,
-//     SC,
-//     RC,
-//     M['inputDataTypes'],
-//     M['outputDataType']
-//   >
-//
-//   const merged = {
-//     async run({ inputData, meta, inputPreview }) {
-//       return {
-//         output: inputData,
-//         preview: inputPreview,
-//         meta,
-//       }
-//     },
-//     ...handlerOptions,
-//   } as StepHandlerOptions<M, T, NormalRunner<T>>
-//
-//   type R = NormalRunner<T>
-//
-//   const handler = makeStepHandler<M, T, R>(meta, merged)
-//
-//   return useCoreStepHandler<M, T, R>(nodeId, meta, handler) as InitializedBranchNode<M, T>
-// }
+
+// ⚠️ options property order matters here see StepHandlerOptionsInfer⚠️
+export function useBranchHandler<
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+  C extends Config,
+  SC extends Config,
+  RC extends ReactiveConfigType<C>,
+  M extends StepMeta<I, O>,
+  R extends ForkRunner<StepContext<M, C, SC, RC>>
+>(
+  nodeId: NodeId,
+  meta: M,
+  handlerOptions: Optional<
+    StepHandlerOptions<M, C, SC, RC, R>,
+    'run'
+  >,
+)
+  : InitializedBranchNode<M, StepContext<M, C, SC, RC>> {
+
+  const merged = {
+    async run({ inputData, meta, inputPreview }) {
+      return {
+        output: inputData,
+        preview: inputPreview,
+        meta,
+      }
+    },
+    ...handlerOptions,
+  } as StepHandlerOptions<M, C, SC, RC, R>
+
+  const handler = makeStepHandler<M, C, SC, RC, R>(meta, merged)
+  type T = StepContext<M, C, SC, RC>
+
+  return useCoreStepHandler<M, T>(nodeId, handler) as InitializedBranchNode<M, T>
+}

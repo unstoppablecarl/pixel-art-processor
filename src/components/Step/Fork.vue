@@ -1,14 +1,14 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { STEP_META as branchStepMeta } from './Branch.vue'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.FORK,
   def: 'fork_step',
   displayName: 'Fork',
   passthrough: true,
   branchDefs: [branchStepMeta.def],
-}
+})
 </script>
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/_types.ts'
@@ -21,8 +21,7 @@ import { computed } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useForkHandler(nodeId, {
-  ...STEP_META,
+const node = useForkHandler(nodeId, STEP_META, {
   config() {
     return {}
   },

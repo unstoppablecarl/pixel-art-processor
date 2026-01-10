@@ -27,7 +27,7 @@ export interface StepContext<
 
 
 
-// export type ReactiveConfigType<C extends Config> = ShallowReactive<C> | Reactive<C>;
+// it doesn't make sense, but it does need to be & not |
 export type ReactiveConfigType<C extends Config> =
   ShallowReactive<C> & Reactive<C>;
 

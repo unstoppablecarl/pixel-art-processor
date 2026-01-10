@@ -14,7 +14,7 @@ const store = usePipelineStore()
 const stepRegistry = useStepRegistry()
 
 const { branch } = defineProps<{
-  branch: InitializedBranchNode<any>,
+  branch: InitializedBranchNode<any, any>,
 }>()
 
 const displayName = computed(() => stepRegistry.get(branch.def).displayName)

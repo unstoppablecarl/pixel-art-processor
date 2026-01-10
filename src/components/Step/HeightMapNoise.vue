@@ -1,15 +1,14 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.STEP,
   def: 'height_map_noise',
   displayName: 'HeightMap: Noise',
   inputDataTypes: [HeightMap],
   outputDataType: HeightMap,
-}
-
+})
 </script>
 <script setup lang="ts">
 import { computed, shallowRef } from 'vue'
@@ -26,9 +25,8 @@ const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const noiseImageData = shallowRef<ImageData | null>(null)
 
-const node = useStepHandler(nodeId, {
-  ...STEP_META,
-  config() {
+const node = useStepHandler(nodeId, STEP_META, {
+  config(): typeof GENERATE_NOISE_DEFAULTS {
     return {
       ...GENERATE_NOISE_DEFAULTS,
     }

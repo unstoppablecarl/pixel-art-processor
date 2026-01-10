@@ -146,11 +146,11 @@ const settingsVisible = ref(true)
 
           <div>
             <strong>Input:</strong>
-            {{ node.handler?.inputDataTypes?.map((t: any) => t.displayName).join(', ') }}
+            {{ node.handler?.currentInputDataTypes?.map((t: any) => t.displayName).join(', ') }}
           </div>
           <div>
             <strong>Output:</strong>
-            {{ node.handler?.outputDataType?.displayName }}
+            {{ node.handler?.currentOutputDataType?.displayName }}
           </div>
         </BPopover>
 

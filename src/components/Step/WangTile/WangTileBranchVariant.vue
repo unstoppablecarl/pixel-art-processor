@@ -1,13 +1,13 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../../lib/pipeline/_types.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.BRANCH,
   def: 'wang_tile_branch_variant',
   displayName: 'Wang Tile: Branch Variant',
   passthrough: true,
   isValidDescendantDef: () => false,
-}
+})
 </script>
 <script setup lang="ts">
 import type { IRunnerResultMeta, NodeId } from '../../../lib/pipeline/_types.ts'
@@ -31,11 +31,10 @@ type StepRunnerResult = {
   validationErrors: StepValidationError[]
 }
 
-const branch = useBranchHandler(branchId, {
-  ...STEP_META,
+const branch = useBranchHandler(branchId, STEP_META, {
   config() {
     return {
-      parentBranchId: null,
+      parentBranchId: null as NodeId | null,
     }
   },
   async run({ config, inputData, meta }) {
@@ -51,14 +50,17 @@ const branch = useBranchHandler(branchId, {
       const step = store.getStep(stepId)
 
       prevOutput = await step.runRaw({
-        config: step.config,
+        config: step.config!,
         inputData: prevOutput.output,
         inputPreview: prevOutput.preview,
         meta: prevOutput.meta,
       })
     }
 
-    return prevOutput
+    return {
+      output: prevOutput.output,
+      meta: prevOutput.meta,
+    }
   },
 })
 

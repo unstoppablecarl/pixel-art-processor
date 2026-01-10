@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { type ForkDefinition, type NodeId } from '../../lib/pipeline/_types.ts'
+import { type AnyForkDefinition, type NodeId } from '../../lib/pipeline/_types.ts'
 
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
@@ -14,7 +14,7 @@ const fork = computed(() => store.getFork(forkNodeId))
 const branches = computed(() => fork.value.branchIds.value.map(store.getBranch))
 
 const addableBranches = computed(() => {
-  const definition = stepRegistry.get(fork.value.def) as ForkDefinition<any, any>
+  const definition = stepRegistry.get(fork.value.def) as AnyForkDefinition
 
   return definition.branchDefs.map(stepRegistry.get)
 })

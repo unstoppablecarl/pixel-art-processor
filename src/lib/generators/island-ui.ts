@@ -174,7 +174,7 @@ export const ISLAND_FILTERS: Record<IslandFilterType, { label: string, filter: (
     label: 'Edge',
     filter: (i: Island) => i.type !== IslandType.NORMAL,
   },
-}
+} as const
 
 export const ISLAND_TYPES_FILTER_OPTIONS = Object.fromEntries(
   Object.entries(ISLAND_FILTERS).map(([key, val]) => [key, val.label]),

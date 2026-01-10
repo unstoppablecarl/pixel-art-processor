@@ -1,14 +1,14 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.STEP,
   def: 'bitmask_islands_add_edges',
   displayName: 'BitMask Islands: Add Edges',
   inputDataTypes: [],
   outputDataType: BitMask,
-}
+})
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -51,8 +51,7 @@ const CONFIG_DEFAULTS = {
   padding: 4,
 }
 
-const node = useStepHandler(nodeId, {
-  ...STEP_META,
+const node = useStepHandler(nodeId, STEP_META, {
   config() {
     return {
       ...CONFIG_DEFAULTS,

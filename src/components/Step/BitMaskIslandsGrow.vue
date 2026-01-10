@@ -1,18 +1,18 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.STEP,
   def: 'bitmask_islands_grow',
   displayName: 'BitMask Islands: Grow',
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
-}
-
+})
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
+import { reactive } from 'vue'
 import {
   DEFAULT_EXPANDABLE,
   DEFAULT_EXPANDABLE_BOUNDS,
@@ -65,10 +65,7 @@ const ITERATION_DEFAULTS = rangeSliderConfig({
   value: 1,
 })
 
-const node = useStepHandler(nodeId, {
-  ...STEP_META,
-  inputDataTypes: [BitMask],
-  outputDataType: BitMask,
+const node = useStepHandler(nodeId, STEP_META, {
   config() {
     return {
       minDistance: 4,
@@ -77,7 +74,7 @@ const node = useStepHandler(nodeId, {
 
       iterations: {
         ...ITERATION_DEFAULTS,
-      },
+      } as typeof ITERATION_DEFAULTS,
 
       clusterRadius: 0,
       marchingGrowthPixelsPerIteration: 1,
@@ -91,6 +88,7 @@ const node = useStepHandler(nodeId, {
       ...DEFAULT_EXPANDABLE_RESPECTING_DISTANCE.CONFIG,
     }
   },
+  reactiveConfig: reactive,
   async run({ config, inputData }) {
     if (!inputData) return
 
@@ -104,7 +102,7 @@ const node = useStepHandler(nodeId, {
       [GrowType.MARCHING]: () => marchingGrower(C.marchingGrowthPixelsPerIteration),
       [GrowType.WEIGHTED]: () => weightedRandomGrower(),
       [GrowType.PERLIN]: () => perlinGrower(C.perlinFactor),
-    }
+    } as const
     const grower = map[config.growType]()
 
     const islandFilter = ISLAND_FILTERS[C.islandType].filter

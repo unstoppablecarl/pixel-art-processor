@@ -1,19 +1,18 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { BitMask } from '../../lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.STEP,
   def: 'height_map_glow',
   displayName: 'HeightMap: Glow',
   inputDataTypes: [BitMask],
   outputDataType: HeightMap,
-}
-
+})
 </script>
 <script setup lang="ts">
-import { applyInnerGlow, INNER_GLOW_DEFAULTS } from '../../lib/generators/inner-glow.ts'
+import { applyInnerGlow, INNER_GLOW_DEFAULTS, type InnerGlowOptions } from '../../lib/generators/inner-glow.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
@@ -24,8 +23,7 @@ import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, {
-  ...STEP_META,
+const node = useStepHandler(nodeId, STEP_META, {
   config() {
     return {
       ...INNER_GLOW_DEFAULTS,
@@ -37,7 +35,7 @@ const node = useStepHandler(nodeId, {
     const bitMask = inputData as BitMask
 
     let imageData = fillNonTransparentPixels(bitMask.toImageData(), 255)
-    imageData = applyInnerGlow(imageData, config)
+    imageData = applyInnerGlow(imageData, config as Required<InnerGlowOptions>)
     if (config.fillTransparent) {
       fillTransparentPixels(imageData, config.fillTransparentValue)
     }

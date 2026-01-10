@@ -1,16 +1,15 @@
 <script lang="ts">
-import { type AnyStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META = defineStepMeta({
   type: NodeType.STEP,
   def: 'normal_map_to_texture_lighting',
   displayName: 'NormalMap -> Texture Lighting',
   inputDataTypes: [NormalMap],
   outputDataType: PixelMap,
-}
-
+})
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
@@ -24,8 +23,7 @@ import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, {
-  ...STEP_META,
+const node = useStepHandler(nodeId, STEP_META, {
   config() {
     return {
       lightX: 0.5,

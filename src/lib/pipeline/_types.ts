@@ -155,3 +155,7 @@ export type EffectiveOutputConstructor<M extends StepMeta<any, any>> =
         ? O
         : never
     : never
+
+export function defineConfig<C extends Config>(fn: () => C) {
+  return fn
+}
