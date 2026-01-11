@@ -73,32 +73,38 @@ function useHandler<
   type InputData = InstanceUnionFromConstructorArray<I>
   type OutputData = InstanceType<O>
 
-  const defaultConfig = (() => ({} as Config))
-  const defaultReactiveConfig = (defaults: Config) => reactive(defaults as object) as ReactiveConfig
-  const defaultRun = (runOptions: { config: ReactiveConfig, inputData: InputData }) => ({
-    config: runOptions.config as RC,
-    output: null as OutputData | null,
-  })
+  // Default implementations
+  const config = options?.config ?? (() => ({} as Config))
 
-  const defaultSerializeConfig = (config: RC) => config as unknown as SC
-  const defaultDeserializeConfig = (serialized: SC) => serialized as unknown as Config
+  const reactiveConfig = options?.reactiveConfig ??
+    ((defaults: Config) => reactive(defaults as object) as ReactiveConfig)
 
-  const deserializeConfig = (options?.deserializeConfig ?? defaultDeserializeConfig) as (serialized: SC) => Config
+  const run = options?.run ??
+    ((runOptions: { config: ReactiveConfig, inputData: InputData }) => ({
+      config: runOptions.config as RC,
+      output: null as OutputData | null,
+    }))
 
-  const defaultLoadConfig = (config: RC, serializedConfig: SC) => {
-    const deserialized = deserializeConfig(serializedConfig)
-    Object.assign(config as any, deserialized)
-  }
-  const loadConfig = (options?.loadConfig ?? defaultLoadConfig) as (config: RC, serializedConfig: SC) => void
+  const serializeConfig = options?.serializeConfig ??
+    ((config: RC) => config as unknown as SC)
+
+  const deserializeConfig = options?.deserializeConfig ??
+    ((serialized: SC) => serialized as unknown as Config)
+
+  const loadConfig = options?.loadConfig ??
+    ((config: RC, serializedConfig: SC) => {
+      const deserialized = deserializeConfig(serializedConfig)
+      Object.assign(config as any, deserialized)
+    })
 
   return {
     meta,
-    config: (options?.config ?? defaultConfig) as () => Config,
-    reactiveConfig: (options?.reactiveConfig ?? defaultReactiveConfig) as (defaults: Config) => ReactiveConfig,
-    serializeConfig: (options?.serializeConfig ?? defaultSerializeConfig) as (config: Config) => SC,
-    deserializeConfig,
-    loadConfig,
-    run: (options?.run ?? defaultRun) as (options: { config: ReactiveConfig, inputData: InputData }) => {
+    config: config as () => Config,
+    reactiveConfig: reactiveConfig as (defaults: Config) => ReactiveConfig,
+    serializeConfig: serializeConfig as (config: Config) => SC,
+    deserializeConfig: deserializeConfig as (serialized: SC) => Config,
+    loadConfig: loadConfig as (config: RC, serializedConfig: SC) => void,
+    run: run as (options: { config: ReactiveConfig, inputData: InputData }) => {
       config: RC,
       output: OutputData | null
     },
