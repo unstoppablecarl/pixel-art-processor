@@ -14,7 +14,7 @@ import type {
 } from './_types.ts'
 import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
-import type { InitializedNode } from './Node.ts'
+import type { AnyNode, InitializedNode } from './Node.ts'
 import type { NodeRunner } from './NodeRunner.ts'
 import {
   type AnyStepContext,
@@ -71,6 +71,7 @@ export type StepHandlerOptions<
   onRemoved?: (id: NodeId) => void
   onAdded?: (node: InitializedNode<M, StepContext<M, C, SC, RC>>) => void
   onAfterRun?: (node: InitializedNode<M, StepContext<M, C, SC, RC>>) => void
+  onBranchEndResolved?: (branchEndNode: AnyNode) => void,
 
   run: R
 }
@@ -102,10 +103,12 @@ export interface IStepHandler<
 
   validateInput(inputData: T['Input'], inputDataTypes: T['InputConstructors']): StepValidationError[],
 
-  onRemoving?: (node: InitializedNode<M, T>) => void
-  onRemoved?: (id: NodeId) => void
-  onAdded?: (node: InitializedNode<M, T>) => void
-  onAfterRun?: (node: InitializedNode<M, T>) => void
+  onRemoving?: (node: InitializedNode<M, T>) => void,
+  onRemoved?: (id: NodeId) => void,
+  onAdded?: (node: InitializedNode<M, T>) => void,
+  onAfterRun?: (node: InitializedNode<M, T>) => void,
+
+  onBranchEndResolved?: (branchEndNode: AnyNode) => void,
 
   run: R,
 

@@ -20,7 +20,7 @@ export type SingleRunnerResult<T extends AnyStepContext> = {
   readonly [certifiedResult]: true,
   preview: Preview,
   output: T['Output'] | null,
-  meta: IRunnerResultMeta,
+  meta: IRunnerResultMeta | null,
   validationErrors: StepValidationError[]
 }
 
@@ -61,7 +61,7 @@ export function parseResult<T extends AnyStepContext>(out: SingleRunnerOutput<T>
     [certifiedResult]: true,
     output: out?.output?.lock() ?? null,
     preview: out?.preview ?? null,
-    meta: out?.meta ?? {},
+    meta: out?.meta ?? null,
     validationErrors: out?.validationErrors?.map(parseValidationError) ?? [],
   }
 }

@@ -115,6 +115,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
         if (!afterId) throw new Error('afterId required by BranchNode')
         return addBranch(def, afterId)
       }
+
       throw new Error('Invalid def')
     }
 
@@ -308,10 +309,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       node.isDirty = false
       prng.setSeed(node.getSeedSum(store))
 
-      if (isBranch(node)) {
-
-      }
-
       await node.processRunner(store)
 
       // After running, children become dirty
@@ -320,24 +317,13 @@ export const usePipelineStore = defineStore('pipeline', () => {
       const endOfBranch = isFork(node) || isStep(node) && !childIds.length
       if (endOfBranch) {
         const parentBranch = findInAncestorNodes(node.id, (n) => isBranch(n)) as AnyBranchNode
-        if (parentBranch) {
-          // parentBranch.handler!.onBranchEndResolved?.(node)
-        }
+        parentBranch?.handler?.onBranchEndResolved?.(node)
       }
 
       for (const childId of childIds) {
         markDirty(childId)
       }
     }
-
-    // function initializeNode<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId, handler: IStepHandler<M, T>): AnyNode<T> {
-    //   const node = get(id) as unknown as AnyNode<T>
-    //
-    //   node.initialize(handler)
-    //   // node.handler?.onAdded?.(node as InitializedNode<T>)
-    //
-    //   return node
-    // }
 
     function _cloneNodeInstance(original: AnyNode): AnyNode {
       const serialized = original.serialize()
