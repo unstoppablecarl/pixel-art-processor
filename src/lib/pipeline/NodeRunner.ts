@@ -71,3 +71,26 @@ function parseValidationError(error: StepValidationError | string) {
 
   return error
 }
+
+export async function defaultNormalRunner<T extends AnyStepContext>(
+  {
+    config,
+    inputData,
+    inputPreview,
+    meta,
+  }: NormalRunnerInput<T>,
+) {
+  return {
+    output: inputData,
+    preview: inputPreview,
+    meta: meta,
+  } as SingleRunnerOutput<T>
+}
+
+export async function defaultForkRunner <T extends AnyStepContext>({ inputData, branchIndex, inputPreview, meta }: ForkRunnerInput<T>) {
+  return {
+    output: inputData,
+    preview: inputPreview,
+    meta,
+  }
+}
