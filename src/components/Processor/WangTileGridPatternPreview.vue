@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import { type AnyNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
+import { type AnyNode, isFork } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
-import { normalizeValueToArray } from '../../lib/util/misc.ts'
-import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
-import { deepUnwrap } from '../../lib/util/vue-util.ts'
 import { makeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
 
@@ -18,51 +15,46 @@ type ImageOutput = {
   index: number,
   node: AnyNode,
   image: ImageData
+  tileId: string,
   key: string,
   encoded: string,
 }
 
-function make(node: AnyNode, outputIndex: number, outputPreview: ImageData): ImageOutput {
+function make(node: AnyNode, outputIndex: number): ImageOutput {
   const key = makeImgVar(node, outputIndex)
-  const encoded = imageDataToUrlImage(outputPreview)
+  const encoded = imageDataToUrlImage(node.outputPreview)
   return {
     node,
     key,
+    tileId: node.outputMeta.wangTileInfo.id,
     index: outputIndex,
-    image: outputPreview,
+    image: node.outputPreview,
     encoded: `${key}: url(${encoded});`,
   }
 }
 
+const nodesProcessing = computed(() => {
+  return !!store.nodesProcessing.length
+})
+
 const stepOutputNodes = computed(() => {
+  if (nodesProcessing.value) return []
 
-  let result: ImageOutput[] = []
-  store.getLeafNodes().forEach(node => {
-    if (isStep(node) || isBranch(node)) {
-      if (!node.outputPreview) return
-      if (!node.isReady(store)) return
-      normalizeValueToArray(node.outputPreview)
-        .forEach((p, index) => {
-          result.push(make(node, index, p))
-        })
-    }
-  })
-
-  console.log('stepOutputNodes', deepUnwrap(result))
-  return result
+  return store.getLeafNodes()
+    .filter(n => !isFork(n) && !!n.outputPreview)
+    .map(make)
 })
 
 const tileset = computed(() => {
   if (!stepOutputNodes.value.length) return null
-
-  const edges = deepUnwrap(stepOutputNodes.value[0].node.outputMeta.wangTileEdges) as BinaryArray[]
-  return WangTileset.createFromColors(edges)
+  const tiles = stepOutputNodes.value.map(n => n.node.outputMeta.wangTileInfo)
+  return new WangTileset<number>(tiles)
 })
 
 const tileGrid = computed(() => {
   if (!tileset.value) return
 
-  return makeWangGrid(previewStore.gridWidth, previewStore.gridHeight, tileset.value)
+  return makeWangGrid<number>(previewStore.gridWidth, previewStore.gridHeight, tileset.value)
 })
 
 const size = computed(() => {
@@ -99,7 +91,6 @@ const makeImgVar = (node: AnyNode, index: number) => IMAGE_VAR_PREFIX + node.id 
 
 const grid = computed(() => {
   if (!stepOutputNodes.value.length) return null
-
   if (!tileGrid.value) return
 
   const result: { index: number, cssStyle: string, node: AnyNode }[][] = []
@@ -107,11 +98,9 @@ const grid = computed(() => {
     result[y] = []
     for (let x = 0; x < previewStore.gridWidth; x++) {
 
-      const tile = tileGrid.value.get(x, y)
-      const index = tileset.value?.tiles.indexOf(tile!)
-      if (!index) continue
-      const item = stepOutputNodes.value[index!]
-      if (!item) continue
+      const tile = tileGrid.value.get(x, y)!
+      const item = stepOutputNodes.value.find(t => t.tileId === tile.id)!
+      const index = stepOutputNodes.value.indexOf(item)
       const node = item.node
 
       result[y][x] = {
@@ -121,6 +110,8 @@ const grid = computed(() => {
       }
     }
   }
+
+  console.log({ result })
 
   return result
 })
@@ -144,7 +135,7 @@ const grid = computed(() => {
                id="scale"
                min="1"
                max="10"
-               node="1"
+               step="1"
                style="width: 150px;"
                v-model.number="previewStore.scale"
         >
