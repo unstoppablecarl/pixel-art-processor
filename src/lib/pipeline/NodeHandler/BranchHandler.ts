@@ -68,20 +68,22 @@ export function makeBranchHandler<
     M['inputDataTypes'],
     M['outputDataType']
   >,
-): BranchHandler<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType']
-> {
+) {
   type I = M['inputDataTypes']
   type O = M['outputDataType']
 
-  return {
-    ...makeHandler<C, SC, RC, I, O>(meta, options),
-    type: NodeType.BRANCH,
-    run: options?.run ?? defaultNormalRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
-    onBranchEndResolved: options?.onBranchEndResolved,
-  }
+  return Object.assign(
+    makeHandler<C, SC, RC, I, O>(meta, options),
+    {
+      type: NodeType.BRANCH,
+      run: options?.run ?? defaultNormalRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
+      onBranchEndResolved: options?.onBranchEndResolved,
+
+    }) as BranchHandler<
+    C,
+    SC,
+    RC,
+    M['inputDataTypes'],
+    M['outputDataType']
+  >
 }

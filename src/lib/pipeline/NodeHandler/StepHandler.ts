@@ -66,19 +66,20 @@ export function makeStepHandler<
     M['inputDataTypes'],
     M['outputDataType']
   >,
-): StepHandler<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType']
-> {
+) {
   type I = M['inputDataTypes']
   type O = M['outputDataType']
 
-  return {
-    ...makeHandler<C, SC, RC, I, O>(meta, options),
-    type: NodeType.STEP,
-    run: options?.run ?? defaultNormalRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
-  }
+  return Object.assign(
+    makeHandler<C, SC, RC, I, O>(meta, options),
+    {
+      type: NodeType.STEP,
+      run: options?.run ?? defaultNormalRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
+    }) as StepHandler<
+    C,
+    SC,
+    RC,
+    M['inputDataTypes'],
+    M['outputDataType']
+  >
 }

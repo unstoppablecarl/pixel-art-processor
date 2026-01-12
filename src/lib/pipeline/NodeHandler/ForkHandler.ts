@@ -66,19 +66,20 @@ export function makeForkHandler<
     M['inputDataTypes'],
     M['outputDataType']
   >,
-): ForkHandler<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType']
-> {
+) {
   type I = M['inputDataTypes']
   type O = M['outputDataType']
 
-  return {
-    ...makeHandler<C, SC, RC, I, O>(meta, options),
-    type: NodeType.FORK,
-    run: options?.run ?? defaultForkRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
-  }
+  return Object.assign(
+    makeHandler<C, SC, RC, I, O>(meta, options),
+    {
+      type: NodeType.FORK,
+      run: options?.run ?? defaultForkRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
+    }) as ForkHandler<
+    C,
+    SC,
+    RC,
+    M['inputDataTypes'],
+    M['outputDataType']
+  >
 }
