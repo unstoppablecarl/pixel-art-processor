@@ -31,6 +31,16 @@ const handler = defineBranchHandler(STEP_META, {
   onRemoving(node) {
     getSiblingBranchVariants().forEach((sibling) => store.remove(sibling.id))
   },
+  async run({ inputData, meta, inputPreview }) {
+    return {
+      output: inputData,
+      preview: inputPreview,
+      meta,
+    }
+  },
+  onBranchEndResolved() {
+    getSiblingBranchVariants().forEach((sibling) => store.markDirty(sibling.id))
+  },
 })
 
 const branch = useBranchHandler(branchId, STEP_META, handler)

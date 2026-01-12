@@ -88,7 +88,8 @@ const handler = defineForkHandler(STEP_META, {
       output: mask,
       preview: mask.toImageData(),
       meta: {
-        wangTileInfo: wangTile,
+        wangTileEdges: edges,
+        wangTileInfo: tileset.value.tiles[branchIndex],
       },
     }
   },

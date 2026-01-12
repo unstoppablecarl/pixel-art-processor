@@ -6,6 +6,7 @@ import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import AppHeader from './AppHeader.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
+import WangTileGridPatternPreview from './Processor/WangTileGridPatternPreview.vue'
 
 const store = usePipelineStore()
 
@@ -52,6 +53,6 @@ onMounted(() => {
       <AddRootStepButtons />
     </div>
 
-    <!--    <GridPatternPreview />-->
+    <WangTileGridPatternPreview />
   </div>
 </template>

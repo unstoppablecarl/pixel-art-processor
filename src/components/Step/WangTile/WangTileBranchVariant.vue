@@ -54,6 +54,7 @@ const handler = defineBranchHandler(STEP_META, {
 
     return {
       output: prevOutput.output as PassThrough,
+      preview: prevOutput.preview,
       meta: prevOutput.meta,
     }
   },
@@ -66,7 +67,8 @@ const branch = useBranchHandler(branchId, STEP_META, handler)
 <template>
   <BranchCard :branch="branch">
     <template #nodes>
-      <div class="card-body">
+      <div class="card-body d-flex">
+        <StepImage :image-data="branch.forkPreview" />
         <StepImage :image-data="branch.outputPreview" />
       </div>
     </template>
