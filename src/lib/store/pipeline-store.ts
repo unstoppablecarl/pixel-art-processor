@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { reactive, ref, shallowReactive, watch } from 'vue'
+import { computed, reactive, ref, shallowReactive, watch } from 'vue'
 import { type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
 import {
   type AnyBranchNode,
@@ -286,7 +286,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
 
     // the only place to mark a node for processing
     function markDirty(id: NodeId) {
-      get(id).isDirty = true
+      get(id).isDirty.value = true
       queue(id)
     }
 
@@ -305,7 +305,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
         return
       }
 
-      node.isDirty = false
+      node.isDirty.value = false
       prng.setSeed(node.getSeedSum(store))
 
       await node.processRunner(store)
@@ -415,6 +415,14 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return root ? root.getOutputSize() : { width: 64, height: 64 }
     }
 
+    const nodesProcessing = computed((): AnyNode[] => {
+      return Object.values(nodes).filter(n => {
+        if (!n.computedOutputReady.value) return true
+        if (n.prevNodeId) return !get(n.prevNodeId).computedOutputReady.value
+        return false
+      })
+    })
+
     function getLeafNodes(): AnyNode[] {
       const store = usePipelineStore()
 
@@ -493,6 +501,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
       getFallbackOutputWidth,
       getDisplayName,
+      nodesProcessing,
     }
   },
   {

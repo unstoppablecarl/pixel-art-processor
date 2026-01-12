@@ -1,4 +1,4 @@
-import { type Reactive, ref, type Ref } from 'vue'
+import { computed, type Reactive, ref, type Ref } from 'vue'
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
@@ -71,9 +71,9 @@ export abstract class BaseNode<
   abstract handler: StepHandler<C, SC, RC, I, O> | ForkHandler<C, SC, RC, I, O> | BranchHandler<C, SC, RC, I, O> | undefined
 
   // system
-  isDirty = false
-  isProcessing = false
-  initialized = false
+  isDirty = ref(false)
+  isProcessing = ref(false)
+  initialized = ref(false)
   lastExecutionTimeMS: undefined | number
 
   constructor({ id, def, seed = 0, visible = true, config, prevNodeId = null }: BaseNodeOptions<SC>) {
@@ -89,9 +89,9 @@ export abstract class BaseNode<
   }
 
   isReady(store: PipelineStore) {
-    if (this.isProcessing) return false
-    if (!this.initialized) return false
-    if (!this.isDirty) return false
+    if (this.isProcessing.value) return false
+    if (!this.initialized.value) return false
+    if (!this.isDirty.value) return false
 
     if (!this.prevNodeId) return true
 
@@ -99,21 +99,27 @@ export abstract class BaseNode<
   }
 
   outputReady(): boolean {
-    return !this.isDirty
-      && !this.isProcessing
-      && this.initialized
+    return !this.isDirty.value
+      && !this.isProcessing.value
+      && this.initialized.value
   }
+
+  computedOutputReady = computed((): boolean => {
+    return !this.isDirty.value
+      && !this.isProcessing.value
+      && this.initialized.value
+  })
 
   async processRunner(store: PipelineStore) {
     // await this.logFunction('processRunner', async () => {
 
-    this.isProcessing = true
+    this.isProcessing.value = true
     const startTime = performance.now()
 
     await this.resolveRunner(store)
 
-    this.isProcessing = false
-    this.isDirty = false
+    this.isProcessing.value = false
+    this.isDirty.value = false
     this.lastExecutionTimeMS = performance.now() - startTime
     // })
   }
@@ -168,7 +174,7 @@ export abstract class BaseNode<
       handler.loadConfig(this.config as RC, this.loadSerialized.config)
       this.loadSerialized = null
     }
-    this.initialized = true
+    this.initialized.value = true
   }
 
   getSeedSum(store: PipelineStore): number {

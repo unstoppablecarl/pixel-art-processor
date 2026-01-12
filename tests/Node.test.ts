@@ -145,13 +145,13 @@ describe('Pipeline Node Behavior', () => {
       const handler = makeStepHandler(passThroughMeta, passthroughHandlerOptions)
       s.initialize(handler)
 
-      s.isDirty = false
-      s.isProcessing = false
-      s.initialized = true
+      s.isDirty.value = false
+      s.isProcessing.value = false
+      s.initialized.value = true
 
       expect(s.outputReady()).toBe(true)
 
-      s.isDirty = true
+      s.isDirty.value = true
       expect(s.outputReady()).toBe(false)
     })
 
@@ -185,13 +185,13 @@ describe('Pipeline Node Behavior', () => {
       s0.initialize(handler)
       s1.initialize(handler)
 
-      s0.isDirty = false
-      s0.isProcessing = false
-      s0.initialized = true
+      s0.isDirty.value = false
+      s0.isProcessing.value = false
+      s0.initialized.value = true
 
-      s1.isDirty = true
-      s1.isProcessing = false
-      s1.initialized = true
+      s1.isDirty.value = true
+      s1.isProcessing.value = false
+      s1.initialized.value = true
 
       const store = makeStore({
         [nid('s0')]: s0,
@@ -200,7 +200,7 @@ describe('Pipeline Node Behavior', () => {
 
       expect(s1.isReady(store)).toBe(true)
 
-      s0.isDirty = true
+      s0.isDirty.value = true
       expect(s1.isReady(store)).toBe(false)
     })
   })
@@ -335,7 +335,7 @@ describe('Pipeline Node Behavior', () => {
 
       const s0Definition = defineTestNode({
         inputDataTypes: [BitMask],
-        outputDataType: NormalMap,
+        outputDataType: BitMask,
       })
 
       const s0 = new StepNode<
@@ -379,15 +379,15 @@ describe('Pipeline Node Behavior', () => {
 
       const bitMask = new BitMask(1, 1)
       s0.outputData = bitMask
-      s0.isDirty = false
-      s0.initialized = true
+      s0.isDirty.value = false
+      s0.initialized.value = true
 
       const store = makeStore({
         [s0.id]: s0,
         [s1.id]: s1,
       })
 
-      s1.isDirty = true
+      s1.isDirty.value = true
       await s1.processRunner(store)
       expect(s1.validationErrors).toEqual([])
       expect(s1.outputData).toBe(bitMask)
@@ -441,15 +441,15 @@ describe('Pipeline Node Behavior', () => {
       s1.initialize(handler1)
 
       s0.outputData = new NormalMap(1, 1)
-      s0.isDirty = false
-      s0.initialized = true
+      s0.isDirty.value = false
+      s0.initialized.value = true
 
       const store = makeStore({
         [nid('s0')]: s0,
         [nid('s1')]: s1,
       })
 
-      s1.isDirty = true
+      s1.isDirty.value = true
       await s1.processRunner(store)
       expect(s1.validationErrors).toEqual([])
       expect(s1.outputData).toBe(s0.outputData)
