@@ -1,18 +1,17 @@
-import { type Reactive, reactive, shallowRef } from 'vue'
-import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
-import { PassThrough } from '../step-data-types/PassThrough.ts'
-import { type StepDataType, type StepMeta, type WatcherTarget } from './_types.ts'
-import { InvalidInputTypeError } from './errors/InvalidInputTypeError.ts'
-import { StepValidationError } from './errors/StepValidationError.ts'
-
-type InstanceType<T> = T extends new (...args: any[]) => infer R ? R : never;
-type UnionFromArray<T extends readonly any[]> = T[number];
-
-type InstanceUnionFromConstructorArray<T extends readonly any[]> =
-  InstanceType<UnionFromArray<T>>;
-
-export type NormalizedConfig<C> = C extends {} ? (undefined extends C ? {} : C) : C
-export type NormalizedReactiveConfig<C, RC> = RC extends Reactive<C> ? RC : Reactive<NormalizedConfig<C>>
+import { reactive, type Reactive, shallowRef } from 'vue'
+import type { BaseDataStructure } from '../../step-data-types/BaseDataStructure.ts'
+import { PassThrough } from '../../step-data-types/PassThrough.ts'
+import type {
+  NodeId,
+  NormalizedConfig,
+  NormalizedReactiveConfig,
+  StepDataType, StepInputTypesToInstances,
+  StepMeta,
+  WatcherTarget,
+} from '../_types.ts'
+import { InvalidInputTypeError } from '../errors/InvalidInputTypeError.ts'
+import type { StepValidationError } from '../errors/StepValidationError.ts'
+import type { InitializedNode } from '../Node.ts'
 
 export type NodeHandler<
   C,
@@ -20,7 +19,7 @@ export type NodeHandler<
   RC,
   I extends readonly StepDataType[],
   O extends StepDataType,
-  M = StepMeta<I, O>
+  M extends StepMeta<any, any> = StepMeta<I, O>,
 > = {
   meta: M
   config: () => NormalizedConfig<C>
@@ -28,13 +27,19 @@ export type NodeHandler<
   serializeConfig: (config: NormalizedConfig<C>) => SC
   deserializeConfig: (serialized: SC) => NormalizedConfig<C>
   loadConfig: (config: RC, serializedConfig: SC) => void
-  watcherTargets(node: any, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
-  validateInput(inputData: InstanceUnionFromConstructorArray<I>, inputDataTypes: I): StepValidationError[],
+  watcherTargets(node: InitializedNode<C, SC, RC, I, O>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
+  validateInput(inputData: StepInputTypesToInstances<I>, inputDataTypes: I): StepValidationError[],
   setPassThroughDataType: (passthroughType: StepDataType) => void,
   clearPassThroughDataType: () => void,
 
   currentInputDataTypes: readonly StepDataType[],
   currentOutputDataType: StepDataType,
+
+  onRemoving?: (node: InitializedNode<C, SC, RC, I, O>) => void,
+  onRemoved?: (id: NodeId) => void,
+  onAdded?: (node: InitializedNode<C, SC, RC, I, O>) => void,
+  onAfterRun?: (node: InitializedNode<C, SC, RC, I, O>) => void,
+
 }
 
 export type NodeHandlerOptions<
@@ -65,7 +70,7 @@ export function makeHandler<
 ) {
   type Config = NormalizedConfig<C>
   type ReactiveConfig = NormalizedReactiveConfig<C, RC>
-  type Input = InstanceUnionFromConstructorArray<I>
+  type Input = StepInputTypesToInstances<I>
 
   const defaults = {
     config: (() => ({} as Config)),
@@ -124,7 +129,7 @@ export function makeHandler<
     deserializeConfig: deserializeConfig as (serialized: SC) => Config,
     loadConfig: loadConfig as (config: RC, serializedConfig: SC) => void,
     watcherTargets: watcherTargets as (node: any, defaults: WatcherTarget[]) => WatcherTarget[],
-    validateInput: validateInput as (inputData: InstanceUnionFromConstructorArray<I>, inputDataTypes: I) => StepValidationError[],
+    validateInput: validateInput as (inputData: StepInputTypesToInstances<I>, inputDataTypes: I) => StepValidationError[],
 
     get currentInputDataTypes() {
       return passthroughType.value ? [passthroughType.value] : defaultInput

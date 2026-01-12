@@ -1,32 +1,33 @@
 import { NodeType, type StepDataType, type StepInputTypesToInstances, type StepMeta } from '../_types.ts'
+import type { AnyNode } from '../Node.ts'
 import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
-export function defineStepHandler<
+export function defineBranchHandler<
   C,
   SC,
   RC,
   M extends StepMeta<any, any>,
 >(
   meta: M,
-  options: StepHandlerOptions<
+  options: BranchHandlerOptions<
     C,
     SC,
     RC,
     M['inputDataTypes'],
     M['outputDataType']
   >,
-): StepHandler<
+): BranchHandler<
   C,
   SC,
   RC,
   M['inputDataTypes'],
   M['outputDataType']
 > {
-  return makeStepHandler(meta, options)
+  return makeBranchHandler(meta, options)
 }
 
-export type StepHandler<
+export type BranchHandler<
   C,
   SC,
   RC,
@@ -39,33 +40,34 @@ export type StepHandler<
   I,
   O
 > & {
-  type: NodeType.STEP,
+  type: NodeType.BRANCH,
   run: NormalRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
+  onBranchEndResolved?: (branchEndNode: AnyNode) => void,
 }
 
-export type StepHandlerOptions<
+export type BranchHandlerOptions<
   C,
   SC,
   RC,
   I extends readonly StepDataType[],
   O extends StepDataType,
-> = Partial<StepHandler<C, SC, RC, I, O>>
+> = Partial<BranchHandler<C, SC, RC, I, O>>
 
-export function makeStepHandler<
+export function makeBranchHandler<
   C,
   SC,
   RC,
   M extends StepMeta<any, any>,
 >(
   meta: M,
-  options?: StepHandlerOptions<
+  options?: BranchHandlerOptions<
     C,
     SC,
     RC,
     M['inputDataTypes'],
     M['outputDataType']
   >,
-): StepHandler<
+): BranchHandler<
   C,
   SC,
   RC,
@@ -77,7 +79,8 @@ export function makeStepHandler<
 
   return {
     ...makeHandler<C, SC, RC, I, O>(meta, options),
-    type: NodeType.STEP,
+    type: NodeType.BRANCH,
     run: options?.run ?? defaultNormalRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
+    onBranchEndResolved: options?.onBranchEndResolved,
   }
 }

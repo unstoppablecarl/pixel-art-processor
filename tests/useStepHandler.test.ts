@@ -1,29 +1,23 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { Component, shallowReactive } from 'vue'
+import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import {
   type AnyStepDefinition,
-  type AnyStepMeta,
   defineStepMeta,
   type IRunnerResultMeta,
   type NodeDef,
   type NodeId,
   NodeType,
+  type StepInputTypesToInstances,
   type WatcherTarget,
 } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipeline/Node.ts'
+import { defineStepHandler, type StepHandler } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
-import {
-  type AnyStepContext,
-  type ReactiveConfigType,
-  type StepContext,
-  type StepInputTypesToInstances,
-} from '../src/lib/pipeline/Step'
-import type { IStepHandler } from '../src/lib/pipeline/StepHandler'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
-import { useStepHandler } from '../src/lib/pipeline/useStepHandler'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
@@ -72,7 +66,7 @@ describe('step handler type testing', async () => {
     type SC = {
       maskImageData: SerializedImageData | null,
     }
-    type RC = ReactiveConfigType<C>
+    type RC = ShallowReactive<C>
 
     const STEP_META = defineStepMeta({
       displayName: 'test',
@@ -82,15 +76,20 @@ describe('step handler type testing', async () => {
       outputDataType: NormalMap,
     })
 
-
     useStepRegistry().defineStep({ ...STEP_META, component: {} as unknown as Component } as AnyStepDefinition)
     useStepRegistry().validateDefRegistration(STEP_META)
 
     type M = typeof STEP_META
+    type I = M['inputDataTypes']
+    type O = M['outputDataType']
+
+    type Input = StepInputTypesToInstances<I>
+    // type Output = InstanceType<O>
 
     const store = usePipelineStore()
     const newStep = store.add(STEP_META.def as NodeDef, null)
-    const step = useStepHandler(newStep.id, STEP_META, {
+
+    const handler = defineStepHandler(STEP_META, {
       config() {
         return {
           ...configRaw,
@@ -131,69 +130,44 @@ describe('step handler type testing', async () => {
         }
       },
       watcherTargets(n, defaults) {
-        expectTypeOf(n).toEqualTypeOf<InitializedNode<M, T>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
         expectTypeOf(defaults).toEqualTypeOf<WatcherTarget[]>()
 
         return []
       },
       onRemoving(n) {
-        expectTypeOf(n).toEqualTypeOf<InitializedNode<M, T>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
       },
       onRemoved(id) {
         expectTypeOf(id).toEqualTypeOf<NodeId>()
       },
       onAdded(n) {
-        expectTypeOf(n).toEqualTypeOf<InitializedNode<M, T>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
       },
     })
 
+    const step = useStepHandler(newStep.id, STEP_META, handler)
+
     await Promise.resolve()
-
-    type TFromNode = typeof step extends InitializedNode<any, infer T> ? T : never
-    type RFromNode = typeof step['handler'] extends IStepHandler<any, any, infer R> ? R : never
-    expectTypeOf(step).toExtend<InitializedNode<M, TFromNode>>()
-    expectTypeOf<RFromNode>().toExtend<NormalRunner<TFromNode>>()
-    expectTypeOf<RFromNode>()
-      .parameter(0)
-      .toEqualTypeOf<{
-        config: TFromNode['RC'],
-        inputData: TFromNode['Input'] | null,
-        inputPreview: ImageData | null,
-        meta: IRunnerResultMeta,
-      }>()
-
-    expectTypeOf<RFromNode>()
-      .returns
-      .toEqualTypeOf<Promise<SingleRunnerOutput<TFromNode>>>()
-
-    type T = typeof step extends InitializedNode<any, infer U> ? U : never
-
-    it('T is a StepContext for M, C, SC, RC', () => {
-      expectTypeOf<T>().toEqualTypeOf<StepContext<M, C, SC, RC>>()
-    })
-    // type NodeRunner =
-    //   typeof step extends InitializedNode<infer T, infer R> ? R : never
 
     it('creates correct step', () => {
 
-      expectTypeOf<T>().toExtend<StepContext<M, C, SC, RC>>()
-      expectTypeOf(step).not.toEqualTypeOf<InitializedNode<AnyStepMeta, AnyStepContext>>()
-      expectTypeOf(step).toExtend<InitializedNode<M, StepContext<M, C, SC, RC>>>()
+      expectTypeOf(step).not.toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedStepNode<C, SC, RC, I, O, M>>()
 
-      expectTypeOf(step).toEqualTypeOf<InitializedStepNode<M, T>>()
       expectTypeOf(step.outputPreview).toEqualTypeOf<ImageData | null>()
       expectTypeOf(step.outputData).toEqualTypeOf<OutputInstance | null>()
-      expectTypeOf(step.outputMeta).toEqualTypeOf<IRunnerResultMeta>()
+      expectTypeOf(step.outputMeta).toEqualTypeOf<IRunnerResultMeta | null>()
     })
 
     it('creates correct handler', () => {
       expect(step.handler).to.not.eq(undefined)
 
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        IStepHandler<M, T, NormalRunner<T>>['run']
+        StepHandler<C, SC, RC, I, O>['run']
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        NormalRunner<T>
+        NormalRunner<InputInstances, OutputInstance, RC>
       >()
       expectTypeOf(step.handler.run).toEqualTypeOf<{
         __normal?: never,
@@ -201,9 +175,9 @@ describe('step handler type testing', async () => {
           config: RC,
           inputData: InputInstances | null,
           inputPreview: ImageData | null,
-          meta: IRunnerResultMeta,
+          meta: IRunnerResultMeta | null,
         }): Promise<
-          SingleRunnerOutput<T>
+          SingleRunnerOutput<OutputInstance>
         >
       }>()
 
@@ -211,64 +185,64 @@ describe('step handler type testing', async () => {
         config: RC,
         inputData: InputInstances | null,
         inputPreview: ImageData | null,
-        meta: IRunnerResultMeta
+        meta: IRunnerResultMeta | null
       }]>()
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
-        Promise<SingleRunnerOutput<T>>
+        Promise<SingleRunnerOutput<OutputInstance>>
       >()
 
       expectTypeOf(step.handler.config).toEqualTypeOf<
-        IStepHandler<M, T>['config']
+        StepHandler<C, SC, RC, I, O>['config']
       >()
       expectTypeOf(step.handler.config).toEqualTypeOf<
         () => C
       >()
 
       expectTypeOf(step.handler.reactiveConfig).toEqualTypeOf<
-        IStepHandler<M, T>['reactiveConfig']
+        StepHandler<C, SC, RC, I, O>['reactiveConfig']
       >()
       expectTypeOf(step.handler.reactiveConfig).toEqualTypeOf<
         (defaults: C) => RC
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        IStepHandler<M, T, NormalRunner<T>>['watcherTargets']
+        StepHandler<C, SC, RC, I, O>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        (node: InitializedNode<M, T>, defaults: WatcherTarget[]) => WatcherTarget[]
+        (node: InitializedNode<C, SC, RC, I, O, M>, defaults: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
-        IStepHandler<M, T>['serializeConfig']
+        StepHandler<C, SC, RC, I, O>['serializeConfig']
       >()
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
         ((config: C) => SC)
       >()
 
       expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
-        IStepHandler<M, T>['deserializeConfig']
+        StepHandler<C, SC, RC, I, O>['deserializeConfig']
       >()
       expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
         ((config: SC) => C)
       >()
 
       expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
-        IStepHandler<M, T>['loadConfig']
+        StepHandler<C, SC, RC, I, O>['loadConfig']
       >()
       expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
         (config: RC, serializedConfig: SC) => void
       >()
 
       expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        IStepHandler<M, T>['validateInput']
+        StepHandler<C, SC, RC, I, O>['validateInput']
       >()
       expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        ((inputData: T['Input'], inputDataTypes: T['InputConstructors']) => StepValidationError[])
+        ((inputData: Input, inputDataTypes: I) => StepValidationError[])
       >()
 
-      expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes']>()
-      expectTypeOf(step.handler.meta.outputDataType).toEqualTypeOf<M['outputDataType']>()
+      expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes'] | undefined>()
+      expectTypeOf(step.handler.meta.outputDataType).toEqualTypeOf<M['outputDataType'] | undefined>()
     })
   })
 })

@@ -1,7 +1,30 @@
-import { NodeType, type StepDataType, type StepMeta } from '../_types.ts'
-import { makeHandler, type NodeHandler } from '../NodeHandler.ts'
+import { NodeType, type StepDataType, type StepInputTypesToInstances, type StepMeta } from '../_types.ts'
 import { defaultForkRunner, type ForkRunner } from '../NodeRunner.ts'
-import type { StepContext } from '../Step.ts'
+import { makeHandler, type NodeHandler } from './NodeHandler.ts'
+
+export function defineForkHandler<
+  C,
+  SC,
+  RC,
+  M extends StepMeta<any, any>,
+>(
+  meta: M,
+  options: ForkHandlerOptions<
+    C,
+    SC,
+    RC,
+    M['inputDataTypes'],
+    M['outputDataType']
+  >,
+): ForkHandler<
+  C,
+  SC,
+  RC,
+  M['inputDataTypes'],
+  M['outputDataType']
+> {
+  return makeForkHandler(meta, options)
+}
 
 export type ForkHandler<
   C,
@@ -17,7 +40,7 @@ export type ForkHandler<
   O
 > & {
   type: NodeType.FORK,
-  run: ForkRunner<StepContext<StepMeta<I, O>, C, SC, RC>>,
+  run: ForkRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
 }
 
 export type ForkHandlerOptions<
@@ -32,18 +55,29 @@ export function makeForkHandler<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>
+  M extends StepMeta<any, any>,
 >(
   meta: M,
-  options?: ForkHandlerOptions<C, SC, RC, I, O>,
-): ForkHandler<C, SC, RC, I, O> {
-  type T = StepContext<M, C, SC, RC>
+  options?: ForkHandlerOptions<
+    C,
+    SC,
+    RC,
+    M['inputDataTypes'],
+    M['outputDataType']
+  >,
+): ForkHandler<
+  C,
+  SC,
+  RC,
+  M['inputDataTypes'],
+  M['outputDataType']
+> {
+  type I = M['inputDataTypes']
+  type O = M['outputDataType']
 
   return {
     ...makeHandler<C, SC, RC, I, O>(meta, options),
     type: NodeType.FORK,
-    run: options?.run ?? defaultForkRunner<T>,
+    run: options?.run ?? defaultForkRunner<StepInputTypesToInstances<I>, InstanceType<O>, RC>,
   }
 }

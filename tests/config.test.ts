@@ -33,26 +33,22 @@ type Meta<
   outputDataType: O
 }
 
-type InstanceType<T> = T extends new (...args: any[]) => infer R ? R : never;
-
 type UnionFromArray<T extends readonly any[]> = T[number];
 
 type InstanceUnionFromConstructorArray<T extends readonly any[]> =
   InstanceType<UnionFromArray<T>>;
 
-type Options<
+type BaseOptions<
   C = {},
   RC = Reactive<C>,
   SC = C,
   I extends readonly DataTypeConstructor[] = readonly DataTypeConstructor[],
-  O extends DataTypeConstructor = DataTypeConstructor
+  O extends DataTypeConstructor = DataTypeConstructor,
+  RunOptions = { config: RC, inputData: InstanceUnionFromConstructorArray<I> }
 > = {
   config?: () => C
   reactiveConfig?: (defaults: C) => RC
-  run?: (options: {
-    config: RC,
-    inputData: InstanceUnionFromConstructorArray<I>
-  }) => {
+  run?: (options: RunOptions) => {
     output: InstanceType<O>,
     config: RC
   }
@@ -61,41 +57,43 @@ type Options<
   loadConfig?: (config: RC, serializedConfig: SC) => void
 }
 
-function useHandler<
-  C = {},
-  RC = Reactive<C>,
-  SC = C,
-  I extends readonly DataTypeConstructor[] = readonly DataTypeConstructor[],
-  O extends DataTypeConstructor = DataTypeConstructor
->(meta: Meta<I, O>, options?: Options<C, RC, SC, I, O>) {
-  type Config = C extends {} ? (undefined extends C ? {} : C) : C
-  type ReactiveConfig = RC extends Reactive<C> ? RC : Reactive<Config>
-  type InputData = InstanceUnionFromConstructorArray<I>
+type NormalizedConfig<C> = C extends {} ? (undefined extends C ? {} : C) : C
+type NormalizedReactiveConfig<C, RC> = RC extends Reactive<C> ? RC : Reactive<NormalizedConfig<C>>
+
+function baseHandler<
+  C,
+  RC,
+  SC,
+  I extends readonly DataTypeConstructor[],
+  O extends DataTypeConstructor,
+  RunOptions
+>(
+  meta: Meta<I, O>,
+  options: BaseOptions<C, RC, SC, I, O, RunOptions> | undefined,
+  defaultRun: (runOptions: RunOptions) => any,
+) {
+  type Config = NormalizedConfig<C>
+  type ReactiveConfig = NormalizedReactiveConfig<C, RC>
   type OutputData = InstanceType<O>
 
-  // Default implementations
-  const config = options?.config ?? (() => ({} as Config))
-
-  const reactiveConfig = options?.reactiveConfig ??
-    ((defaults: Config) => reactive(defaults as object) as ReactiveConfig)
-
-  const run = options?.run ??
-    ((runOptions: { config: ReactiveConfig, inputData: InputData }) => ({
-      config: runOptions.config as RC,
-      output: null as OutputData | null,
-    }))
-
-  const serializeConfig = options?.serializeConfig ??
-    ((config: RC) => config as unknown as SC)
-
-  const deserializeConfig = options?.deserializeConfig ??
-    ((serialized: SC) => serialized as unknown as Config)
-
-  const loadConfig = options?.loadConfig ??
-    ((config: RC, serializedConfig: SC) => {
+  const defaults = {
+    config: (() => ({} as Config)),
+    reactiveConfig: ((defaults: Config) => reactive(defaults as object) as ReactiveConfig),
+    run: defaultRun,
+    serializeConfig: ((config: RC) => config as unknown as SC),
+    deserializeConfig: ((serialized: SC) => serialized as unknown as Config),
+    loadConfig: ((config: RC, serializedConfig: SC) => {
       const deserialized = deserializeConfig(serializedConfig)
       Object.assign(config as any, deserialized)
-    })
+    }),
+  }
+
+  const config = options?.config ?? defaults.config
+  const reactiveConfig = options?.reactiveConfig ?? defaults.reactiveConfig
+  const run = options?.run ?? defaultRun
+  const serializeConfig = options?.serializeConfig ?? defaults.serializeConfig
+  const deserializeConfig = options?.deserializeConfig ?? defaults.deserializeConfig
+  const loadConfig = options?.loadConfig ?? defaults.loadConfig
 
   return {
     meta,
@@ -104,11 +102,99 @@ function useHandler<
     serializeConfig: serializeConfig as (config: Config) => SC,
     deserializeConfig: deserializeConfig as (serialized: SC) => Config,
     loadConfig: loadConfig as (config: RC, serializedConfig: SC) => void,
-    run: run as (options: { config: ReactiveConfig, inputData: InputData }) => {
-      config: RC,
-      output: OutputData | null
-    },
+    run: run as (options: RunOptions) => { config: RC, output: OutputData | null },
   }
+}
+
+type HandlerReturn<
+  C,
+  RC,
+  SC,
+  I extends readonly DataTypeConstructor[],
+  O extends DataTypeConstructor,
+  RunOptions
+> = {
+  meta: Meta<I, O>
+  config: () => NormalizedConfig<C>
+  reactiveConfig: (defaults: NormalizedConfig<C>) => NormalizedReactiveConfig<C, RC>
+  serializeConfig: (config: NormalizedConfig<C>) => SC
+  deserializeConfig: (serialized: SC) => NormalizedConfig<C>
+  loadConfig: (config: RC, serializedConfig: SC) => void
+  run: (options: RunOptions) => {
+    config: RC
+    output: InstanceType<O> | null
+  }
+}
+
+type HandlerAReturn<
+  C = {},
+  RC = Reactive<C>,
+  SC = C,
+  I extends readonly DataTypeConstructor[] = readonly DataTypeConstructor[],
+  O extends DataTypeConstructor = DataTypeConstructor
+> = HandlerReturn<
+  C,
+  RC,
+  SC,
+  I,
+  O,
+  { config: NormalizedReactiveConfig<C, RC>, inputData: InstanceUnionFromConstructorArray<I> }
+>
+
+type HandlerBReturn<
+  C = {},
+  RC = Reactive<C>,
+  SC = C,
+  I extends readonly
+    DataTypeConstructor[] = readonly
+    DataTypeConstructor[],
+  O extends DataTypeConstructor = DataTypeConstructor
+> = HandlerReturn<
+  C,
+  RC,
+  SC,
+  I,
+  O,
+  { config: RC, inputData: InstanceUnionFromConstructorArray<I>, branchIndex: number }
+>
+
+function useHandlerA<
+  C = {},
+  RC = Reactive<C>,
+  SC = C,
+  I extends readonly DataTypeConstructor[] = readonly DataTypeConstructor[],
+  O extends DataTypeConstructor = DataTypeConstructor
+>(
+  meta: Meta<I, O>,
+  options?: BaseOptions<C, RC, SC, I, O, {
+    config: NormalizedReactiveConfig<C, RC>,
+    inputData: InstanceUnionFromConstructorArray<I>
+  }>,
+): HandlerAReturn<C, RC, SC, I, O> {
+  return baseHandler(meta, options, (runOptions: any) => ({
+    config: runOptions.config,
+    output: null,
+  }))
+}
+
+export function useHandlerB<
+  C = {},
+  RC = Reactive<C>,
+  SC = C,
+  I extends readonly DataTypeConstructor[] = readonly DataTypeConstructor[],
+  O extends DataTypeConstructor = DataTypeConstructor
+>(
+  meta: Meta<I, O>,
+  options?: BaseOptions<C, RC, SC, I, O, {
+    config: RC,
+    inputData: InstanceUnionFromConstructorArray<I>,
+    branchIndex: number
+  }>,
+): HandlerBReturn<C, RC, SC, I, O> {
+  return baseHandler(meta, options, (runOptions: any) => ({
+    config: runOptions.config,
+    output: null,
+  }))
 }
 
 describe('config test', () => {
@@ -120,7 +206,7 @@ describe('config test', () => {
   it('handles defaults', () => {
     type C = {}
     type RC = Reactive<C>
-    const handler = useHandler(meta)
+    const handler = useHandlerA(meta)
 
     expectTypeOf(handler.config).toEqualTypeOf<() => C>()
     expectTypeOf(handler.reactiveConfig).toEqualTypeOf<(defaults: C) => RC>()
@@ -143,7 +229,7 @@ describe('config test', () => {
     type C = { foo: string }
     type RC = Reactive<C>
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       config: () => ({ foo: 'bar' }),
     })
 
@@ -168,7 +254,7 @@ describe('config test', () => {
     type C = { foo: string }
     type RC = ShallowReactive<C>
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       config: () => ({ foo: 'bar' }),
       reactiveConfig(defaults) {
         expectTypeOf(defaults).toEqualTypeOf<C>()
@@ -198,7 +284,7 @@ describe('config test', () => {
     type C = { foo: string }
     type RC = ShallowReactive<C>
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       config: () => ({ foo: 'bar' }),
       reactiveConfig(defaults) {
         expectTypeOf(defaults).toEqualTypeOf<C>()
@@ -236,7 +322,7 @@ describe('config test', () => {
     type C = { foo: string }
     type RC = Reactive<C>
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       config: () => ({ foo: 'bar' }),
       run({ config }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
@@ -269,7 +355,7 @@ describe('config test', () => {
     type C = {}
     type RC = Reactive<C>
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       run({ config }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
         if (!isReactive(config)) throw new Error('config is not reactive')
@@ -302,7 +388,7 @@ describe('config test', () => {
     type RC = Reactive<C>
     type SC = { serializedFoo: string }
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       config() {
         return {
           foo: 'bar',
@@ -364,7 +450,7 @@ describe('config test', () => {
     type RC = Reactive<C>
     type SC = { foo: string }
 
-    const handler = useHandler(meta, {
+    const handler = useHandlerA(meta, {
       config() {
         return {
           foo: 'bar',

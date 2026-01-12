@@ -19,7 +19,8 @@ import {
   islandCheckboxColors,
 } from '../../lib/generators/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
@@ -28,11 +29,11 @@ import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { ref } from 'vue'
+import { reactive, ref } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       minDistance: 4,
@@ -45,6 +46,7 @@ const node = useStepHandler(nodeId, STEP_META, {
       ...DEFAULT_SHOW_ADDED.CONFIG,
     }
   },
+  reactiveConfig: reactive,
   async run({ config, inputData }) {
     if (!inputData) return
 
@@ -82,6 +84,7 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 const config = node.config
 const settingsVisible = ref(true)

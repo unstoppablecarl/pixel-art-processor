@@ -13,14 +13,15 @@ export const STEP_META = defineStepMeta({
 <script setup lang="ts">
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../Card/StepCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       maskImageData: null as null | ImageData,
@@ -49,6 +50,7 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 function handleError(errors: StepValidationError[]) {
   node.validationErrors = errors

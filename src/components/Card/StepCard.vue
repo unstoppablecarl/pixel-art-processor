@@ -5,7 +5,7 @@ import { getValidationErrorComponent } from '../../lib/errors.ts'
 
 import { INVALID_INPUT_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputTypeError.ts'
 import { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
-import { type AnyForkNode, type AnyInitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
+import { type InitializedForkNode, type InitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
@@ -26,8 +26,10 @@ const {
   mutable = true,
   subHeader = '',
   imgColumns = 1,
-} = defineProps<{
-  node: AnyInitializedNode
+} = defineProps<NodeProps<any>>()
+
+export type NodeProps<N extends InitializedNode<any, any, any, any, any, any>> = {
+  node: N,
   showDimensions?: boolean,
   images?: StepImg[],
   showAddStepBtn?: boolean,
@@ -37,7 +39,7 @@ const {
   mutable?: boolean,
   subHeader?: string,
   imgColumns?: number
-}>()
+}
 
 const dimensions = computed(() => {
   const { width, height } = node.getOutputSize()
@@ -60,7 +62,7 @@ const nodeImages = computed((): StepImg[] => {
     }]
   }
 
-  const fork = node as AnyForkNode
+  const fork = node as InitializedForkNode<any, any, any, any, any, any>
   if (!fork.forkOutputData.value.length) {
     return [{
       label: 'Input (no branches)',

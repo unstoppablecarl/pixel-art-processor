@@ -13,7 +13,8 @@ export const STEP_META = defineStepMeta({
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { isBranch, isStep } from '../../lib/pipeline/Node.ts'
-import { useForkHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineForkHandler } from '../../lib/pipeline/NodeHandler/ForkHandler.ts'
+import { useForkHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
 import StepCard from '../Card/StepCard.vue'
@@ -21,7 +22,7 @@ import { computed } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useForkHandler(nodeId, STEP_META, {
+const handler = defineForkHandler(STEP_META, {
   config() {
     return {}
   },
@@ -33,6 +34,8 @@ const node = useForkHandler(nodeId, STEP_META, {
     }
   },
 })
+
+const node = useForkHandler(nodeId, STEP_META, handler)
 
 const store = usePipelineStore()
 const outputDataRef = store.getFork(node.id).forkOutputData

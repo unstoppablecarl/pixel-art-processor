@@ -1,11 +1,8 @@
 import { describe, expect, it, vi } from 'vitest'
-import { type Component, reactive } from 'vue'
+import { type Component, type Reactive, reactive } from 'vue'
 import { defineStepMeta, type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
-import { BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node'
-import type { NormalRunner } from '../src/lib/pipeline/NodeRunner'
-import type { ReactiveConfigType, StepContext } from '../src/lib/pipeline/Step'
-import type { StepHandlerOptions } from '../src/lib/pipeline/StepHandler'
-import { makeStepHandler } from '../src/lib/pipeline/StepHandler'
+import { BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
+import { makeStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { PassThrough } from '../src/lib/step-data-types/PassThrough'
@@ -72,32 +69,18 @@ useStepRegistry().defineStep({
 
 type RawConfig = { value: number }
 type SerializedConfig = { value: number }
-type RC = ReactiveConfigType<RawConfig>
-
-type TPass = StepContext<
-  typeof passThroughMeta,
-  RawConfig,
-  SerializedConfig,
-  RC
->
+type RC = Reactive<RawConfig>
 
 // ------------------------------------------------------------
 // Handler options
 // ------------------------------------------------------------
 
-type TPassthrough = StepContext<
-  typeof passThroughMeta,
-  RawConfig,
-  SerializedConfig,
-  RC
->
-
 const passthroughHandlerOptions: StepHandlerOptions<
-  typeof passThroughMeta,
   RawConfig,
   SerializedConfig,
   RC,
-  NormalRunner<TPassthrough>
+  any,
+  any
 > = {
   config() {
     return { value: 2 }
@@ -116,11 +99,11 @@ const passthroughHandlerOptions: StepHandlerOptions<
 }
 
 const typedHandlerOptions: StepHandlerOptions<
-  typeof basicMeta,
   RawConfig,
   SerializedConfig,
   RC,
-  NormalRunner<TPassthrough>
+  typeof basicMeta['inputDataTypes'],
+  typeof basicMeta['outputDataType']
 > = {
   config() {
     return { value: 1 }
@@ -135,13 +118,6 @@ const typedHandlerOptions: StepHandlerOptions<
     validationErrors: [],
   })),
 }
-type TTyped = StepContext<
-  typeof basicMeta,
-  RawConfig,
-  SerializedConfig,
-  RC
->
-
 
 // ------------------------------------------------------------
 // TESTS
@@ -153,7 +129,13 @@ describe('Pipeline Node Behavior', () => {
   // ------------------------------------------------------------
   describe('isReady / outputReady', () => {
     it('outputReady returns true only when clean, not processing, initialized', () => {
-      const s = new StepNode<typeof passThroughMeta, TPass>({
+      const s = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s'),
         def: passthroughDef,
         config: { value: 1 },
@@ -173,12 +155,24 @@ describe('Pipeline Node Behavior', () => {
     })
 
     it('isReady requires prev outputReady when prevNodeId exists', () => {
-      const s0 = new StepNode<typeof passThroughMeta, TPass>({
+      const s0 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s0'),
         def: passthroughDef,
         config: { value: 1 },
       })
-      const s1 = new StepNode<typeof passThroughMeta, TPass>({
+      const s1 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s1'),
         def: passthroughDef,
         config: { value: 1 },
@@ -215,7 +209,13 @@ describe('Pipeline Node Behavior', () => {
   // ------------------------------------------------------------
   describe('serialize loadSerialized config', () => {
     it('serialize uses initial config when handler not initialized', () => {
-      const s = new StepNode<typeof passThroughMeta, TPass>({
+      const s = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s'),
         def: passthroughDef,
         config: { value: 123 },
@@ -231,14 +231,26 @@ describe('Pipeline Node Behavior', () => {
   // ------------------------------------------------------------
   describe('seedSum accumulation', () => {
     it('accumulates seedSum from previous nodes', () => {
-      const s0 = new StepNode<typeof passThroughMeta, TPass>({
+      const s0 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s0'),
         def: passthroughDef,
         config: { value: 1 },
         seed: 5,
       })
 
-      const s1 = new StepNode<typeof passThroughMeta, TPass>({
+      const s1 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s1'),
         def: passthroughDef,
         config: { value: 1 },
@@ -265,7 +277,13 @@ describe('Pipeline Node Behavior', () => {
   // ------------------------------------------------------------
   describe('ForkNode serialize', () => {
     it('serializes prevNodeId and branchIds', () => {
-      const f = new ForkNode<typeof passThroughMeta, TPass>({
+      const f = new ForkNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('f'),
         def: passthroughDef,
         branchIds: [nid('b0'), nid('b1')],
@@ -286,7 +304,13 @@ describe('Pipeline Node Behavior', () => {
   // ------------------------------------------------------------
   describe('BranchNode serialize', () => {
     it('serializes prevNodeId and branchIndex', () => {
-      const b = new BranchNode<typeof passThroughMeta, TPass>({
+      const b = new BranchNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('b'),
         def: passthroughDef,
         prevNodeId: nid('f'),
@@ -307,13 +331,25 @@ describe('Pipeline Node Behavior', () => {
   // ------------------------------------------------------------
   describe('Passthrough nodes', () => {
     it('StepNode in passthrough mode forwards input type', async () => {
-      const s0 = new StepNode<typeof passThroughMeta, TPass>({
+      const s0 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s0'),
         def: passthroughDef,
         config: { value: 1 },
       })
 
-      const s1 = new StepNode<typeof passThroughMeta, TPass>({
+      const s1 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        any,
+        any
+      >({
         id: nid('s1'),
         def: passthroughDef,
         config: { value: 1 },
@@ -344,13 +380,25 @@ describe('Pipeline Node Behavior', () => {
 
   describe('Typed input/output nodes', () => {
     it('StepNode with typedDef respects input/output types', async () => {
-      const s0 = new StepNode<typeof basicMeta, TTyped>({
+      const s0 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        typeof basicMeta['inputDataTypes'],
+        typeof basicMeta['outputDataType']
+      >({
         id: nid('s0'),
         def: typedDef,
         config: { value: 1 },
       })
 
-      const s1 = new StepNode<typeof basicMeta, TTyped>({
+      const s1 = new StepNode<
+        RawConfig,
+        SerializedConfig,
+        RC,
+        typeof basicMeta['inputDataTypes'],
+        typeof basicMeta['outputDataType']
+      >({
         id: nid('s1'),
         def: typedDef,
         config: { value: 1 },

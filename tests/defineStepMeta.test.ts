@@ -1,7 +1,6 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import type { EffectiveInputConstructors, EffectiveOutputConstructor, StepDataType } from '../src/lib/pipeline/_types'
 import { defineStepMeta, NodeType } from '../src/lib/pipeline/_types'
-import type { StepContext } from '../src/lib/pipeline/Step'
 
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
@@ -48,20 +47,6 @@ describe('defineStepMeta inference', () => {
   it('infers outputDataType correctly', () => {
     type O = EffectiveOutputConstructor<M>
     expectTypeOf<O>().toEqualTypeOf<typeof COut>()
-  })
-
-  it('StepContext derives correct Input and Output', () => {
-    type T = StepContext<M, any, any, any>
-
-    expectTypeOf<T['Input']>().toEqualTypeOf<A | B>()
-    expectTypeOf<T['Output']>().toEqualTypeOf<COut>()
-  })
-
-  it('StepContext derives correct Input and Output types', () => {
-    type T = StepContext<M, { foo: number }, { foo: number }, { foo: number }>
-
-    expectTypeOf<T['Input']>().toEqualTypeOf<A | B>()
-    expectTypeOf<T['Output']>().toEqualTypeOf<COut>()
   })
 
   // ------------------------------------------------------------

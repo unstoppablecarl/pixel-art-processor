@@ -34,7 +34,7 @@ export function defineStepMeta<M extends StepMeta<any, any>>(meta: M): M {
   return meta
 }
 
-export type AnyStepMeta = StepMeta<readonly StepDataType[], StepDataType>
+export type AnyStepMeta = StepMeta<any, any>
 
 export type StepMeta<
   I extends readonly StepDataType[] = readonly StepDataType[],
@@ -43,7 +43,6 @@ export type StepMeta<
   | (StepMetaBase & StepNodeSpecific & IO<I, O>)
   | (StepMetaBase & BranchNodeSpecific & IO<I, O>)
   | (StepMetaBase & ForkNodeSpecific & IO<I, O>)
-
 
 export type StepMetaBase = {
   def: string
@@ -64,7 +63,6 @@ type ForkNodeSpecific = {
   branchDefs: readonly string[]
 }
 
-
 type PassthroughIO = {
   passthrough: true
   inputDataTypes?: undefined
@@ -84,7 +82,6 @@ type IO<
   I extends readonly StepDataType[] = readonly StepDataType[],
   O extends StepDataType = StepDataType
 > = PassthroughIO | NormalIO<I, O>
-
 
 type StepDefinitionBase = {
   def: NodeDef
@@ -156,6 +153,17 @@ export type EffectiveOutputConstructor<M extends StepMeta<any, any>> =
         : never
     : never
 
-export function defineConfig<C extends Config>(fn: () => C) {
-  return fn
+export type NormalizedConfig<C> = C extends {} ? (undefined extends C ? {} : C) : C
+export type NormalizedReactiveConfig<C, RC> = RC extends Reactive<C> ? RC : Reactive<NormalizedConfig<C>>
+export type StepLoaderSerialized<
+  SerializedConfig
+> = null
+  | {
+  config: SerializedConfig
 }
+export type StepInputTypesToInstances<
+  Input extends readonly StepDataType[] = readonly StepDataType[]
+> =
+  Input extends readonly []
+    ? never
+    : InstanceType<Input[number]>

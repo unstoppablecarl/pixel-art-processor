@@ -12,7 +12,6 @@ import {
   type StepDefinitions,
 } from './_types.ts'
 import type { AnyNode } from './Node.ts'
-import type { AnyStepContext } from './Step.ts'
 
 export type StepRegistry = ReturnType<typeof makeStepRegistry>
 
@@ -97,7 +96,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   }
 
   function validateDefRegistration(meta: AnyStepMeta) {
-    const definition = {...get(meta.def)} as AnyStepMeta
+    const definition = { ...get(meta.def) } as AnyStepMeta
     // @ts-expect-error
     delete definition['component']!
 
@@ -114,7 +113,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     has,
     getNodeType: (def: string): NodeType => get(def).type,
     defToComponent: (def: string): Component => get(def).component,
-    nodeIsPassthrough: <M extends AnyStepMeta, T extends AnyStepContext>(node: AnyNode<M, T>): boolean => !!get(node.def).passthrough,
+    nodeIsPassthrough: (node: AnyNode): boolean => !!get(node.def).passthrough,
     canBeChildOf,
     validateCanBeChildOf,
     addableToArray,

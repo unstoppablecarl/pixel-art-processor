@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { reactive, ref, shallowReactive, watch } from 'vue'
-import { type AnyStepMeta, type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
+import { type NodeDef, type NodeId, NodeType } from '../pipeline/_types.ts'
 import {
   type AnyBranchNode,
   type AnyForkNode,
@@ -16,7 +16,6 @@ import {
   isStep,
   StepNode,
 } from '../pipeline/Node.ts'
-import type { AnyStepContext } from '../pipeline/Step.ts'
 import { useStepRegistry } from '../pipeline/StepRegistry.ts'
 import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
@@ -76,27 +75,27 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return `${def}_${idIncrement.value++}` as NodeId
     }
 
-    function get<M extends AnyStepMeta = AnyStepMeta, T extends AnyStepContext = AnyStepContext>(id: NodeId): AnyNode<M, T> {
+    function get(id: NodeId): AnyNode {
       if (!nodes[id]) throw new Error('node not found: ' + id)
-      return nodes[id] as AnyNode<M, T>
+      return nodes[id]
     }
 
-    function getStep<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId): StepNode<M, T> {
+    function getStep(id: NodeId): AnyStepNode {
       const step = get(id)
       if (!isStep(step)) throw new Error(`${id} is not a step`)
-      return step as StepNode<M, T>
+      return step as AnyStepNode
     }
 
-    function getFork<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId): ForkNode<M, T> {
+    function getFork(id: NodeId): AnyForkNode {
       const fork = get(id)
       if (!isFork(fork)) throw new Error(`${id} is not a fork`)
-      return fork as ForkNode<M, T>
+      return fork as AnyForkNode
     }
 
-    function getBranch<M extends AnyStepMeta, T extends AnyStepContext>(id: NodeId): BranchNode<M, T> {
+    function getBranch(id: NodeId): AnyBranchNode {
       const branch = get(id)
       if (!isBranch(branch)) throw new Error(`${id} is not a branch`)
-      return branch as BranchNode<M, T>
+      return branch as AnyBranchNode
     }
 
     function getIfExists(id: NodeId): AnyNode | undefined {
@@ -401,7 +400,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       branchClone.branchIndex = idx + 1
 
       // Reindex all branches
-      parentFork.branchIds.value.forEach((bid, i) => {
+      parentFork.branchIds.value.forEach((bid: NodeId, i: number) => {
         const b = get(bid) as AnyBranchNode
         b.branchIndex = i
       })
