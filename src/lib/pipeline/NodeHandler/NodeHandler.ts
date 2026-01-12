@@ -5,13 +5,17 @@ import type {
   NodeId,
   NormalizedConfig,
   NormalizedReactiveConfig,
-  StepDataType, StepInputTypesToInstances,
+  StepDataType,
+  StepInputTypesToInstances,
   StepMeta,
   WatcherTarget,
 } from '../_types.ts'
 import { InvalidInputTypeError } from '../errors/InvalidInputTypeError.ts'
 import type { StepValidationError } from '../errors/StepValidationError.ts'
 import type { InitializedNode } from '../Node.ts'
+import type { BranchHandler } from './BranchHandler.ts'
+import type { ForkHandler } from './ForkHandler.ts'
+import type { StepHandler } from './StepHandler.ts'
 
 export type NodeHandler<
   C,
@@ -148,3 +152,14 @@ export function makeHandler<
     },
   } as NodeHandler<C, SC, RC, I, O>
 }
+
+export type AnyHandler<
+  C,
+  SC,
+  RC,
+  I extends readonly StepDataType[],
+  O extends StepDataType,
+> =
+  | StepHandler<C, SC, RC, I, O>
+  | ForkHandler<C, SC, RC, I, O>
+  | BranchHandler<C, SC, RC, I, O>

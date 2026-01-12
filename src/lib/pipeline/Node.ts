@@ -20,6 +20,7 @@ import {
 import { StepValidationError } from './errors/StepValidationError.ts'
 import type { BranchHandler } from './NodeHandler/BranchHandler.ts'
 import type { ForkHandler } from './NodeHandler/ForkHandler.ts'
+import type { AnyHandler } from './NodeHandler/NodeHandler.ts'
 import type { StepHandler } from './NodeHandler/StepHandler.ts'
 import { type NormalRunner, parseResult, type SingleRunnerResult } from './NodeRunner.ts'
 import { useStepRegistry } from './StepRegistry.ts'
@@ -152,7 +153,7 @@ export abstract class BaseNode<
     }
   }
 
-  initialize(handler: StepHandler<C, SC, RC, I, O> | ForkHandler<C, SC, RC, I, O> | BranchHandler<C, SC, RC, I, O>): void {
+  initialize(handler: AnyHandler<C, SC, RC, I, O>): void {
 
     this.handler = handler
 

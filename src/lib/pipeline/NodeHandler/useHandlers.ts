@@ -11,7 +11,7 @@ import type {
 } from '../Node.ts'
 import { type BranchHandler } from './BranchHandler.ts'
 import { type ForkHandler } from './ForkHandler.ts'
-import type { NodeHandler } from './NodeHandler.ts'
+import type { AnyHandler, NodeHandler } from './NodeHandler.ts'
 import { type StepHandler } from './StepHandler.ts'
 
 export function useNodeHandler<
@@ -26,7 +26,8 @@ export function useNodeHandler<
 ) {
   const store = usePipelineStore()
   const node = store.get(nodeId) as GraphNode<C, SC, RC, I, O>
-  node.initialize(handler as NonNullable<typeof node.handler>)
+
+  node.initialize(handler as AnyHandler<C, SC, RC, I, O>)
   node.handler?.onAdded?.(node as InitializedNode<C, SC, RC, I, O>)
 
   node.getWatcherTargets()
