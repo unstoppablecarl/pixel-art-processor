@@ -188,11 +188,15 @@ describe('fork handler type testing', async () => {
 
       expectTypeOf(step.handler.run).parameters.toEqualTypeOf<[{
         config: RC,
-        inputData: HeightMap | BitMask | null,
+        inputData: InputInstances | null,
         inputPreview: ImageData | null,
         branchIndex: number,
         meta: IRunnerResultMeta | null
       }]>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['config']>().toEqualTypeOf<RC>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['inputData']>().toEqualTypeOf<InputInstances | null>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['inputPreview']>().toEqualTypeOf<ImageData | null>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['meta']>().toEqualTypeOf<IRunnerResultMeta | null>()
 
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
         Promise<SingleRunnerOutput<OutputInstance>>

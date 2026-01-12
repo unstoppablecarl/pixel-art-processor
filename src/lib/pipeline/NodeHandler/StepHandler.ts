@@ -1,3 +1,4 @@
+import type { Reactive } from 'vue'
 import { NodeType, type StepDataType, type StepInputTypesToInstances, type StepMeta } from '../_types.ts'
 import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
@@ -52,10 +53,10 @@ export type StepHandlerOptions<
 > = Partial<StepHandler<C, SC, RC, I, O>>
 
 export function makeStepHandler<
-  C,
-  SC,
-  RC,
-  M extends StepMeta<any, any>,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  M extends StepMeta<any, any> = StepMeta<any, any>,
 >(
   meta: M,
   options?: StepHandlerOptions<

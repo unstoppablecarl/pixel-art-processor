@@ -187,6 +187,11 @@ describe('step handler type testing', async () => {
         inputPreview: ImageData | null,
         meta: IRunnerResultMeta | null
       }]>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['config']>().toEqualTypeOf<RC>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['inputData']>().toEqualTypeOf<InputInstances | null>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['inputPreview']>().toEqualTypeOf<ImageData | null>()
+      expectTypeOf<Parameters<typeof handler.run>[0]['meta']>().toEqualTypeOf<IRunnerResultMeta | null>()
+
       expectTypeOf(step.handler.run).returns.toEqualTypeOf<
         Promise<SingleRunnerOutput<OutputInstance>>
       >()
@@ -244,5 +249,9 @@ describe('step handler type testing', async () => {
       expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes'] | undefined>()
       expectTypeOf(step.handler.meta.outputDataType).toEqualTypeOf<M['outputDataType'] | undefined>()
     })
+
+
   })
+
+
 })
