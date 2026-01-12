@@ -16,6 +16,7 @@ import { defineBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHan
 import { useBranchHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { parseResult, type SingleRunnerResult } from '../../../lib/pipeline/NodeRunner.ts'
 import type { PassThrough } from '../../../lib/step-data-types/PassThrough.ts'
+import { PixelMap } from '../../../lib/step-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
 import StepImage from '../../StepImage.vue'
@@ -52,9 +53,17 @@ const handler = defineBranchHandler(STEP_META, {
       })
     }
 
+    let finalPreview = prevOutput.preview
+    if (prevOutput.preview && branch.forkPreview) {
+      const img = PixelMap.fromImageData(prevOutput.preview)
+      const edgePreview = PixelMap.fromImageData(branch.forkPreview)
+
+      finalPreview = img.merge(edgePreview).toImageData()
+    }
+
     return {
       output: prevOutput.output as PassThrough,
-      preview: prevOutput.preview,
+      preview: finalPreview,
       meta: prevOutput.meta,
     }
   },

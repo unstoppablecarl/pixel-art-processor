@@ -1,4 +1,5 @@
 import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/ImageData.ts'
+import { validateSizes } from '../util/misc.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
 export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, SerializedRGBA> {
@@ -40,5 +41,16 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, Seriali
 
   protected serializeValue(value: RGBA): SerializedRGBA {
     return serializeRGBA(value)
+  }
+
+  merge(other: PixelMap, minAlpha = 0) {
+    validateSizes(this, other)
+    other.each((x, y, v) => {
+      if (v.a > minAlpha) {
+        this.set(x, y, v)
+      }
+    })
+
+    return this
   }
 }

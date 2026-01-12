@@ -1,6 +1,6 @@
 import tinycolor from 'tinycolor2'
 import type { NodeDataTypeColors } from '../../steps.ts'
-import type { NodeDataTypeColor } from '../pipeline/_types.ts'
+import type { NodeDataTypeColor, StepDataTypeInstance } from '../pipeline/_types.ts'
 import { deepUnwrap } from './vue-util.ts'
 
 const blue = makeBgColor('#CCEDFC')
@@ -165,4 +165,18 @@ export function deepFreeze<T>(obj: T): T {
   }
 
   return obj
+}
+
+export function validateSizes(a: StepDataTypeInstance, b: StepDataTypeInstance) {
+  if (a.width !== b.width) {
+    const msg = `A width: ${a.width} does not equal B width: ${b.width}`
+    console.error(msg)
+    throw new Error(msg)
+  }
+
+  if (a.height !== b.height) {
+    const msg = `A height: ${a.height} does not equal B height: ${b.height}`
+    console.error(msg)
+    throw new Error(msg)
+  }
 }
