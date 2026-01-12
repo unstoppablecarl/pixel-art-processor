@@ -1,7 +1,7 @@
 import { reactive, type Reactive, shallowRef } from 'vue'
-import type { BaseDataStructure } from '../../step-data-types/BaseDataStructure.ts'
 import { PassThrough } from '../../step-data-types/PassThrough.ts'
 import type {
+  IRunnerResultMeta,
   NodeId,
   NormalizedConfig,
   NormalizedReactiveConfig,
@@ -10,7 +10,6 @@ import type {
   StepMeta,
   WatcherTarget,
 } from '../_types.ts'
-import { InvalidInputTypeError } from '../errors/InvalidInputTypeError.ts'
 import type { StepValidationError } from '../errors/StepValidationError.ts'
 import type { InitializedNode } from '../Node.ts'
 import type { BranchHandler } from './BranchHandler.ts'
@@ -32,7 +31,7 @@ export type NodeHandler<
   deserializeConfig: (serialized: SC) => NormalizedConfig<C>
   loadConfig: (config: RC, serializedConfig: SC) => void
   watcherTargets(node: InitializedNode<C, SC, RC, I, O>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
-  validateInput(inputData: StepInputTypesToInstances<I>, inputDataTypes: I): StepValidationError[],
+  validateInput(inputData: StepInputTypesToInstances<I>, inputDataTypes: I, inputMeta: IRunnerResultMeta | null): StepValidationError[],
   setPassThroughDataType: (passthroughType: StepDataType) => void,
   clearPassThroughDataType: () => void,
 
@@ -91,17 +90,8 @@ export function makeHandler<
     ): WatcherTarget[] {
       return defaults
     },
-    validateInput(inputData: Input | null, inputDataTypes: I) {
-      if (inputData === null) return []
-
-      if ((inputDataTypes as unknown as any[]).some(c => (inputData as any) instanceof c)) {
-        return []
-      }
-
-      const receivedType = (inputData as BaseDataStructure)
-        .constructor as StepDataType
-
-      return [new InvalidInputTypeError(inputDataTypes, receivedType)]
+    validateInput(inputData: Input | null, inputDataTypes: I, inputMeta: IRunnerResultMeta | null): StepValidationError[] {
+      return []
     },
   }
 
@@ -133,7 +123,7 @@ export function makeHandler<
     deserializeConfig: deserializeConfig as (serialized: SC) => Config,
     loadConfig: loadConfig as (config: RC, serializedConfig: SC) => void,
     watcherTargets: watcherTargets as (node: any, defaults: WatcherTarget[]) => WatcherTarget[],
-    validateInput: validateInput as (inputData: StepInputTypesToInstances<I>, inputDataTypes: I) => StepValidationError[],
+    validateInput: validateInput as (inputData: StepInputTypesToInstances<I>, inputDataTypes: I, inputMeta: IRunnerResultMeta | null) => StepValidationError[],
 
     get currentInputDataTypes() {
       return passthroughType.value ? [passthroughType.value] : defaultInput

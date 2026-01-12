@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { BButton, BButtonGroup, BPopover } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
-import { getValidationErrorComponent } from '../../lib/errors.ts'
+import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
 
-import { INVALID_INPUT_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputTypeError.ts'
+import { INVALID_INPUT_STATIC_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputStaticTypeError.ts'
 import { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedForkNode, type InitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
@@ -90,11 +90,11 @@ const cssStyle = computed(() => {
 })
 
 const invalidInputType = computed(() => {
-  return !!node.validationErrors.find((e: StepValidationError) => e.slug === INVALID_INPUT_TYPE_ERROR)
+  return !!node.validationErrors.find((e: StepValidationError) => e.slug === INVALID_INPUT_STATIC_TYPE_ERROR)
 })
 
 const validationErrors = computed(() => {
-  return node.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_TYPE_ERROR)
+  return node.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_STATIC_TYPE_ERROR)
 })
 
 const executionTime = computed(() => {

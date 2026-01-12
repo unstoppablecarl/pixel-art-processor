@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import { getValidationErrorComponent } from '../../lib/errors.ts'
+import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { type InitializedBranchNode, isBranch, isFork } from '../../lib/pipeline/Node.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'

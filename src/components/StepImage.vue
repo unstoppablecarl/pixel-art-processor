@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { getValidationErrorComponent } from '../lib/errors.ts'
+import { getValidationErrorComponent } from '../lib/pipeline/errors/errors.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { imageDataToUrlImage } from '../lib/util/ImageData.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'

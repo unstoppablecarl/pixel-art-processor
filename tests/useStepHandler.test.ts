@@ -76,7 +76,7 @@ describe('step handler type testing', async () => {
       outputDataType: NormalMap,
     })
 
-    useStepRegistry().defineStep({ ...STEP_META, component: {} as unknown as Component } as AnyStepDefinition)
+    useStepRegistry().defineNode({ ...STEP_META, component: {} as unknown as Component } as AnyStepDefinition)
     useStepRegistry().validateDefRegistration(STEP_META)
 
     type M = typeof STEP_META
@@ -243,7 +243,7 @@ describe('step handler type testing', async () => {
         StepHandler<C, SC, RC, I, O>['validateInput']
       >()
       expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        ((inputData: Input, inputDataTypes: I) => StepValidationError[])
+        ((inputData: Input, inputDataTypes: I, meta: IRunnerResultMeta | null) => StepValidationError[])
       >()
 
       expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes'] | undefined>()

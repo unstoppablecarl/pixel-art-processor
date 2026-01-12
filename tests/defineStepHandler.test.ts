@@ -463,9 +463,9 @@ describe('defineStepHandler<T>', () => {
     }>()
 
     const config = handler.config()
-    expect(config).toEqual({ foo: 'bar' })
+    expect(config).toEqual(CONFIG)
     const reactiveConfig = handler.reactiveConfig(config)
-    expect(reactiveConfig).toEqual({ foo: 'bar' })
+    expect(reactiveConfig).toEqual(CONFIG)
     const result = await handler.run({
       config: reactiveConfig,
       inputData,

@@ -19,7 +19,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   const STEP_DEFINITIONS: StepDefinitions = {}
   const dataTypeRegistry: StepDataTypeRegistry = new StepDataTypeRegistry(stepDataTypes)
 
-  function defineStep(definition: AnyStepDefinition) {
+  function defineNode(definition: AnyStepDefinition) {
     if (STEP_DEFINITIONS[definition.def]) {
       throw new Error('cannot define step that already exists: ' + definition.def)
     }
@@ -27,7 +27,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     return STEP_DEFINITIONS[definition.def]
   }
 
-  const defineSteps = (stepDefinitions: AnyStepDefinition[]) => stepDefinitions.forEach(defineStep)
+  const defineSteps = (stepDefinitions: AnyStepDefinition[]) => stepDefinitions.forEach(defineNode)
   defineSteps(stepDefinitions)
 
   function get(def: string): AnyStepDefinition {
@@ -107,7 +107,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   }
 
   return {
-    defineStep,
+    defineNode,
     defineSteps,
     get,
     has,

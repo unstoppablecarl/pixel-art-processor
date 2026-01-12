@@ -1,4 +1,5 @@
-import { ref, type Ref } from 'vue'
+import { type Reactive, ref, type Ref } from 'vue'
+import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
@@ -17,6 +18,8 @@ import {
   type WatcherTarget,
   type WithRequired,
 } from './_types.ts'
+import { InvalidInputInstanceTypeError } from './errors/InvalidInputInstanceTypeError.ts'
+import { InvalidInputStaticTypeError } from './errors/InvalidInputStaticTypeError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
 import type { BranchHandler } from './NodeHandler/BranchHandler.ts'
 import type { ForkHandler } from './NodeHandler/ForkHandler.ts'
@@ -201,9 +204,44 @@ export abstract class BaseNode<
     return store.get(this.prevNodeId) as PrevNode
   }
 
-  validatePrev(prevOutput: SingleRunnerResult<any>['output']): StepValidationError[] {
-    if (!prevOutput) return []
-    return this.handler!.validateInput(prevOutput, this.handler!.currentInputDataTypes as I)
+  validatePrev(store: PipelineStore, prevOutput: SingleRunnerResult<any>['output'], prevMeta: IRunnerResultMeta | null): StepValidationError[] {
+    let result: StepValidationError[] = []
+
+    console.error(this.id, 'isPassthrough', store.nodeIsPassthrough(this as unknown as AnyNode))
+    // @TODO handle nodes that require input / require no input
+    if (!store.nodeIsPassthrough(this as unknown as AnyNode)) {
+      const staticTypeErrors = this.validatePrevOutputTypeStatic(store)
+      if (staticTypeErrors.length) {
+        result = staticTypeErrors
+      } else if (prevOutput) {
+        result = this.validatePrevOutputTypeInstance(prevOutput)
+      }
+    }
+
+    return [
+      ...result,
+      ...this.handler!.validateInput(prevOutput, this.handler!.currentInputDataTypes as I, prevMeta),
+    ]
+  }
+
+  protected validatePrevOutputTypeStatic(store: PipelineStore): StepValidationError[] {
+    const prev = this.getPrev(store) as InitializedNode<any, any, any, any, any>
+
+    if (!prev) return []
+    const inputDataTypes = this.handler!.currentInputDataTypes as I
+    const outputDataType = prev.handler.currentOutputDataType
+    if (!inputDataTypes.includes(outputDataType)) return [new InvalidInputStaticTypeError(inputDataTypes, outputDataType)]
+
+    return []
+  }
+
+  protected validatePrevOutputTypeInstance(inputData: StepDataTypeInstance): StepValidationError[] {
+    const inputDataTypes = this.handler!.currentInputDataTypes as I
+    const isValid = (inputDataTypes as unknown as any[]).some(c => (inputData as any) instanceof c)
+    if (isValid) return []
+    const receivedType = (inputData as BaseDataStructure).constructor
+
+    return [new InvalidInputInstanceTypeError(inputDataTypes, receivedType)]
   }
 }
 
@@ -333,7 +371,7 @@ export class StepNode<
         meta,
       } = await this.getResultFromPrev(store)
 
-      const validationErrors = this.validatePrev(inputData)
+      const validationErrors = this.validatePrev(store, inputData, meta)
       if (validationErrors.length) {
         inputData = null
         inputPreview = null
@@ -550,7 +588,7 @@ export class BranchNode<
         meta,
       } as any)
 
-      const validationErrors = this.validatePrev(inputData)
+      const validationErrors = this.validatePrev(store, inputData, meta)
       if (validationErrors.length) {
         inputData = null
         inputPreview = null
@@ -600,11 +638,11 @@ export class BranchNode<
 export type AnyNode = GraphNode<any, any, any, any, any, any>
 
 export type GraphNode<
-  C,
-  SC,
-  RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  I extends readonly StepDataType[] = readonly StepDataType[],
+  O extends StepDataType = StepDataType,
   M extends StepMeta<I, O> = StepMeta<I, O>,
 > =
   | StepNode<C, SC, RC, I, O, M>

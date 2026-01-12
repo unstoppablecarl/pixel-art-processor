@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { InvalidInputTypeError } from '../../lib/pipeline/errors/InvalidInputTypeError.ts'
+import { InvalidInputStaticTypeError } from '../../lib/pipeline/errors/InvalidInputStaticTypeError.ts'
 import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
 
 const { error } = defineProps<{
-  error: InvalidInputTypeError,
+  error: InvalidInputStaticTypeError,
 }>()
 
 const dataTypeRegistry = useStepRegistry().dataTypeRegistry

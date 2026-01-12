@@ -77,7 +77,7 @@ describe('fork handler type testing', async () => {
       branchDefs: [],
     })
 
-    useStepRegistry().defineStep({
+    useStepRegistry().defineNode({
       ...STEP_META,
       component: {} as unknown as Component,
     } as unknown as AnyStepDefinition)
@@ -249,7 +249,7 @@ describe('fork handler type testing', async () => {
         ForkHandler<C, SC, RC, I, O>['validateInput']
       >()
       expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        ((inputData: Input, inputDataTypes: I) => StepValidationError[])
+        ((inputData: Input, inputDataTypes: I, meta: IRunnerResultMeta | null) => StepValidationError[])
       >()
 
       expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes'] | undefined>()

@@ -1,8 +1,8 @@
 import type { Component } from 'vue'
-import GenericValidationErrorMessage from '../components/ValidationErrors/GenericValidationErrorMessage.vue'
-import InvalidInputTypeMessage from '../components/ValidationErrors/InvalidInputTypeMessage.vue'
-import { InvalidInputTypeError } from './pipeline/errors/InvalidInputTypeError.ts'
-import { StepValidationError } from './pipeline/errors/StepValidationError.ts'
+import GenericValidationErrorMessage from '../../../components/ValidationErrors/GenericValidationErrorMessage.vue'
+import InvalidInputTypeMessage from '../../../components/ValidationErrors/InvalidInputTypeMessage.vue'
+import { InvalidInputStaticTypeError } from './InvalidInputStaticTypeError.ts'
+import { StepValidationError } from './StepValidationError.ts'
 
 type ErrorCtor = new (...args: any[]) => StepValidationError
 
@@ -10,7 +10,7 @@ const registry = new Map<ErrorCtor, Component>()
 
 const map: { component: Component, error: ErrorCtor }[] = [{
   component: InvalidInputTypeMessage,
-  error: InvalidInputTypeError,
+  error: InvalidInputStaticTypeError,
 }]
 
 map.forEach(({ component, error }) => {

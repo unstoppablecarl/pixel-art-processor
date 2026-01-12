@@ -1,33 +1,30 @@
 import { Component } from 'vue'
-import { type NodeDef, NodeType, type StepDataType } from '../src/lib/pipeline/_types.ts'
+import type { Optional } from '../src/lib/_helpers.ts'
+import { type AnyStepDefinition, type NodeDef, NodeType, type StepMeta } from '../src/lib/pipeline/_types.ts'
 import { useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
 
-export function defineTestStep(
+let defIncrement = 0
+
+export function defineTestNode(
   {
     def,
     displayName = 'Testing',
     type = NodeType.STEP,
     inputDataTypes,
     outputDataType,
-    branchDefs = [],
-    passthrough = false
-  }: {
-    def: string,
-    displayName?: string,
-    type?: NodeType,
-    passthrough?: boolean,
-    inputDataTypes: readonly StepDataType[],
-    outputDataType: StepDataType,
-    branchDefs?: string[]
-  },
+    passthrough,
+  }: Optional<StepMeta, 'displayName' | 'def' | 'passthrough' | 'type'>,
 ) {
-  return useStepRegistry().defineStep({
+
+  def ??= 'testing_' + defIncrement++
+
+  return useStepRegistry().defineNode({
     displayName,
     def: def as NodeDef,
     type,
+    passthrough,
     inputDataTypes,
     outputDataType,
-    branchDefs: branchDefs as NodeDef[],
     component: {} as unknown as Component,
-  })
+  } as AnyStepDefinition)
 }
