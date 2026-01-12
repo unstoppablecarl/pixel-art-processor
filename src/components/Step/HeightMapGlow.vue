@@ -14,7 +14,8 @@ export const STEP_META = defineStepMeta({
 <script setup lang="ts">
 import { applyInnerGlow, INNER_GLOW_DEFAULTS, type InnerGlowOptions } from '../../lib/generators/inner-glow.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
@@ -23,7 +24,7 @@ import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       ...INNER_GLOW_DEFAULTS,
@@ -46,6 +47,7 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 const config = node.config
 </script>

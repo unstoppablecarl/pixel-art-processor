@@ -50,6 +50,7 @@ const handler = defineStepHandler(STEP_META, {
     }
   },
 })
+
 const node = useStepHandler(nodeId, STEP_META, handler)
 
 function handleError(errors: StepValidationError[]) {

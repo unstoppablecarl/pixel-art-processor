@@ -13,14 +13,15 @@ export const STEP_META = defineStepMeta({
 </script>
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { heightMapToNormalMap } from '../../lib/step-data-types/data-type-converters.ts'
 import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       normalMapStrength: 1.5,
@@ -38,6 +39,8 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
+
 const config = node.config
 </script>
 <template>

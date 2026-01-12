@@ -1,16 +1,17 @@
+import type { Reactive } from 'vue'
 import { NodeType, type StepDataType, type StepInputTypesToInstances, type StepMeta } from '../_types.ts'
 import type { AnyNode } from '../Node.ts'
 import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
 export function defineBranchHandler<
-  C,
-  SC,
-  RC,
-  M extends StepMeta<any, any>,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  M extends StepMeta<any, any> = StepMeta<any, any>,
 >(
   meta: M,
-  options: BranchHandlerOptions<
+  options?: BranchHandlerOptions<
     C,
     SC,
     RC,
@@ -54,10 +55,10 @@ export type BranchHandlerOptions<
 > = Partial<BranchHandler<C, SC, RC, I, O>>
 
 export function makeBranchHandler<
-  C,
-  SC,
-  RC,
-  M extends StepMeta<any, any>,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  M extends StepMeta<any, any> = StepMeta<any, any>,
 >(
   meta: M,
   options?: BranchHandlerOptions<

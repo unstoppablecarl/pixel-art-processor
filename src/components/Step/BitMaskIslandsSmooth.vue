@@ -26,7 +26,8 @@ import {
 import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { getIslands } from '../../lib/step-data-types/BitMask/island-helpers.ts'
 import { type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../Card/StepCard.vue'
@@ -53,7 +54,7 @@ const ITERATION_DEFAULTS = rangeSliderConfig({
   value: 1,
 })
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       minDistance: 4,
@@ -101,6 +102,7 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 const config = node.config
 

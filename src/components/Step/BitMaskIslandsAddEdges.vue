@@ -13,7 +13,8 @@ export const STEP_META = defineStepMeta({
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { prng } from '../../lib/util/prng.ts'
 import StepCard from '../Card/StepCard.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
@@ -51,7 +52,7 @@ const CONFIG_DEFAULTS = {
   padding: 4,
 }
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       ...CONFIG_DEFAULTS,
@@ -105,6 +106,9 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+
+const node = useStepHandler(nodeId, STEP_META, handler)
+
 const config = node.config!
 
 const computedSize = computed(() => config.size.value)

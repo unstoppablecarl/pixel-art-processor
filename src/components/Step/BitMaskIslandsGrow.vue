@@ -12,7 +12,6 @@ export const STEP_META = defineStepMeta({
 </script>
 <script setup lang="ts">
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { reactive } from 'vue'
 import {
   DEFAULT_EXPANDABLE,
   DEFAULT_EXPANDABLE_BOUNDS,
@@ -32,7 +31,8 @@ import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower
 import { perlinGrower } from '../../lib/generators/IslandGrower/PerlinGrower.ts'
 import { weightedRandomGrower } from '../../lib/generators/IslandGrower/WeightedRandomGrower.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { getIslands } from '../../lib/step-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
 import StepCard from '../Card/StepCard.vue'
@@ -65,7 +65,7 @@ const ITERATION_DEFAULTS = rangeSliderConfig({
   value: 1,
 })
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       minDistance: 4,
@@ -88,7 +88,6 @@ const node = useStepHandler(nodeId, STEP_META, {
       ...DEFAULT_EXPANDABLE_RESPECTING_DISTANCE.CONFIG,
     }
   },
-  reactiveConfig: reactive,
   async run({ config, inputData }) {
     if (!inputData) return
 
@@ -136,6 +135,8 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 const config = node.config
 

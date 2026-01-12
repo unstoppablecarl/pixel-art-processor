@@ -15,7 +15,8 @@ export const STEP_META = defineStepMeta({
 import { computed } from 'vue'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../Card/StepCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
@@ -23,7 +24,7 @@ import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config() {
     return {
       lightX: 0.5,
@@ -61,6 +62,7 @@ const node = useStepHandler(nodeId, STEP_META, {
     }
   },
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 const images = computed(() => [
   {

@@ -26,7 +26,8 @@ export const STEP_META: AnyStepMeta = {
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
-import { useForkHandler } from '../../../lib/pipeline/useStepHandler.ts'
+import { defineForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
+import { useForkHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import type { BinaryArray } from '../../../lib/util/prng/binary-array-chunks.ts'
 import { deepUnwrap, shallowArrayItemsRef } from '../../../lib/util/vue-util.ts'
@@ -52,7 +53,7 @@ const CONFIG_DEFAULTS = {
   }),
 }
 
-const node = useForkHandler(nodeId,  STEP_META,{
+const handler = defineForkHandler(STEP_META, {
   config() {
     return {
       ...CONFIG_DEFAULTS,
@@ -92,6 +93,8 @@ const node = useForkHandler(nodeId,  STEP_META,{
     }
   },
 })
+const node = useForkHandler(nodeId, STEP_META, handler)
+
 const config = node.config
 
 function wangTileForBranch(branchIndex: number) {

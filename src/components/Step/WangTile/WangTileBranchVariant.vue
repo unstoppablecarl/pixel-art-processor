@@ -11,11 +11,10 @@ export const STEP_META = defineStepMeta({
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
-import type { IRunnerResultMeta, NodeId } from '../../../lib/pipeline/_types.ts'
-import { StepValidationError } from '../../../lib/pipeline/errors/StepValidationError.ts'
-import { parseResult } from '../../../lib/pipeline/NodeRunner.ts'
-import type { AnyStepContext } from '../../../lib/pipeline/Step.ts'
-import { useBranchHandler } from '../../../lib/pipeline/useStepHandler.ts'
+import type { NodeId } from '../../../lib/pipeline/_types.ts'
+import { defineBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
+import { useBranchHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { parseResult, type SingleRunnerResult } from '../../../lib/pipeline/NodeRunner.ts'
 import type { PassThrough } from '../../../lib/step-data-types/PassThrough.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
@@ -26,14 +25,7 @@ const { branchId } = defineProps<{
   branchId: NodeId,
 }>()
 
-type StepRunnerResult = {
-  preview: ImageData | null,
-  output: AnyStepContext['Output'] | null,
-  meta: IRunnerResultMeta,
-  validationErrors: StepValidationError[]
-}
-
-const branch = useBranchHandler(branchId, STEP_META, {
+const handler = defineBranchHandler(STEP_META, {
   config() {
     return {
       parentBranchId: null as NodeId | null,
@@ -43,10 +35,10 @@ const branch = useBranchHandler(branchId, STEP_META, {
   async run({ config, inputData, meta }) {
     const parentBranch = store.get(config.parentBranchId!)
 
-    let prevOutput: StepRunnerResult = parseResult({
+    let prevOutput: SingleRunnerResult<any> = parseResult({
       output: inputData,
       meta: meta,
-    })
+    }, meta)
 
     const parentBranchDescendantIds = store.getDescendantIds(parentBranch.id)
     for (const stepId of parentBranchDescendantIds) {
@@ -66,6 +58,9 @@ const branch = useBranchHandler(branchId, STEP_META, {
     }
   },
 })
+
+const branch = useBranchHandler(branchId, STEP_META, handler)
+
 
 </script>
 <template>

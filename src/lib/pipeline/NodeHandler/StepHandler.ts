@@ -4,13 +4,13 @@ import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
 export function defineStepHandler<
-  C,
-  SC,
-  RC,
-  M extends StepMeta<any, any>,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  M extends StepMeta<any, any> = StepMeta<any, any>,
 >(
   meta: M,
-  options: StepHandlerOptions<
+  options?: StepHandlerOptions<
     C,
     SC,
     RC,

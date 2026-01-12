@@ -14,7 +14,8 @@ export const STEP_META = defineStepMeta({
 import { computed, shallowRef } from 'vue'
 import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../lib/generators/perlin-noise.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useStepHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -25,7 +26,7 @@ const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const noiseImageData = shallowRef<ImageData | null>(null)
 
-const node = useStepHandler(nodeId, STEP_META, {
+const handler = defineStepHandler(STEP_META, {
   config(): typeof GENERATE_NOISE_DEFAULTS {
     return {
       ...GENERATE_NOISE_DEFAULTS,
@@ -61,6 +62,7 @@ const images = computed(() => {
     },
   ]
 })
+const node = useStepHandler(nodeId, STEP_META, handler)
 
 const config = node.config
 

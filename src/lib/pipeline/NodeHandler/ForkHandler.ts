@@ -1,12 +1,13 @@
+import type { Reactive } from 'vue'
 import { NodeType, type StepDataType, type StepInputTypesToInstances, type StepMeta } from '../_types.ts'
 import { defaultForkRunner, type ForkRunner } from '../NodeRunner.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
 export function defineForkHandler<
-  C,
-  SC,
-  RC,
-  M extends StepMeta<any, any>,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  M extends StepMeta<any, any> = StepMeta<any, any>,
 >(
   meta: M,
   options: ForkHandlerOptions<
@@ -52,10 +53,10 @@ export type ForkHandlerOptions<
 > = Partial<ForkHandler<C, SC, RC, I, O>>
 
 export function makeForkHandler<
-  C,
-  SC,
-  RC,
-  M extends StepMeta<any, any>,
+  C = {},
+  SC = C,
+  RC = Reactive<C>,
+  M extends StepMeta<any, any> = StepMeta<any, any>,
 >(
   meta: M,
   options?: ForkHandlerOptions<

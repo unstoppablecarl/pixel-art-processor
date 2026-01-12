@@ -12,7 +12,8 @@ export const STEP_META = defineStepMeta({
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NodeDef, NodeId } from '../../../lib/pipeline/_types.ts'
-import { useBranchHandler } from '../../../lib/pipeline/useStepHandler.ts'
+import { defineBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
+import { useBranchHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
 import { STEP_META as variantStepMeta } from './WangTileBranchVariant.vue'
@@ -23,7 +24,7 @@ const { branchId } = defineProps<{
   branchId: NodeId,
 }>()
 
-const branch = useBranchHandler(branchId, STEP_META, {
+const handler = defineBranchHandler(STEP_META, {
   config() {
     return {}
   },
@@ -31,6 +32,8 @@ const branch = useBranchHandler(branchId, STEP_META, {
     getSiblingBranchVariants().forEach((sibling) => store.remove(sibling.id))
   },
 })
+
+const branch = useBranchHandler(branchId, STEP_META, handler)
 
 function getSiblingBranchVariants() {
   return branch.getSiblings(store, (otherBranch) => otherBranch?.config?.parentBranchId === branch.id)

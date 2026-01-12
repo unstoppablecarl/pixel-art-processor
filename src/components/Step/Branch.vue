@@ -10,14 +10,16 @@ export const STEP_META = defineStepMeta({
 </script>
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { useBranchHandler } from '../../lib/pipeline/useStepHandler.ts'
+import { defineBranchHandler } from '../../lib/pipeline/NodeHandler/BranchHandler.ts'
+import { useBranchHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
 import BranchCard from '../Card/BranchCard.vue'
 
 const { branchId } = defineProps<{
   branchId: NodeId,
 }>()
 
-const branch = useBranchHandler(branchId, STEP_META, {})
+const handler = defineBranchHandler(STEP_META)
+const branch = useBranchHandler(branchId, STEP_META, handler)
 
 </script>
 <template>
