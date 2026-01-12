@@ -23,12 +23,14 @@ import { computed } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { useForkHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { PixelMap } from '../../../lib/step-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
+import { arrayIndexToColor } from '../../../lib/util/color.ts'
 import type { BinaryArray } from '../../../lib/util/prng/binary-array-chunks.ts'
 import { deepUnwrap, shallowArrayItemsRef } from '../../../lib/util/vue-util.ts'
 import {
   makeBitMaskFromWangTile,
-  makeWangTileEdgeConfigDefaults,
+  makeWangTileEdgeConfigDefaults, renderImageEdgeChunks,
   type WangTileEdgeConfig,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import { populateIndexedWangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
@@ -78,10 +80,11 @@ const handler = defineForkHandler(STEP_META, {
 
     const wangTile = wangTileForBranch(branchIndex)
     const mask = makeBitMaskFromWangTile(config.size.value, wangTile)
+    const preview = makePreviewFromWangTile(config.size.value, wangTile)
 
     return {
       output: mask,
-      preview: mask.toImageData(),
+      preview: preview.toImageData(),
       meta: {
         wangTileEdges: edges,
         wangTileInfo: tileset.value.tiles[branchIndex],
@@ -92,6 +95,21 @@ const handler = defineForkHandler(STEP_META, {
 const node = useForkHandler(nodeId, STEP_META, handler)
 
 const config = node.config
+
+function makePreviewFromWangTile(size: number, tile: WangTile<BinaryArray>) {
+  const mask = new PixelMap(size, size)
+  const nIndex = edges.value.indexOf(tile.edges.N)
+  const eIndex = edges.value.indexOf(tile.edges.E)
+  const sIndex = edges.value.indexOf(tile.edges.S)
+  const wIndex = edges.value.indexOf(tile.edges.W)
+
+  const length = edges.value.length
+  renderImageEdgeChunks(mask, 'N', tile.edges.N, arrayIndexToColor(nIndex, length))
+  renderImageEdgeChunks(mask, 'E', tile.edges.E, arrayIndexToColor(eIndex, length))
+  renderImageEdgeChunks(mask, 'S', tile.edges.S, arrayIndexToColor(sIndex, length))
+  renderImageEdgeChunks(mask, 'W', tile.edges.W, arrayIndexToColor(wIndex, length))
+  return mask
+}
 
 function wangTileForBranch(branchIndex: number) {
   const indexedWangTile = tileset.value.tiles[branchIndex]
@@ -174,6 +192,7 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
         <ForkWangTileEdge
           :node-id="nodeId"
           :size="config.size.value"
+          :color="arrayIndexToColor(index, config.wangTiles.length)"
           :index="index-1"
           v-model:config="config.wangTiles[index-1]"
           :edge="edges[index-1]"

@@ -1,4 +1,7 @@
+import type { StepDataTypeInstance } from '../pipeline/_types.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
+import { PixelMap } from '../step-data-types/PixelMap.ts'
+import type { RGBA } from '../util/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
 import type { WangTile, WangTileEdge } from './WangTileset.ts'
@@ -39,51 +42,52 @@ export function generateWangTileEdgePattern(size: number, c: WangTileEdgeConfig)
   })
 }
 
-export function wangTileEdgePreview(chunks: BinaryArray) {
-  const mask = new BitMask(chunks.length, 1)
-  return renderBitMaskEdgeChunks(mask, 'N', chunks)
+export function wangTileEdgePreview(chunks: BinaryArray, color: RGBA) {
+  const target = new PixelMap(chunks.length, 1)
+  return renderImageEdgeChunks(target, 'N', chunks, color)
 }
 
 export function makeBitMaskFromWangTile(size: number, tile: WangTile<BinaryArray>) {
   const mask = new BitMask(size, size)
-  renderBitMaskEdgeChunks(mask, 'N', tile.edges.N)
-  renderBitMaskEdgeChunks(mask, 'E', tile.edges.E)
-  renderBitMaskEdgeChunks(mask, 'S', tile.edges.S)
-  renderBitMaskEdgeChunks(mask, 'W', tile.edges.W)
+  renderImageEdgeChunks(mask, 'N', tile.edges.N, 1)
+  renderImageEdgeChunks(mask, 'E', tile.edges.E, 1)
+  renderImageEdgeChunks(mask, 'S', tile.edges.S, 1)
+  renderImageEdgeChunks(mask, 'W', tile.edges.W, 1)
   return mask
 }
 
-export function renderBitMaskEdgeChunks(
-  mask: BitMask,
+export function renderImageEdgeChunks<T extends StepDataTypeInstance>(
+  target: T,
   direction: WangTileEdge,
   chunks: BinaryArray,
+  value: any,
 ) {
   const size = chunks.length
 
   if (direction === 'N' || direction === 'S') {
-    if (mask.width < size) {
-      const msg = `BitMask width: ${mask.width} is less than binary array length: ${chunks.length}`
+    if (target.width < size) {
+      const msg = `BitMask width: ${target.width} is less than binary array length: ${chunks.length}`
       console.error(msg)
       throw new Error(msg)
     }
   } else {
-    if (mask.height < size) {
-      const msg = `BitMask height: ${mask.height} is less than binary array length: ${chunks.length}`
+    if (target.height < size) {
+      const msg = `BitMask height: ${target.height} is less than binary array length: ${chunks.length}`
       console.error(msg)
       throw new Error(msg)
     }
   }
 
   const edges = {
-    N: (i: number) => mask.set(i, 0, 1),
-    E: (i: number) => mask.set(size - 1, i, 1),
-    S: (i: number) => mask.set(i, size - 1, 1),
-    W: (i: number) => mask.set(0, i, 1),
+    N: (i: number) => target.set(i, 0, value),
+    E: (i: number) => target.set(size - 1, i, value),
+    S: (i: number) => target.set(i, size - 1, value),
+    W: (i: number) => target.set(0, i, value),
   }
 
   chunks.forEach((v, i) => {
     if (v) edges[direction](i)
   })
 
-  return mask
+  return target
 }

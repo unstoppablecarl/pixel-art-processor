@@ -2,6 +2,7 @@
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, watch } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
+import type { RGBA } from '../../lib/util/ImageData.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
 import {
   generateWangTileEdgePattern,
@@ -21,9 +22,11 @@ const {
   size,
   nodeId,
   index,
+  color,
 } = defineProps<{
   index: number,
   nodeId: NodeId,
+  color: RGBA,
   size: number,
 }>()
 
@@ -34,7 +37,7 @@ watch(config, () => {
 const preview = computed(() => {
   if (!edge.value) return null
 
-  return wangTileEdgePreview(edge.value).toImageData()
+  return wangTileEdgePreview(edge.value, color).toImageData()
 })
 </script>
 <template>
