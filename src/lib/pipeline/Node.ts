@@ -206,15 +206,12 @@ export abstract class BaseNode<
 
   validatePrev(store: PipelineStore, prevOutput: SingleRunnerResult<any>['output'], prevMeta: IRunnerResultMeta | null): StepValidationError[] {
     let result: StepValidationError[] = []
-
-    // @TODO handle nodes that require input / require no input
-    if (!store.nodeIsPassthrough(this as unknown as AnyNode)) {
-      const staticTypeErrors = this.validatePrevOutputTypeStatic(store)
-      if (staticTypeErrors.length) {
-        result = staticTypeErrors
-      } else if (prevOutput) {
-        result = this.validatePrevOutputTypeInstance(prevOutput)
-      }
+    // note at this point if this is a passthrough node its current type should match its prev node output
+    const staticTypeErrors = this.validatePrevOutputTypeStatic(store)
+    if (staticTypeErrors.length) {
+      result = staticTypeErrors
+    } else if (prevOutput) {
+      result = this.validatePrevOutputTypeInstance(prevOutput)
     }
 
     return [
