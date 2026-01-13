@@ -3,9 +3,6 @@ import type { NodeDataType } from '../../node-data-types/_node-data-types.ts'
 import { PassThrough } from '../../node-data-types/PassThrough.ts'
 import { type NodeDef, NodeType } from '../_types.ts'
 
-// export function defineNodeMeta<M extends NodeMeta<any, any>>(meta: ValidateNodeMeta<M>): M {
-//   return meta
-// }
 export const defineStep = <M extends AnyStepMeta<any, any>>(meta: M): M => meta
 export const defineFork = <M extends AnyForkMeta<any, any>>(meta: M): M => meta
 export const defineBranch = <M extends AnyBranchMeta<any, any>>(meta: M): M => meta
