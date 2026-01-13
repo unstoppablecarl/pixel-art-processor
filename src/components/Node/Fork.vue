@@ -17,7 +17,7 @@ import { isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { defineForkHandler, useForkHandler } from '../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import { computed } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -68,7 +68,7 @@ const images = computed((): StepImg[] => {
 
 </script>
 <template>
-  <StepCard
+  <NodeCard
     :node="node"
     :show-add-node-btn="false"
     :copyable="false"
@@ -77,5 +77,5 @@ const images = computed((): StepImg[] => {
     :sub-header="`: x ${node.branchIds.value.length}`"
     :images="images"
   >
-  </StepCard>
+  </NodeCard>
 </template>

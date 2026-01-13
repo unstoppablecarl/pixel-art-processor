@@ -17,7 +17,7 @@ export const NODE_DATA_TYPES: DataStructureConstructor[] = [
   PassThrough as DataStructureConstructor,
 ]
 
-const nodeModules = import.meta.glob(['./components/Step/**/*.vue'])
+const nodeModules = import.meta.glob(['./components/Node/**/*.vue'])
 
 const green = '#146c43'
 const pink = '#ab296a'

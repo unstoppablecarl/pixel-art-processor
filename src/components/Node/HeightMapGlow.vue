@@ -19,7 +19,7 @@ import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandle
 import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/ImageData.ts'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -50,7 +50,7 @@ const node = useStepHandler(nodeId, handler)
 const config = node.config
 </script>
 <template>
-  <StepCard :node="node">
+  <NodeCard :node="node">
     <template #footer>
       <div class="section">
         <CheckBoxInput
@@ -105,5 +105,5 @@ const config = node.config
         </div>
       </div>
     </template>
-  </StepCard>
+  </NodeCard>
 </template>

@@ -9,7 +9,7 @@ import { type InitializedForkNode, type InitializedNode, isBranch, isStep } from
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
-import StepImage from '../StepImage.vue'
+import NodeImage from '../NodeImage.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
@@ -207,7 +207,7 @@ const settingsVisible = ref(true)
               <template
                 v-for="({imageData, label, validationErrors: imgValidationErrors = []}, index) in nodeImages"
               >
-                <StepImage
+                <NodeImage
                   :image-data="imageData"
                   :label="label"
                   :validationErrors="imgValidationErrors"
@@ -215,7 +215,7 @@ const settingsVisible = ref(true)
                   <template v-for="(_, name) in $slots" #[name]="slotProps">
                     <slot :name="name" v-bind="{...slotProps, index}" />
                   </template>
-                </StepImage>
+                </NodeImage>
                 <slot
                   name="after-image"
                   :index="index"

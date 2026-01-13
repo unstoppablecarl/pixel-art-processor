@@ -9,7 +9,7 @@ import {
   type WangTileEdgeConfig,
   wangTileEdgePreview,
 } from '../../lib/wang-tiles/wang-tile-vue-helpers.ts'
-import StepImage from '../StepImage.vue'
+import NodeImage from '../NodeImage.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 import ForkWangTileEdgeConfig from './ForkWangTileEdgeConfig.vue'
 
@@ -69,7 +69,7 @@ const preview = computed(() => {
   </div>
 
   <div class="card-body">
-    <StepImage
+    <NodeImage
       :image-data="preview"
     />
   </div>

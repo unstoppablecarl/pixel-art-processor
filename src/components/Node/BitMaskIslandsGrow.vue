@@ -35,7 +35,7 @@ import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -142,7 +142,7 @@ const config = node.config
 
 </script>
 <template>
-  <StepCard :node="node">
+  <NodeCard :node="node">
     <template #footer>
       <BTabs
         content-class="mt-3 p-2"
@@ -219,5 +219,5 @@ const config = node.config
         </BTab>
       </BTabs>
     </template>
-  </StepCard>
+  </NodeCard>
 </template>

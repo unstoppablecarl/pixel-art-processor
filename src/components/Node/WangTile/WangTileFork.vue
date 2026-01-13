@@ -33,11 +33,11 @@ import {
   type WangTileEdgeConfig,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import { populateIndexedWangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
-import StepCard from '../../Card/StepCard.vue'
-import StepImage from '../../StepImage.vue'
+import NodeCard from '../../Card/NodeCard.vue'
+import NodeImage from '../../NodeImage.vue'
 import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
-import ForkWangTileEdge from '../../StepSupport/ForkWangTileEdge.vue'
+import ForkWangTileEdge from '../../NodeSupport/ForkWangTileEdge.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -158,7 +158,7 @@ watchEffect(() => {
 })
 </script>
 <template>
-  <StepCard
+  <NodeCard
     :node="node"
     :show-add-node-btn="false"
     :copyable="false"
@@ -166,7 +166,7 @@ watchEffect(() => {
     :mutable="false"
   >
     <template #body v-if="!config.wangTiles.length">
-      <StepImage :image-data="null" />
+      <NodeImage :image-data="null" />
     </template>
 
     <template #body-and-footer>
@@ -212,5 +212,5 @@ watchEffect(() => {
         </div>
       </div>
     </template>
-  </StepCard>
+  </NodeCard>
 </template>

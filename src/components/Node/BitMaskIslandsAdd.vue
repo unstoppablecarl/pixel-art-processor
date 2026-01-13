@@ -24,7 +24,7 @@ import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandle
 import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -97,7 +97,7 @@ function toggleExpand() {
 }
 </script>
 <template>
-  <StepCard :node="node">
+  <NodeCard :node="node">
     <template #footer>
       <BTabs
         v-model:index="config.activeTabIndex"
@@ -174,5 +174,5 @@ function toggleExpand() {
       </div>
 
     </template>
-  </StepCard>
+  </NodeCard>
 </template>

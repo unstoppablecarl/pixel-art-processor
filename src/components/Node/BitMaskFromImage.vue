@@ -16,7 +16,7 @@ import type { StepValidationError } from '../../lib/pipeline/errors/StepValidati
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -58,7 +58,7 @@ function handleError(errors: StepValidationError[]) {
 }
 </script>
 <template>
-  <StepCard
+  <NodeCard
     :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
@@ -74,5 +74,5 @@ function handleError(errors: StepValidationError[]) {
         />
       </div>
     </template>
-  </StepCard>
+  </NodeCard>
 </template>

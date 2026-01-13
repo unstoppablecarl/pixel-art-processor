@@ -344,10 +344,10 @@ export const usePipelineStore = defineStore('pipeline', () => {
         const childClone = _cloneSubtree(childId, map)
 
         if (isStep(original)) {
-          // Step → (Step | Fork)
+          // Node → (Node | Fork)
           childClone.prevNodeId = newId
         } else if (isBranch(original)) {
-          // Branch → (Step | Fork) via nextId
+          // Branch → (Node | Fork) via nextId
           childClone.prevNodeId = newId
         } else if (isFork(original)) {
           // Fork → Branches via branchIds[]

@@ -16,7 +16,7 @@ import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { prng } from '../../lib/util/prng.ts'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
@@ -114,7 +114,7 @@ const config = node.config!
 const computedSize = computed(() => config.size.value)
 </script>
 <template>
-  <StepCard :node="node" show-dimensions>
+  <NodeCard :node="node" show-dimensions>
     <template #footer>
 
       <div class="section">
@@ -219,5 +219,5 @@ const computedSize = computed(() => config.size.value)
         />
       </div>
     </template>
-  </StepCard>
+  </NodeCard>
 </template>

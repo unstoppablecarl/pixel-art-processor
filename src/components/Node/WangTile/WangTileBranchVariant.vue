@@ -19,7 +19,7 @@ import type { PassThrough } from '../../../lib/node-data-types/PassThrough.ts'
 import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
-import StepImage from '../../StepImage.vue'
+import NodeImage from '../../NodeImage.vue'
 
 const store = usePipelineStore()
 const { branchId } = defineProps<{
@@ -76,8 +76,8 @@ const branch = useBranchHandler(branchId, handler)
   <BranchCard :branch="branch">
     <template #nodes>
       <div class="card-body d-flex">
-        <StepImage :image-data="branch.forkPreview" />
-        <StepImage :image-data="branch.outputPreview" />
+        <NodeImage :image-data="branch.forkPreview" />
+        <NodeImage :image-data="branch.outputPreview" />
       </div>
     </template>
   </BranchCard>

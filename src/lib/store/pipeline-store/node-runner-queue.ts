@@ -39,7 +39,7 @@ export function makeNodeRunnerQueue(store: Pick<PipelineStore, 'runNode' | 'getA
   }
 
   function findHighestDirtyAncestors(dirtyIds: Set<NodeId>): Set<NodeId> {
-    // Step 1: For each dirty node, walk all the way up to the true root
+    // Node 1: For each dirty node, walk all the way up to the true root
     // and record the full ancestor chain.
     const chains: Map<NodeId, NodeId[]> = new Map()
 
@@ -47,7 +47,7 @@ export function makeNodeRunnerQueue(store: Pick<PipelineStore, 'runNode' | 'getA
       chains.set(id, store.getAncestorNodeIds(id))
     }
 
-    // Step 2: For each chain, find the highest ancestor that is dirty.
+    // Node 2: For each chain, find the highest ancestor that is dirty.
     // If none are dirty, the original node is the highest dirty ancestor.
     const highestDirty = new Set<NodeId>()
 
@@ -67,7 +67,7 @@ export function makeNodeRunnerQueue(store: Pick<PipelineStore, 'runNode' | 'getA
       highestDirty.add(chosen ?? dirtyId)
     }
 
-    // Step 3: Remove descendants — keep only the highest dirty nodes.
+    // Node 3: Remove descendants — keep only the highest dirty nodes.
     // If A is an ancestor of B, and both are in the set, remove B.
     const result = new Set(highestDirty)
 

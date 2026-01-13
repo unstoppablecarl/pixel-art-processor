@@ -27,7 +27,7 @@ export async function loadNodeComponentsMetaData(
   const errors = collectErrors(globResults, stepDataTypes)
   if (errors.length) {
     errors.forEach(console.error)
-    throw new Error('Step Component Errors:\n' + errors.join('\n'))
+    throw new Error('Node Component Errors:\n' + errors.join('\n'))
   }
 
   return Object.entries(globResults).map(([_, module]) =>
@@ -70,7 +70,7 @@ function buildDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefini
 }
 
 /* ------------------------------------------------------------
-   Step definition builder
+   Node definition builder
 ------------------------------------------------------------ */
 
 function buildStepDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefinition {

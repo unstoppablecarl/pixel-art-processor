@@ -17,7 +17,7 @@ import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../l
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import StepCard from '../Card/StepCard.vue'
+import NodeCard from '../Card/NodeCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const store = usePipelineStore()
@@ -68,7 +68,7 @@ const config = node.config
 
 </script>
 <template>
-  <StepCard
+  <NodeCard
     :node="node"
     :images="images"
     :img-columns="2"
@@ -124,5 +124,5 @@ const config = node.config
         />
       </div>
     </template>
-  </StepCard>
+  </NodeCard>
 </template>
