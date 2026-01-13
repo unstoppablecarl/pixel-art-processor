@@ -8,17 +8,17 @@ import { installNodeRegistry, makeNodeRegistry } from './lib/pipeline/NodeRegist
 import { createPersistedState } from './lib/store/_pinia-persist-plugin.ts'
 import { CustomAutoAnimationPlugin } from './lib/util/auto-animate.ts'
 import { injectNodeDataTypeCss } from './lib/util/misc.ts'
-import { loadStepDefinitions, STEP_DATA_TYPE_COLORS, STEP_DATA_TYPES } from './steps.ts'
+import { loadNodeDefinitions, NODE_DATA_TYPE_COLORS, NODE_DATA_TYPES } from './steps.ts'
 
 const app = createApp(App)
 const pinia = createPinia()
 
 pinia.use(createPersistedState())
 
-const stepDefinitions = await loadStepDefinitions()
-installNodeRegistry(makeNodeRegistry(stepDefinitions, STEP_DATA_TYPES))
+const stepDefinitions = await loadNodeDefinitions()
+installNodeRegistry(makeNodeRegistry(stepDefinitions, NODE_DATA_TYPES))
 
-injectNodeDataTypeCss(STEP_DATA_TYPE_COLORS)
+injectNodeDataTypeCss(NODE_DATA_TYPE_COLORS)
 
 app.use(autoAnimatePlugin, CustomAutoAnimationPlugin)
 

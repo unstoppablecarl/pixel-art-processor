@@ -4,11 +4,11 @@ import type { AnyBranchNode, AnyForkNode, AnyStepNode } from '../src/lib/pipelin
 import { installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deepUnwrap } from '../src/lib/util/vue-util.ts'
-import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps.ts'
+import { loadNodeDefinitions, NODE_DATA_TYPES } from '../src/steps.ts'
 
 beforeEach(async () => {
-  const stepDefinitions = await loadStepDefinitions()
-  installNodeRegistry(makeNodeRegistry(stepDefinitions, STEP_DATA_TYPES))
+  const stepDefinitions = await loadNodeDefinitions()
+  installNodeRegistry(makeNodeRegistry(stepDefinitions, NODE_DATA_TYPES))
 })
 
 // Helpers to reduce noise

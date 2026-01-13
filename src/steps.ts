@@ -7,7 +7,7 @@ import { NormalMap } from './lib/step-data-types/NormalMap.ts'
 import { PassThrough } from './lib/step-data-types/PassThrough.ts'
 import { PixelMap } from './lib/step-data-types/PixelMap.ts'
 
-export const STEP_DATA_TYPES: DataStructureConstructor[] = [
+export const NODE_DATA_TYPES: DataStructureConstructor[] = [
   BitMask as DataStructureConstructor,
   NormalMap as DataStructureConstructor,
   HeightMap as DataStructureConstructor,
@@ -15,15 +15,15 @@ export const STEP_DATA_TYPES: DataStructureConstructor[] = [
   PassThrough as DataStructureConstructor,
 ]
 
-const stepModules = import.meta.glob(['./components/Step/**/*.vue'])
+const nodeModules = import.meta.glob(['./components/Step/**/*.vue'])
 
 const green = '#146c43'
 const pink = '#ab296a'
 const purple = '#59359a'
 const blue = '#0a58ca'
 
-export type NodeDataTypeColors = typeof STEP_DATA_TYPE_COLORS
-export const STEP_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
+export type NodeDataTypeColors = typeof NODE_DATA_TYPE_COLORS
+export const NODE_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
   [BitMask, { key: '--bit-mask-color', color: green, cssClass: 'bit-mask-bg' }],
   [HeightMap, { key: '--height-map-color', color: pink, cssClass: 'height-map-bg' }],
   [NormalMap, { key: '--normal-map-color', color: purple, cssClass: 'normal-map-bg' }],
@@ -36,33 +36,33 @@ export const STEP_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
 ])
 
 export function getNodeDataTypeCssClass(stepDataType: StepDataType) {
-  return STEP_DATA_TYPE_COLORS.get(stepDataType)!.cssClass
+  return NODE_DATA_TYPE_COLORS.get(stepDataType)!.cssClass
 }
 
 
 // ⚠️ the code below only works if it is in this file
-let stepLoadPromise: Promise<AnyNodeDefinition[]> | null = null
+let nodeLoadPromise: Promise<AnyNodeDefinition[]> | null = null
 
-export function loadStepDefinitions(): Promise<AnyNodeDefinition[]> {
-  if (!stepLoadPromise) {
-    stepLoadPromise = (async () => {
+export function loadNodeDefinitions(): Promise<AnyNodeDefinition[]> {
+  if (!nodeLoadPromise) {
+    nodeLoadPromise = (async () => {
       const loadedModules: Record<string, any> = {}
-      for (const [path, loader] of Object.entries(stepModules)) {
+      for (const [path, loader] of Object.entries(nodeModules)) {
         loadedModules[path] = await (loader as () => Promise<any>)()
       }
-      return loadStepComponentsMetaData(loadedModules, STEP_DATA_TYPES)
+      return loadStepComponentsMetaData(loadedModules, NODE_DATA_TYPES)
     })()
   }
 
-  return stepLoadPromise
+  return nodeLoadPromise
 }
 
 if (import.meta.hot && !import.meta.env.VITEST) {
   import.meta.hot.accept(async () => {
-    stepLoadPromise = null
+    nodeLoadPromise = null
 
-    const stepDefinitions = await loadStepDefinitions()
+    const nodeDefinitions = await loadNodeDefinitions()
     const { installNodeRegistry, makeNodeRegistry } = await import('./lib/pipeline/NodeRegistry.ts')
-    installNodeRegistry(makeNodeRegistry(stepDefinitions, STEP_DATA_TYPES))
+    installNodeRegistry(makeNodeRegistry(nodeDefinitions, NODE_DATA_TYPES))
   })
 }
