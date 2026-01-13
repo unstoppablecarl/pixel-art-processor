@@ -5,6 +5,7 @@ import { type NodeId } from '../../lib/pipeline/_types.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import type { ForkDefinition } from '../../lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import NodeContainer from '../NodeSupport/NodeContainer.vue'
 
 const store = usePipelineStore()
 const nodeRegistry = getNodeRegistry()
@@ -27,10 +28,7 @@ const addableBranches = computed(() => {
       v-for="branch in branches"
       :key="`${forkNodeId}-branch-${branch.id}`"
     >
-      <component
-        :is="nodeRegistry.defToComponent(branch.def)"
-        :branch-id="branch.id"
-      />
+      <NodeContainer :node-id="branch.id" :node-def="branch.def" />
     </template>
 
     <template v-for="branchDef in addableBranches">

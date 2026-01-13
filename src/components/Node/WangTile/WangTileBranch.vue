@@ -20,8 +20,8 @@ import { STEP_META as variantStepMeta } from './WangTileBranchVariant.vue'
 
 const store = usePipelineStore()
 
-const { branchId } = defineProps<{
-  branchId: NodeId,
+const { nodeId } = defineProps<{
+  nodeId: NodeId,
 }>()
 
 const handler = defineBranchHandler(STEP_META, {
@@ -43,7 +43,7 @@ const handler = defineBranchHandler(STEP_META, {
   },
 })
 
-const branch = useBranchHandler(branchId, handler)
+const branch = useBranchHandler(nodeId, handler)
 const fork = computed(() => branch.getPrev(store))
 
 const siblingBranchVariants = computed(() => {

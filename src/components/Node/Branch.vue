@@ -14,12 +14,12 @@ import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineBranchHandler, useBranchHandler } from '../../lib/pipeline/NodeHandler/BranchHandler.ts'
 import BranchCard from '../Card/BranchCard.vue'
 
-const { branchId } = defineProps<{
-  branchId: NodeId,
+const { nodeId } = defineProps<{
+  nodeId: NodeId,
 }>()
 
 const handler = defineBranchHandler(STEP_META)
-const branch = useBranchHandler(branchId, handler)
+const branch = useBranchHandler(nodeId, handler)
 
 </script>
 <template>

@@ -22,8 +22,8 @@ import BranchCard from '../../Card/BranchCard.vue'
 import NodeImage from '../../NodeImage.vue'
 
 const store = usePipelineStore()
-const { branchId } = defineProps<{
-  branchId: NodeId,
+const { nodeId } = defineProps<{
+  nodeId: NodeId,
 }>()
 
 const handler = defineBranchHandler(STEP_META, {
@@ -69,7 +69,7 @@ const handler = defineBranchHandler(STEP_META, {
   },
 })
 
-const branch = useBranchHandler(branchId, handler)
+const branch = useBranchHandler(nodeId, handler)
 
 </script>
 <template>

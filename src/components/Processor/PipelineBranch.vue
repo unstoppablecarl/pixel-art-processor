@@ -4,6 +4,7 @@ import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { type AnyForkNode, isFork } from '../../lib/pipeline/Node.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import NodeContainer from '../NodeSupport/NodeContainer.vue'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = usePipelineStore()
@@ -39,25 +40,19 @@ const allNodes = computed(() => {
   <div class="processor-branch">
     <template v-if="allNodes.nodes.length">
       <template v-for="node in allNodes.nodes" :key="node.id">
-        <component
-          :is="nodeRegistry.defToComponent(node.def)"
-          :node-id="node.id"
-          class="node"
-        />
+        <NodeContainer :node-id="node.id" :node-def="node.def" class="node" />
+
       </template>
     </template>
 
-<!--    <div v-else class="empty-branch-placeholder">-->
-<!--      Drop Here-->
-<!--    </div>-->
+    <!--    <div v-else class="empty-branch-placeholder">-->
+    <!--      Drop Here-->
+    <!--    </div>-->
   </div>
 
   <template v-if="allNodes.fork">
-    <component
-      :is="nodeRegistry.defToComponent(allNodes.fork.def)"
-      :node-id="allNodes.fork.id"
-      class="node"
-    />
+    <NodeContainer :node-id="allNodes.fork.id" :node-def="allNodes.fork.def" class="node" />
+
     <PipelineForkBranches :fork-node-id="allNodes.fork.id" />
   </template>
 </template>
