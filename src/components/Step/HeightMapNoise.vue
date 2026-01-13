@@ -1,11 +1,11 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/_types.ts'
-import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 import { HeightMap } from '../../lib/node-data-types/HeightMap.ts'
+import { type NodeDef, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
-  def: 'height_map_noise',
+  def: 'height_map_noise' as NodeDef,
   displayName: 'HeightMap: Noise',
   inputDataTypes: [HeightMap],
   outputDataType: HeightMap,
@@ -15,8 +15,7 @@ export const STEP_META = defineStep({
 import { computed, shallowRef } from 'vue'
 import { GENERATE_NOISE_DEFAULTS, generateNoise, mergeHeightMaps } from '../../lib/generators/perlin-noise.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -63,7 +62,7 @@ const images = computed(() => {
     },
   ]
 })
-const node = useStepHandler(nodeId, STEP_META, handler)
+const node = useStepHandler(nodeId, handler)
 
 const config = node.config
 

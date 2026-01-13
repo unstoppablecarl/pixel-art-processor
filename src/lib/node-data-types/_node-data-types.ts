@@ -4,6 +4,9 @@ import { NormalMap } from './NormalMap.ts'
 import { PassThrough } from './PassThrough.ts'
 import { PixelMap } from './PixelMap.ts'
 
+// requires [BitMask, NormalMap] as const
+export type NodeDataTypeTuple = readonly [NodeDataType, ...NodeDataType[]]
+
 export type NodeDataType =
   | typeof BitMask
   | typeof NormalMap

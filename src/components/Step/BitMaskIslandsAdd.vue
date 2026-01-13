@@ -1,11 +1,11 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/_types.ts'
-import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 import { BitMask } from '../../lib/node-data-types/BitMask.ts'
+import { type NodeDef, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
-  def: 'bitmask_islands_add',
+  def: 'bitmask_islands_add' as NodeDef,
   displayName: 'BitMask Islands: Add',
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
@@ -20,8 +20,7 @@ import {
   islandCheckboxColors,
 } from '../../lib/generators/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
@@ -51,7 +50,7 @@ const handler = defineStepHandler(STEP_META, {
   async run({ config, inputData }) {
     if (!inputData) return
 
-    const mask = inputData.copy() as BitMask
+    const mask = inputData.copy()
     const C = config
 
     const points = addPointsPoissonDisk(
@@ -85,7 +84,7 @@ const handler = defineStepHandler(STEP_META, {
     }
   },
 })
-const node = useStepHandler(nodeId, STEP_META, handler)
+const node = useStepHandler(nodeId, handler)
 
 const config = node.config
 const settingsVisible = ref(true)

@@ -4,7 +4,7 @@ import { type AnyNodeDefinition, defineBranch } from '../../../lib/pipeline/type
 
 export const STEP_META = defineBranch({
   type: NodeType.BRANCH,
-  def: 'wang_tile_branch',
+  def: 'wang_tile_branch' as NodeDef,
   displayName: 'Wang Tile: Branch',
   passthrough: true,
   isValidDescendantDef: (def: AnyNodeDefinition) => def.type === NodeType.STEP,
@@ -13,8 +13,7 @@ export const STEP_META = defineBranch({
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { NodeDef, NodeId } from '../../../lib/pipeline/_types.ts'
-import { defineBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
-import { useBranchHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineBranchHandler, useBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
 import { STEP_META as variantStepMeta } from './WangTileBranchVariant.vue'
@@ -44,7 +43,7 @@ const handler = defineBranchHandler(STEP_META, {
   },
 })
 
-const branch = useBranchHandler(branchId, STEP_META, handler)
+const branch = useBranchHandler(branchId, handler)
 const fork = computed(() => branch.getPrev(store))
 
 const siblingBranchVariants = computed(() => {

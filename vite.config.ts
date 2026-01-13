@@ -37,7 +37,7 @@ export default defineConfig(({ mode }) => {
       ],
       environment: 'jsdom',
       typecheck: {
-        enabled: false,
+        enabled: true,
         tsconfig: 'tsconfig.json',
         include: [
           '**/*.test.ts',

@@ -28,7 +28,7 @@ const {
   imgColumns = 1,
 } = defineProps<NodeProps<any>>()
 
-export type NodeProps<N extends InitializedNode<any, any, any, any, any, any>> = {
+export type NodeProps<N extends InitializedNode<any, any, any, any>> = {
   node: N,
   showDimensions?: boolean,
   images?: StepImg[],
@@ -62,7 +62,7 @@ const nodeImages = computed((): StepImg[] => {
     }]
   }
 
-  const fork = node as InitializedForkNode<any, any, any, any, any, any>
+  const fork = node as InitializedForkNode<any, any, any, any>
   if (!fork.forkOutputData.value.length) {
     return [{
       label: 'Input (no branches)',

@@ -2,11 +2,11 @@ import { expectTypeOf } from 'expect-type'
 import { describe, expect, it } from 'vitest'
 import { isReactive, type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
-import {
-  type IRunnerResultMeta,
-  NodeType,
 
-} from '../src/lib/pipeline/_types.ts'
+import { BitMask } from '../src/lib/node-data-types/BitMask.ts'
+import { HeightMap } from '../src/lib/node-data-types/HeightMap.ts'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
+import { type IRunnerResultMeta, type NodeDef, NodeType } from '../src/lib/pipeline/_types.ts'
 import {
   defineStepHandler,
   type StepHandler,
@@ -14,10 +14,6 @@ import {
 } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { defineStep } from '../src/lib/pipeline/types/definitions.ts'
-
-import { BitMask } from '../src/lib/node-data-types/BitMask.ts'
-import { HeightMap } from '../src/lib/node-data-types/HeightMap.ts'
-import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
 
 class A extends BitMask {
 }
@@ -39,7 +35,7 @@ type SerializedConfig = {
 }
 
 // Helper def string
-const DEF = 'test/handler'
+const DEF = 'test/handler' as NodeDef
 
 const STEP_META = defineStep({
   type: NodeType.STEP,
@@ -56,7 +52,7 @@ type Output = InstanceType<M['outputDataType']>
 
 describe('defineStepHandler<T>', () => {
   it('returns an StepHandler<M, T>-compatible object merging defaults and options', () => {
-    const options: StepHandlerOptions<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']> = {
+    const options: StepHandlerOptions<RawConfig, SerializedConfig, RC, M> = {
       config() {
         return {} as RC
       },
@@ -84,13 +80,13 @@ describe('defineStepHandler<T>', () => {
     const handler = defineStepHandler(STEP_META, options)
 
     // Shape of handler: must be a full StepHandler<T>
-    expectTypeOf(handler).toEqualTypeOf<StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>>()
+    expectTypeOf(handler).toEqualTypeOf<StepHandler<RawConfig, SerializedConfig, RC, M>>()
 
     // validate core fields
     // type AllowedElem = (typeof handler.meta.inputDataTypes)[number]
-    expectTypeOf(handler.meta.inputDataTypes).toEqualTypeOf<(typeof A | typeof B)[] | undefined>()
+    expectTypeOf(handler.meta.inputDataTypes).toEqualTypeOf<[typeof A , typeof B]>()
 
-    expectTypeOf(handler.meta.outputDataType).toEqualTypeOf<typeof COut | undefined>()
+    expectTypeOf(handler.meta.outputDataType).toEqualTypeOf<typeof COut>()
 
     // defaulted config() is overridden by options.config()
     expectTypeOf(handler.config).toEqualTypeOf<() => RawConfig>()
@@ -100,19 +96,19 @@ describe('defineStepHandler<T>', () => {
 
     // ensure defaulted methods have the right types even if not provided in options
     expectTypeOf(handler.watcherTargets).toEqualTypeOf<
-      StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>['watcherTargets']
+      StepHandler<RawConfig, SerializedConfig, RC, M>['watcherTargets']
     >()
     expectTypeOf(handler.serializeConfig).toEqualTypeOf<
-      StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>['serializeConfig']
+      StepHandler<RawConfig, SerializedConfig, RC, M>['serializeConfig']
     >()
     expectTypeOf(handler.deserializeConfig).toEqualTypeOf<
-      StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>['deserializeConfig']
+      StepHandler<RawConfig, SerializedConfig, RC, M>['deserializeConfig']
     >()
     expectTypeOf(handler.loadConfig).toEqualTypeOf<
-      StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>['loadConfig']
+      StepHandler<RawConfig, SerializedConfig, RC, M>['loadConfig']
     >()
     expectTypeOf(handler.validateInput).toEqualTypeOf<
-      StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>['validateInput']
+      StepHandler<RawConfig, SerializedConfig, RC, M>['validateInput']
     >()
   })
 

@@ -1,27 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { type Component, type Reactive, reactive } from 'vue'
+import { reactive, type Reactive } from 'vue'
 import { BitMask } from '../src/lib/node-data-types/BitMask'
-import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap'
 import { type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
-import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
-import { defineStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
-import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
-import { type AnyStepMeta, defineStep } from '../src/lib/pipeline/types/definitions.ts'
+import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node'
+import { defineStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler'
+import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry'
+import { type AnyNodeDefinition, defineBranch, defineFork, defineStep } from '../src/lib/pipeline/types/definitions'
 import type { PipelineStore } from '../src/lib/store/pipeline-store'
-import { defineTestNode } from './_helpers.ts'
 
-// ------------------------------------------------------------
-// Registry setup
-// ------------------------------------------------------------
+/* ------------------------------------------------------------
+   Registry setup
+------------------------------------------------------------ */
 installNodeRegistry(makeNodeRegistry())
 
-// ------------------------------------------------------------
-// Helpers
-// ------------------------------------------------------------
+/* ------------------------------------------------------------
+   Helpers
+------------------------------------------------------------ */
 
 const nid = (s: string) => s as NodeId
 
-function makeStore(nodes: Record<NodeId, any>): PipelineStore {
+function makeStore(nodes: Record<string, AnyNode>): PipelineStore {
   return {
     nodes,
     get(id: NodeId) {
@@ -30,58 +29,43 @@ function makeStore(nodes: Record<NodeId, any>): PipelineStore {
     nodeIsPassthrough(node: AnyNode) {
       return getNodeRegistry().nodeIsPassthrough(node)
     },
-  } as unknown as PipelineStore
+  } as any
 }
-
-// ------------------------------------------------------------
-// Step definitions
-// ------------------------------------------------------------
-
-const passthroughDef = 'passthrough-step' as NodeDef
-const passThroughMeta = defineStep({
-  type: NodeType.STEP,
-  def: passthroughDef,
-  displayName: 'testing',
-  passthrough: true,
-})
-
-getNodeRegistry().defineNode({
-  ...passThroughMeta,
-  component: {} as Component,
-})
-
-const typedDef = 'typed-step' as NodeDef
-const basicMeta = defineStep({
-  type: NodeType.STEP,
-  def: typedDef,
-  displayName: 'testing2',
-  passthrough: false,
-  inputDataTypes: [BitMask],
-  outputDataType: BitMask,
-})
-
-getNodeRegistry().defineNode({
-  ...basicMeta,
-  component: {} as Component,
-})
-
-// ------------------------------------------------------------
-// Config types
-// ------------------------------------------------------------
 
 type RawConfig = { value: number }
 type SerializedConfig = { value: number }
 type RC = Reactive<RawConfig>
 
-// ------------------------------------------------------------
-// Handler options
-// ------------------------------------------------------------
+/* ------------------------------------------------------------
+   Handler options
+------------------------------------------------------------ */
 
 const passthroughHandlerOptions: StepHandlerOptions<
   RawConfig,
   SerializedConfig,
   RC,
-  any,
+  any
+> = {
+  config() {
+    return { value: 1 }
+  },
+  reactiveConfig(defaults) {
+    return reactive(defaults)
+  },
+  async run({ inputData }) {
+    return {
+      output: inputData,
+      preview: null,
+      meta: null,
+      validationErrors: [],
+    }
+  },
+}
+
+const typedHandlerOptions: StepHandlerOptions<
+  RawConfig,
+  SerializedConfig,
+  RC,
   any
 > = {
   config() {
@@ -100,44 +84,38 @@ const passthroughHandlerOptions: StepHandlerOptions<
   },
 }
 
-const typedHandlerOptions = {
-  config() {
-    return { value: 1 }
-  },
-  reactiveConfig(defaults: any) {
-    return reactive(defaults)
-  },
-  run: async ({ inputData }: { inputData: any }) => ({
-    output: inputData,
-    preview: null,
-    meta: null,
-    validationErrors: [],
-  }),
-}
+/* ------------------------------------------------------------
+   TESTS
+------------------------------------------------------------ */
 
-// ------------------------------------------------------------
-// TESTS
-// ------------------------------------------------------------
+describe('Node classes (latest architecture)', () => {
 
-describe('Pipeline Node Behavior', () => {
-  // ------------------------------------------------------------
-  // isReady / outputReady
-  // ------------------------------------------------------------
-  describe('isReady / outputReady', () => {
-    it('outputReady returns true only when clean, not processing, initialized', () => {
+  /* ------------------------------------------------------------
+     StepNode: outputReady / isReady
+  ------------------------------------------------------------ */
+  describe('StepNode readiness', () => {
+    it('outputReady is true only when clean, not processing, initialized', () => {
+      const meta = defineStep({
+        type: NodeType.STEP,
+        def: 'ready-test' as NodeDef,
+        displayName: 'Ready',
+        inputDataTypes: [BitMask],
+        outputDataType: BitMask,
+      })
+
+      const handler = defineStepHandler(meta, passthroughHandlerOptions)
+
       const s = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('s'),
-        def: passthroughDef,
+        def: meta.def,
         config: { value: 1 },
       })
 
-      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       s.initialize(handler)
 
       s.isDirty.value = false
@@ -150,33 +128,40 @@ describe('Pipeline Node Behavior', () => {
       expect(s.outputReady()).toBe(false)
     })
 
-    it('isReady requires prev outputReady when prevNodeId exists', () => {
+    it('isReady requires previous node outputReady when prevNodeId exists', () => {
+      const meta = defineStep({
+        type: NodeType.STEP,
+        def: 'ready-chain' as NodeDef,
+        displayName: 'Chain',
+        inputDataTypes: [BitMask],
+        outputDataType: BitMask,
+      })
+
+      const handler = defineStepHandler(meta, passthroughHandlerOptions)
+
       const s0 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('s0'),
-        def: passthroughDef,
+        def: meta.def,
         config: { value: 1 },
       })
+
       const s1 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('s1'),
-        def: passthroughDef,
+        def: meta.def,
         config: { value: 1 },
+        prevNodeId: nid('s0'),
       })
 
-      s1.prevNodeId = nid('s0')
-
-      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       s0.initialize(handler)
       s1.initialize(handler)
 
@@ -188,10 +173,7 @@ describe('Pipeline Node Behavior', () => {
       s1.isProcessing.value = false
       s1.initialized.value = true
 
-      const store = makeStore({
-        [nid('s0')]: s0,
-        [nid('s1')]: s1,
-      })
+      const store = makeStore({ s0, s1 })
 
       expect(s1.isReady(store)).toBe(true)
 
@@ -200,20 +182,27 @@ describe('Pipeline Node Behavior', () => {
     })
   })
 
-  // ------------------------------------------------------------
-  // serialize() using loadSerialized?.config
-  // ------------------------------------------------------------
-  describe('serialize loadSerialized config', () => {
-    it('serialize uses initial config when handler not initialized', () => {
+  /* ------------------------------------------------------------
+     StepNode: serialize
+  ------------------------------------------------------------ */
+  describe('StepNode serialize', () => {
+    it('serialize returns initial config when handler not initialized', () => {
+      const meta = defineStep({
+        type: NodeType.STEP,
+        def: 'serialize-test' as NodeDef,
+        displayName: 'Serialize',
+        inputDataTypes: [BitMask],
+        outputDataType: BitMask,
+      })
+
       const s = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('s'),
-        def: passthroughDef,
+        def: meta.def,
         config: { value: 123 },
       })
 
@@ -222,20 +211,29 @@ describe('Pipeline Node Behavior', () => {
     })
   })
 
-  // ------------------------------------------------------------
-  // seedSum accumulation
-  // ------------------------------------------------------------
-  describe('seedSum accumulation', () => {
+  /* ------------------------------------------------------------
+     StepNode: seedSum
+  ------------------------------------------------------------ */
+  describe('StepNode seedSum', () => {
     it('accumulates seedSum from previous nodes', () => {
+      const meta = defineStep({
+        type: NodeType.STEP,
+        def: 'seed-test' as NodeDef,
+        displayName: 'Seed',
+        inputDataTypes: [BitMask],
+        outputDataType: BitMask,
+      })
+
+      const handler = defineStepHandler(meta, passthroughHandlerOptions)
+
       const s0 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('s0'),
-        def: passthroughDef,
+        def: meta.def,
         config: { value: 1 },
         seed: 5,
       })
@@ -244,49 +242,52 @@ describe('Pipeline Node Behavior', () => {
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('s1'),
-        def: passthroughDef,
+        def: meta.def,
         config: { value: 1 },
         seed: 7,
+        prevNodeId: nid('s0'),
       })
 
-      s1.prevNodeId = nid('s0')
-
-      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       s0.initialize(handler)
 
-      const store = makeStore({
-        [nid('s0')]: s0,
-        [nid('s1')]: s1,
-      })
+      const store = makeStore({ s0, s1 })
 
-      expect(s0.getSeedSum(store)).toEqual(5)
-      expect(s1.getSeedSum(store)).toEqual(12)
+      expect(s0.getSeedSum(store)).toBe(5)
+      expect(s1.getSeedSum(store)).toBe(12)
     })
   })
 
-  // ------------------------------------------------------------
-  // Fork serialize
-  // ------------------------------------------------------------
+  /* ------------------------------------------------------------
+     ForkNode serialize
+  ------------------------------------------------------------ */
   describe('ForkNode serialize', () => {
     it('serializes prevNodeId and branchIds', () => {
+      const meta = defineFork({
+        type: NodeType.FORK,
+        def: 'fork-test' as NodeDef,
+        displayName: 'Fork',
+        inputDataTypes: [BitMask],
+        outputDataType: BitMask,
+        branchDefs: ['b0' as NodeDef, 'b1' as NodeDef],
+      })
+
+      const handler = defineStepHandler(meta, passthroughHandlerOptions)
+
       const f = new ForkNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('f'),
-        def: passthroughDef,
+        def: meta.def,
         branchIds: [nid('b0'), nid('b1')],
         prevNodeId: nid('s0'),
       })
 
-      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       f.initialize(handler)
 
       const ser = f.serialize()
@@ -295,25 +296,33 @@ describe('Pipeline Node Behavior', () => {
     })
   })
 
-  // ------------------------------------------------------------
-  // Branch serialize
-  // ------------------------------------------------------------
+  /* ------------------------------------------------------------
+     BranchNode serialize
+  ------------------------------------------------------------ */
   describe('BranchNode serialize', () => {
     it('serializes prevNodeId and branchIndex', () => {
+      const meta = defineBranch({
+        type: NodeType.BRANCH,
+        def: 'branch-test' as NodeDef,
+        displayName: 'Branch',
+        inputDataTypes: [BitMask],
+        outputDataType: BitMask,
+      })
+
+      const handler = defineStepHandler(meta, passthroughHandlerOptions)
+
       const b = new BranchNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof meta
       >({
         id: nid('b'),
-        def: passthroughDef,
+        def: meta.def,
         prevNodeId: nid('f'),
         branchIndex: 2,
       })
 
-      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       b.initialize(handler)
 
       const ser = b.serialize()
@@ -322,55 +331,57 @@ describe('Pipeline Node Behavior', () => {
     })
   })
 
-  // ------------------------------------------------------------
-  // Passthrough nodes
-  // ------------------------------------------------------------
-  describe('Passthrough nodes', () => {
-    it('StepNode in passthrough mode forwards input type', async () => {
+  /* ------------------------------------------------------------
+     Passthrough nodes
+  ------------------------------------------------------------ */
+  describe('Passthrough StepNode', () => {
+    it('forwards input type and outputData unchanged', async () => {
+      getNodeRegistry().clear()
 
-      const s0Definition = defineTestNode({
+      const s0Meta = defineStep({
+        type: NodeType.STEP,
+        def: 's0' as NodeDef,
+        displayName: 'S0',
         inputDataTypes: [BitMask],
         outputDataType: BitMask,
       })
+      getNodeRegistry().defineNode(s0Meta as unknown as AnyNodeDefinition)
+
+      const s1Meta = defineStep({
+        type: NodeType.STEP,
+        def: 's1' as NodeDef,
+        displayName: 'S1',
+        passthrough: true,
+      })
+      getNodeRegistry().defineNode(s1Meta as unknown as AnyNodeDefinition)
+
+      const handler0 = defineStepHandler(s0Meta, typedHandlerOptions)
+      const handler1 = defineStepHandler(s1Meta, passthroughHandlerOptions)
 
       const s0 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        typeof s0Definition['inputDataTypes'],
-        typeof s0Definition['outputDataType']
+        typeof s0Meta
       >({
         id: nid('s0'),
-        def: s0Definition.def,
+        def: s0Meta.def,
         config: { value: 1 },
       })
-
-      const s1Definition = defineTestNode({
-        passthrough: true,
-      })
-
-      expect(getNodeRegistry().get(s1Definition.def).passthrough).toBe(true)
 
       const s1 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        any,
-        any
+        typeof s1Meta
       >({
-        id: nid('s1_passthrough'),
-        def: s1Definition.def,
+        id: nid('s1'),
+        def: s1Meta.def,
         config: { value: 1 },
-        prevNodeId: s0.id,
+        prevNodeId: nid('s0'),
       })
 
-      expect(getNodeRegistry().get(s1Definition.def).passthrough).toBe(true)
-
-      const handler0 = defineStepHandler(s0Definition as AnyStepMeta, passthroughHandlerOptions)
-
       s0.initialize(handler0)
-
-      const handler1 = defineStepHandler(s1Definition as AnyStepMeta, passthroughHandlerOptions)
       s1.initialize(handler1)
 
       const bitMask = new BitMask(1, 1)
@@ -378,77 +389,82 @@ describe('Pipeline Node Behavior', () => {
       s0.isDirty.value = false
       s0.initialized.value = true
 
-      const store = makeStore({
-        [s0.id]: s0,
-        [s1.id]: s1,
-      })
+      const store = makeStore({ s0, s1 })
 
       s1.isDirty.value = true
       await s1.processRunner(store)
+
       expect(s1.validationErrors).toEqual([])
-      expect(s1.outputData).toBe(bitMask)
       expect(s1.outputData).toBe(bitMask)
     })
   })
 
-  describe('Typed input/output nodes', () => {
-    it('StepNode with typedDef respects input/output types', async () => {
-
-      const s0Definition = defineTestNode({
+  /* ------------------------------------------------------------
+     Typed IO nodes
+  ------------------------------------------------------------ */
+  describe('Typed IO StepNode', () => {
+    it('respects input/output types and passes data correctly', async () => {
+      getNodeRegistry().clear()
+      const s0Meta = defineStep({
+        type: NodeType.STEP,
+        def: 's0-typed' as NodeDef,
+        displayName: 'S0 Typed',
         inputDataTypes: [BitMask],
         outputDataType: NormalMap,
       })
+
+      getNodeRegistry().defineNode(s0Meta as unknown as AnyNodeDefinition)
+
+      const s1Meta = defineStep({
+        type: NodeType.STEP,
+        def: 's1-typed' as NodeDef,
+        displayName: 'S1 Typed',
+        inputDataTypes: [NormalMap],
+        outputDataType: NormalMap,
+      })
+      getNodeRegistry().defineNode(s1Meta as unknown as AnyNodeDefinition)
+
+      const handler0 = defineStepHandler(s0Meta, typedHandlerOptions)
+      const handler1 = defineStepHandler(s1Meta, typedHandlerOptions)
 
       const s0 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        typeof s0Definition['inputDataTypes'],
-        typeof s0Definition['outputDataType']
+        typeof s0Meta
       >({
         id: nid('s0'),
-        def: s0Definition.def,
+        def: s0Meta.def,
         config: { value: 1 },
-      })
-
-      const s1Definition = defineTestNode({
-        inputDataTypes: [NormalMap],
-        outputDataType: NormalMap,
       })
 
       const s1 = new StepNode<
         RawConfig,
         SerializedConfig,
         RC,
-        typeof s1Definition['inputDataTypes'],
-        typeof s1Definition['outputDataType']
+        typeof s1Meta
       >({
         id: nid('s1'),
-        def: s1Definition.def,
+        def: s1Meta.def,
         config: { value: 1 },
+        prevNodeId: nid('s0'),
       })
 
-      s1.prevNodeId = nid('s0')
-
-      const handler0 = defineStepHandler(s0Definition as AnyStepMeta, typedHandlerOptions)
       s0.initialize(handler0)
-
-      const handler1 = defineStepHandler(s1Definition as AnyStepMeta, typedHandlerOptions)
       s1.initialize(handler1)
 
-      s0.outputData = new NormalMap(1, 1)
+      const nm = new NormalMap(1, 1)
+      s0.outputData = nm
       s0.isDirty.value = false
       s0.initialized.value = true
 
-      const store = makeStore({
-        [nid('s0')]: s0,
-        [nid('s1')]: s1,
-      })
+      const store = makeStore({ s0, s1 })
 
       s1.isDirty.value = true
       await s1.processRunner(store)
+
       expect(s1.validationErrors).toEqual([])
-      expect(s1.outputData).toBe(s0.outputData)
+      expect(s1.outputData).toBe(nm)
     })
   })
 })

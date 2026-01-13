@@ -1,11 +1,11 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/_types.ts'
-import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 import { BitMask } from '../../lib/node-data-types/BitMask.ts'
+import { type NodeDef, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
-  def: 'bitmask_islands_grow',
+  def: 'bitmask_islands_grow' as NodeDef,
   displayName: 'BitMask Islands: Grow',
   inputDataTypes: [BitMask],
   outputDataType: BitMask,
@@ -32,8 +32,7 @@ import { marchingGrower } from '../../lib/generators/IslandGrower/MarchingGrower
 import { perlinGrower } from '../../lib/generators/IslandGrower/PerlinGrower.ts'
 import { weightedRandomGrower } from '../../lib/generators/IslandGrower/WeightedRandomGrower.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
 import StepCard from '../Card/StepCard.vue'
@@ -92,7 +91,7 @@ const handler = defineStepHandler(STEP_META, {
   async run({ config, inputData }) {
     if (!inputData) return
 
-    const mask = inputData.copy() as BitMask
+    const mask = inputData.copy()
     const islands = getIslands(mask)
     const C = config
 
@@ -137,7 +136,7 @@ const handler = defineStepHandler(STEP_META, {
   },
 })
 
-const node = useStepHandler(nodeId, STEP_META, handler)
+const node = useStepHandler(nodeId, handler)
 
 const config = node.config
 

@@ -10,7 +10,15 @@ import type {
 } from '../_types.ts'
 import type { StepValidationError } from '../errors/StepValidationError.ts'
 import type { InitializedNode } from '../Node.ts'
-import type { NodeMeta } from '../types/definitions.ts'
+import {
+  type AnyBranchMeta,
+  type AnyForkMeta,
+  type AnyNodeMeta,
+  type AnyStepMeta,
+  getMetaInput,
+  isPassthroughMeta,
+  type MetaIO,
+} from '../types/definitions.ts'
 import type { BranchHandler } from './BranchHandler.ts'
 import type { ForkHandler } from './ForkHandler.ts'
 import type { StepHandler } from './StepHandler.ts'
@@ -19,9 +27,7 @@ export type NodeHandler<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<any, any> = NodeMeta<I, O>,
+  M extends AnyNodeMeta
 > = {
   meta: M
   config: () => NormalizedConfig<C>
@@ -29,30 +35,28 @@ export type NodeHandler<
   serializeConfig: (config: NormalizedConfig<C>) => SC
   deserializeConfig: (serialized: SC) => NormalizedConfig<C>
   loadConfig: (config: RC, serializedConfig: SC) => void
-  watcherTargets(node: InitializedNode<C, SC, RC, I, O>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
-  validateInput(inputData: StepInputTypesToInstances<I>, inputDataTypes: I, inputMeta: IRunnerResultMeta | null): StepValidationError[],
+  watcherTargets(node: InitializedNode<C, SC, RC>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
+  validateInput(inputData: StepInputTypesToInstances<MetaIO<M>[0]>, inputDataTypes: MetaIO<M>[0], inputMeta: IRunnerResultMeta | null): StepValidationError[],
   setPassThroughDataType: (passthroughType: NodeDataType) => void,
   clearPassThroughDataType: () => void,
 
   currentInputDataTypes: readonly NodeDataType[],
   currentOutputDataType: NodeDataType,
 
-  onRemoving?: (node: InitializedNode<C, SC, RC, I, O>) => void,
+  onRemoving?: (node: InitializedNode<C, SC, RC>) => void,
   onRemoved?: (id: NodeId) => void,
-  onAdded?: (node: InitializedNode<C, SC, RC, I, O>) => void,
-  onAfterRun?: (node: InitializedNode<C, SC, RC, I, O>) => void,
-
+  onAdded?: (node: InitializedNode<C, SC, RC>) => void,
+  onAfterRun?: (node: InitializedNode<C, SC, RC>) => void,
 }
 
 export type NodeHandlerOptions<
   C = {},
   SC = C,
   RC = Reactive<C>,
-  I extends readonly NodeDataType[] = readonly NodeDataType[],
-  O extends NodeDataType = NodeDataType,
+  M extends AnyNodeMeta = AnyNodeMeta
 > = Partial<
   Omit<
-    NodeHandler<C, SC, RC, I, O>,
+    NodeHandler<C, SC, RC, M>,
     | 'setPassThroughDataType'
     | 'clearPassThroughDataType'
     | 'currentInputDataTypes'
@@ -64,15 +68,14 @@ export function makeHandler<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
+  M extends AnyNodeMeta,
 >(
-  meta: NodeMeta<I, O>,
-  options: NodeHandlerOptions<C, SC, RC, I, O> | undefined,
+  meta: M,
+  options: NodeHandlerOptions<C, SC, RC, M> | undefined,
 ) {
   type Config = NormalizedConfig<C>
   type ReactiveConfig = NormalizedReactiveConfig<C, RC>
-  type Input = StepInputTypesToInstances<I>
+  type Input = StepInputTypesToInstances<MetaIO<M>[0]>
 
   const defaults = {
     config: (() => ({} as Config)),
@@ -89,7 +92,7 @@ export function makeHandler<
     ): WatcherTarget[] {
       return defaults
     },
-    validateInput(inputData: Input | null, inputDataTypes: I, inputMeta: IRunnerResultMeta | null): StepValidationError[] {
+    validateInput(inputData: Input | null, inputDataTypes: MetaIO<M>[0], inputMeta: IRunnerResultMeta | null): StepValidationError[] {
       return []
     },
   }
@@ -102,15 +105,12 @@ export function makeHandler<
   const watcherTargets = options?.watcherTargets ?? defaults.watcherTargets
   const validateInput = options?.validateInput ?? defaults.validateInput
 
-  const defaultInput = (meta.passthrough
-      ? [PassThrough]
-      : meta.inputDataTypes
-  ) as I
+  let defaultInput: MetaIO<M>[0] = getMetaInput(meta)
 
-  const defaultOutput = (meta.passthrough
+  const defaultOutput = (isPassthroughMeta(meta)
       ? PassThrough
       : meta.outputDataType
-  ) as O
+  ) as MetaIO<M>[1]
 
   const passthroughType = shallowRef<NodeDataType | undefined>(undefined)
 
@@ -122,7 +122,7 @@ export function makeHandler<
     deserializeConfig: deserializeConfig as (serialized: SC) => Config,
     loadConfig: loadConfig as (config: RC, serializedConfig: SC) => void,
     watcherTargets: watcherTargets as (node: any, defaults: WatcherTarget[]) => WatcherTarget[],
-    validateInput: validateInput as (inputData: StepInputTypesToInstances<I>, inputDataTypes: I, inputMeta: IRunnerResultMeta | null) => StepValidationError[],
+    validateInput: validateInput as (inputData: StepInputTypesToInstances<MetaIO<M>[0]>, inputDataTypes: MetaIO<M>[0], inputMeta: IRunnerResultMeta | null) => StepValidationError[],
 
     get currentInputDataTypes() {
       return passthroughType.value ? [passthroughType.value] : defaultInput
@@ -139,16 +139,15 @@ export function makeHandler<
     setPassThroughDataType(type: NodeDataType) {
       passthroughType.value = type
     },
-  } as NodeHandler<C, SC, RC, I, O>
+  } as NodeHandler<C, SC, RC, M>
 }
 
 export type AnyHandler<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
+  M extends AnyNodeMeta = AnyNodeMeta
 > =
-  | StepHandler<C, SC, RC, I, O>
-  | ForkHandler<C, SC, RC, I, O>
-  | BranchHandler<C, SC, RC, I, O>
+  | StepHandler<C, SC, RC, Extract<M, AnyStepMeta<any, any>>>
+  | ForkHandler<C, SC, RC, Extract<M, AnyForkMeta<any, any>>>
+  | BranchHandler<C, SC, RC, Extract<M, AnyBranchMeta<any, any>>>

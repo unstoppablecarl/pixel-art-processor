@@ -1,12 +1,12 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/_types.ts'
-import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 import { NormalMap } from '../../lib/node-data-types/NormalMap.ts'
 import { PixelMap } from '../../lib/node-data-types/PixelMap.ts'
+import { type NodeDef, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
-  def: 'normal_map_to_texture_lighting',
+  def: 'normal_map_to_texture_lighting' as NodeDef,
   displayName: 'NormalMap -> Texture Lighting',
   inputDataTypes: [NormalMap],
   outputDataType: PixelMap,
@@ -16,8 +16,7 @@ export const STEP_META = defineStep({
 import { computed } from 'vue'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
 import StepCard from '../Card/StepCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
@@ -63,7 +62,7 @@ const handler = defineStepHandler(STEP_META, {
     }
   },
 })
-const node = useStepHandler(nodeId, STEP_META, handler)
+const node = useStepHandler(nodeId, handler)
 
 const images = computed(() => [
   {

@@ -1,6 +1,6 @@
 <script lang="ts">
 import { BitMask } from '../../../lib/node-data-types/BitMask.ts'
-import { NodeType } from '../../../lib/pipeline/_types.ts'
+import { type NodeDef, NodeType } from '../../../lib/pipeline/_types.ts'
 import { defineFork } from '../../../lib/pipeline/types/definitions.ts'
 import type { WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import { STEP_META as branchStepMeta } from './WangTileBranch.vue'
@@ -11,9 +11,9 @@ export interface IRunnerResultMeta {
 
 export const STEP_META = defineFork({
   type: NodeType.FORK,
-  def: 'fork_wang_tiles',
+  def: 'fork_wang_tiles' as NodeDef,
   displayName: 'Fork: Wang Tiles',
-  inputDataTypes: [],
+  noInput: true,
   outputDataType: BitMask,
   branchDefs: [branchStepMeta.def],
 })
@@ -21,8 +21,7 @@ export const STEP_META = defineFork({
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
-import { defineForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
-import { useForkHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineForkHandler, useForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { arrayIndexToColor } from '../../../lib/util/color.ts'
@@ -92,7 +91,7 @@ const handler = defineForkHandler(STEP_META, {
     }
   },
 })
-const node = useForkHandler(nodeId, STEP_META, handler)
+const node = useForkHandler(nodeId, handler)
 
 const config = node.config
 

@@ -1,12 +1,12 @@
 <script lang="ts">
-import { NodeType } from '../../lib/pipeline/_types.ts'
-import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 import { HeightMap } from '../../lib/node-data-types/HeightMap.ts'
 import { NormalMap } from '../../lib/node-data-types/NormalMap.ts'
+import { type NodeDef, NodeType } from '../../lib/pipeline/_types.ts'
+import { defineStep } from '../../lib/pipeline/types/definitions.ts'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
-  def: 'height_map_to_normal_map',
+  def: 'height_map_to_normal_map' as NodeDef,
   displayName: 'HeightMap -> NormalMap',
   inputDataTypes: [HeightMap],
   outputDataType: NormalMap,
@@ -14,8 +14,7 @@ export const STEP_META = defineStep({
 </script>
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { heightMapToNormalMap } from '../../lib/node-data-types/data-type-converters.ts'
 import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -31,16 +30,14 @@ const handler = defineStepHandler(STEP_META, {
   async run({ config, inputData }) {
     if (!inputData) return
 
-    const heightMap = inputData as HeightMap
-
-    const normalMap = heightMapToNormalMap(heightMap, config.normalMapStrength)
+    const normalMap = heightMapToNormalMap(inputData, config.normalMapStrength)
     return {
       output: normalMap,
       preview: normalMap.toImageData(),
     }
   },
 })
-const node = useStepHandler(nodeId, STEP_META, handler)
+const node = useStepHandler(nodeId, handler)
 
 const config = node.config
 </script>

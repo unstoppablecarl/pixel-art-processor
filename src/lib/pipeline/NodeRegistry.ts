@@ -3,14 +3,16 @@ import type { DataStructureConstructor } from '../node-data-types/BaseDataStruct
 import { NodeDataTypeRegistry } from '../node-data-types/NodeDataTypeRegistry.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
-import {
-  type NodeDef,
-  type NodeId,
-  NodeType,
-
-} from './_types.ts'
+import { type NodeDef, type NodeId, NodeType } from './_types.ts'
 import type { AnyNode } from './Node.ts'
-import type { AnyNodeDefinition, AnyNodeMeta, NodeDefinitions } from './types/definitions.ts'
+import {
+  type AnyNodeDefinition,
+  type AnyNodeMeta,
+  isNormalMeta,
+  isPassthroughMeta,
+  isStartMeta,
+  type NodeDefinitions,
+} from './types/definitions.ts'
 
 export type NodeRegistry = ReturnType<typeof makeNodeRegistry>
 
@@ -30,7 +32,7 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
   defineNodes(nodeDefinitions)
 
   function get(def: string): AnyNodeDefinition {
-    const result = NODE_DEFINITIONS[def]
+    const result = NODE_DEFINITIONS[def as NodeDef]
     if (!result) {
       throw new Error('Node Definition not found: ' + def)
     }
@@ -43,8 +45,8 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
 
   function isCompatibleWithOutputType(def: NodeDef, nodeDataType: DataStructureConstructor): boolean {
     const definition = get(def)
-    if (definition.passthrough) return true
-    return definition.inputDataTypes.includes(nodeDataType)
+    if (isPassthroughMeta(definition)) return true
+    return isNormalMeta(definition) && definition.inputDataTypes.includes(nodeDataType)
   }
 
   const getFork = (def: NodeDef) => {
@@ -112,7 +114,7 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
     has,
     getNodeType: (def: string): NodeType => get(def).type,
     defToComponent: (def: string): Component => get(def).component,
-    nodeIsPassthrough: (node: AnyNode): boolean => !!get(node.def).passthrough,
+    nodeIsPassthrough: (node: AnyNode): boolean => isPassthroughMeta(get(node.def)),
     canBeChildOf,
     validateCanBeChildOf,
     addableToArray,
@@ -122,8 +124,11 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
     dataTypeRegistry,
     isCompatibleWithOutputType,
     validateDefRegistration,
+    clear: () => Object.keys(NODE_DEFINITIONS).forEach((k) => delete NODE_DEFINITIONS[k as NodeDef]),
     rootNodes: () => Object.values(NODE_DEFINITIONS)
-      .filter(s => !s.passthrough && s.inputDataTypes.length === 0),
+      .filter((s) => {
+        !isPassthroughMeta(s) && !isStartMeta(s)
+      }),
   }
 }
 

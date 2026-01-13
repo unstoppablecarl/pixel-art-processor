@@ -1,22 +1,18 @@
 <script lang="ts">
-import { NodeType } from '../../../lib/pipeline/_types.ts'
+import { type NodeDef, NodeType } from '../../../lib/pipeline/_types.ts'
 import { defineBranch } from '../../../lib/pipeline/types/definitions.ts'
 
 export const STEP_META = defineBranch({
   type: NodeType.BRANCH,
-  def: 'wang_tile_branch_variant',
+  def: 'wang_tile_branch_variant' as NodeDef,
   displayName: 'Wang Tile: Branch Variant',
   passthrough: true,
-  // isValidDescendantDef: () => false,
-  // branchDefs: ['fo'],
-  // foo: 'bar'
 })
 </script>
 <script setup lang="ts">
 import { reactive } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
-import { defineBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
-import { useBranchHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineBranchHandler, useBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
 import { parseResult, type SingleRunnerResult } from '../../../lib/pipeline/NodeRunner.ts'
 import type { PassThrough } from '../../../lib/node-data-types/PassThrough.ts'
 import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
@@ -72,7 +68,7 @@ const handler = defineBranchHandler(STEP_META, {
   },
 })
 
-const branch = useBranchHandler(branchId, STEP_META, handler)
+const branch = useBranchHandler(branchId, handler)
 
 </script>
 <template>

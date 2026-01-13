@@ -1,10 +1,6 @@
 import { computed, type Reactive, ref, type Ref } from 'vue'
+import type { NodeDataTypeInstance, StepInputTypesToInstances } from '../node-data-types/_node-data-types.ts'
 import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
-import type {
-  NodeDataType,
-  NodeDataTypeInstance,
-  StepInputTypesToInstances,
-} from '../node-data-types/_node-data-types.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
@@ -23,11 +19,21 @@ import { InvalidInputStaticTypeError } from './errors/InvalidInputStaticTypeErro
 import { StepValidationError } from './errors/StepValidationError.ts'
 import type { BranchHandler } from './NodeHandler/BranchHandler.ts'
 import type { ForkHandler } from './NodeHandler/ForkHandler.ts'
-import type { AnyHandler } from './NodeHandler/NodeHandler.ts'
+import type { NodeHandler } from './NodeHandler/NodeHandler.ts'
 import type { StepHandler } from './NodeHandler/StepHandler.ts'
-import { type NormalRunner, parseResult, type SingleRunnerResult } from './NodeRunner.ts'
 import { getNodeRegistry } from './NodeRegistry.ts'
-import type { AnyNodeMeta, NodeMeta } from './types/definitions.ts'
+import { type NormalRunner, parseResult, type SingleRunnerResult } from './NodeRunner.ts'
+import {
+  type AnyBranchMeta,
+  type AnyForkMeta,
+  type AnyNodeMeta,
+  type AnyStepMeta,
+  type BranchMetaIO,
+  type ForkMetaIO,
+  isNormalMeta,
+  type MetaIO,
+  type StepMetaIO,
+} from './types/definitions.ts'
 
 export type BaseNodeSerialized<SC> = {
   id: NodeId,
@@ -51,9 +57,7 @@ export abstract class BaseNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
+  M extends AnyNodeMeta,
   PrevNode extends AnyNode = AnyNode
 > {
   readonly abstract type: NodeType
@@ -69,7 +73,7 @@ export abstract class BaseNode<
   seedSum = 0
   validationErrors: StepValidationError[] = []
   loadSerialized: StepLoaderSerialized<SC> = null
-  abstract handler: StepHandler<C, SC, RC, I, O> | ForkHandler<C, SC, RC, I, O> | BranchHandler<C, SC, RC, I, O> | undefined
+  abstract handler: NodeHandler<C, SC, RC, M> | undefined
 
   // system
   isDirty = ref(false)
@@ -163,7 +167,7 @@ export abstract class BaseNode<
     }
   }
 
-  initialize(handler: AnyHandler<C, SC, RC, I, O>): void {
+  initialize(handler: NodeHandler<C, SC, RC, M>): void {
 
     this.handler = handler
 
@@ -223,23 +227,29 @@ export abstract class BaseNode<
 
     return [
       ...result,
-      ...this.handler!.validateInput(prevOutput, this.handler!.currentInputDataTypes as I, prevMeta),
+      ...this.handler!.validateInput(prevOutput, this.handler!.currentInputDataTypes as MetaIO<M>[0], prevMeta),
     ]
   }
 
   protected validatePrevOutputTypeStatic(store: PipelineStore): StepValidationError[] {
-    const prev = this.getPrev(store) as InitializedNode<any, any, any, any, any>
+    const prev = this.getPrev(store) as InitializedNode<any, any, any>
 
     if (!prev) return []
-    const inputDataTypes = this.handler!.currentInputDataTypes as I
-    const outputDataType = prev.handler.currentOutputDataType
-    if (!inputDataTypes.includes(outputDataType)) return [new InvalidInputStaticTypeError(inputDataTypes, outputDataType)]
+
+    const meta = this.handler!.meta
+    if (isNormalMeta(meta)) {
+      const inputDataTypes = meta.inputDataTypes
+      const outputDataType = prev.handler.currentOutputDataType
+      if (!inputDataTypes.includes(outputDataType)) {
+        return [new InvalidInputStaticTypeError(inputDataTypes, outputDataType)]
+      }
+    }
 
     return []
   }
 
   protected validatePrevOutputTypeInstance(inputData: NodeDataTypeInstance): StepValidationError[] {
-    const inputDataTypes = this.handler!.currentInputDataTypes as I
+    const inputDataTypes = this.handler!.currentInputDataTypes as MetaIO<M>[0]
     const isValid = (inputDataTypes as unknown as any[]).some(c => (inputData as any) instanceof c)
     if (isValid) return []
     const receivedType = (inputData as BaseDataStructure).constructor
@@ -275,12 +285,10 @@ abstract class StepOrBranchNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
+  M extends AnyNodeMeta,
   PrevNode extends AnyNode = AnyNode
-> extends BaseNode<C, SC, RC, I, O, M, PrevNode> {
-  outputData: InstanceType<O> | null = null
+> extends BaseNode<C, SC, RC, M, PrevNode> {
+  outputData: InstanceType<MetaIO<M>[1]> | null = null
   outputPreview: ImageData | null = null
   outputMeta: IRunnerResultMeta | null = null
 
@@ -302,7 +310,7 @@ type StepNodeProperties = {
 }
 export type AnyStepNodeSerialized = StepNodeSerialized<any>
 export type StepNodeSerialized<SC> = BaseNodeSerialized<SC> & StepNodeProperties
-export type AnyStepNode = StepNode<any, any, any, any, any, any>
+export type AnyStepNode = StepNode<any, any, any, any>
 export type StepNodeOptions<SC> = BaseNodeOptions<SC> & Partial<StepNodeProperties>
 
 const StepBase = WithStepOrFork(StepOrBranchNode)
@@ -311,16 +319,13 @@ export class StepNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
-  N extends InitializedStepNode<C, SC, RC, I, O, M> = InitializedStepNode<C, SC, RC, I, O, M>
-> extends StepBase<C, SC, RC, I, O, M, AnyForkNode | AnyStepNode> {
+  M extends AnyStepMeta,
+> extends StepBase<C, SC, RC, M, AnyForkNode | AnyStepNode> {
 
   type = NodeType.STEP
 
   muted: boolean
-  handler: StepHandler<C, SC, RC, I, O> | undefined
+  handler: StepHandler<C, SC, RC, M> | undefined
 
   constructor(options: StepNodeOptions<SC>) {
     super(options)
@@ -336,12 +341,12 @@ export class StepNode<
   }
 
   async runRaw(options: Parameters<NormalRunner<
-    StepInputTypesToInstances<I>,
-    InstanceType<O>,
+    StepInputTypesToInstances<StepMetaIO<M>[0]>,
+    InstanceType<StepMetaIO<M>[1]>,
     RC
   >
-  >[0]): Promise<SingleRunnerResult<InstanceType<O>>> {
-    return this.logFunction('step.run', async () => parseResult<InstanceType<O>>(
+  >[0]): Promise<SingleRunnerResult<InstanceType<StepMetaIO<M>[1]>>> {
+    return this.logFunction('step.run', async () => parseResult<InstanceType<StepMetaIO<M>[1]>>(
       await this.handler!.run(options),
       options?.meta ?? null,
     ))
@@ -399,7 +404,7 @@ export class StepNode<
       name: 'muted',
       target: () => this.muted,
     }]
-    return this.handler!.watcherTargets(this as unknown as N, defaults)
+    return this.handler!.watcherTargets(this as InitializedStepNode<C, SC, RC>, defaults)
   }
 }
 
@@ -409,7 +414,7 @@ type ForkNodeProperties = {
 }
 export type AnyForkNodeSerialized = ForkNodeSerialized<any>
 export type ForkNodeSerialized<SC> = BaseNodeSerialized<SC> & Required<ForkNodeProperties>
-export type AnyForkNode = ForkNode<any, any, any, any, any, any>
+export type AnyForkNode = ForkNode<any, any, any, any>
 export type ForkNodeOptions<SC> = BaseNodeOptions<SC> & ForkNodeProperties
 
 const ForkBase = WithStepOrFork(BaseNode)
@@ -418,15 +423,13 @@ export class ForkNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
-> extends ForkBase<C, SC, RC, I, O, M, AnyStepNode | AnyBranchNode> {
+  M extends AnyForkMeta<any, any>,
+> extends ForkBase<C, SC, RC, M, AnyStepNode | AnyBranchNode> {
   type = NodeType.FORK
 
-  handler: ForkHandler<C, SC, RC, I, O> | undefined
+  handler: ForkHandler<C, SC, RC, M> | undefined
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
-  forkOutputData: Ref<(SingleRunnerResult<InstanceType<O>> | undefined)[]> = ref([])
+  forkOutputData: Ref<(SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>> | undefined)[]> = ref([])
   maxBranchCount = ref<null | number>(null)
 
   canAddBranch = computed((): boolean => {
@@ -455,21 +458,21 @@ export class ForkNode<
       this.branchIds.value.map((_, i) => {
         return this.runBranch(store, i)
       }),
-    ) as SingleRunnerResult<InstanceType<O>>[]
+    ) as SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>[]
   }
 
-  getCachedBranchOutput(branchIndex: number): SingleRunnerResult<InstanceType<O>> | null {
+  getCachedBranchOutput(branchIndex: number): SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>> | null {
     return this.forkOutputData.value[branchIndex] ?? null
   }
 
-  async getBranchOutput(store: PipelineStore, branchIndex: number): Promise<SingleRunnerResult<InstanceType<O>>> {
+  async getBranchOutput(store: PipelineStore, branchIndex: number): Promise<SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>> {
     if (this.forkOutputData.value[branchIndex] === undefined) {
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
       // trigger reactivity
       this.forkOutputData.value = [...this.forkOutputData.value]
     }
 
-    return this.forkOutputData.value[branchIndex] as SingleRunnerResult<InstanceType<O>>
+    return this.forkOutputData.value[branchIndex] as SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>
   }
 
   // use when fork output data changes for only a specific branch
@@ -480,7 +483,7 @@ export class ForkNode<
   }
 
   private async runBranch(store: PipelineStore, branchIndex: number): Promise<
-    SingleRunnerResult<InstanceType<O>>
+    SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>
   > {
     return this.logFunction('runBranch', async () => {
       const {
@@ -497,7 +500,7 @@ export class ForkNode<
         meta,
       })
 
-      return parseResult<InstanceType<O>>(output, meta)
+      return parseResult<InstanceType<ForkMetaIO<M>[1]>>(output, meta)
     })
   }
 
@@ -531,7 +534,7 @@ export class ForkNode<
   }
 
   getWatcherTargets(): WatcherTarget[] {
-    return this.handler!.watcherTargets(this as InitializedForkNode<C, SC, RC, I, O, M>, super.getBaseWatcherTargets())
+    return this.handler!.watcherTargets(this as InitializedForkNode<C, SC, RC>, super.getBaseWatcherTargets())
   }
 }
 
@@ -541,20 +544,19 @@ type BranchNodeProperties = {
 }
 export type AnyBranchNodeSerialized = BranchNodeSerialized<any>
 export type BranchNodeSerialized<SC> = BaseNodeSerialized<SC> & Required<BranchNodeProperties>
-export type AnyBranchNode = BranchNode<any, any, any, any, any>
+export type AnyBranchNode = BranchNode<any, any, any, any>
 export type BranchNodeOptions<SC> = BaseNodeOptions<SC> & BranchNodeProperties
 
 export class BranchNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
-> extends StepOrBranchNode<C, SC, RC, I, O, M, AnyForkNode> {
+  M extends AnyBranchMeta<any, any>,
+  // N extends InitializedBranchNode<C, SC, RC, BranchMetaIO<M>[0], BranchMetaIO<M>[1], M> = InitializedBranchNode<C, SC, RC, BranchMetaIO<M>[0], BranchMetaIO<M>[1], M>
+> extends StepOrBranchNode<C, SC, RC, M, AnyForkNode> {
   type = NodeType.BRANCH
 
-  handler: BranchHandler<C, SC, RC, I, O> | undefined
+  handler: BranchHandler<C, SC, RC, M> | undefined
   prevNodeId: NodeId
   branchIndex: number
 
@@ -608,12 +610,12 @@ export class BranchNode<
 
       const output = await this.handler!.run({
         config: this.config as RC,
-        inputData: inputData as StepInputTypesToInstances<I>,
+        inputData: inputData as StepInputTypesToInstances<BranchMetaIO<M>[0]>,
         inputPreview,
         meta,
       })
 
-      const result = parseResult<InstanceType<O>>(output, meta)
+      const result = parseResult<InstanceType<BranchMetaIO<M>[1]>>(output, meta)
 
       this.outputData = result.output
       this.outputPreview = result.preview
@@ -624,6 +626,7 @@ export class BranchNode<
   }
 
   async getResultFromPrev(store: PipelineStore): Promise<SingleRunnerResult<NodeDataTypeInstance>> {
+    type O = BranchMetaIO<M>[1]
     // return this.logFunction('getResultFromPrev', async () => {
     const fork = this.getPrev(store)
     const result = await fork.getBranchOutput(store, this.branchIndex)
@@ -632,7 +635,7 @@ export class BranchNode<
   }
 
   getWatcherTargets(): WatcherTarget[] {
-    return this.handler!.watcherTargets(this as InitializedBranchNode<C, SC, RC, I, O, M>, super.getBaseWatcherTargets())
+    return this.handler!.watcherTargets(this as InitializedBranchNode<C, SC, RC>, super.getBaseWatcherTargets())
   }
 
   getSiblings(store: PipelineStore, filter?: (siblingBranch: AnyBranchNode) => boolean): AnyBranchNode[] {
@@ -646,63 +649,50 @@ export class BranchNode<
   }
 }
 
-export type AnyNode = GraphNode<any, any, any, any, any, any>
+export type AnyNode = GraphNode<any, any, any, AnyNodeMeta>
 
 export type GraphNode<
   C = {},
   SC = C,
   RC = Reactive<C>,
-  I extends readonly NodeDataType[] = readonly NodeDataType[],
-  O extends NodeDataType = NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
+  M extends AnyNodeMeta = AnyNodeMeta
 > =
-  | StepNode<C, SC, RC, I, O, M>
-  | ForkNode<C, SC, RC, I, O, M>
-  | BranchNode<C, SC, RC, I, O, M>
+  | StepNode<C, SC, RC, Extract<M, AnyStepMeta<any, any>>>
+  | ForkNode<C, SC, RC, Extract<M, AnyForkMeta<any, any>>>
+  | BranchNode<C, SC, RC, Extract<M, AnyBranchMeta<any, any>>>
 
 export type InitializedStepNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
-> = { __brand: 'step' }
-  & WithRequired<StepNode<C, SC, RC, I, O, M>, 'config' | 'handler'>
+  M extends AnyStepMeta<any, any> = AnyStepMeta<any, any>
+> = WithRequired<StepNode<C, SC, RC, M>, 'config' | 'handler'>
 
 export type InitializedForkNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
-> = { __brand: 'fork' }
-  & WithRequired<ForkNode<C, SC, RC, I, O, M>, 'config' | 'handler'>
+  M extends AnyForkMeta<any, any> = AnyForkMeta<any, any>
+> = WithRequired<ForkNode<C, SC, RC, M>, 'config' | 'handler'>
 
 export type InitializedBranchNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
-> = { __brand: 'branch' }
-  & WithRequired<BranchNode<C, SC, RC, I, O, M>, 'config' | 'handler'>
+  M extends AnyBranchMeta<any, any> = AnyBranchMeta<any, any>
+> = WithRequired<BranchNode<C, SC, RC, M>, 'config' | 'handler'>
 
 export type InitializedNode<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
-  M extends NodeMeta<I, O> = NodeMeta<I, O>,
+  M extends AnyNodeMeta = AnyNodeMeta
 > =
-  | InitializedStepNode<C, SC, RC, I, O, M>
-  | InitializedForkNode<C, SC, RC, I, O, M>
-  | InitializedBranchNode<C, SC, RC, I, O, M>
+  | InitializedStepNode<C, SC, RC, Extract<M, AnyStepMeta<any, any>>>
+  | InitializedForkNode<C, SC, RC, Extract<M, AnyForkMeta<any, any>>>
+  | InitializedBranchNode<C, SC, RC, Extract<M, AnyBranchMeta<any, any>>>
 
-export type AnyInitializedNode = InitializedNode<any, any, any, readonly NodeDataType[], NodeDataType, AnyNodeMeta>
+export type AnyInitializedNode = InitializedNode<any, any, any>
 
 export type AnyNodeSerialized = AnyStepNodeSerialized | AnyForkNodeSerialized | AnyBranchNodeSerialized
 

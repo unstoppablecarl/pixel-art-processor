@@ -1,143 +1,39 @@
-import { watch } from 'vue'
-import type { NodeDataType } from '../../node-data-types/_node-data-types.ts'
 import { usePipelineStore } from '../../store/pipeline-store.ts'
-import { logNodeWatch } from '../../util/misc.ts'
-import type { NodeId } from '../_types.ts'
-import type {
-  GraphNode,
-  InitializedBranchNode,
-  InitializedForkNode,
-  InitializedNode,
-  InitializedStepNode,
-} from '../Node.ts'
-import type { NodeMeta } from '../types/definitions.ts'
-import { type BranchHandler } from './BranchHandler.ts'
-import { type ForkHandler } from './ForkHandler.ts'
-import type { AnyHandler, NodeHandler } from './NodeHandler.ts'
-import { type StepHandler } from './StepHandler.ts'
+import { type NodeId, NodeType } from '../_types.ts'
+import { BranchNode, ForkNode, type GraphNode, type InitializedNode, StepNode } from '../Node.ts'
+import type { AnyBranchMeta, AnyForkMeta, AnyNodeMeta, AnyStepMeta } from '../types/definitions.ts'
+import type { NodeHandler } from './NodeHandler.ts'
 
 export function useNodeHandler<
   C,
   SC,
   RC,
-  I extends readonly NodeDataType[],
-  O extends NodeDataType,
+  M extends AnyNodeMeta
 >(
   nodeId: NodeId,
-  handler: NodeHandler<C, SC, RC, I, O>,
+  handler: NodeHandler<C, SC, RC, M>,
 ) {
   const store = usePipelineStore()
-  const node = store.get(nodeId) as GraphNode<C, SC, RC, I, O>
 
-  node.initialize(handler as AnyHandler<C, SC, RC, I, O>)
-  node.handler?.onAdded?.(node as InitializedNode<C, SC, RC, I, O>)
+  const node = store.get(nodeId) as GraphNode<C, SC, RC, M>
+  const type = handler.meta.type
 
-  node.getWatcherTargets()
-    .forEach(({ name, target }) => {
-      watch(target, () => {
-        logNodeWatch(node.id, name)
-        store.markDirty(node.id)
-      }, { deep: true })
-    })
+  if (type === NodeType.STEP) {
+    type S = StepNode<C, SC, RC, Extract<M, AnyStepMeta<any, any>>>
+    type H = NodeHandler<C, SC, RC, Extract<M, AnyStepMeta<any, any>>>
+    (node as S).initialize(handler as H)
+  } else if (type === NodeType.FORK) {
+    type F = ForkNode<C, SC, RC, Extract<M, AnyForkMeta<any, any>>>
+    type H = NodeHandler<C, SC, RC, Extract<M, AnyForkMeta<any, any>>>
+    (node as F).initialize(handler as H)
+  } else {
+    type B = BranchNode<C, SC, RC, Extract<M, AnyBranchMeta<any, any>>>
+    type H = NodeHandler<C, SC, RC, Extract<M, AnyBranchMeta<any, any>>>
+    (node as B).initialize(handler as H)
+  }
 
-  return node as InitializedNode<C, SC, RC, I, O>
+  return node as InitializedNode<C, SC, RC, M>
 }
 
-export function useStepHandler<
-  C,
-  SC,
-  RC,
-  M extends NodeMeta<any, any>,
->(
-  nodeId: NodeId,
-  meta: M,
-  handler: StepHandler<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType']
-  >,
-): InitializedStepNode<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType'],
-  M
-> {
-  return useNodeHandler(nodeId, handler) as InitializedStepNode<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType'],
-    M
-  >
-}
 
-export function useForkHandler<
-  C,
-  SC,
-  RC,
-  M extends NodeMeta<any, any>,
->(
-  nodeId: NodeId,
-  meta: M,
-  handler: ForkHandler<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType']
-  >,
-): InitializedForkNode<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType'],
-  M
-> {
-  return useNodeHandler(nodeId, handler) as InitializedForkNode<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType'],
-    M
-  >
-}
 
-export function useBranchHandler<
-  C,
-  SC,
-  RC,
-  M extends NodeMeta<any, any>,
->(
-  nodeId: NodeId,
-  meta: M,
-  handler: BranchHandler<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType']
-  >,
-): InitializedBranchNode<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType'],
-  M
-> {
-  return useNodeHandler(nodeId, handler) as InitializedBranchNode<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType'],
-    M
-  >
-}

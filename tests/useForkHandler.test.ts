@@ -15,8 +15,7 @@ import {
 } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
-import { defineForkHandler, type ForkHandler } from '../src/lib/pipeline/NodeHandler/ForkHandler.ts'
-import { useForkHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
+import { defineForkHandler, type ForkHandler, useForkHandler } from '../src/lib/pipeline/NodeHandler/ForkHandler.ts'
 import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import type { ForkRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyNodeDefinition, defineFork } from '../src/lib/pipeline/types/definitions.ts'
@@ -69,7 +68,7 @@ describe('fork handler type testing', async () => {
 
     const STEP_META = defineFork({
       displayName: 'test',
-      def: 'testing',
+      def: 'testing' as NodeDef,
       type: NodeType.FORK,
       inputDataTypes: [HeightMap, BitMask],
       outputDataType: NormalMap,
@@ -84,7 +83,7 @@ describe('fork handler type testing', async () => {
 
     type M = typeof STEP_META
     type I = M['inputDataTypes']
-    type O = M['outputDataType']
+    // type O = M['outputDataType']
 
     type Input = StepInputTypesToInstances<I>
     // type Output = InstanceType<O>
@@ -136,37 +135,41 @@ describe('fork handler type testing', async () => {
         }
       },
       watcherTargets(n, defaults) {
-        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC>>()
+        // expectTypeOf(n).toEqualTypeOf<InitializedForkNode<C, SC, RC, M>>()
+
         expectTypeOf(defaults).toEqualTypeOf<WatcherTarget[]>()
 
         return []
       },
       onRemoving(n) {
-        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC>>()
+        // expectTypeOf(n).toEqualTypeOf<InitializedForkNode<C, SC, RC, M>>()
       },
       onRemoved(id) {
         expectTypeOf(id).toEqualTypeOf<NodeId>()
       },
       onAdded(n) {
-        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
+        expectTypeOf(n).toEqualTypeOf<InitializedNode<C, SC, RC>>()
+        // expectTypeOf(n).toEqualTypeOf<InitializedForkNode<C, SC, RC, M>>()
       },
     })
 
-    const step = useForkHandler(newStep.id, STEP_META, handler)
+    const step = useForkHandler(newStep.id, handler)
 
     await Promise.resolve()
 
     it('creates correct step', () => {
 
-      expectTypeOf(step).not.toEqualTypeOf<InitializedNode<C, SC, RC, I, O, M>>()
-      expectTypeOf(step).toEqualTypeOf<InitializedForkNode<C, SC, RC, I, O, M>>()
+      expectTypeOf(step).not.toEqualTypeOf<InitializedNode<C, SC, RC, M>>()
+      expectTypeOf(step).toEqualTypeOf<InitializedForkNode<C, SC, RC, M>>()
     })
 
     it('creates correct handler', () => {
       expect(step.handler).to.not.eq(undefined)
 
       expectTypeOf(step.handler.run).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['run']
+        ForkHandler<C, SC, RC, M>['run']
       >()
       expectTypeOf(step.handler.run).toExtend<
         ForkRunner<InputInstances, OutputInstance, RC>
@@ -202,57 +205,57 @@ describe('fork handler type testing', async () => {
       >()
 
       expectTypeOf(step.handler.config).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['config']
+        ForkHandler<C, SC, RC, M>['config']
       >()
       expectTypeOf(step.handler.config).toEqualTypeOf<
         () => C
       >()
 
       expectTypeOf(step.handler.reactiveConfig).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['reactiveConfig']
+        ForkHandler<C, SC, RC, M>['reactiveConfig']
       >()
       expectTypeOf(step.handler.reactiveConfig).toEqualTypeOf<
         (defaults: C) => RC
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['watcherTargets']
+        ForkHandler<C, SC, RC, M>['watcherTargets']
       >()
 
       expectTypeOf(step.handler.watcherTargets).toEqualTypeOf<
-        (node: InitializedNode<C, SC, RC, I, O, M>, defaults: WatcherTarget[]) => WatcherTarget[]
+        (node: InitializedNode<C, SC, RC>, defaults: WatcherTarget[]) => WatcherTarget[]
       >()
 
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['serializeConfig']
+        ForkHandler<C, SC, RC, M>['serializeConfig']
       >()
       expectTypeOf(step.handler.serializeConfig).toEqualTypeOf<
         ((config: C) => SC)
       >()
 
       expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['deserializeConfig']
+        ForkHandler<C, SC, RC, M>['deserializeConfig']
       >()
       expectTypeOf(step.handler.deserializeConfig).toEqualTypeOf<
         ((config: SC) => C)
       >()
 
       expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['loadConfig']
+        ForkHandler<C, SC, RC, M>['loadConfig']
       >()
       expectTypeOf(step.handler.loadConfig).toEqualTypeOf<
         (config: RC, serializedConfig: SC) => void
       >()
 
       expectTypeOf(step.handler.validateInput).toEqualTypeOf<
-        ForkHandler<C, SC, RC, I, O>['validateInput']
+        ForkHandler<C, SC, RC, M>['validateInput']
       >()
       expectTypeOf(step.handler.validateInput).toEqualTypeOf<
         ((inputData: Input, inputDataTypes: I, meta: IRunnerResultMeta | null) => StepValidationError[])
       >()
 
-      expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes'] | undefined>()
-      expectTypeOf(step.handler.meta.outputDataType).toEqualTypeOf<M['outputDataType'] | undefined>()
+      expectTypeOf(step.handler.meta.inputDataTypes).toEqualTypeOf<M['inputDataTypes']>()
+      expectTypeOf(step.handler.meta.outputDataType).toEqualTypeOf<M['outputDataType']>()
     })
   })
 })

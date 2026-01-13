@@ -2,10 +2,15 @@
 import { BButtonGroup, BDropdown, BDropdownHeader, BDropdownItem, BTooltip } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
 import type { NodeDataType } from '../../lib/node-data-types/_node-data-types.ts'
-import type { NodeDef, NodeId } from '../../lib/pipeline/_types.ts'
-import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
-import type { AnyNodeDefinition } from '../../lib/pipeline/types/definitions.ts'
 import { PassThrough } from '../../lib/node-data-types/PassThrough.ts'
+import type { NodeId } from '../../lib/pipeline/_types.ts'
+import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
+import {
+  type AnyNodeDefinition,
+  isNormalMeta,
+  isPassthroughMeta,
+  isStartMeta,
+} from '../../lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { getNodeDataTypeCssClass } from '../../nodes.ts'
 
@@ -24,41 +29,35 @@ const addableNodes = computed(() => {
   const result = stepRegistry.addableToArray()
     .filter(({ def }) => stepRegistry.canBeChildOf(store, def, node.id))
     .map((
-        {
-          def,
-          displayName,
-          inputDataTypes,
-          outputDataType,
-          passthrough,
-        }: AnyNodeDefinition) => {
+        meta: AnyNodeDefinition) => {
 
-        const input: NodeDataType[] = passthrough ? [PassThrough] : inputDataTypes
-        const output: NodeDataType = passthrough ? PassThrough : outputDataType
-
+        // ⚠️this should be the only place that uses [Passthrough]
+        let input: NodeDataType[] = []
+        let output: NodeDataType
         let inputNames: string[] = ['None']
         let outputName: string = 'None'
         let inputColorCssClass = ['bg-secondary']
-        let outputColorCssClass: string
+        let outputColorCssClass: string = ''
 
-        if (passthrough) {
-          inputColorCssClass = [getNodeDataTypeCssClass(PassThrough)]
+        if (isPassthroughMeta(meta)) {
+          input = [PassThrough]
+          output = PassThrough
           inputNames = [PassThrough.displayName]
           outputName = PassThrough.displayName
-
-        } else {
-          if (inputDataTypes.length) {
-            inputColorCssClass = input.map(getNodeDataTypeCssClass)
-            inputNames = input.map(c => c.displayName)
-            outputName = output.displayName
-          }
+        } else if (isNormalMeta(meta)) {
+          input = meta.inputDataTypes
+          output = meta.outputDataType
+          inputColorCssClass = input.map(getNodeDataTypeCssClass)
+          inputNames = input.map(c => c.displayName)
+        } else if (isStartMeta(meta)) {
+          output = meta.outputDataType
         }
-
-        outputColorCssClass = getNodeDataTypeCssClass(output)
+        outputColorCssClass = getNodeDataTypeCssClass(output!)
 
         return {
-          def: def as NodeDef,
-          displayName,
-          compatible: stepRegistry.isCompatibleWithOutputType(def as NodeDef, node.handler!.currentOutputDataType),
+          def: meta.def,
+          displayName: meta.displayName,
+          compatible: stepRegistry.isCompatibleWithOutputType(meta.def, node.handler!.currentOutputDataType),
           inputColorCssClass,
           outputColorCssClass: outputColorCssClass,
           inputNames,
