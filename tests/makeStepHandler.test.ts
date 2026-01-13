@@ -2,23 +2,19 @@ import { expectTypeOf } from 'expect-type'
 import { describe, expect, it } from 'vitest'
 import { isReactive, type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
-import {
-  type IRunnerResultMeta,
-  NodeType,
 
-} from '../src/lib/pipeline/_types.ts'
+import { BitMask } from '../src/lib/node-data-types/BitMask.ts'
+import { HeightMap } from '../src/lib/node-data-types/HeightMap.ts'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
+import { type IRunnerResultMeta, NodeType } from '../src/lib/pipeline/_types.ts'
 import type { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import {
-  makeStepHandler,
+  defineStepHandler,
   type StepHandler,
   type StepHandlerOptions,
 } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
-
-import { BitMask } from '../src/lib/node-data-types/BitMask.ts'
-import { HeightMap } from '../src/lib/node-data-types/HeightMap.ts'
-import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
 
 class A extends BitMask {
 }
@@ -160,7 +156,7 @@ describe('StepHandlerOptions<T>', () => {
   })
 })
 
-describe('makeStepHandler<T>', () => {
+describe('defineStepHandler>', () => {
   it('returns an StepHandler<M, T>-compatible object merging defaults and options', () => {
     const options: StepHandlerOptions<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']> = {
       config() {
@@ -187,7 +183,7 @@ describe('makeStepHandler<T>', () => {
       },
     }
 
-    const handler = makeStepHandler(STEP_META, options)
+    const handler = defineStepHandler(STEP_META, options)
 
     // Shape of handler: must be a full StepHandler<T>
     expectTypeOf(handler).toEqualTypeOf<StepHandler<RawConfig, SerializedConfig, RC, M['inputDataTypes'], M['outputDataType']>>()
@@ -231,7 +227,7 @@ describe('makeStepHandler<T>', () => {
   it('handles defaults', async () => {
     type C = {}
     type RC = Reactive<C>
-    const handler = makeStepHandler(STEP_META)
+    const handler = defineStepHandler(STEP_META)
 
     expectTypeOf(handler.config).toEqualTypeOf<() => C>()
     expectTypeOf(handler.reactiveConfig).toEqualTypeOf<(defaults: C) => RC>()
@@ -281,7 +277,7 @@ describe('makeStepHandler<T>', () => {
     type C = { foo: string }
     type RC = Reactive<C>
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config: () => ({ foo: 'bar' }),
     })
 
@@ -335,7 +331,7 @@ describe('makeStepHandler<T>', () => {
     type C = { foo: string }
     type RC = ShallowReactive<C>
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config: () => ({ foo: 'bar' }),
       reactiveConfig(defaults) {
         expectTypeOf(defaults).toEqualTypeOf<C>()
@@ -394,7 +390,7 @@ describe('makeStepHandler<T>', () => {
     type C = { foo: string }
     type RC = ShallowReactive<C>
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config: () => ({ foo: 'bar' }),
       reactiveConfig(defaults) {
         expectTypeOf(defaults).toEqualTypeOf<C>()
@@ -459,7 +455,7 @@ describe('makeStepHandler<T>', () => {
     type C = { foo: string }
     type RC = Reactive<C>
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config: () => ({ foo: 'bar' }),
       async run({ config }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
@@ -519,14 +515,14 @@ describe('makeStepHandler<T>', () => {
     const CONFIG = {
       foo: 'bar',
       blah: {
-        thing: 'something'
-      }
+        thing: 'something',
+      },
     }
 
     type C = typeof CONFIG
     type RC = Reactive<C>
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config() {
         return { ...CONFIG }
       },
@@ -588,7 +584,7 @@ describe('makeStepHandler<T>', () => {
     type C = {}
     type RC = Reactive<C>
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       async run({ config }) {
         expectTypeOf(config).toEqualTypeOf<RC>()
         if (!isReactive(config)) throw new Error('config is not reactive')
@@ -648,7 +644,7 @@ describe('makeStepHandler<T>', () => {
     type RC = Reactive<C>
     type SC = { serializedFoo: string }
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config() {
         return {
           foo: 'bar',
@@ -734,7 +730,7 @@ describe('makeStepHandler<T>', () => {
     type RC = Reactive<C>
     type SC = { foo: string }
 
-    const handler = makeStepHandler(STEP_META, {
+    const handler = defineStepHandler(STEP_META, {
       config() {
         return {
           foo: 'bar',

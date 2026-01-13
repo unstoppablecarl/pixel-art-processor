@@ -5,29 +5,6 @@ import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import type { NodeMeta } from '../types/definitions.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
-export function defineStepHandler<
-  C = {},
-  SC = C,
-  RC = Reactive<C>,
-  M extends NodeMeta<any, any> = NodeMeta<any, any>,
->(
-  meta: M,
-  options?: StepHandlerOptions<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType']
-  >,
-): StepHandler<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType']
-> {
-  return makeStepHandler(meta, options)
-}
 
 export type StepHandler<
   C,
@@ -54,7 +31,7 @@ export type StepHandlerOptions<
   O extends NodeDataType,
 > = Partial<StepHandler<C, SC, RC, I, O>>
 
-export function makeStepHandler<
+export function defineStepHandler<
   C = {},
   SC = C,
   RC = Reactive<C>,

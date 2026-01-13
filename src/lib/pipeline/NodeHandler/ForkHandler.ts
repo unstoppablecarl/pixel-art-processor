@@ -5,30 +5,6 @@ import { defaultForkRunner, type ForkRunner } from '../NodeRunner.ts'
 import type { NodeMeta } from '../types/definitions.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
-export function defineForkHandler<
-  C = {},
-  SC = C,
-  RC = Reactive<C>,
-  M extends NodeMeta<any, any> = NodeMeta<any, any>,
->(
-  meta: M,
-  options: ForkHandlerOptions<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType']
-  >,
-): ForkHandler<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType']
-> {
-  return makeForkHandler(meta, options)
-}
-
 export type ForkHandler<
   C,
   SC,
@@ -54,7 +30,7 @@ export type ForkHandlerOptions<
   O extends NodeDataType,
 > = Partial<ForkHandler<C, SC, RC, I, O>>
 
-export function makeForkHandler<
+export function defineForkHandler<
   C = {},
   SC = C,
   RC = Reactive<C>,

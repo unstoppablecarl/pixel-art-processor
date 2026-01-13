@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { type Component, type Reactive, reactive } from 'vue'
 import { type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
 import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
-import { makeStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
+import { defineStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
 import { BitMask } from '../src/lib/node-data-types/BitMask'
@@ -143,7 +143,7 @@ describe('Pipeline Node Behavior', () => {
         config: { value: 1 },
       })
 
-      const handler = makeStepHandler(passThroughMeta, passthroughHandlerOptions)
+      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       s.initialize(handler)
 
       s.isDirty.value = false
@@ -182,7 +182,7 @@ describe('Pipeline Node Behavior', () => {
 
       s1.prevNodeId = nid('s0')
 
-      const handler = makeStepHandler(passThroughMeta, passthroughHandlerOptions)
+      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       s0.initialize(handler)
       s1.initialize(handler)
 
@@ -261,7 +261,7 @@ describe('Pipeline Node Behavior', () => {
 
       s1.prevNodeId = nid('s0')
 
-      const handler = makeStepHandler(passThroughMeta, passthroughHandlerOptions)
+      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       s0.initialize(handler)
 
       const store = makeStore({
@@ -292,7 +292,7 @@ describe('Pipeline Node Behavior', () => {
         prevNodeId: nid('s0'),
       })
 
-      const handler = makeStepHandler(passThroughMeta, passthroughHandlerOptions)
+      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       f.initialize(handler)
 
       const ser = f.serialize()
@@ -319,7 +319,7 @@ describe('Pipeline Node Behavior', () => {
         branchIndex: 2,
       })
 
-      const handler = makeStepHandler(passThroughMeta, passthroughHandlerOptions)
+      const handler = defineStepHandler(passThroughMeta, passthroughHandlerOptions)
       b.initialize(handler)
 
       const ser = b.serialize()
@@ -372,10 +372,10 @@ describe('Pipeline Node Behavior', () => {
 
       expect(getNodeRegistry().get(s1Definition.def).passthrough).toBe(true)
 
-      const handler0 = makeStepHandler(s0Definition, typedHandlerOptions)
+      const handler0 = defineStepHandler(s0Definition, typedHandlerOptions)
       s0.initialize(handler0)
 
-      const handler1 = makeStepHandler(s1Definition, passthroughHandlerOptions)
+      const handler1 = defineStepHandler(s1Definition, passthroughHandlerOptions)
       s1.initialize(handler1)
 
       const bitMask = new BitMask(1, 1)
@@ -435,10 +435,10 @@ describe('Pipeline Node Behavior', () => {
 
       s1.prevNodeId = nid('s0')
 
-      const handler0 = makeStepHandler(s0Definition, typedHandlerOptions)
+      const handler0 = defineStepHandler(s0Definition, typedHandlerOptions)
       s0.initialize(handler0)
 
-      const handler1 = makeStepHandler(s1Definition, typedHandlerOptions)
+      const handler1 = defineStepHandler(s1Definition, typedHandlerOptions)
       s1.initialize(handler1)
 
       s0.outputData = new NormalMap(1, 1)

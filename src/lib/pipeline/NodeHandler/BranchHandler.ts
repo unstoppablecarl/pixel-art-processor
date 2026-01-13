@@ -6,30 +6,6 @@ import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import type { NodeMeta } from '../types/definitions.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
-export function defineBranchHandler<
-  C = {},
-  SC = C,
-  RC = Reactive<C>,
-  M extends NodeMeta<any, any> = NodeMeta<any, any>,
->(
-  meta: M,
-  options?: BranchHandlerOptions<
-    C,
-    SC,
-    RC,
-    M['inputDataTypes'],
-    M['outputDataType']
-  >,
-): BranchHandler<
-  C,
-  SC,
-  RC,
-  M['inputDataTypes'],
-  M['outputDataType']
-> {
-  return makeBranchHandler(meta, options)
-}
-
 export type BranchHandler<
   C,
   SC,
@@ -56,7 +32,7 @@ export type BranchHandlerOptions<
   O extends NodeDataType,
 > = Partial<BranchHandler<C, SC, RC, I, O>>
 
-export function makeBranchHandler<
+export function defineBranchHandler<
   C = {},
   SC = C,
   RC = Reactive<C>,
