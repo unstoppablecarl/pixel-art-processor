@@ -33,7 +33,7 @@ const store = usePipelineStore()
                  id="scale"
                  min="1"
                  max="10"
-                 node="1"
+                 step="1"
                  style="width: 150px;"
                  v-model.number="store.imgScale"
           >
