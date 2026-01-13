@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import { type AnyForkDefinition, type NodeId } from '../../lib/pipeline/_types.ts'
+import { type NodeId } from '../../lib/pipeline/_types.ts'
 
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
+import type { AnyForkDefinition } from '../../lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
 const store = usePipelineStore()

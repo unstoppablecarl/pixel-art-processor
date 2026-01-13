@@ -1,11 +1,11 @@
 import type { Reactive, ShallowReactive } from 'vue'
-import type { Config } from '../../pipeline/_types.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../ImageData.ts'
 
 export type ConfigKeyAdapter<Serialized = any, Deserialized = any> = {
   serialize(value: Deserialized): Serialized,
   deserialize?: (value: Serialized) => Deserialized,
 }
+export type Config = Record<string, any>
 
 export type ConfigKeyAdapters<
   C extends Config,

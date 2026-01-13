@@ -1,7 +1,7 @@
 import { watch } from 'vue'
 import { usePipelineStore } from '../../store/pipeline-store.ts'
 import { logNodeWatch } from '../../util/misc.ts'
-import type { NodeId, StepDataType, StepMeta } from '../_types.ts'
+import type { NodeId, NodeDataType } from '../_types.ts'
 import type {
   GraphNode,
   InitializedBranchNode,
@@ -9,6 +9,7 @@ import type {
   InitializedNode,
   InitializedStepNode,
 } from '../Node.ts'
+import type { NodeMeta } from '../types/definitions.ts'
 import { type BranchHandler } from './BranchHandler.ts'
 import { type ForkHandler } from './ForkHandler.ts'
 import type { AnyHandler, NodeHandler } from './NodeHandler.ts'
@@ -18,8 +19,8 @@ export function useNodeHandler<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
 >(
   nodeId: NodeId,
   handler: NodeHandler<C, SC, RC, I, O>,
@@ -45,7 +46,7 @@ export function useStepHandler<
   C,
   SC,
   RC,
-  M extends StepMeta<any, any>,
+  M extends NodeMeta<any, any>,
 >(
   nodeId: NodeId,
   meta: M,
@@ -78,7 +79,7 @@ export function useForkHandler<
   C,
   SC,
   RC,
-  M extends StepMeta<any, any>,
+  M extends NodeMeta<any, any>,
 >(
   nodeId: NodeId,
   meta: M,
@@ -111,7 +112,7 @@ export function useBranchHandler<
   C,
   SC,
   RC,
-  M extends StepMeta<any, any>,
+  M extends NodeMeta<any, any>,
 >(
   nodeId: NodeId,
   meta: M,

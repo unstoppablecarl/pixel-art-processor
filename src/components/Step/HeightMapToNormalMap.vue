@@ -1,9 +1,10 @@
 <script lang="ts">
-import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { NodeType } from '../../lib/pipeline/_types.ts'
+import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
 import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
 import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
 
-export const STEP_META = defineStepMeta({
+export const STEP_META = defineNodeMeta({
   type: NodeType.STEP,
   def: 'height_map_to_normal_map',
   displayName: 'HeightMap -> NormalMap',

@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { type Component, type Reactive, reactive } from 'vue'
-import { defineStepMeta, type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
+import { type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
 import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
 import { makeStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
+import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
 import type { PipelineStore } from '../src/lib/store/pipeline-store'
@@ -37,7 +38,7 @@ function makeStore(nodes: Record<NodeId, any>): PipelineStore {
 // ------------------------------------------------------------
 
 const passthroughDef = 'passthrough-step' as NodeDef
-const passThroughMeta = defineStepMeta({
+const passThroughMeta = defineNodeMeta({
   type: NodeType.STEP,
   def: passthroughDef,
   displayName: 'testing',
@@ -50,7 +51,7 @@ getNodeRegistry().defineNode({
 })
 
 const typedDef = 'typed-step' as NodeDef
-const basicMeta = defineStepMeta({
+const basicMeta = defineNodeMeta({
   type: NodeType.STEP,
   def: typedDef,
   displayName: 'testing2',

@@ -1,4 +1,4 @@
-import type { StepDataTypeInstance } from '../pipeline/_types.ts'
+import type { NodeDataTypeInstance } from '../pipeline/_types.ts'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { PixelMap } from '../step-data-types/PixelMap.ts'
 import type { RGBA } from '../util/ImageData.ts'
@@ -56,7 +56,7 @@ export function makeBitMaskFromWangTile(size: number, tile: WangTile<BinaryArray
   return mask
 }
 
-export function renderImageEdgeChunks<T extends StepDataTypeInstance>(
+export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
   target: T,
   direction: WangTileEdge,
   chunks: BinaryArray,

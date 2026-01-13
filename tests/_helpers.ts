@@ -1,7 +1,8 @@
 import { Component } from 'vue'
 import type { Optional } from '../src/lib/_helpers.ts'
-import { type AnyNodeDefinition, type NodeDef, NodeType, type StepMeta } from '../src/lib/pipeline/_types.ts'
+import { type NodeDef, NodeType } from '../src/lib/pipeline/_types.ts'
 import { getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
+import type { AnyNodeDefinition, NodeMeta } from '../src/lib/pipeline/types/definitions.ts'
 
 let defIncrement = 0
 
@@ -13,7 +14,7 @@ export function defineTestNode(
     inputDataTypes,
     outputDataType,
     passthrough,
-  }: Optional<StepMeta, 'displayName' | 'def' | 'passthrough' | 'type'>,
+  }: Optional<NodeMeta, 'displayName' | 'def' | 'passthrough' | 'type'>,
 ) {
 
   def ??= 'testing_' + defIncrement++

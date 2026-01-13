@@ -1,4 +1,4 @@
-import { type Component, type Reactive, type WatchSource } from 'vue'
+import { type Reactive, type WatchSource } from 'vue'
 import { BitMask } from '../step-data-types/BitMask.ts'
 import { HeightMap } from '../step-data-types/HeightMap.ts'
 import { NormalMap } from '../step-data-types/NormalMap.ts'
@@ -14,109 +14,19 @@ export enum NodeType {
 export type NodeId = string & { readonly __nodeIdBrand: unique symbol }
 export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
 
-export type StepDataType =
+export type NodeDataType =
   | typeof BitMask
   | typeof NormalMap
   | typeof HeightMap
   | typeof PixelMap
   | typeof PassThrough
 
-export type StepDataTypeInstance =
+export type NodeDataTypeInstance =
   | BitMask
   | NormalMap
   | HeightMap
   | PixelMap
   | PassThrough
-
-export type NodeDefinitions = Record<string, AnyNodeDefinition>
-
-export function defineStepMeta<M extends StepMeta<any, any>>(meta: M): M {
-  return meta
-}
-
-export type AnyStepMeta = StepMeta<any, any>
-
-export type StepMeta<
-  I extends readonly StepDataType[] = readonly StepDataType[],
-  O extends StepDataType = StepDataType
-> =
-  | (StepMetaBase & StepNodeSpecific & IO<I, O>)
-  | (StepMetaBase & BranchNodeSpecific & IO<I, O>)
-  | (StepMetaBase & ForkNodeSpecific & IO<I, O>)
-
-export type StepMetaBase = {
-  def: string
-  displayName: string
-  isValidDescendantDef?: (def: AnyNodeDefinition) => boolean
-}
-
-type StepNodeSpecific = {
-  type: NodeType.STEP
-}
-
-type BranchNodeSpecific = {
-  type: NodeType.BRANCH
-}
-
-type ForkNodeSpecific = {
-  type: NodeType.FORK
-  branchDefs: readonly string[]
-}
-
-type PassthroughIO = {
-  passthrough: true
-  inputDataTypes?: undefined
-  outputDataType?: undefined
-}
-
-type NormalIO<
-  I extends readonly StepDataType[] = readonly StepDataType[],
-  O extends StepDataType = StepDataType
-> = {
-  passthrough?: false
-  inputDataTypes: I
-  outputDataType: O
-}
-
-type IO<
-  I extends readonly StepDataType[] = readonly StepDataType[],
-  O extends StepDataType = StepDataType
-> = PassthroughIO | NormalIO<I, O>
-
-type StepDefinitionBase = {
-  def: NodeDef
-  displayName: string
-  readonly component: Component
-} & Pick<StepMetaBase, 'isValidDescendantDef'>
-
-type StepDefinitionSpecific = {
-  type: NodeType.STEP
-}
-
-type BranchDefinitionSpecific = {
-  type: NodeType.BRANCH
-}
-
-type ForkDefinitionSpecific = {
-  type: NodeType.FORK
-  branchDefs: NodeDef[]
-}
-
-export type AnyStepDefinition = StepDefinitionBase & StepDefinitionSpecific
-export type AnyForkDefinition = StepDefinitionBase & ForkDefinitionSpecific
-export type AnyBranchDefinition = StepDefinitionBase & StepDefinitionSpecific
-
-export type NodeDefinition<
-  I extends readonly StepDataType[] = readonly StepDataType[],
-  O extends StepDataType = StepDataType
-> =
-  | (StepDefinitionBase & StepDefinitionSpecific & IO<I, O>)
-  | (StepDefinitionBase & BranchDefinitionSpecific & IO<I, O>)
-  | (StepDefinitionBase & ForkDefinitionSpecific & IO<I, O>)
-
-export type AnyNodeDefinition = NodeDefinition<any, any>
-
-export type Config = Record<string, any>
 
 export type WatcherTarget = {
   name: string,
@@ -131,28 +41,6 @@ export type WithRequired<T, K extends keyof T> =
 export interface IRunnerResultMeta {
 }
 
-export type EffectiveInputConstructors<M extends StepMeta<any, any>> =
-// force distribution over union
-  M extends unknown
-    ? // first, handle passthrough
-    M extends { passthrough: true }
-      ? readonly [typeof PassThrough]
-      : // otherwise, just use the StepMeta generic
-      M extends StepMeta<infer I, any>
-        ? I
-        : never
-    : never
-
-export type EffectiveOutputConstructor<M extends StepMeta<any, any>> =
-// force distribution over union
-  M extends unknown
-    ? M extends { passthrough: true }
-      ? typeof PassThrough
-      : M extends StepMeta<any, infer O>
-        ? O
-        : never
-    : never
-
 export type NormalizedConfig<C> = C extends {} ? (undefined extends C ? {} : C) : C
 export type NormalizedReactiveConfig<C, RC> = RC extends Reactive<C> ? RC : Reactive<NormalizedConfig<C>>
 export type StepLoaderSerialized<
@@ -162,7 +50,7 @@ export type StepLoaderSerialized<
   config: SerializedConfig
 }
 export type StepInputTypesToInstances<
-  Input extends readonly StepDataType[] = readonly StepDataType[]
+  Input extends readonly NodeDataType[] = readonly NodeDataType[]
 > =
   Input extends readonly []
     ? never

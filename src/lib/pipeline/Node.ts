@@ -4,17 +4,15 @@ import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
-  type AnyStepMeta,
   type IRunnerResultMeta,
   type NodeDef,
   type NodeId,
   NodeType,
   type NormalizedConfig,
-  type StepDataType,
-  type StepDataTypeInstance,
+  type NodeDataType,
+  type NodeDataTypeInstance,
   type StepInputTypesToInstances,
   type StepLoaderSerialized,
-  type StepMeta,
   type WatcherTarget,
   type WithRequired,
 } from './_types.ts'
@@ -27,6 +25,7 @@ import type { AnyHandler } from './NodeHandler/NodeHandler.ts'
 import type { StepHandler } from './NodeHandler/StepHandler.ts'
 import { type NormalRunner, parseResult, type SingleRunnerResult } from './NodeRunner.ts'
 import { getNodeRegistry } from './NodeRegistry.ts'
+import type { AnyNodeMeta, NodeMeta } from './types/definitions.ts'
 
 export type BaseNodeSerialized<SC> = {
   id: NodeId,
@@ -50,9 +49,9 @@ export abstract class BaseNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
   PrevNode extends AnyNode = AnyNode
 > {
   readonly abstract type: NodeType
@@ -237,7 +236,7 @@ export abstract class BaseNode<
     return []
   }
 
-  protected validatePrevOutputTypeInstance(inputData: StepDataTypeInstance): StepValidationError[] {
+  protected validatePrevOutputTypeInstance(inputData: NodeDataTypeInstance): StepValidationError[] {
     const inputDataTypes = this.handler!.currentInputDataTypes as I
     const isValid = (inputDataTypes as unknown as any[]).some(c => (inputData as any) instanceof c)
     if (isValid) return []
@@ -274,9 +273,9 @@ abstract class StepOrBranchNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
   PrevNode extends AnyNode = AnyNode
 > extends BaseNode<C, SC, RC, I, O, M, PrevNode> {
   outputData: InstanceType<O> | null = null
@@ -310,9 +309,9 @@ export class StepNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
   N extends InitializedStepNode<C, SC, RC, I, O, M> = InitializedStepNode<C, SC, RC, I, O, M>
 > extends StepBase<C, SC, RC, I, O, M, AnyForkNode | AnyStepNode> {
 
@@ -417,9 +416,9 @@ export class ForkNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > extends ForkBase<C, SC, RC, I, O, M, AnyStepNode | AnyBranchNode> {
   type = NodeType.FORK
 
@@ -547,9 +546,9 @@ export class BranchNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > extends StepOrBranchNode<C, SC, RC, I, O, M, AnyForkNode> {
   type = NodeType.BRANCH
 
@@ -622,7 +621,7 @@ export class BranchNode<
     })
   }
 
-  async getResultFromPrev(store: PipelineStore): Promise<SingleRunnerResult<StepDataTypeInstance>> {
+  async getResultFromPrev(store: PipelineStore): Promise<SingleRunnerResult<NodeDataTypeInstance>> {
     // return this.logFunction('getResultFromPrev', async () => {
     const fork = this.getPrev(store)
     const result = await fork.getBranchOutput(store, this.branchIndex)
@@ -651,9 +650,9 @@ export type GraphNode<
   C = {},
   SC = C,
   RC = Reactive<C>,
-  I extends readonly StepDataType[] = readonly StepDataType[],
-  O extends StepDataType = StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[] = readonly NodeDataType[],
+  O extends NodeDataType = NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > =
   | StepNode<C, SC, RC, I, O, M>
   | ForkNode<C, SC, RC, I, O, M>
@@ -663,9 +662,9 @@ export type InitializedStepNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > = { __brand: 'step' }
   & WithRequired<StepNode<C, SC, RC, I, O, M>, 'config' | 'handler'>
 
@@ -673,9 +672,9 @@ export type InitializedForkNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > = { __brand: 'fork' }
   & WithRequired<ForkNode<C, SC, RC, I, O, M>, 'config' | 'handler'>
 
@@ -683,9 +682,9 @@ export type InitializedBranchNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > = { __brand: 'branch' }
   & WithRequired<BranchNode<C, SC, RC, I, O, M>, 'config' | 'handler'>
 
@@ -693,15 +692,15 @@ export type InitializedNode<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<I, O> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<I, O> = NodeMeta<I, O>,
 > =
   | InitializedStepNode<C, SC, RC, I, O, M>
   | InitializedForkNode<C, SC, RC, I, O, M>
   | InitializedBranchNode<C, SC, RC, I, O, M>
 
-export type AnyInitializedNode = InitializedNode<any, any, any, readonly StepDataType[], StepDataType, AnyStepMeta>
+export type AnyInitializedNode = InitializedNode<any, any, any, readonly NodeDataType[], NodeDataType, AnyNodeMeta>
 
 export type AnyNodeSerialized = AnyStepNodeSerialized | AnyForkNodeSerialized | AnyBranchNodeSerialized
 

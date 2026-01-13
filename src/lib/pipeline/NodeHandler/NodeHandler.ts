@@ -5,13 +5,13 @@ import type {
   NodeId,
   NormalizedConfig,
   NormalizedReactiveConfig,
-  StepDataType,
+  NodeDataType,
   StepInputTypesToInstances,
-  StepMeta,
   WatcherTarget,
 } from '../_types.ts'
 import type { StepValidationError } from '../errors/StepValidationError.ts'
 import type { InitializedNode } from '../Node.ts'
+import type { NodeMeta } from '../types/definitions.ts'
 import type { BranchHandler } from './BranchHandler.ts'
 import type { ForkHandler } from './ForkHandler.ts'
 import type { StepHandler } from './StepHandler.ts'
@@ -20,9 +20,9 @@ export type NodeHandler<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
-  M extends StepMeta<any, any> = StepMeta<I, O>,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
+  M extends NodeMeta<any, any> = NodeMeta<I, O>,
 > = {
   meta: M
   config: () => NormalizedConfig<C>
@@ -32,11 +32,11 @@ export type NodeHandler<
   loadConfig: (config: RC, serializedConfig: SC) => void
   watcherTargets(node: InitializedNode<C, SC, RC, I, O>, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[]
   validateInput(inputData: StepInputTypesToInstances<I>, inputDataTypes: I, inputMeta: IRunnerResultMeta | null): StepValidationError[],
-  setPassThroughDataType: (passthroughType: StepDataType) => void,
+  setPassThroughDataType: (passthroughType: NodeDataType) => void,
   clearPassThroughDataType: () => void,
 
-  currentInputDataTypes: readonly StepDataType[],
-  currentOutputDataType: StepDataType,
+  currentInputDataTypes: readonly NodeDataType[],
+  currentOutputDataType: NodeDataType,
 
   onRemoving?: (node: InitializedNode<C, SC, RC, I, O>) => void,
   onRemoved?: (id: NodeId) => void,
@@ -49,8 +49,8 @@ export type NodeHandlerOptions<
   C = {},
   SC = C,
   RC = Reactive<C>,
-  I extends readonly StepDataType[] = readonly StepDataType[],
-  O extends StepDataType = StepDataType,
+  I extends readonly NodeDataType[] = readonly NodeDataType[],
+  O extends NodeDataType = NodeDataType,
 > = Partial<
   Omit<
     NodeHandler<C, SC, RC, I, O>,
@@ -65,10 +65,10 @@ export function makeHandler<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
 >(
-  meta: StepMeta<I, O>,
+  meta: NodeMeta<I, O>,
   options: NodeHandlerOptions<C, SC, RC, I, O> | undefined,
 ) {
   type Config = NormalizedConfig<C>
@@ -113,7 +113,7 @@ export function makeHandler<
       : meta.outputDataType
   ) as O
 
-  const passthroughType = shallowRef<StepDataType | undefined>(undefined)
+  const passthroughType = shallowRef<NodeDataType | undefined>(undefined)
 
   return {
     meta,
@@ -137,7 +137,7 @@ export function makeHandler<
       passthroughType.value = undefined
     },
 
-    setPassThroughDataType(type: StepDataType) {
+    setPassThroughDataType(type: NodeDataType) {
       passthroughType.value = type
     },
   } as NodeHandler<C, SC, RC, I, O>
@@ -147,8 +147,8 @@ export type AnyHandler<
   C,
   SC,
   RC,
-  I extends readonly StepDataType[],
-  O extends StepDataType,
+  I extends readonly NodeDataType[],
+  O extends NodeDataType,
 > =
   | StepHandler<C, SC, RC, I, O>
   | ForkHandler<C, SC, RC, I, O>

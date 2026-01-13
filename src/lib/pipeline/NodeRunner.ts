@@ -1,12 +1,12 @@
 import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
-import type { IRunnerResultMeta, StepDataTypeInstance } from './_types.ts'
+import type { IRunnerResultMeta, NodeDataTypeInstance } from './_types.ts'
 import { GenericValidationError } from './errors/GenericValidationError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
 
 type Preview = ImageData | null
 
 export type SingleRunnerOutput<
-  Out extends StepDataTypeInstance
+  Out extends NodeDataTypeInstance
 > =
   | void
   | null
@@ -18,7 +18,7 @@ export type SingleRunnerOutput<
   meta?: IRunnerResultMeta | null
 }
 
-export type SingleRunnerResult<Out extends StepDataTypeInstance> = {
+export type SingleRunnerResult<Out extends NodeDataTypeInstance> = {
   readonly [certifiedResult]: true,
   preview: Preview,
   output: Out | null,
@@ -27,15 +27,15 @@ export type SingleRunnerResult<Out extends StepDataTypeInstance> = {
 }
 
 export type NodeRunner<
-  Input extends StepDataTypeInstance,
-  Output extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
+  Output extends NodeDataTypeInstance,
   RC,
 > =
   | NormalRunner<Input, Output, RC>
   | ForkRunner<Input, Output, RC>
 
 export type NormalRunnerInput<
-  Input extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
   RC,
 > = {
   config: RC,
@@ -45,8 +45,8 @@ export type NormalRunnerInput<
 }
 
 export interface NormalRunner<
-  Input extends StepDataTypeInstance,
-  Output extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
+  Output extends NodeDataTypeInstance,
   RC,
 > {
   __normal?: never,
@@ -54,7 +54,7 @@ export interface NormalRunner<
 }
 
 export type ForkRunnerInput<
-  Input extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
   RC,
 > = {
   config: RC,
@@ -65,8 +65,8 @@ export type ForkRunnerInput<
 }
 
 export interface ForkRunner<
-  Input extends StepDataTypeInstance,
-  Output extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
+  Output extends NodeDataTypeInstance,
   RC,
 > {
   __fork?: never,
@@ -77,7 +77,7 @@ const certifiedResult = Symbol(__DEV__ ? 'certified runner result' : '')
 
 // SingleRunnerResult should only be created by this function
 export function parseResult<
-  Output extends StepDataTypeInstance,
+  Output extends NodeDataTypeInstance,
 >(
   out: SingleRunnerOutput<Output>,
   prevMeta: IRunnerResultMeta | null,
@@ -98,8 +98,8 @@ function parseValidationError(error: StepValidationError | string) {
 }
 
 export async function defaultNormalRunner<
-  Input extends StepDataTypeInstance,
-  Output extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
+  Output extends NodeDataTypeInstance,
   RC,
 >(
   {
@@ -117,8 +117,8 @@ export async function defaultNormalRunner<
 }
 
 export async function defaultForkRunner<
-  Input extends StepDataTypeInstance,
-  Output extends StepDataTypeInstance,
+  Input extends NodeDataTypeInstance,
+  Output extends NodeDataTypeInstance,
   RC,
 >({
     inputData,

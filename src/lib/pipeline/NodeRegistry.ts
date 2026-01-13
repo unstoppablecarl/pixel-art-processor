@@ -4,14 +4,13 @@ import { NodeDataTypeRegistry } from '../step-data-types/NodeDataTypeRegistry.ts
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import {
-  type AnyNodeDefinition,
-  type AnyStepMeta,
   type NodeDef,
   type NodeId,
   NodeType,
-  type NodeDefinitions,
+
 } from './_types.ts'
 import type { AnyNode } from './Node.ts'
+import type { AnyNodeDefinition, AnyNodeMeta, NodeDefinitions } from './types/definitions.ts'
 
 export type NodeRegistry = ReturnType<typeof makeNodeRegistry>
 
@@ -95,8 +94,8 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
     }
   }
 
-  function validateDefRegistration(meta: AnyStepMeta) {
-    const definition = { ...get(meta.def) } as AnyStepMeta
+  function validateDefRegistration(meta: AnyNodeMeta) {
+    const definition = { ...get(meta.def) } as AnyNodeMeta
     // @ts-expect-error
     delete definition['component']!
 

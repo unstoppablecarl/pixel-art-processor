@@ -3,8 +3,6 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import {
-  type AnyNodeDefinition,
-  defineStepMeta,
   type IRunnerResultMeta,
   type NodeDef,
   type NodeId,
@@ -18,6 +16,7 @@ import { defineStepHandler, type StepHandler } from '../src/lib/pipeline/NodeHan
 import { useStepHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
+import { type AnyNodeDefinition, defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
@@ -68,7 +67,7 @@ describe('step handler type testing', async () => {
     }
     type RC = ShallowReactive<C>
 
-    const STEP_META = defineStepMeta({
+    const STEP_META = defineNodeMeta({
       displayName: 'test',
       def: 'testing',
       type: NodeType.STEP,

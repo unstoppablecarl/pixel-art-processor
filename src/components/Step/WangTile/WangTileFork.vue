@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { AnyStepMeta } from '../../../lib/pipeline/_types.ts'
 import { NodeType } from '../../../lib/pipeline/_types.ts'
+import type { AnyNodeMeta } from '../../../lib/pipeline/types/definitions.ts'
 import { BitMask } from '../../../lib/step-data-types/BitMask.ts'
 import type { WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import { STEP_META as branchStepMeta } from './WangTileBranch.vue'
@@ -9,7 +9,7 @@ export interface IRunnerResultMeta {
   wangTileInfo?: WangTile<number>
 }
 
-export const STEP_META: AnyStepMeta = {
+export const STEP_META: AnyNodeMeta = {
   type: NodeType.FORK,
   def: 'fork_wang_tiles',
   displayName: 'Fork: Wang Tiles',

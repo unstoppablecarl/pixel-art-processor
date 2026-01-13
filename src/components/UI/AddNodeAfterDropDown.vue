@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { BButtonGroup, BDropdown, BDropdownHeader, BDropdownItem, BTooltip } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
-import type { AnyNodeDefinition, NodeDef, NodeId, StepDataType } from '../../lib/pipeline/_types.ts'
+import type { NodeDef, NodeId, NodeDataType } from '../../lib/pipeline/_types.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
+import type { AnyNodeDefinition } from '../../lib/pipeline/types/definitions.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { getNodeDataTypeCssClass } from '../../nodes.ts'
@@ -30,8 +31,8 @@ const addableNodes = computed(() => {
           passthrough,
         }: AnyNodeDefinition) => {
 
-        const input: StepDataType[] = passthrough ? [PassThrough] : inputDataTypes
-        const output: StepDataType = passthrough ? PassThrough : outputDataType
+        const input: NodeDataType[] = passthrough ? [PassThrough] : inputDataTypes
+        const output: NodeDataType = passthrough ? PassThrough : outputDataType
 
         let inputNames: string[] = ['None']
         let outputName: string = 'None'

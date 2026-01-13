@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { type AnyNodeDefinition, NodeType, type StepMeta } from './_types.ts'
+import { type NodeDef, NodeType } from './_types.ts'
+import type { AnyNodeDefinition, NodeMeta } from './types/definitions.ts'
 
 export async function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyNodeDefinition[]> {
 
@@ -27,10 +28,10 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
       passthrough,
       branchDefs,
       isValidDescendantDef,
-    } = (module as any).STEP_META as StepMeta<any, any> & { branchDefs: string[] }
+    } = (module as any).STEP_META as NodeMeta<any, any> & { branchDefs: string[] }
 
     return {
-      def,
+      def: def as NodeDef,
       type,
       displayName,
       component: (module as any).default as Component,

@@ -1,5 +1,6 @@
-import { type AnyNodeDefinition, type NodeDataTypeColor, type StepDataType } from './lib/pipeline/_types.ts'
+import { type NodeDataTypeColor, type NodeDataType } from './lib/pipeline/_types.ts'
 import { loadStepComponentsMetaData } from './lib/pipeline/StepMeta.ts'
+import type { AnyNodeDefinition } from './lib/pipeline/types/definitions.ts'
 import { type DataStructureConstructor } from './lib/step-data-types/BaseDataStructure.ts'
 import { BitMask } from './lib/step-data-types/BitMask.ts'
 import { HeightMap } from './lib/step-data-types/HeightMap.ts'
@@ -23,7 +24,7 @@ const purple = '#59359a'
 const blue = '#0a58ca'
 
 export type NodeDataTypeColors = typeof NODE_DATA_TYPE_COLORS
-export const NODE_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
+export const NODE_DATA_TYPE_COLORS = new Map<NodeDataType, NodeDataTypeColor>([
   [BitMask, { key: '--bit-mask-color', color: green, cssClass: 'bit-mask-bg' }],
   [HeightMap, { key: '--height-map-color', color: pink, cssClass: 'height-map-bg' }],
   [NormalMap, { key: '--normal-map-color', color: purple, cssClass: 'normal-map-bg' }],
@@ -35,7 +36,7 @@ export const NODE_DATA_TYPE_COLORS = new Map<StepDataType, NodeDataTypeColor>([
   }],
 ])
 
-export function getNodeDataTypeCssClass(stepDataType: StepDataType) {
+export function getNodeDataTypeCssClass(stepDataType: NodeDataType) {
   return NODE_DATA_TYPE_COLORS.get(stepDataType)!.cssClass
 }
 

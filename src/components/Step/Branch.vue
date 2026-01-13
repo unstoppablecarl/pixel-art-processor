@@ -1,7 +1,8 @@
 <script lang="ts">
-import { defineStepMeta, NodeType } from '../../lib/pipeline/_types.ts'
+import { NodeType } from '../../lib/pipeline/_types.ts'
+import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
 
-export const STEP_META = defineStepMeta({
+export const STEP_META = defineNodeMeta({
   type: NodeType.BRANCH,
   def: 'branch',
   displayName: 'Branch',

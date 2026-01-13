@@ -1,6 +1,11 @@
 import { describe, expectTypeOf, it } from 'vitest'
-import type { EffectiveInputConstructors, EffectiveOutputConstructor, StepDataType } from '../src/lib/pipeline/_types'
-import { defineStepMeta, NodeType } from '../src/lib/pipeline/_types'
+import type { NodeDataType } from '../src/lib/pipeline/_types'
+import { NodeType } from '../src/lib/pipeline/_types'
+import {
+  defineNodeMeta,
+  type EffectiveInputConstructors,
+  type EffectiveOutputConstructor,
+} from '../src/lib/pipeline/types/definitions.ts'
 
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
@@ -19,7 +24,7 @@ describe('defineStepMeta inference', () => {
   // ------------------------------------------------------------
   // 1. Normal step meta
   // ------------------------------------------------------------
-  const META = defineStepMeta({
+  const META = defineNodeMeta({
     type: NodeType.STEP,
     def: 'normal',
     displayName: 'Normal',
@@ -32,7 +37,7 @@ describe('defineStepMeta inference', () => {
   type InputCtors = EffectiveInputConstructors<M>
 
   expectTypeOf<InputCtors>().toExtend<
-    readonly StepDataType[]
+    readonly NodeDataType[]
   >()
 
   expectTypeOf<InputCtors[number]>().toEqualTypeOf<
@@ -52,7 +57,7 @@ describe('defineStepMeta inference', () => {
   // ------------------------------------------------------------
   // 2. Passthrough meta
   // ------------------------------------------------------------
-  const PASSTHROUGH = defineStepMeta({
+  const PASSTHROUGH = defineNodeMeta({
     type: NodeType.STEP,
     def: 'passthrough',
     displayName: 'Passthrough',
@@ -69,7 +74,7 @@ describe('defineStepMeta inference', () => {
   // ------------------------------------------------------------
   // 3. Branch meta
   // ------------------------------------------------------------
-  const BRANCH = defineStepMeta({
+  const BRANCH = defineNodeMeta({
     type: NodeType.BRANCH,
     def: 'branch',
     displayName: 'Branch',
@@ -87,7 +92,7 @@ describe('defineStepMeta inference', () => {
     expectTypeOf<O>().toEqualTypeOf<typeof B>()
   })
 
-  const FORK = defineStepMeta({
+  const FORK = defineNodeMeta({
     type: NodeType.FORK,
     def: 'fork',
     displayName: 'Fork',

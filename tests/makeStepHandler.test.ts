@@ -2,7 +2,6 @@ import { expectTypeOf } from 'expect-type'
 import { describe, expect, it } from 'vitest'
 import { isReactive, type Reactive, shallowReactive, type ShallowReactive } from 'vue'
 import {
-  defineStepMeta,
   type IRunnerResultMeta,
   NodeType,
   type StepInputTypesToInstances,
@@ -14,6 +13,7 @@ import {
   type StepHandlerOptions,
 } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
+import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
 
 import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
@@ -43,7 +43,7 @@ type RC = Reactive<RawConfig>
 // Helper def string
 const DEF = 'test/handler'
 
-const STEP_META = defineStepMeta({
+const STEP_META = defineNodeMeta({
   type: NodeType.STEP,
   displayName: 'testing',
   def: DEF,

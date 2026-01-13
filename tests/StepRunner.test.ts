@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
-import type { StepDataType, StepInputTypesToInstances } from '../src/lib/pipeline/_types.ts'
+import type { NodeDataType, StepInputTypesToInstances } from '../src/lib/pipeline/_types.ts'
 import {
   type ForkRunner,
   type ForkRunnerInput,
@@ -24,8 +24,8 @@ type IsEqual<A, B> =
 // Minimal mock StepContext-like shape for type-level testing
 type MockStepContext<
   RC,
-  InputConstructors extends readonly StepDataType[],
-  OutputConstructor extends StepDataType,
+  InputConstructors extends readonly NodeDataType[],
+  OutputConstructor extends NodeDataType,
 > = {
   RC: RC
   InputConstructors: InputConstructors
