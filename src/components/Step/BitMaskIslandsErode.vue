@@ -1,7 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { BitMask } from '../../lib/node-data-types/BitMask.ts'
 
 export const STEP_META = defineNodeMeta({
   type: NodeType.STEP,
@@ -28,8 +28,8 @@ import { islandEroderWeighted } from '../../lib/generators/IslandSmoother/island
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
-import { getIslands } from '../../lib/step-data-types/BitMask/island-helpers.ts'
-import { Island, type IslandPointFilter, IslandType } from '../../lib/step-data-types/BitMask/Island.ts'
+import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
+import { Island, type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
 import StepCard from '../Card/StepCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'

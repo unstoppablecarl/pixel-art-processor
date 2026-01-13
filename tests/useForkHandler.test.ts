@@ -2,12 +2,12 @@ import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type Component, type ShallowReactive, shallowReactive } from 'vue'
+import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
 import {
   type IRunnerResultMeta,
   type NodeDef,
   type NodeId,
   NodeType,
-  type StepInputTypesToInstances,
   type WatcherTarget,
 } from '../src/lib/pipeline/_types.ts'
 import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
@@ -17,9 +17,9 @@ import { useForkHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
 import type { ForkRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { type AnyNodeDefinition, defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
-import { BitMask } from '../src/lib/step-data-types/BitMask'
-import { HeightMap } from '../src/lib/step-data-types/HeightMap'
-import { NormalMap } from '../src/lib/step-data-types/NormalMap'
+import { BitMask } from '../src/lib/node-data-types/BitMask'
+import { HeightMap } from '../src/lib/node-data-types/HeightMap'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'

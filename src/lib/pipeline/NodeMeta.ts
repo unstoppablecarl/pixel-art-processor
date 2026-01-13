@@ -1,9 +1,9 @@
 import type { Component } from 'vue'
-import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
+import type { DataStructureConstructor } from '../node-data-types/BaseDataStructure.ts'
 import { type NodeDef, NodeType } from './_types.ts'
 import type { AnyNodeDefinition, NodeMeta } from './types/definitions.ts'
 
-export async function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyNodeDefinition[]> {
+export async function loadNodeComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyNodeDefinition[]> {
 
   const errors = Object.entries(globResults)
     .map(([path, module]) => validateModule(path, module, stepDataTypes))

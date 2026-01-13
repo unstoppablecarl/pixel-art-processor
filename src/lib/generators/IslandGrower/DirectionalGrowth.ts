@@ -1,5 +1,5 @@
-import { ADJACENT_DIRECTIONS } from '../../step-data-types/BaseDataStructure.ts'
-import type { Island } from '../../step-data-types/BitMask/Island.ts'
+import { ADJACENT_DIRECTIONS } from '../../node-data-types/BaseDataStructure.ts'
+import type { Island } from '../../node-data-types/BitMask/Island.ts'
 import { prng } from '../../util/prng.ts'
 import type { IslandMutator } from '../IslandMutator.ts'
 

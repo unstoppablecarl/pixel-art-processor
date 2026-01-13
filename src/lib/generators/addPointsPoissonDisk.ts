@@ -1,7 +1,7 @@
 import PoissonDiskSampling from 'poisson-disk-sampling'
 import { PointSet } from '../util/data/PointSet.ts'
-import type { Point } from '../step-data-types/BaseDataStructure.ts'
-import type { BitMask } from '../step-data-types/BitMask.ts'
+import type { Point } from '../node-data-types/BaseDataStructure.ts'
+import type { BitMask } from '../node-data-types/BitMask.ts'
 import { prng } from '../util/prng.ts'
 
 export function addPointsPoissonDisk(

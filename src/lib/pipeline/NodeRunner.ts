@@ -1,5 +1,6 @@
-import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
-import type { IRunnerResultMeta, NodeDataTypeInstance } from './_types.ts'
+import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
+import type { NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
+import type { IRunnerResultMeta } from './_types.ts'
 import { GenericValidationError } from './errors/GenericValidationError.ts'
 import { StepValidationError } from './errors/StepValidationError.ts'
 

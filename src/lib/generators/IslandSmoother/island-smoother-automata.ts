@@ -1,5 +1,5 @@
-import type { Point, PointValueFilter } from '../../step-data-types/BaseDataStructure.ts'
-import type { Bit, BitMask } from '../../step-data-types/BitMask.ts'
+import type { Point, PointValueFilter } from '../../node-data-types/BaseDataStructure.ts'
+import type { Bit, BitMask } from '../../node-data-types/BitMask.ts'
 
 export function smoothAutomata(
   mask: BitMask,

@@ -1,8 +1,8 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
-import { HeightMap } from '../../lib/step-data-types/HeightMap.ts'
-import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
+import { HeightMap } from '../../lib/node-data-types/HeightMap.ts'
+import { NormalMap } from '../../lib/node-data-types/NormalMap.ts'
 
 export const STEP_META = defineNodeMeta({
   type: NodeType.STEP,
@@ -16,7 +16,7 @@ export const STEP_META = defineNodeMeta({
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { useStepHandler } from '../../lib/pipeline/NodeHandler/useHandlers.ts'
-import { heightMapToNormalMap } from '../../lib/step-data-types/data-type-converters.ts'
+import { heightMapToNormalMap } from '../../lib/node-data-types/data-type-converters.ts'
 import StepCard from '../Card/StepCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 

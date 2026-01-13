@@ -1,6 +1,7 @@
 import type { Component } from 'vue'
-import { PassThrough } from '../../step-data-types/PassThrough.ts'
-import { type NodeDataType, type NodeDef, NodeType } from '../_types.ts'
+import type { NodeDataType } from '../../node-data-types/_node-data-types.ts'
+import { PassThrough } from '../../node-data-types/PassThrough.ts'
+import { type NodeDef, NodeType } from '../_types.ts'
 
 export function defineNodeMeta<M extends NodeMeta<any, any>>(meta: M): M {
   return meta

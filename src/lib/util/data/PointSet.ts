@@ -1,4 +1,4 @@
-import type { Point } from '../../step-data-types/BaseDataStructure.ts'
+import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 
 export class PointSet extends Map<string, Point> {
   add(x: number, y: number) {

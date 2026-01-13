@@ -1,7 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../../lib/pipeline/_types.ts'
 import type { AnyNodeMeta } from '../../../lib/pipeline/types/definitions.ts'
-import { BitMask } from '../../../lib/step-data-types/BitMask.ts'
+import { BitMask } from '../../../lib/node-data-types/BitMask.ts'
 import type { WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import { STEP_META as branchStepMeta } from './WangTileBranch.vue'
 
@@ -23,7 +23,7 @@ import { computed, watchEffect } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { useForkHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
-import { PixelMap } from '../../../lib/step-data-types/PixelMap.ts'
+import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { arrayIndexToColor } from '../../../lib/util/color.ts'
 import type { BinaryArray } from '../../../lib/util/prng/binary-array-chunks.ts'

@@ -1,7 +1,8 @@
 import { watch } from 'vue'
+import type { NodeDataType } from '../../node-data-types/_node-data-types.ts'
 import { usePipelineStore } from '../../store/pipeline-store.ts'
 import { logNodeWatch } from '../../util/misc.ts'
-import type { NodeId, NodeDataType } from '../_types.ts'
+import type { NodeId } from '../_types.ts'
 import type {
   GraphNode,
   InitializedBranchNode,

@@ -1,8 +1,8 @@
 import { type Ref, toRef } from 'vue'
 import type { CheckboxColorListItem } from '../../components/UIForms/CheckboxColorList.vue'
-import type { Point } from '../step-data-types/BaseDataStructure.ts'
-import { BitMask } from '../step-data-types/BitMask.ts'
-import { type Island, IslandType } from '../step-data-types/BitMask/Island.ts'
+import type { Point } from '../node-data-types/BaseDataStructure.ts'
+import { BitMask } from '../node-data-types/BitMask.ts'
+import { type Island, IslandType } from '../node-data-types/BitMask/Island.ts'
 import { parseColorData } from '../util/color.ts'
 import { Sketch } from '../util/Sketch.ts'
 

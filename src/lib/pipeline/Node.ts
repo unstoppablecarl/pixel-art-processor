@@ -1,5 +1,10 @@
 import { computed, type Reactive, ref, type Ref } from 'vue'
-import type { BaseDataStructure } from '../step-data-types/BaseDataStructure.ts'
+import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
+import type {
+  NodeDataType,
+  NodeDataTypeInstance,
+  StepInputTypesToInstances,
+} from '../node-data-types/_node-data-types.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { type ImgSize, logNodeEvent } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
@@ -9,9 +14,6 @@ import {
   type NodeId,
   NodeType,
   type NormalizedConfig,
-  type NodeDataType,
-  type NodeDataTypeInstance,
-  type StepInputTypesToInstances,
   type StepLoaderSerialized,
   type WatcherTarget,
   type WithRequired,

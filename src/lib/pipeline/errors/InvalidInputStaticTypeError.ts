@@ -1,4 +1,4 @@
-import type { NodeDataType } from '../_types.ts'
+import type { NodeDataType } from '../../node-data-types/_node-data-types.ts'
 import { StepValidationError } from './StepValidationError.ts'
 
 export const INVALID_INPUT_STATIC_TYPE_ERROR = 'INVALID_INPUT_STATIC_TYPE_ERROR'

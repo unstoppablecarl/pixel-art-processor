@@ -1,5 +1,6 @@
 import type { Reactive } from 'vue'
-import { NodeType, type NodeDataType, type StepInputTypesToInstances } from '../_types.ts'
+import type { NodeDataType, StepInputTypesToInstances } from '../../node-data-types/_node-data-types.ts'
+import { NodeType } from '../_types.ts'
 import type { AnyNode } from '../Node.ts'
 import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
 import type { NodeMeta } from '../types/definitions.ts'

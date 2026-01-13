@@ -1,5 +1,5 @@
 import { describe, expectTypeOf, it } from 'vitest'
-import type { NodeDataType } from '../src/lib/pipeline/_types'
+import type { NodeDataType } from '../src/lib/node-data-types/_node-data-types.ts'
 import { NodeType } from '../src/lib/pipeline/_types'
 import {
   defineNodeMeta,
@@ -7,9 +7,9 @@ import {
   type EffectiveOutputConstructor,
 } from '../src/lib/pipeline/types/definitions.ts'
 
-import { BitMask } from '../src/lib/step-data-types/BitMask'
-import { HeightMap } from '../src/lib/step-data-types/HeightMap'
-import { NormalMap } from '../src/lib/step-data-types/NormalMap'
+import { BitMask } from '../src/lib/node-data-types/BitMask'
+import { HeightMap } from '../src/lib/node-data-types/HeightMap'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap'
 
 class A extends BitMask {
 }

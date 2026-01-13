@@ -1,12 +1,11 @@
 import { reactive, type Reactive, shallowRef } from 'vue'
-import { PassThrough } from '../../step-data-types/PassThrough.ts'
+import type { NodeDataType, StepInputTypesToInstances } from '../../node-data-types/_node-data-types.ts'
+import { PassThrough } from '../../node-data-types/PassThrough.ts'
 import type {
   IRunnerResultMeta,
   NodeId,
   NormalizedConfig,
   NormalizedReactiveConfig,
-  NodeDataType,
-  StepInputTypesToInstances,
   WatcherTarget,
 } from '../_types.ts'
 import type { StepValidationError } from '../errors/StepValidationError.ts'

@@ -1,6 +1,6 @@
 import { type Component } from 'vue'
-import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { NodeDataTypeRegistry } from '../step-data-types/NodeDataTypeRegistry.ts'
+import type { DataStructureConstructor } from '../node-data-types/BaseDataStructure.ts'
+import { NodeDataTypeRegistry } from '../node-data-types/NodeDataTypeRegistry.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import {

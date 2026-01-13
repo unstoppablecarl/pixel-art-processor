@@ -1,7 +1,7 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
-import { BitMask } from '../../lib/step-data-types/BitMask.ts'
+import { BitMask } from '../../lib/node-data-types/BitMask.ts'
 
 export const STEP_META = defineNodeMeta({
   type: NodeType.STEP,

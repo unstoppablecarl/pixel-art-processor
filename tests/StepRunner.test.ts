@@ -1,6 +1,6 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, it } from 'vitest'
-import type { NodeDataType, StepInputTypesToInstances } from '../src/lib/pipeline/_types.ts'
+import type { NodeDataType, StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
 import {
   type ForkRunner,
   type ForkRunnerInput,
@@ -9,8 +9,8 @@ import {
   type NormalRunnerInput,
   type SingleRunnerResult,
 } from '../src/lib/pipeline/NodeRunner.ts'
-import type { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
-import type { PixelMap } from '../src/lib/step-data-types/PixelMap.ts'
+import type { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
+import type { PixelMap } from '../src/lib/node-data-types/PixelMap.ts'
 
 // ---------------------------------------------------------
 // Helpers

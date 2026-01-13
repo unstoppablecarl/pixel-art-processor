@@ -5,8 +5,8 @@ import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipelin
 import { makeStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
-import { BitMask } from '../src/lib/step-data-types/BitMask'
-import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
+import { BitMask } from '../src/lib/node-data-types/BitMask'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
 import type { PipelineStore } from '../src/lib/store/pipeline-store'
 import { defineTestNode } from './_helpers.ts'
 

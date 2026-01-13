@@ -1,9 +1,4 @@
 import { type Reactive, type WatchSource } from 'vue'
-import { BitMask } from '../step-data-types/BitMask.ts'
-import { HeightMap } from '../step-data-types/HeightMap.ts'
-import { NormalMap } from '../step-data-types/NormalMap.ts'
-import { PassThrough } from '../step-data-types/PassThrough.ts'
-import { PixelMap } from '../step-data-types/PixelMap.ts'
 
 export enum NodeType {
   STEP = 'STEP',
@@ -13,20 +8,6 @@ export enum NodeType {
 
 export type NodeId = string & { readonly __nodeIdBrand: unique symbol }
 export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
-
-export type NodeDataType =
-  | typeof BitMask
-  | typeof NormalMap
-  | typeof HeightMap
-  | typeof PixelMap
-  | typeof PassThrough
-
-export type NodeDataTypeInstance =
-  | BitMask
-  | NormalMap
-  | HeightMap
-  | PixelMap
-  | PassThrough
 
 export type WatcherTarget = {
   name: string,
@@ -49,9 +30,4 @@ export type StepLoaderSerialized<
   | {
   config: SerializedConfig
 }
-export type StepInputTypesToInstances<
-  Input extends readonly NodeDataType[] = readonly NodeDataType[]
-> =
-  Input extends readonly []
-    ? never
-    : InstanceType<Input[number]>
+

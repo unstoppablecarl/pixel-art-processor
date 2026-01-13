@@ -1,8 +1,8 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
-import { NormalMap } from '../../lib/step-data-types/NormalMap.ts'
-import { PixelMap } from '../../lib/step-data-types/PixelMap.ts'
+import { NormalMap } from '../../lib/node-data-types/NormalMap.ts'
+import { PixelMap } from '../../lib/node-data-types/PixelMap.ts'
 
 export const STEP_META = defineNodeMeta({
   type: NodeType.STEP,

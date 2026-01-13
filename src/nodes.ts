@@ -1,12 +1,13 @@
-import { type NodeDataTypeColor, type NodeDataType } from './lib/pipeline/_types.ts'
-import { loadStepComponentsMetaData } from './lib/pipeline/StepMeta.ts'
+import type { NodeDataType } from './lib/node-data-types/_node-data-types.ts'
+import { type NodeDataTypeColor } from './lib/pipeline/_types.ts'
+import { loadNodeComponentsMetaData } from './lib/pipeline/NodeMeta.ts'
 import type { AnyNodeDefinition } from './lib/pipeline/types/definitions.ts'
-import { type DataStructureConstructor } from './lib/step-data-types/BaseDataStructure.ts'
-import { BitMask } from './lib/step-data-types/BitMask.ts'
-import { HeightMap } from './lib/step-data-types/HeightMap.ts'
-import { NormalMap } from './lib/step-data-types/NormalMap.ts'
-import { PassThrough } from './lib/step-data-types/PassThrough.ts'
-import { PixelMap } from './lib/step-data-types/PixelMap.ts'
+import { type DataStructureConstructor } from './lib/node-data-types/BaseDataStructure.ts'
+import { BitMask } from './lib/node-data-types/BitMask.ts'
+import { HeightMap } from './lib/node-data-types/HeightMap.ts'
+import { NormalMap } from './lib/node-data-types/NormalMap.ts'
+import { PassThrough } from './lib/node-data-types/PassThrough.ts'
+import { PixelMap } from './lib/node-data-types/PixelMap.ts'
 
 export const NODE_DATA_TYPES: DataStructureConstructor[] = [
   BitMask as DataStructureConstructor,
@@ -51,7 +52,7 @@ export function loadNodeDefinitions(): Promise<AnyNodeDefinition[]> {
       for (const [path, loader] of Object.entries(nodeModules)) {
         loadedModules[path] = await (loader as () => Promise<any>)()
       }
-      return loadStepComponentsMetaData(loadedModules, NODE_DATA_TYPES)
+      return loadNodeComponentsMetaData(loadedModules, NODE_DATA_TYPES)
     })()
   }
 

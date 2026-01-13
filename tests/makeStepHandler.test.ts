@@ -1,10 +1,11 @@
 import { expectTypeOf } from 'expect-type'
 import { describe, expect, it } from 'vitest'
 import { isReactive, type Reactive, shallowReactive, type ShallowReactive } from 'vue'
+import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
 import {
   type IRunnerResultMeta,
   NodeType,
-  type StepInputTypesToInstances,
+
 } from '../src/lib/pipeline/_types.ts'
 import type { StepValidationError } from '../src/lib/pipeline/errors/StepValidationError.ts'
 import {
@@ -15,9 +16,9 @@ import {
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
 
-import { BitMask } from '../src/lib/step-data-types/BitMask.ts'
-import { HeightMap } from '../src/lib/step-data-types/HeightMap.ts'
-import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
+import { BitMask } from '../src/lib/node-data-types/BitMask.ts'
+import { HeightMap } from '../src/lib/node-data-types/HeightMap.ts'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
 
 class A extends BitMask {
 }

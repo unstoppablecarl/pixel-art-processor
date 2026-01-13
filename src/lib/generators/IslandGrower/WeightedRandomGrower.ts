@@ -1,4 +1,4 @@
-import type { BitMask } from '../../step-data-types/BitMask.ts'
+import type { BitMask } from '../../node-data-types/BitMask.ts'
 import { prng } from '../../util/prng.ts'
 import type { IslandMutator } from '../IslandMutator.ts'
 

@@ -1,6 +1,6 @@
-import type { Point } from '../step-data-types/BaseDataStructure.ts'
-import { BitMask } from '../step-data-types/BitMask.ts'
-import { Island, type IslandFilter } from '../step-data-types/BitMask/Island.ts'
+import type { Point } from '../node-data-types/BaseDataStructure.ts'
+import { BitMask } from '../node-data-types/BitMask.ts'
+import { Island, type IslandFilter } from '../node-data-types/BitMask/Island.ts'
 
 export type IslandMutatorResult = {
   added: Point[],

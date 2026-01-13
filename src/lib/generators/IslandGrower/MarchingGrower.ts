@@ -1,6 +1,6 @@
-import type { Point } from '../../step-data-types/BaseDataStructure.ts'
-import type { BitMask } from '../../step-data-types/BitMask.ts'
-import { Island } from '../../step-data-types/BitMask/Island.ts'
+import type { Point } from '../../node-data-types/BaseDataStructure.ts'
+import type { BitMask } from '../../node-data-types/BitMask.ts'
+import { Island } from '../../node-data-types/BitMask/Island.ts'
 import { prng } from '../../util/prng.ts'
 import type { IslandMutator } from '../IslandMutator.ts'
 
