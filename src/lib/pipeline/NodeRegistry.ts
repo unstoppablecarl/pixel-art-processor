@@ -126,9 +126,7 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
     validateDefRegistration,
     clear: () => Object.keys(NODE_DEFINITIONS).forEach((k) => delete NODE_DEFINITIONS[k as NodeDef]),
     rootNodes: () => Object.values(NODE_DEFINITIONS)
-      .filter((s) => {
-        !isPassthroughMeta(s) && !isStartMeta(s)
-      }),
+      .filter((s) => isStartMeta(s)),
   }
 }
 

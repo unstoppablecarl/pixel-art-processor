@@ -2,13 +2,11 @@
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { type AnyForkNode, isFork } from '../../lib/pipeline/Node.ts'
-import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import NodeContainer from '../NodeSupport/NodeContainer.vue'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = usePipelineStore()
-const nodeRegistry = getNodeRegistry()
 
 const { nodeIds } = defineProps<{
   nodeIds: NodeId[],
@@ -35,7 +33,6 @@ const allNodes = computed(() => {
   }
 })
 </script>
-
 <template>
   <div class="processor-branch">
     <template v-if="allNodes.nodes.length">

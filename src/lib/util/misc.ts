@@ -101,6 +101,7 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
 }
 
 export type ImgSize = { width: number, height: number }
+export type MaybeImgSize = { width?: number | undefined, height?: number | undefined }
 
 export function injectCss(cssString: string) {
   const head = document.head || document.getElementsByTagName('head')[0]

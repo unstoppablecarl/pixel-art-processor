@@ -7,16 +7,18 @@ const nodeRegistry = getNodeRegistry()
 const {
   nodeId,
   nodeDef,
+  forceRender = false,
 } = defineProps<{
   nodeId: NodeId,
   nodeDef: NodeDef,
+  forceRender?: boolean
 }>()
 
 const definition = computed(() => nodeRegistry.get(nodeDef))
 const component = computed(() => nodeRegistry.defToComponent(nodeDef))
 </script>
 <template>
-  <template v-if="definition.render !== false">
+  <template v-if="forceRender || definition.render !== false">
     <component
       :is="component"
       :node-id="nodeId"

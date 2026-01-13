@@ -2,7 +2,7 @@ import { computed, type Reactive, ref, type Ref } from 'vue'
 import type { NodeDataTypeInstance, StepInputTypesToInstances } from '../node-data-types/_node-data-types.ts'
 import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
-import { type ImgSize, logNodeEvent } from '../util/misc.ts'
+import { logNodeEvent, type MaybeImgSize } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type IRunnerResultMeta,
@@ -133,7 +133,7 @@ export abstract class BaseNode<
 
   abstract childIds(store: PipelineStore): NodeId[]
 
-  abstract getOutputSize(): ImgSize
+  abstract getOutputSize(): MaybeImgSize
 
   abstract getResultFromPrev(store: PipelineStore): Promise<SingleRunnerResult<any>>
 
@@ -297,10 +297,10 @@ abstract class StepOrBranchNode<
     return result ? [result.id] : []
   }
 
-  getOutputSize(): ImgSize {
+  getOutputSize(): MaybeImgSize {
     return {
-      width: this.outputData?.width ?? 0,
-      height: this.outputData?.height ?? 0,
+      width: this.outputData?.width,
+      height: this.outputData?.height,
     }
   }
 }
@@ -512,11 +512,11 @@ export class ForkNode<
     }
   }
 
-  getOutputSize(): ImgSize {
+  getOutputSize(): MaybeImgSize {
     const first = this.forkOutputData.value[0]?.output
     return {
-      width: first?.width ?? 0,
-      height: first?.height ?? 0,
+      width: first?.width,
+      height: first?.height,
     }
   }
 

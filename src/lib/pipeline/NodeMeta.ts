@@ -6,12 +6,10 @@ import type {
   AnyForkMeta,
   AnyNodeDefinition,
   AnyNodeMeta,
+  AnyStepMeta,
   NormalBranchMeta,
   NormalForkMeta,
   NormalStepMeta,
-  PassthroughBranchMeta,
-  PassthroughForkMeta,
-  PassthroughStepMeta,
   StartStepMeta,
 } from './types/definitions'
 
@@ -73,109 +71,73 @@ function buildDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefini
    Node definition builder
 ------------------------------------------------------------ */
 
-function buildStepDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefinition {
+function getBase(meta: AnyNodeMeta, component: Component) {
+  return {
+    def: meta.def,
+    type: meta.type,
+    displayName: meta.displayName,
+    component,
+    isValidDescendantDef: meta.isValidDescendantDef,
+    render: meta.render,
+  }
+}
+
+function buildDefinitionIO(meta: AnyNodeMeta) {
   if ('noInput' in meta && meta.noInput === true) {
     const m = meta as StartStepMeta<any>
     return {
-      def: m.def,
-      type: m.type,
-      displayName: m.displayName,
-      component,
       noInput: true,
       outputDataType: m.outputDataType,
-      isValidDescendantDef: m.isValidDescendantDef,
-      render: m.render,
     }
   }
 
   if ('passthrough' in meta && meta.passthrough === true) {
-    const m = meta as PassthroughStepMeta
     return {
-      def: m.def,
-      type: m.type,
-      displayName: m.displayName,
-      component,
       passthrough: true,
-      isValidDescendantDef: m.isValidDescendantDef,
-      render: m.render,
     }
   }
 
   const m = meta as NormalStepMeta<any, any>
   return {
-    def: m.def,
-    type: m.type,
-    displayName: m.displayName,
-    component,
     inputDataTypes: m.inputDataTypes,
     outputDataType: m.outputDataType,
-    isValidDescendantDef: m.isValidDescendantDef,
-    render: m.render,
   }
+}
+
+function buildStepDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefinition {
+  const base = getBase(meta, component)
+
+  return {
+    ...base,
+    ...buildDefinitionIO(meta),
+  } as AnyStepMeta as AnyNodeDefinition
 }
 
 /* ------------------------------------------------------------
    Fork definition builder
 ------------------------------------------------------------ */
 
-function buildForkDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefinition {
-  if ('passthrough' in meta && meta.passthrough === true) {
-    const m = meta as PassthroughForkMeta
-    return {
-      def: m.def,
-      type: m.type,
-      displayName: m.displayName,
-      component,
-      passthrough: true,
-      branchDefs: m.branchDefs,
-      isValidDescendantDef: m.isValidDescendantDef,
-      render: m.render,
-    }
-  }
+function buildForkDefinition(meta: AnyForkMeta, component: Component): AnyNodeDefinition {
+  const base = getBase(meta, component)
 
-  const m = meta as NormalForkMeta<any, any>
   return {
-    def: m.def,
-    type: m.type,
-    displayName: m.displayName,
-    component,
-    inputDataTypes: m.inputDataTypes,
-    outputDataType: m.outputDataType,
-    branchDefs: m.branchDefs,
-    isValidDescendantDef: m.isValidDescendantDef,
-    render: m.render,
-  }
+    ...base,
+    ...buildDefinitionIO(meta),
+    branchDefs: meta.branchDefs,
+  } as AnyForkMeta as AnyNodeDefinition
 }
 
 /* ------------------------------------------------------------
    Branch definition builder
 ------------------------------------------------------------ */
 
-function buildBranchDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefinition {
-  if ('passthrough' in meta && meta.passthrough === true) {
-    const m = meta as PassthroughBranchMeta
-    return {
-      def: m.def,
-      type: m.type,
-      displayName: m.displayName,
-      component,
-      passthrough: true,
-      isValidDescendantDef: m.isValidDescendantDef,
-      render: m.render,
-    }
-  }
+function buildBranchDefinition(meta: AnyBranchMeta, component: Component): AnyNodeDefinition {
+  const base = getBase(meta, component)
 
-  const m = meta as NormalBranchMeta<any, any>
   return {
-    def: m.def,
-    type: m.type,
-    displayName: m.displayName,
-    component,
-    inputDataTypes: m.inputDataTypes,
-    outputDataType: m.outputDataType,
-    isValidDescendantDef: m.isValidDescendantDef,
-    render: m.render,
-  }
+    ...base,
+    ...buildDefinitionIO(meta),
+  } as AnyBranchMeta as AnyNodeDefinition
 }
 
 function validateModule(

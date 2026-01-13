@@ -111,5 +111,9 @@ const cssStyle = computed(() => {
         </div>
       </div>
     </slot>
+
+    <slot name="after-nodes">
+    </slot>
+
   </div>
 </template>

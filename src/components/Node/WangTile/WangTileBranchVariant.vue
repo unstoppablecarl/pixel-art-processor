@@ -7,7 +7,7 @@ export const STEP_META = defineBranch({
   def: 'wang_tile_branch_variant' as NodeDef,
   displayName: 'Wang Tile: Branch Variant',
   passthrough: true,
-  render: false
+  render: false,
 })
 </script>
 <script setup lang="ts">
@@ -70,7 +70,6 @@ const handler = defineBranchHandler(STEP_META, {
 })
 
 const branch = useBranchHandler(nodeId, handler)
-
 </script>
 <template>
   <BranchCard :branch="branch">

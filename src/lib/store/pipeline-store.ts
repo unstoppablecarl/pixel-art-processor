@@ -411,8 +411,11 @@ export const usePipelineStore = defineStore('pipeline', () => {
     }
 
     function getRootNodeOutputSize(): ImgSize {
-      const root = rootNode()
-      return root ? root.getOutputSize() : { width: 64, height: 64 }
+      const root = rootNode()?.getOutputSize()
+      return {
+        width: root?.width ?? 64,
+        height: root?.height ?? 64,
+      }
     }
 
     const nodesProcessing = computed((): AnyNode[] => {
