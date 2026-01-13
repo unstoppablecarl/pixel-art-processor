@@ -29,7 +29,7 @@ const handler = defineBranchHandler(STEP_META, {
     return {}
   },
   onRemoving(node) {
-    getSiblingBranchVariants().forEach((sibling) => store.remove(sibling.id))
+    siblingBranchVariants.value.forEach((sibling) => store.remove(sibling.id))
   },
   async run({ inputData, meta, inputPreview }) {
     return {
@@ -39,15 +39,16 @@ const handler = defineBranchHandler(STEP_META, {
     }
   },
   onBranchEndResolved() {
-    getSiblingBranchVariants().forEach((sibling) => store.markDirty(sibling.id))
+    siblingBranchVariants.value.forEach((sibling) => store.markDirty(sibling.id))
   },
 })
 
 const branch = useBranchHandler(branchId, STEP_META, handler)
+const fork = computed(() => branch.getPrev(store))
 
-function getSiblingBranchVariants() {
+const siblingBranchVariants = computed(() => {
   return branch.getSiblings(store, (otherBranch) => otherBranch?.config?.parentBranchId === branch.id)
-}
+})
 
 function add() {
   const fork = branch.getPrev(store)
@@ -56,16 +57,16 @@ function add() {
 }
 
 function remove() {
-  const first = getSiblingBranchVariants()[0]
+  const first = siblingBranchVariants.value[0]
   if (first) {
     store.remove(first.id)
   }
 }
 
 const variantCount = computed<number, number>({
-  get: () => getSiblingBranchVariants().length,
+  get: () => siblingBranchVariants.value.length,
   set(value: number) {
-    const diff = value - getSiblingBranchVariants().length
+    const diff = value - siblingBranchVariants.value.length
     if (diff > 0) {
       for (let i = 0; i < diff; i++) {
         add()
@@ -76,7 +77,6 @@ const variantCount = computed<number, number>({
     }
   },
 })
-
 </script>
 <template>
   <BranchCard :branch="branch">
@@ -87,10 +87,11 @@ const variantCount = computed<number, number>({
             <span class="input-group-text">Variant Count</span>
             <input class="form-control" v-model="variantCount" type="number" min="0"
                    style="width: 100px" />
-            <button role="button" class="btn btn-secondary btn-sm" @click="remove()">
+            <button role="button" class="btn btn-secondary btn-sm" @click="remove()" :disabled="variantCount === 0">
               <span class="material-symbols-outlined">remove</span>
             </button>
-            <button role="button" class="btn btn-secondary btn-sm" @click="add()">
+            <button role="button" class="btn btn-secondary btn-sm" @click="add()"
+                    :disabled="!fork.canAddBranch">
               <span class="material-symbols-outlined">add</span>
             </button>
           </div>

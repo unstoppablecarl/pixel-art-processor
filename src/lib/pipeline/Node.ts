@@ -426,6 +426,14 @@ export class ForkNode<
   handler: ForkHandler<C, SC, RC, I, O> | undefined
   branchIds: Ref<NodeId[]> = ref<NodeId[]>([])
   forkOutputData: Ref<(SingleRunnerResult<InstanceType<O>> | undefined)[]> = ref([])
+  maxBranchCount = ref<null | number>(null)
+
+  canAddBranch = computed((): boolean => {
+    const max = this.maxBranchCount.value
+    if (max === null) return true
+
+    return this.branchIds.value.length < max
+  })
 
   constructor(options: ForkNodeOptions<SC>) {
     super(options)

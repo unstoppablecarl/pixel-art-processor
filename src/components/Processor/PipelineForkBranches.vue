@@ -33,7 +33,8 @@ const addableBranches = computed(() => {
     </template>
 
     <template v-for="branchDef in addableBranches">
-      <button role="button" class="btn btn-sm btn-secondary" @click="store.add(branchDef.def, forkNodeId)">
+      <button role="button" class="btn btn-sm btn-secondary" @click="store.add(branchDef.def, forkNodeId)"
+              :disabled="!fork.canAddBranch">
         <span class="material-symbols-outlined">add</span> {{ branchDef.displayName }}
       </button>
     </template>

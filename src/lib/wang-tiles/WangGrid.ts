@@ -65,7 +65,7 @@ export class WangGrid<T> {
   }
 }
 
-export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>): WangGrid<T> {
+export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>): WangGrid<T> | false {
   function getValidCandidates(grid: WangGrid<T>, x: number, y: number): readonly WangTile<T>[] {
     const { tiles } = tileset
     return tiles.filter(tile => grid.isPlacementValid(tileset, x, y, tile.id))
@@ -78,7 +78,7 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
       const candidates = getValidCandidates(grid, x, y)
 
       if (candidates.length === 0) {
-        throw new Error(`No valid tiles for position (${x}, ${y}). `)
+        return false
       }
 
       const chosen = prng.randomArrayValue(candidates as WangTile<T>[])

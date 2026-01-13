@@ -19,7 +19,7 @@ export const STEP_META: AnyStepMeta = {
 }
 </script>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watchEffect } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { useForkHandler } from '../../../lib/pipeline/NodeHandler/useHandlers.ts'
@@ -152,6 +152,11 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
     }
   })
 }
+
+const tileCount = computed(() => Math.pow(config.wangTiles.length, 4))
+watchEffect(() => {
+  node.maxBranchCount.value = tileCount.value
+})
 </script>
 <template>
   <StepCard
@@ -183,7 +188,7 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
               <strong>Edges:</strong> {{ config.wangTiles.length }}
             </div>
             <div>
-              <strong>Tiles:</strong> {{ Math.pow(config.wangTiles.length, 4) }}
+              <strong>Tiles:</strong> {{ tileCount }}
             </div>
           </div>
         </div>
