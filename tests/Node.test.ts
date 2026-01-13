@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { type Component, type Reactive, reactive } from 'vue'
+import { BitMask } from '../src/lib/node-data-types/BitMask'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
 import { type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
 import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
 import { defineStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
-import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
-import { defineStep } from '../src/lib/pipeline/types/definitions.ts'
-import { BitMask } from '../src/lib/node-data-types/BitMask'
-import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
+import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
+import { type AnyStepMeta, defineStep } from '../src/lib/pipeline/types/definitions.ts'
 import type { PipelineStore } from '../src/lib/store/pipeline-store'
 import { defineTestNode } from './_helpers.ts'
 
@@ -100,20 +100,14 @@ const passthroughHandlerOptions: StepHandlerOptions<
   },
 }
 
-const typedHandlerOptions: StepHandlerOptions<
-  RawConfig,
-  SerializedConfig,
-  RC,
-  typeof basicMeta['inputDataTypes'],
-  typeof basicMeta['outputDataType']
-> = {
+const typedHandlerOptions = {
   config() {
     return { value: 1 }
   },
-  reactiveConfig(defaults) {
+  reactiveConfig(defaults: any) {
     return reactive(defaults)
   },
-  run: async ({ inputData }) => ({
+  run: async ({ inputData }: { inputData: any }) => ({
     output: inputData,
     preview: null,
     meta: null,
@@ -372,10 +366,11 @@ describe('Pipeline Node Behavior', () => {
 
       expect(getNodeRegistry().get(s1Definition.def).passthrough).toBe(true)
 
-      const handler0 = defineStepHandler(s0Definition, typedHandlerOptions)
+      const handler0 = defineStepHandler(s0Definition as AnyStepMeta, passthroughHandlerOptions)
+
       s0.initialize(handler0)
 
-      const handler1 = defineStepHandler(s1Definition, passthroughHandlerOptions)
+      const handler1 = defineStepHandler(s1Definition as AnyStepMeta, passthroughHandlerOptions)
       s1.initialize(handler1)
 
       const bitMask = new BitMask(1, 1)
@@ -435,10 +430,10 @@ describe('Pipeline Node Behavior', () => {
 
       s1.prevNodeId = nid('s0')
 
-      const handler0 = defineStepHandler(s0Definition, typedHandlerOptions)
+      const handler0 = defineStepHandler(s0Definition as AnyStepMeta, typedHandlerOptions)
       s0.initialize(handler0)
 
-      const handler1 = defineStepHandler(s1Definition, typedHandlerOptions)
+      const handler1 = defineStepHandler(s1Definition as AnyStepMeta, typedHandlerOptions)
       s1.initialize(handler1)
 
       s0.outputData = new NormalMap(1, 1)
