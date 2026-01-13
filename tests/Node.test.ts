@@ -4,7 +4,7 @@ import { type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
 import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
 import { defineStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
-import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
+import { defineStep } from '../src/lib/pipeline/types/definitions.ts'
 import { BitMask } from '../src/lib/node-data-types/BitMask'
 import { NormalMap } from '../src/lib/node-data-types/NormalMap.ts'
 import type { PipelineStore } from '../src/lib/store/pipeline-store'
@@ -38,7 +38,7 @@ function makeStore(nodes: Record<NodeId, any>): PipelineStore {
 // ------------------------------------------------------------
 
 const passthroughDef = 'passthrough-step' as NodeDef
-const passThroughMeta = defineNodeMeta({
+const passThroughMeta = defineStep({
   type: NodeType.STEP,
   def: passthroughDef,
   displayName: 'testing',
@@ -51,7 +51,7 @@ getNodeRegistry().defineNode({
 })
 
 const typedDef = 'typed-step' as NodeDef
-const basicMeta = defineNodeMeta({
+const basicMeta = defineStep({
   type: NodeType.STEP,
   def: typedDef,
   displayName: 'testing2',

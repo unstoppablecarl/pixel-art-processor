@@ -16,7 +16,7 @@ import { defineStepHandler, type StepHandler } from '../src/lib/pipeline/NodeHan
 import { useStepHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
-import { type AnyNodeDefinition, defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
+import { type AnyNodeDefinition, defineStep } from '../src/lib/pipeline/types/definitions.ts'
 import { BitMask } from '../src/lib/node-data-types/BitMask'
 import { HeightMap } from '../src/lib/node-data-types/HeightMap'
 import { NormalMap } from '../src/lib/node-data-types/NormalMap'
@@ -67,7 +67,7 @@ describe('step handler type testing', async () => {
     }
     type RC = ShallowReactive<C>
 
-    const STEP_META = defineNodeMeta({
+    const STEP_META = defineStep({
       displayName: 'test',
       def: 'testing',
       type: NodeType.STEP,

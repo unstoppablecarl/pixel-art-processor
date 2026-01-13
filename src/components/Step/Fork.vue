@@ -1,9 +1,9 @@
 <script lang="ts">
 import { NodeType } from '../../lib/pipeline/_types.ts'
-import { defineNodeMeta } from '../../lib/pipeline/types/definitions.ts'
+import { defineFork } from '../../lib/pipeline/types/definitions.ts'
 import { STEP_META as branchStepMeta } from './Branch.vue'
 
-export const STEP_META = defineNodeMeta({
+export const STEP_META = defineFork({
   type: NodeType.FORK,
   def: 'fork_step',
   displayName: 'Fork',

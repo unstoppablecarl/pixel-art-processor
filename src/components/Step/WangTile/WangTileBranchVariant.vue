@@ -1,13 +1,15 @@
 <script lang="ts">
 import { NodeType } from '../../../lib/pipeline/_types.ts'
-import { defineNodeMeta } from '../../../lib/pipeline/types/definitions.ts'
+import { defineBranch } from '../../../lib/pipeline/types/definitions.ts'
 
-export const STEP_META = defineNodeMeta({
+export const STEP_META = defineBranch({
   type: NodeType.BRANCH,
   def: 'wang_tile_branch_variant',
   displayName: 'Wang Tile: Branch Variant',
   passthrough: true,
-  isValidDescendantDef: () => false,
+  // isValidDescendantDef: () => false,
+  // branchDefs: ['fo'],
+  // foo: 'bar'
 })
 </script>
 <script setup lang="ts">
@@ -71,7 +73,6 @@ const handler = defineBranchHandler(STEP_META, {
 })
 
 const branch = useBranchHandler(branchId, STEP_META, handler)
-
 
 </script>
 <template>

@@ -3,7 +3,7 @@ import type { NodeDataType, StepInputTypesToInstances } from '../../node-data-ty
 import { NodeType } from '../_types.ts'
 import type { AnyNode } from '../Node.ts'
 import { defaultNormalRunner, type NormalRunner } from '../NodeRunner.ts'
-import type { NodeMeta } from '../types/definitions.ts'
+import type { AnyBranchMeta } from '../types/definitions.ts'
 import { makeHandler, type NodeHandler } from './NodeHandler.ts'
 
 export type BranchHandler<
@@ -36,7 +36,7 @@ export function defineBranchHandler<
   C = {},
   SC = C,
   RC = Reactive<C>,
-  M extends NodeMeta<any, any> = NodeMeta<any, any>,
+  M extends AnyBranchMeta<any, any> = AnyBranchMeta<any, any>,
 >(
   meta: M,
   options?: BranchHandlerOptions<

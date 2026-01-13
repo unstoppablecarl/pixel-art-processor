@@ -1,7 +1,7 @@
 <script lang="ts">
-import { NodeType } from '../../../lib/pipeline/_types.ts'
-import type { AnyNodeMeta } from '../../../lib/pipeline/types/definitions.ts'
 import { BitMask } from '../../../lib/node-data-types/BitMask.ts'
+import { NodeType } from '../../../lib/pipeline/_types.ts'
+import { defineFork } from '../../../lib/pipeline/types/definitions.ts'
 import type { WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import { STEP_META as branchStepMeta } from './WangTileBranch.vue'
 
@@ -9,14 +9,14 @@ export interface IRunnerResultMeta {
   wangTileInfo?: WangTile<number>
 }
 
-export const STEP_META: AnyNodeMeta = {
+export const STEP_META = defineFork({
   type: NodeType.FORK,
   def: 'fork_wang_tiles',
   displayName: 'Fork: Wang Tiles',
   inputDataTypes: [],
   outputDataType: BitMask,
   branchDefs: [branchStepMeta.def],
-}
+})
 </script>
 <script setup lang="ts">
 import { computed, watchEffect } from 'vue'

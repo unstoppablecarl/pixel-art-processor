@@ -3,6 +3,9 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type Component, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
+import { BitMask } from '../src/lib/node-data-types/BitMask'
+import { HeightMap } from '../src/lib/node-data-types/HeightMap'
+import { NormalMap } from '../src/lib/node-data-types/NormalMap'
 import {
   type IRunnerResultMeta,
   type NodeDef,
@@ -14,12 +17,9 @@ import { StepValidationError } from '../src/lib/pipeline/errors/StepValidationEr
 import { type InitializedForkNode, type InitializedNode } from '../src/lib/pipeline/Node.ts'
 import { defineForkHandler, type ForkHandler } from '../src/lib/pipeline/NodeHandler/ForkHandler.ts'
 import { useForkHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
+import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import type { ForkRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
-import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
-import { type AnyNodeDefinition, defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
-import { BitMask } from '../src/lib/node-data-types/BitMask'
-import { HeightMap } from '../src/lib/node-data-types/HeightMap'
-import { NormalMap } from '../src/lib/node-data-types/NormalMap'
+import { type AnyNodeDefinition, defineFork } from '../src/lib/pipeline/types/definitions.ts'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
@@ -67,7 +67,7 @@ describe('fork handler type testing', async () => {
     }
     type RC = ShallowReactive<C>
 
-    const STEP_META = defineNodeMeta({
+    const STEP_META = defineFork({
       displayName: 'test',
       def: 'testing',
       type: NodeType.FORK,

@@ -13,7 +13,7 @@ import {
   type StepHandlerOptions,
 } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
-import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
+import { defineStep } from '../src/lib/pipeline/types/definitions.ts'
 
 import { BitMask } from '../src/lib/node-data-types/BitMask.ts'
 import { HeightMap } from '../src/lib/node-data-types/HeightMap.ts'
@@ -41,7 +41,7 @@ type SerializedConfig = {
 // Helper def string
 const DEF = 'test/handler'
 
-const STEP_META = defineNodeMeta({
+const STEP_META = defineStep({
   type: NodeType.STEP,
   displayName: 'testing',
   def: DEF,

@@ -28,6 +28,7 @@ export async function loadNodeComponentsMetaData(globResults: Record<string, any
       passthrough,
       branchDefs,
       isValidDescendantDef,
+      render,
     } = (module as any).STEP_META as NodeMeta<any, any> & { branchDefs: string[] }
 
     return {
@@ -40,6 +41,7 @@ export async function loadNodeComponentsMetaData(globResults: Record<string, any
       passthrough,
       branchDefs,
       isValidDescendantDef,
+      render,
     } as AnyNodeDefinition
   })
 }

@@ -14,7 +14,7 @@ import {
   type StepHandlerOptions,
 } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
-import { defineNodeMeta } from '../src/lib/pipeline/types/definitions.ts'
+import { defineStep } from '../src/lib/pipeline/types/definitions.ts'
 
 class A extends BitMask {
 }
@@ -40,7 +40,7 @@ type RC = Reactive<RawConfig>
 // Helper def string
 const DEF = 'test/handler'
 
-const STEP_META = defineNodeMeta({
+const STEP_META = defineStep({
   type: NodeType.STEP,
   displayName: 'testing',
   def: DEF,

@@ -1,8 +1,8 @@
 <script lang="ts">
 import { NodeType } from '../../../lib/pipeline/_types.ts'
-import { type AnyNodeDefinition, defineNodeMeta } from '../../../lib/pipeline/types/definitions.ts'
+import { type AnyNodeDefinition, defineBranch } from '../../../lib/pipeline/types/definitions.ts'
 
-export const STEP_META = defineNodeMeta({
+export const STEP_META = defineBranch({
   type: NodeType.BRANCH,
   def: 'wang_tile_branch',
   displayName: 'Wang Tile: Branch',

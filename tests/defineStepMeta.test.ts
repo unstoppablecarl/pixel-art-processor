@@ -1,15 +1,17 @@
 import { describe, expectTypeOf, it } from 'vitest'
 import type { NodeDataType } from '../src/lib/node-data-types/_node-data-types.ts'
-import { NodeType } from '../src/lib/pipeline/_types'
-import {
-  defineNodeMeta,
-  type EffectiveInputConstructors,
-  type EffectiveOutputConstructor,
-} from '../src/lib/pipeline/types/definitions.ts'
 
 import { BitMask } from '../src/lib/node-data-types/BitMask'
 import { HeightMap } from '../src/lib/node-data-types/HeightMap'
 import { NormalMap } from '../src/lib/node-data-types/NormalMap'
+import { NodeType } from '../src/lib/pipeline/_types'
+import {
+  defineBranch,
+  defineFork,
+  defineStep,
+  type EffectiveInputConstructors,
+  type EffectiveOutputConstructor,
+} from '../src/lib/pipeline/types/definitions.ts'
 
 class A extends BitMask {
 }
@@ -24,7 +26,7 @@ describe('defineStepMeta inference', () => {
   // ------------------------------------------------------------
   // 1. Normal step meta
   // ------------------------------------------------------------
-  const META = defineNodeMeta({
+  const META = defineStep({
     type: NodeType.STEP,
     def: 'normal',
     displayName: 'Normal',
@@ -57,7 +59,7 @@ describe('defineStepMeta inference', () => {
   // ------------------------------------------------------------
   // 2. Passthrough meta
   // ------------------------------------------------------------
-  const PASSTHROUGH = defineNodeMeta({
+  const PASSTHROUGH = defineStep({
     type: NodeType.STEP,
     def: 'passthrough',
     displayName: 'Passthrough',
@@ -74,7 +76,7 @@ describe('defineStepMeta inference', () => {
   // ------------------------------------------------------------
   // 3. Branch meta
   // ------------------------------------------------------------
-  const BRANCH = defineNodeMeta({
+  const BRANCH = defineBranch({
     type: NodeType.BRANCH,
     def: 'branch',
     displayName: 'Branch',
@@ -92,7 +94,7 @@ describe('defineStepMeta inference', () => {
     expectTypeOf<O>().toEqualTypeOf<typeof B>()
   })
 
-  const FORK = defineNodeMeta({
+  const FORK = defineFork({
     type: NodeType.FORK,
     def: 'fork',
     displayName: 'Fork',

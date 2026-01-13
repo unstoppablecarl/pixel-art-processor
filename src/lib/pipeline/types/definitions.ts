@@ -3,9 +3,12 @@ import type { NodeDataType } from '../../node-data-types/_node-data-types.ts'
 import { PassThrough } from '../../node-data-types/PassThrough.ts'
 import { type NodeDef, NodeType } from '../_types.ts'
 
-export function defineNodeMeta<M extends NodeMeta<any, any>>(meta: M): M {
-  return meta
-}
+// export function defineNodeMeta<M extends NodeMeta<any, any>>(meta: ValidateNodeMeta<M>): M {
+//   return meta
+// }
+export const defineStep = <M extends AnyStepMeta<any, any>>(meta: M): M => meta
+export const defineFork = <M extends AnyForkMeta<any, any>>(meta: M): M => meta
+export const defineBranch = <M extends AnyBranchMeta<any, any>>(meta: M): M => meta
 
 export type AnyNodeMeta = NodeMeta<any, any>
 
@@ -13,7 +16,8 @@ type IsValidDescendantDef = (def: AnyNodeDefinition) => boolean
 type NodeMetaBase = {
   def: string
   displayName: string
-  isValidDescendantDef?: IsValidDescendantDef
+  isValidDescendantDef?: IsValidDescendantDef,
+  render?: false | undefined,
 }
 
 export type NodeMeta<
@@ -32,7 +36,9 @@ export type AnyStepMeta<
 export type AnyForkMeta<
   I extends readonly NodeDataType[] = readonly NodeDataType[],
   O extends NodeDataType = NodeDataType
-> = NodeMetaBase & ForkSpecific & IO<I, O>
+> = NodeMetaBase & ForkSpecific & IO<I, O> & {
+  branchDefs: readonly string[]
+}
 
 export type AnyBranchMeta<
   I extends readonly NodeDataType[] = readonly NodeDataType[],
@@ -47,7 +53,6 @@ type BranchSpecific = {
 }
 type ForkSpecific = {
   type: NodeType.FORK
-  branchDefs: readonly string[]
 }
 
 export type NodeDefinitions = Record<string, AnyNodeDefinition>
@@ -75,7 +80,9 @@ export type AnyStepDefinition<
 export type AnyForkDefinition<
   I extends readonly NodeDataType[] = readonly NodeDataType[],
   O extends NodeDataType = NodeDataType
-> = NodeDefinitionBase & Readonly<ForkSpecific> & IO<I, O>
+> = NodeDefinitionBase & Readonly<ForkSpecific> & IO<I, O> & {
+  branchDefs: readonly NodeDef[]
+}
 
 export type AnyBranchDefinition<
   I extends readonly NodeDataType[] = readonly NodeDataType[],
