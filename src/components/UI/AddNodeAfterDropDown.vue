@@ -5,7 +5,7 @@ import type { AnyNodeDefinition, NodeDef, NodeId, StepDataType } from '../../lib
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { PassThrough } from '../../lib/step-data-types/PassThrough.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { getNodeDataTypeCssClass } from '../../steps.ts'
+import { getNodeDataTypeCssClass } from '../../nodes.ts'
 
 const store = usePipelineStore()
 

@@ -1,5 +1,5 @@
 import tinycolor from 'tinycolor2'
-import type { NodeDataTypeColors } from '../../steps.ts'
+import type { NodeDataTypeColors } from '../../nodes.ts'
 import type { NodeDataTypeColor, StepDataTypeInstance } from '../pipeline/_types.ts'
 import { deepUnwrap } from './vue-util.ts'
 

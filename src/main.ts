@@ -8,7 +8,7 @@ import { installNodeRegistry, makeNodeRegistry } from './lib/pipeline/NodeRegist
 import { createPersistedState } from './lib/store/_pinia-persist-plugin.ts'
 import { CustomAutoAnimationPlugin } from './lib/util/auto-animate.ts'
 import { injectNodeDataTypeCss } from './lib/util/misc.ts'
-import { loadNodeDefinitions, NODE_DATA_TYPE_COLORS, NODE_DATA_TYPES } from './steps.ts'
+import { loadNodeDefinitions, NODE_DATA_TYPE_COLORS, NODE_DATA_TYPES } from './nodes.ts'
 
 const app = createApp(App)
 const pinia = createPinia()

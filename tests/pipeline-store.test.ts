@@ -4,7 +4,7 @@ import type { AnyBranchNode, AnyForkNode, AnyStepNode } from '../src/lib/pipelin
 import { installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deepUnwrap } from '../src/lib/util/vue-util.ts'
-import { loadNodeDefinitions, NODE_DATA_TYPES } from '../src/steps.ts'
+import { loadNodeDefinitions, NODE_DATA_TYPES } from '../src/nodes.ts'
 
 beforeEach(async () => {
   const stepDefinitions = await loadNodeDefinitions()
