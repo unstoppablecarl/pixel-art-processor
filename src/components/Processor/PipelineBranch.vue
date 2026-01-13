@@ -7,7 +7,7 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineForkBranches from './PipelineForkBranches.vue'
 
 const store = usePipelineStore()
-const stepRegistry = getNodeRegistry()
+const nodeRegistry = getNodeRegistry()
 
 const { nodeIds } = defineProps<{
   nodeIds: NodeId[],
@@ -40,7 +40,7 @@ const allNodes = computed(() => {
     <template v-if="allNodes.nodes.length">
       <template v-for="node in allNodes.nodes" :key="node.id">
         <component
-          :is="stepRegistry.defToComponent(node.def)"
+          :is="nodeRegistry.defToComponent(node.def)"
           :node-id="node.id"
           class="node"
         />
@@ -54,7 +54,7 @@ const allNodes = computed(() => {
 
   <template v-if="allNodes.fork">
     <component
-      :is="stepRegistry.defToComponent(allNodes.fork.def)"
+      :is="nodeRegistry.defToComponent(allNodes.fork.def)"
       :node-id="allNodes.fork.id"
       class="node"
     />

@@ -31,7 +31,7 @@ type SerializedState = {
 export type PipelineStore = ReturnType<typeof usePipelineStore>
 
 export const usePipelineStore = defineStore('pipeline', () => {
-    const stepRegistry = getNodeRegistry()
+    const nodeRegistry = getNodeRegistry()
     const queue = makeNodeRunnerQueue({ runNode, getAncestorNodeIds })
 
     const nodes = reactive<Record<string, AnyNode>>({})
@@ -107,7 +107,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
     }
 
     function add(def: NodeDef, afterId: NodeId | null): AnyNode {
-      const type = stepRegistry.getNodeType(def)
+      const type = nodeRegistry.getNodeType(def)
       if (type == NodeType.STEP) return addStep(def, afterId)
       if (type == NodeType.FORK) return addFork(def, afterId)
       if (type == NodeType.BRANCH) {
@@ -129,7 +129,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
     function addStep(def: NodeDef, prevNodeId: NodeId | null): AnyStepNode {
       if (prevNodeId) {
         const prev = get(prevNodeId)
-        stepRegistry.validateCanBeChildOf(def, prev.def)
+        nodeRegistry.validateCanBeChildOf(def, prev.def)
       }
 
       const id = _defToId(def)
@@ -142,7 +142,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
     function addFork(def: NodeDef, prevNodeId: NodeId | null): AnyForkNode {
       if (prevNodeId) {
         const prev = get(prevNodeId)
-        stepRegistry.validateCanBeChildOf(def, prev.def)
+        nodeRegistry.validateCanBeChildOf(def, prev.def)
       }
 
       const id = _defToId(def)
@@ -460,7 +460,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
     }
 
     function getDisplayName(node: AnyNode) {
-      return stepRegistry.get(node.def).displayName
+      return nodeRegistry.get(node.def).displayName
     }
 
     return {
@@ -498,7 +498,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       hasInAncestorNodes,
       findInAncestorNodes,
       getDescendantIds,
-      nodeIsPassthrough: stepRegistry.nodeIsPassthrough,
+      nodeIsPassthrough: nodeRegistry.nodeIsPassthrough,
       getFallbackOutputWidth,
       getDisplayName,
       nodesProcessing,

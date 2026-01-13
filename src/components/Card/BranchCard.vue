@@ -11,13 +11,13 @@ import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
-const stepRegistry = getNodeRegistry()
+const nodeRegistry = getNodeRegistry()
 
 const { branch } = defineProps<{
   branch: InitializedBranchNode<any, any, any, any>,
 }>()
 
-const displayName = computed(() => stepRegistry.get(branch.def).displayName)
+const displayName = computed(() => nodeRegistry.get(branch.def).displayName)
 const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
   const ids: NodeId[] = []

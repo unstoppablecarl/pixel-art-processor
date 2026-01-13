@@ -23,11 +23,11 @@ const {
 }>()
 
 const addableNodes = computed(() => {
-  const stepRegistry = getNodeRegistry()
+  const nodeRegistry = getNodeRegistry()
   const node = store.get(nodeId)
 
-  const result = stepRegistry.addableToArray()
-    .filter(({ def }) => stepRegistry.canBeChildOf(store, def, node.id))
+  const result = nodeRegistry.addableToArray()
+    .filter(({ def }) => nodeRegistry.canBeChildOf(store, def, node.id))
     .map((
         meta: AnyNodeDefinition) => {
 
@@ -57,7 +57,7 @@ const addableNodes = computed(() => {
         return {
           def: meta.def,
           displayName: meta.displayName,
-          compatible: stepRegistry.isCompatibleWithOutputType(meta.def, node.handler!.currentOutputDataType),
+          compatible: nodeRegistry.isCompatibleWithOutputType(meta.def, node.handler!.currentOutputDataType),
           inputColorCssClass,
           outputColorCssClass: outputColorCssClass,
           inputNames,

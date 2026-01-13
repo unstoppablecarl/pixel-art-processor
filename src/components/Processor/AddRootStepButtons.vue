@@ -5,8 +5,8 @@ import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
 const store = usePipelineStore()
-const stepRegistry = getNodeRegistry()
-const steps = computed(() => stepRegistry.rootNodes())
+const nodeRegistry = getNodeRegistry()
+const steps = computed(() => nodeRegistry.rootNodes())
 
 function add(def: NodeDef) {
   store.add(def, null)

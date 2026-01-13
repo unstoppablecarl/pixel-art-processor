@@ -7,6 +7,7 @@ export const STEP_META = defineBranch({
   def: 'wang_tile_branch_variant' as NodeDef,
   displayName: 'Wang Tile: Branch Variant',
   passthrough: true,
+  render: false
 })
 </script>
 <script setup lang="ts">

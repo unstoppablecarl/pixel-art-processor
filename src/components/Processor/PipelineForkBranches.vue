@@ -7,7 +7,7 @@ import type { ForkDefinition } from '../../lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
 const store = usePipelineStore()
-const stepRegistry = getNodeRegistry()
+const nodeRegistry = getNodeRegistry()
 
 const { forkNodeId } = defineProps<{ forkNodeId: NodeId }>()
 
@@ -15,9 +15,9 @@ const fork = computed(() => store.getFork(forkNodeId))
 const branches = computed(() => fork.value.branchIds.value.map(store.getBranch))
 
 const addableBranches = computed(() => {
-  const definition = stepRegistry.get(fork.value.def) as ForkDefinition<any, any>
+  const definition = nodeRegistry.get(fork.value.def) as ForkDefinition<any, any>
 
-  return definition.branchDefs.map(stepRegistry.get)
+  return definition.branchDefs.map(nodeRegistry.get)
 })
 </script>
 <template>
@@ -28,7 +28,7 @@ const addableBranches = computed(() => {
       :key="`${forkNodeId}-branch-${branch.id}`"
     >
       <component
-        :is="stepRegistry.defToComponent(branch.def)"
+        :is="nodeRegistry.defToComponent(branch.def)"
         :branch-id="branch.id"
       />
     </template>
