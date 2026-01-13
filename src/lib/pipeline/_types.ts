@@ -28,7 +28,7 @@ export type StepDataTypeInstance =
   | PixelMap
   | PassThrough
 
-export type StepDefinitions = Record<string, AnyStepDefinition>
+export type NodeDefinitions = Record<string, AnyNodeDefinition>
 
 export function defineStepMeta<M extends StepMeta<any, any>>(meta: M): M {
   return meta
@@ -47,7 +47,7 @@ export type StepMeta<
 export type StepMetaBase = {
   def: string
   displayName: string
-  isValidDescendantDef?: (def: AnyStepDefinition) => boolean
+  isValidDescendantDef?: (def: AnyNodeDefinition) => boolean
 }
 
 type StepNodeSpecific = {
@@ -102,11 +102,11 @@ type ForkDefinitionSpecific = {
   branchDefs: NodeDef[]
 }
 
-// export type AnyStepDefinition = StepDefinitionBase & StepDefinitionSpecific
+export type AnyStepDefinition = StepDefinitionBase & StepDefinitionSpecific
 export type AnyForkDefinition = StepDefinitionBase & ForkDefinitionSpecific
 export type AnyBranchDefinition = StepDefinitionBase & StepDefinitionSpecific
 
-export type StepDefinition<
+export type NodeDefinition<
   I extends readonly StepDataType[] = readonly StepDataType[],
   O extends StepDataType = StepDataType
 > =
@@ -114,7 +114,7 @@ export type StepDefinition<
   | (StepDefinitionBase & BranchDefinitionSpecific & IO<I, O>)
   | (StepDefinitionBase & ForkDefinitionSpecific & IO<I, O>)
 
-export type AnyStepDefinition = StepDefinition<any, any>
+export type AnyNodeDefinition = NodeDefinition<any, any>
 
 export type Config = Record<string, any>
 

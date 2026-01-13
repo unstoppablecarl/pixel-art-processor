@@ -1,4 +1,4 @@
-import { type AnyStepDefinition, type NodeDataTypeColor, type StepDataType } from './lib/pipeline/_types.ts'
+import { type AnyNodeDefinition, type NodeDataTypeColor, type StepDataType } from './lib/pipeline/_types.ts'
 import { loadStepComponentsMetaData } from './lib/pipeline/StepMeta.ts'
 import { type DataStructureConstructor } from './lib/step-data-types/BaseDataStructure.ts'
 import { BitMask } from './lib/step-data-types/BitMask.ts'
@@ -41,9 +41,9 @@ export function getNodeDataTypeCssClass(stepDataType: StepDataType) {
 
 
 // ⚠️ the code below only works if it is in this file
-let stepLoadPromise: Promise<AnyStepDefinition[]> | null = null
+let stepLoadPromise: Promise<AnyNodeDefinition[]> | null = null
 
-export function loadStepDefinitions(): Promise<AnyStepDefinition[]> {
+export function loadStepDefinitions(): Promise<AnyNodeDefinition[]> {
   if (!stepLoadPromise) {
     stepLoadPromise = (async () => {
       const loadedModules: Record<string, any> = {}
@@ -62,7 +62,7 @@ if (import.meta.hot && !import.meta.env.VITEST) {
     stepLoadPromise = null
 
     const stepDefinitions = await loadStepDefinitions()
-    const { installStepRegistry, makeStepRegistry } = await import('./lib/pipeline/StepRegistry.ts')
-    installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
+    const { installNodeRegistry, makeNodeRegistry } = await import('./lib/pipeline/NodeRegistry.ts')
+    installNodeRegistry(makeNodeRegistry(stepDefinitions, STEP_DATA_TYPES))
   })
 }

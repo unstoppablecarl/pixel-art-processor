@@ -1,7 +1,7 @@
 import { Component } from 'vue'
 import type { Optional } from '../src/lib/_helpers.ts'
-import { type AnyStepDefinition, type NodeDef, NodeType, type StepMeta } from '../src/lib/pipeline/_types.ts'
-import { useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { type AnyNodeDefinition, type NodeDef, NodeType, type StepMeta } from '../src/lib/pipeline/_types.ts'
+import { getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 
 let defIncrement = 0
 
@@ -18,7 +18,7 @@ export function defineTestNode(
 
   def ??= 'testing_' + defIncrement++
 
-  return useStepRegistry().defineNode({
+  return getNodeRegistry().defineNode({
     displayName,
     def: def as NodeDef,
     type,
@@ -26,5 +26,5 @@ export function defineTestNode(
     inputDataTypes,
     outputDataType,
     component: {} as unknown as Component,
-  } as AnyStepDefinition)
+  } as AnyNodeDefinition)
 }

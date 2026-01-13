@@ -1,14 +1,14 @@
 import { createPinia, setActivePinia } from 'pinia'
 import { beforeEach, describe, expect, it } from 'vitest'
 import type { AnyBranchNode, AnyForkNode, AnyStepNode } from '../src/lib/pipeline/Node.ts'
-import { installStepRegistry, makeStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { type PipelineStore, usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deepUnwrap } from '../src/lib/util/vue-util.ts'
 import { loadStepDefinitions, STEP_DATA_TYPES } from '../src/steps.ts'
 
 beforeEach(async () => {
   const stepDefinitions = await loadStepDefinitions()
-  installStepRegistry(makeStepRegistry(stepDefinitions, STEP_DATA_TYPES))
+  installNodeRegistry(makeNodeRegistry(stepDefinitions, STEP_DATA_TYPES))
 })
 
 // Helpers to reduce noise

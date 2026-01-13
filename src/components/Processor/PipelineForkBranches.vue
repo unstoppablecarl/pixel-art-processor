@@ -2,11 +2,11 @@
 import { computed } from 'vue'
 import { type AnyForkDefinition, type NodeId } from '../../lib/pipeline/_types.ts'
 
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
+import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 
 const store = usePipelineStore()
-const stepRegistry = useStepRegistry()
+const stepRegistry = getNodeRegistry()
 
 const { forkNodeId } = defineProps<{ forkNodeId: NodeId }>()
 

@@ -1,12 +1,12 @@
 <script lang="ts">
-import { type AnyStepDefinition, defineStepMeta, NodeType } from '../../../lib/pipeline/_types.ts'
+import { type AnyNodeDefinition, defineStepMeta, NodeType } from '../../../lib/pipeline/_types.ts'
 
 export const STEP_META = defineStepMeta({
   type: NodeType.BRANCH,
   def: 'wang_tile_branch',
   displayName: 'Wang Tile: Branch',
   passthrough: true,
-  isValidDescendantDef: (def: AnyStepDefinition) => def.type === NodeType.STEP,
+  isValidDescendantDef: (def: AnyNodeDefinition) => def.type === NodeType.STEP,
 })
 </script>
 <script setup lang="ts">

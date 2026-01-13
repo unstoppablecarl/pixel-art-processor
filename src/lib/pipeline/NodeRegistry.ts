@@ -1,51 +1,51 @@
 import { type Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { StepDataTypeRegistry } from '../step-data-types/StepDataTypeRegistry.ts'
+import { NodeDataTypeRegistry } from '../step-data-types/NodeDataTypeRegistry.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import {
-  type AnyStepDefinition,
+  type AnyNodeDefinition,
   type AnyStepMeta,
   type NodeDef,
   type NodeId,
   NodeType,
-  type StepDefinitions,
+  type NodeDefinitions,
 } from './_types.ts'
 import type { AnyNode } from './Node.ts'
 
-export type StepRegistry = ReturnType<typeof makeStepRegistry>
+export type NodeRegistry = ReturnType<typeof makeNodeRegistry>
 
-export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], stepDataTypes: DataStructureConstructor[] = []) {
-  const STEP_DEFINITIONS: StepDefinitions = {}
-  const dataTypeRegistry: StepDataTypeRegistry = new StepDataTypeRegistry(stepDataTypes)
+export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], nodeDataTypes: DataStructureConstructor[] = []) {
+  const NODE_DEFINITIONS: NodeDefinitions = {}
+  const dataTypeRegistry: NodeDataTypeRegistry = new NodeDataTypeRegistry(nodeDataTypes)
 
-  function defineNode(definition: AnyStepDefinition) {
-    if (STEP_DEFINITIONS[definition.def]) {
-      throw new Error('cannot define step that already exists: ' + definition.def)
+  function defineNode(definition: AnyNodeDefinition) {
+    if (NODE_DEFINITIONS[definition.def]) {
+      throw new Error('cannot define node that already exists: ' + definition.def)
     }
-    STEP_DEFINITIONS[definition.def] = { ...definition }
-    return STEP_DEFINITIONS[definition.def]
+    NODE_DEFINITIONS[definition.def] = { ...definition }
+    return NODE_DEFINITIONS[definition.def]
   }
 
-  const defineSteps = (stepDefinitions: AnyStepDefinition[]) => stepDefinitions.forEach(defineNode)
-  defineSteps(stepDefinitions)
+  const defineNodes = (nodeDefinitions: AnyNodeDefinition[]) => nodeDefinitions.forEach(defineNode)
+  defineNodes(nodeDefinitions)
 
-  function get(def: string): AnyStepDefinition {
-    const result = STEP_DEFINITIONS[def]
+  function get(def: string): AnyNodeDefinition {
+    const result = NODE_DEFINITIONS[def]
     if (!result) {
-      throw new Error('Step Definition not found: ' + def)
+      throw new Error('Node Definition not found: ' + def)
     }
     return result
   }
 
   function has(def: string): boolean {
-    return def in STEP_DEFINITIONS
+    return def in NODE_DEFINITIONS
   }
 
-  function isCompatibleWithOutputType(def: NodeDef, stepDataType: DataStructureConstructor): boolean {
+  function isCompatibleWithOutputType(def: NodeDef, nodeDataType: DataStructureConstructor): boolean {
     const definition = get(def)
     if (definition.passthrough) return true
-    return definition.inputDataTypes.includes(stepDataType)
+    return definition.inputDataTypes.includes(nodeDataType)
   }
 
   const getFork = (def: NodeDef) => {
@@ -59,7 +59,7 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
   const isStep = (def: string): boolean => get(def).type === NodeType.STEP
 
   function addableToArray() {
-    return Object.values(STEP_DEFINITIONS)
+    return Object.values(NODE_DEFINITIONS)
   }
 
   // check if parent has any ancestors that would make the child an invalid child of parent
@@ -102,13 +102,13 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
 
     if (!objectsAreEqual(meta, definition)) {
       console.error({ meta, definition })
-      throw new Error(`step def: ${meta.def} registered does not match registry`)
+      throw new Error(`node def: ${meta.def} registered does not match registry`)
     }
   }
 
   return {
     defineNode,
-    defineSteps,
+    defineNodes,
     get,
     has,
     getNodeType: (def: string): NodeType => get(def).type,
@@ -123,33 +123,33 @@ export function makeStepRegistry(stepDefinitions: AnyStepDefinition[] = [], step
     dataTypeRegistry,
     isCompatibleWithOutputType,
     validateDefRegistration,
-    rootNodes: () => Object.values(STEP_DEFINITIONS)
+    rootNodes: () => Object.values(NODE_DEFINITIONS)
       .filter(s => !s.passthrough && s.inputDataTypes.length === 0),
   }
 }
 
-let REGISTRY: StepRegistry | undefined
+let REGISTRY: NodeRegistry | undefined
 
 // Restore from previous HMR state
 if (import.meta.hot && !import.meta.env.VITEST) {
-  if (import.meta.hot.data.stepRegistry) {
-    REGISTRY = import.meta.hot.data.stepRegistry
+  if (import.meta.hot.data.nodeRegistry) {
+    REGISTRY = import.meta.hot.data.nodeRegistry
   }
 }
 
-export function installStepRegistry(registry: StepRegistry) {
+export function installNodeRegistry(registry: NodeRegistry) {
   REGISTRY = registry
 
   // cache hmr state
   if (import.meta.hot && !import.meta.env.VITEST) {
 
-    import.meta.hot.data.stepRegistry = registry
+    import.meta.hot.data.nodeRegistry = registry
   }
 }
 
-export function useStepRegistry(): StepRegistry {
+export function getNodeRegistry(): NodeRegistry {
   if (!REGISTRY) {
-    throw new Error('StepRegistry not found. Call installStepRegistry(makeStepRegistry(STEP_DEFINITIONS, STEP_DATA_TYPES)) in main.ts')
+    throw new Error('NodeRegistry not found. Call installNodeRegistry(makeNodeRegistry(NODE_DEFINITIONS, NODE_DATA_TYPES)) in main.ts')
   }
   return REGISTRY
 }

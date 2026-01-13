@@ -16,7 +16,7 @@ import {
   isStep,
   StepNode,
 } from '../pipeline/Node.ts'
-import { useStepRegistry } from '../pipeline/StepRegistry.ts'
+import { getNodeRegistry } from '../pipeline/NodeRegistry.ts'
 import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
@@ -31,7 +31,7 @@ type SerializedState = {
 export type PipelineStore = ReturnType<typeof usePipelineStore>
 
 export const usePipelineStore = defineStore('pipeline', () => {
-    const stepRegistry = useStepRegistry()
+    const stepRegistry = getNodeRegistry()
     const queue = makeNodeRunnerQueue({ runNode, getAncestorNodeIds })
 
     const nodes = reactive<Record<string, AnyNode>>({})

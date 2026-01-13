@@ -4,14 +4,14 @@ import { computed } from 'vue'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { type InitializedBranchNode, isBranch, isFork } from '../../lib/pipeline/Node.ts'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
+import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
-const stepRegistry = useStepRegistry()
+const stepRegistry = getNodeRegistry()
 
 const { branch } = defineProps<{
   branch: InitializedBranchNode<any, any, any, any, any>,

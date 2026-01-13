@@ -2,7 +2,7 @@ import type { DataStructureConstructor } from './BaseDataStructure.ts'
 
 type ClassConstructor = new (...args: any[]) => any;
 
-export class StepDataTypeRegistry {
+export class NodeDataTypeRegistry {
   types: Map<ClassConstructor, string> = new Map([
     [ImageData, 'Image Data (Native)'],
   ])
@@ -57,14 +57,14 @@ export class StepDataTypeRegistry {
     else if (typeof entity === 'function') {
       constructor = entity as ClassConstructor
     } else {
-      console.error('Invalid Step Type entity for lookup', entity)
-      return 'Invalid Step Type entity'
+      console.error('Invalid Node Type entity for lookup', entity)
+      return 'Invalid Node Type entity'
     }
 
     const displayName = this.types.get(constructor)
 
     if (!displayName) {
-      const msg = `Constructor ${constructor.name} is not registered in the step data type registry.`
+      const msg = `Constructor ${constructor.name} is not registered in the node data type registry.`
       console.error(msg)
       return msg
     }

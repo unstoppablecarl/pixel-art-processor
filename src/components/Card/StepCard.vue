@@ -6,7 +6,7 @@ import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts
 import { INVALID_INPUT_STATIC_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputStaticTypeError.ts'
 import { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedForkNode, type InitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
+import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
 import StepImage from '../StepImage.vue'
@@ -102,7 +102,7 @@ const executionTime = computed(() => {
   return (node.lastExecutionTimeMS / 1000).toFixed(2)
 })
 
-const registry = useStepRegistry()
+const registry = getNodeRegistry()
 const header = computed(() => registry.get(node.def).displayName)
 
 function toggleMute() {

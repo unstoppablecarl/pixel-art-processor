@@ -1,8 +1,8 @@
 import type { Component } from 'vue'
 import type { DataStructureConstructor } from '../step-data-types/BaseDataStructure.ts'
-import { type AnyStepDefinition, NodeType, type StepMeta } from './_types.ts'
+import { type AnyNodeDefinition, NodeType, type StepMeta } from './_types.ts'
 
-export async function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyStepDefinition[]> {
+export async function loadStepComponentsMetaData(globResults: Record<string, any>, stepDataTypes: DataStructureConstructor[]): Promise<AnyNodeDefinition[]> {
 
   const errors = Object.entries(globResults)
     .map(([path, module]) => validateModule(path, module, stepDataTypes))
@@ -39,12 +39,12 @@ export async function loadStepComponentsMetaData(globResults: Record<string, any
       passthrough,
       branchDefs,
       isValidDescendantDef,
-    } as AnyStepDefinition
+    } as AnyNodeDefinition
   })
 }
 
 function validateModule(path: string, module: any, stepDataTypes: DataStructureConstructor[]): ComponentError | void {
-  const STEP_META = (module as any).STEP_META as AnyStepDefinition
+  const STEP_META = (module as any).STEP_META as AnyNodeDefinition
 
   if (!STEP_META) {
     return {

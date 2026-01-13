@@ -3,7 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type ShallowReactive, shallowReactive } from 'vue'
 import {
-  type AnyStepDefinition,
+  type AnyNodeDefinition,
   defineStepMeta,
   type IRunnerResultMeta,
   type NodeDef,
@@ -17,7 +17,7 @@ import { type InitializedNode, type InitializedStepNode } from '../src/lib/pipel
 import { defineStepHandler, type StepHandler } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
 import { useStepHandler } from '../src/lib/pipeline/NodeHandler/useHandlers.ts'
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
-import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry.ts'
+import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { HeightMap } from '../src/lib/step-data-types/HeightMap'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap'
@@ -26,7 +26,7 @@ import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/ImageData.ts'
 
 function makeAppContext(cb: () => void) {
-  installStepRegistry(makeStepRegistry())
+  installNodeRegistry(makeNodeRegistry())
 
   const App = {
     setup() {
@@ -76,8 +76,8 @@ describe('step handler type testing', async () => {
       outputDataType: NormalMap,
     })
 
-    useStepRegistry().defineNode({ ...STEP_META, component: {} as unknown as Component } as AnyStepDefinition)
-    useStepRegistry().validateDefRegistration(STEP_META)
+    getNodeRegistry().defineNode({ ...STEP_META, component: {} as unknown as Component } as AnyNodeDefinition)
+    getNodeRegistry().validateDefRegistration(STEP_META)
 
     type M = typeof STEP_META
     type I = M['inputDataTypes']

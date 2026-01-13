@@ -3,7 +3,7 @@ import { type Component, type Reactive, reactive } from 'vue'
 import { defineStepMeta, type NodeDef, type NodeId, NodeType } from '../src/lib/pipeline/_types'
 import { type AnyNode, BranchNode, ForkNode, StepNode } from '../src/lib/pipeline/Node.ts'
 import { makeStepHandler, type StepHandlerOptions } from '../src/lib/pipeline/NodeHandler/StepHandler.ts'
-import { installStepRegistry, makeStepRegistry, useStepRegistry } from '../src/lib/pipeline/StepRegistry'
+import { installNodeRegistry, makeNodeRegistry, getNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import { BitMask } from '../src/lib/step-data-types/BitMask'
 import { NormalMap } from '../src/lib/step-data-types/NormalMap.ts'
 import type { PipelineStore } from '../src/lib/store/pipeline-store'
@@ -12,7 +12,7 @@ import { defineTestNode } from './_helpers.ts'
 // ------------------------------------------------------------
 // Registry setup
 // ------------------------------------------------------------
-installStepRegistry(makeStepRegistry())
+installNodeRegistry(makeNodeRegistry())
 
 // ------------------------------------------------------------
 // Helpers
@@ -27,7 +27,7 @@ function makeStore(nodes: Record<NodeId, any>): PipelineStore {
       return nodes[id]
     },
     nodeIsPassthrough(node: AnyNode) {
-      return useStepRegistry().nodeIsPassthrough(node)
+      return getNodeRegistry().nodeIsPassthrough(node)
     },
   } as unknown as PipelineStore
 }
@@ -44,7 +44,7 @@ const passThroughMeta = defineStepMeta({
   passthrough: true,
 })
 
-useStepRegistry().defineNode({
+getNodeRegistry().defineNode({
   ...passThroughMeta,
   component: {} as Component,
 })
@@ -59,7 +59,7 @@ const basicMeta = defineStepMeta({
   outputDataType: BitMask,
 })
 
-useStepRegistry().defineNode({
+getNodeRegistry().defineNode({
   ...basicMeta,
   component: {} as Component,
 })
@@ -354,7 +354,7 @@ describe('Pipeline Node Behavior', () => {
         passthrough: true,
       })
 
-      expect(useStepRegistry().get(s1Definition.def).passthrough).toBe(true)
+      expect(getNodeRegistry().get(s1Definition.def).passthrough).toBe(true)
 
       const s1 = new StepNode<
         RawConfig,
@@ -369,7 +369,7 @@ describe('Pipeline Node Behavior', () => {
         prevNodeId: s0.id,
       })
 
-      expect(useStepRegistry().get(s1Definition.def).passthrough).toBe(true)
+      expect(getNodeRegistry().get(s1Definition.def).passthrough).toBe(true)
 
       const handler0 = makeStepHandler(s0Definition, typedHandlerOptions)
       s0.initialize(handler0)

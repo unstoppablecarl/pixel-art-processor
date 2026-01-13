@@ -26,7 +26,7 @@ import type { ForkHandler } from './NodeHandler/ForkHandler.ts'
 import type { AnyHandler } from './NodeHandler/NodeHandler.ts'
 import type { StepHandler } from './NodeHandler/StepHandler.ts'
 import { type NormalRunner, parseResult, type SingleRunnerResult } from './NodeRunner.ts'
-import { useStepRegistry } from './StepRegistry.ts'
+import { getNodeRegistry } from './NodeRegistry.ts'
 
 export type BaseNodeSerialized<SC> = {
   id: NodeId,
@@ -723,10 +723,10 @@ export function deSerializeNode(data: AnyNodeSerialized): AnyNode {
   throw new Error(message)
 }
 
-export const isStep = (n: AnyNode | AnyInitializedNode): n is AnyStepNode => useStepRegistry().getNodeType(n.def) === NodeType.STEP
-export const isFork = (n: AnyNode | AnyInitializedNode): n is AnyForkNode => useStepRegistry().getNodeType(n.def) === NodeType.FORK
-export const isBranch = (n: AnyNode | AnyInitializedNode): n is AnyBranchNode => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
+export const isStep = (n: AnyNode | AnyInitializedNode): n is AnyStepNode => getNodeRegistry().getNodeType(n.def) === NodeType.STEP
+export const isFork = (n: AnyNode | AnyInitializedNode): n is AnyForkNode => getNodeRegistry().getNodeType(n.def) === NodeType.FORK
+export const isBranch = (n: AnyNode | AnyInitializedNode): n is AnyBranchNode => getNodeRegistry().getNodeType(n.def) === NodeType.BRANCH
 
-const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.STEP
-const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.FORK
-const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => useStepRegistry().getNodeType(n.def) === NodeType.BRANCH
+const isStepSerialized = (n: AnyNodeSerialized): n is AnyStepNodeSerialized => getNodeRegistry().getNodeType(n.def) === NodeType.STEP
+const isForkSerialized = (n: AnyNodeSerialized): n is AnyForkNodeSerialized => getNodeRegistry().getNodeType(n.def) === NodeType.FORK
+const isBranchSerialized = (n: AnyNodeSerialized): n is AnyBranchNodeSerialized => getNodeRegistry().getNodeType(n.def) === NodeType.BRANCH

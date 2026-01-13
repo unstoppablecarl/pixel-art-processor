@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { InvalidInputStaticTypeError } from '../../lib/pipeline/errors/InvalidInputStaticTypeError.ts'
-import { useStepRegistry } from '../../lib/pipeline/StepRegistry.ts'
+import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 
 const { error } = defineProps<{
   error: InvalidInputStaticTypeError,
 }>()
 
-const dataTypeRegistry = useStepRegistry().dataTypeRegistry
+const dataTypeRegistry = getNodeRegistry().dataTypeRegistry
 
 const valid = error.expectedTypes.map(t => {
   return dataTypeRegistry.getDisplayName(t)
