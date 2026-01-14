@@ -119,15 +119,15 @@ const handler = defineStepHandler(STEP_META, {
       return true
     }
 
-    const selectedIslands = new WeakSet<Island>()
+    const skipIslands = new WeakSet<Island>()
 
     islands.forEach(i => {
       if (!islandTypeFiler(i)) return
       if (config.populationFactor === 1) return
-      if (prng() < config.populationFactor) selectedIslands.add(i)
+      if (prng() > config.populationFactor) skipIslands.add(i)
     })
 
-    const islandFilter = (i: Island) => selectedIslands.has(i) && islandTypeFiler(i)
+    const islandFilter = (i: Island) => !skipIslands.has(i) && islandTypeFiler(i)
 
     const { added, removed } = mutateIslands({
       mask,

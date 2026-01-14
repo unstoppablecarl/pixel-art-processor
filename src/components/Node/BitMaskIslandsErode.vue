@@ -30,6 +30,7 @@ import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandle
 import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
 import NodeCard from '../Card/NodeCard.vue'
+import NodeFooterBtnCollapse from '../UI/NodeFooterBtnCollapse.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -119,13 +120,24 @@ const config = node.config
   <NodeCard :node="node">
     <template #footer>
       <BTabs
-        content-class="mt-3 p-2"
         v-model:index="config.activeTabIndex"
+        no-body
       >
         <BTab
+          :id="`${nodeId}-settings`"
           title="Settings"
-          id="settings"
-        >
+        />
+
+        <BTab
+          :id="`${nodeId}-display`"
+          title="Display"
+        />
+
+        <NodeFooterBtnCollapse :node-id="nodeId" v-model:active-tab-index="config.activeTabIndex" />
+      </BTabs>
+
+      <div class="auto-animate" v-auto-animate>
+        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 0">
           <RangeSlider
             :id="`${nodeId}-border-buffer`"
             label="Border Buffer"
@@ -164,14 +176,11 @@ const config = node.config
             </div>
           </template>
 
-        </BTab>
-        <BTab
-          title="Display"
-          id="display"
-        >
+        </div>
+        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 1">
           <CheckboxColorList :items="islandCheckboxColors(config)" />
-        </BTab>
-      </BTabs>
+        </div>
+      </div>
     </template>
   </NodeCard>
 </template>
