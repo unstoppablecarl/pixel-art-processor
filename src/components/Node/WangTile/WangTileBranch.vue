@@ -63,9 +63,9 @@ function add() {
 }
 
 function remove() {
-  const first = siblingBranchVariants.value[0]
-  if (first) {
-    store.remove(first.id)
+  const last = siblingBranchVariants.value[siblingBranchVariants.value.length - 1]
+  if (last) {
+    store.remove(last.id)
   }
 }
 
