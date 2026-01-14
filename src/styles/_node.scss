@@ -14,8 +14,8 @@
   padding-right: 20px;
 }
 
-.fork-branch-header-spacer {
-  padding: 5px 0 0 0;
+.fork-branch-header {
+  padding: 5px calc(var(--node-card-margin) + 0.5rem) 0;
 }
 
 .card {
@@ -37,7 +37,7 @@
   }
 }
 
-.branch {
+.branch-child-nodes {
   display: flex;
   flex-direction: row;
   align-items: flex-start;
@@ -79,17 +79,10 @@
 
   .node-header {
     padding: 5px calc(var(--node-card-margin) + 0.5rem) 0;
-
-    .execution-time {
-      font-size: 0.875em;
-      opacity: 0.6;
-    }
   }
 }
 
 .card-node {
-  margin: var(--node-card-margin);
-
   &.invalid-input-type {
     border-left-color: var(--bs-danger);
   }
@@ -145,6 +138,8 @@
 
 .card-node,
 .card-fork-branch {
+  margin: var(--node-card-margin);
+
   .section {
     padding: var(--bs-card-cap-padding-y) var(--bs-card-cap-padding-x);
 

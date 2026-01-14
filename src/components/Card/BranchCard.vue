@@ -7,6 +7,7 @@ import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
+import ExecutionTimer from '../UI/ExecutionTimer.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -41,10 +42,22 @@ const cssStyle = computed(() => {
 })
 </script>
 <template>
-  <div
-    v-if="branch"
-    :style="cssStyle"
-    :class="{
+  <div class="branch">
+    <div class="fork-branch-header hstack">
+      <ExecutionTimer
+        class="ms-auto"
+        :time-ms="branch?.lastExecutionTimeMS"
+      />
+      <ExecutionTimer
+        class="ms-3"
+        label="(Total)"
+        :time-ms="branch?.lastBranchTotalExecutionTimeMS"
+      />
+    </div>
+    <div
+      v-if="branch"
+      :style="cssStyle"
+      :class="{
       'card card-fork-branch': true,
       'border-danger': branch?.validationErrors.length,
     }"

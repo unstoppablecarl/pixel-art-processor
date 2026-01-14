@@ -587,6 +587,9 @@ export class BranchNode<
   forkPreview: ImageData | null = null
   forkValidationErrors: StepValidationError[] = []
 
+  private lastBranchTotalStartTimeMS: number = 0
+  lastBranchTotalExecutionTimeMS: number = 0
+
   constructor(options: BranchNodeOptions<SC>) {
     super(options)
     this.prevNodeId = options.prevNodeId
@@ -609,8 +612,14 @@ export class BranchNode<
     return store.maybeGetFork(this.prevNodeId)
   }
 
+  onBranchEndResolved(lastChildNode: AnyStepNode | AnyForkNode): void {
+    this.handler!.onBranchEndResolved?.(lastChildNode)
+    this.lastBranchTotalExecutionTimeMS = performance.now() - this.lastBranchTotalStartTimeMS
+  }
+
   protected async resolveRunner(store: PipelineStore) {
     await this.logFunction('resolveRunner', async () => {
+      this.lastBranchTotalStartTimeMS = performance.now()
       const fork = this.getPrev(store)
       this.handler!.setPassThroughDataType(fork.handler!.currentOutputDataType)
 

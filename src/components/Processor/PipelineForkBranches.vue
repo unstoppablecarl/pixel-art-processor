@@ -23,7 +23,6 @@ const addableBranches = computed(() => {
 </script>
 <template>
   <div class="fork-branches">
-    <div class="fork-branch-header-spacer">&nbsp;</div>
     <template
       v-for="branch in branches"
       :key="`${forkNodeId}-branch-${branch.id}`"

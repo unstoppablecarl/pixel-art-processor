@@ -82,9 +82,11 @@ export const usePipelineStore = defineStore('pipeline', () => {
     function maybeGetStep(id: NodeId): AnyStepNode | null {
       return nodes[id] ? getStep(id) : null
     }
+
     function maybeGetFork(id: NodeId): AnyForkNode | null {
       return nodes[id] ? getFork(id) : null
     }
+
     function maybeGetBranch(id: NodeId): AnyBranchNode | null {
       return nodes[id] ? getBranch(id) : null
     }
@@ -339,7 +341,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       const endOfBranch = isFork(node) || isStep(node) && !childIds.length
       if (endOfBranch) {
         const parentBranch = findInAncestorNodes(node.id, (n) => isBranch(n)) as AnyBranchNode
-        parentBranch?.handler?.onBranchEndResolved?.(node)
+        parentBranch?.onBranchEndResolved(node)
       }
 
       for (const childId of childIds) {
