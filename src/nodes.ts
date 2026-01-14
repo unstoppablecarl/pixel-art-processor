@@ -33,6 +33,7 @@ export const NODE_DATA_TYPE_COLORS = new Map<NodeDataType, NodeDataTypeColor>([
   [PassThrough, {
     key: '--pass-through-color',
     color: 'linear-gradient(90deg, rgba(0, 255, 255, 1) 0%, rgba(255, 0, 255, 1) 100%)',
+    pillCss: 'text-shadow: 0 0 2px #000, 0 0 3px #000;',
     cssClass: 'pass-through-bg',
   }],
 ])

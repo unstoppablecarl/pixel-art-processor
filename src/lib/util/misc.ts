@@ -111,8 +111,8 @@ export function injectCss(cssString: string) {
 }
 
 export function buildNodeDataTypeCss(items: NodeDataTypeColor[]) {
-  return items.map(({ cssClass, key }) => {
-    return `.${cssClass} { background: var(${key}) !important; }`
+  return items.map(({ cssClass, key, pillCss }) => {
+    return `.${cssClass} { background: var(${key}) !important; ${pillCss} }`
   }).join(' ')
 }
 
