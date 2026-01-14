@@ -30,9 +30,24 @@ const {
   size: number,
 }>()
 
-watch(config, () => {
-  edge.value = generateWangTileEdgePattern(size, config.value)
-}, { deep: true, immediate: true })
+watch(
+  () => [
+    // do not trigger on .visible changes
+    config.value.chunks,
+    config.value.shuffleSeed,
+    config.value.invert,
+    config.value.minGapSize,
+    config.value.maxGapSize,
+    config.value.minChunkSize,
+    config.value.maxChunkSize,
+    config.value.padding,
+    config.value.seed,
+  ],
+  () => {
+    edge.value = generateWangTileEdgePattern(size, config.value)
+  },
+  { immediate: true },
+)
 
 const preview = computed(() => {
   if (!edge.value) return null

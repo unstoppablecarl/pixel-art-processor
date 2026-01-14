@@ -35,6 +35,7 @@ import {
 import { populateIndexedWangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
 import NodeCard from '../../Card/NodeCard.vue'
 import NodeImage from '../../NodeImage.vue'
+import CheckBoxInput from '../../UIForms/CheckBoxInput.vue'
 import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 import ForkWangTileEdge from '../../NodeSupport/ForkWangTileEdge.vue'
@@ -54,6 +55,7 @@ const handler = defineForkHandler(STEP_META, {
     return {
       ...CONFIG_DEFAULTS,
       wangTiles: [] as WangTileEdgeConfig[],
+      showEdgeColors: true,
     }
   },
   watcherTargets(n) {
@@ -61,6 +63,10 @@ const handler = defineForkHandler(STEP_META, {
       {
         name: 'size',
         target: () => n.config.size,
+      },
+      {
+        name: 'showEdgeColors',
+        target: () => n.config.showEdgeColors,
       },
       n.seedWatcherTarget(),
     ]
@@ -76,11 +82,17 @@ const handler = defineForkHandler(STEP_META, {
 
     const wangTile = wangTileForBranch(branchIndex)
     const mask = makeBitMaskFromWangTile(config.size.value, wangTile)
-    const preview = makePreviewFromWangTile(config.size.value, wangTile)
+
+    let preview: ImageData | null
+    if (config.showEdgeColors) {
+      preview = makePreviewFromWangTile(config.size.value, wangTile).toImageData()
+    } else {
+      preview = mask.toImageData()
+    }
 
     return {
       output: mask,
-      preview: preview.toImageData(),
+      preview,
       meta: {
         wangTileEdges: edges,
         wangTileInfo: tileset.value.tiles[branchIndex],
@@ -150,6 +162,7 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
 }
 
 const tileCount = computed(() => Math.pow(config.wangTiles.length, 4))
+
 watchEffect(() => {
   node.maxBranchCount.value = tileCount.value
 })
@@ -179,6 +192,7 @@ watchEffect(() => {
             v-model:step="config.size.step"
           />
 
+          <CheckBoxInput :id="`${nodeId}-show-edge-colors`" label="Show Edge Colors" v-model="config.showEdgeColors" />
           <div class="hstack gap-2">
             <div>
               <strong>Edges:</strong> {{ config.wangTiles.length }}

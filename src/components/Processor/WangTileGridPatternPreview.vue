@@ -111,8 +111,6 @@ const grid = computed(() => {
     }
   }
 
-  console.log({ result })
-
   return result
 })
 </script>
