@@ -30,7 +30,10 @@ const def = computed(() => nodeRegistry.get(node.value.def))
       <table class="table table-sm">
         <thead>
         <tr>
-          <th colspan="2"> {{ def.displayName }}</th>
+          <th colspan="2">ID: {{ node.id }}</th>
+        </tr>
+        <tr>
+          <th colspan="2">DEF: {{ def.displayName }}</th>
         </tr>
         </thead>
         <tbody>
