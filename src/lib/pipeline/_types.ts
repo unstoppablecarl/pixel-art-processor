@@ -11,7 +11,8 @@ export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
 
 export type WatcherTarget = {
   name: string,
-  target: WatchSource | Reactive<any>
+  target: WatchSource | Reactive<any>,
+  deep: boolean,
 }
 
 export type NodeDataTypeColor = { key: string, color: string, cssClass: string }

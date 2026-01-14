@@ -197,17 +197,19 @@ export abstract class BaseNode<
     ]
   }
 
-  configWatcherTarget() {
+  configWatcherTarget(): WatcherTarget {
     return {
       name: 'config',
       target: () => this.config,
+      deep: true,
     }
   }
 
-  seedWatcherTarget() {
+  seedWatcherTarget(): WatcherTarget {
     return {
       name: 'seed',
       target: () => this.seed,
+      deep: false,
     }
   }
 
@@ -421,10 +423,11 @@ export class StepNode<
     return this.handler!.watcherTargets(this as InitializedStepNode<C, SC, RC>, defaults)
   }
 
-  mutedWatcherTarget() {
+  mutedWatcherTarget(): WatcherTarget {
     return {
       name: 'muted',
       target: () => this.muted,
+      deep: false,
     }
   }
 }
