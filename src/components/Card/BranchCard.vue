@@ -8,6 +8,7 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import ExecutionTimer from '../UI/ExecutionTimer.vue'
+import NodeInfo from '../UI/NodeInfo.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -72,6 +73,7 @@ const cssStyle = computed(() => {
       }"
     >
       <div class="card-header hstack">
+        <NodeInfo :node-id="branch.id"/>
         <slot name="card-header"></slot>
 
         <div class="vr ms-auto me-2"></div>
