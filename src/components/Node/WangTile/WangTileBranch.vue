@@ -52,7 +52,7 @@ const handler = defineBranchHandler(STEP_META, {
 })
 
 const branch = useBranchHandler(nodeId, handler)
-const fork = computed(() => branch.getPrev(store))
+const fork = computed(() => store.getFork(branch.prevNodeId))
 const siblingBranchVariants = useSiblingBranchVariantsOf(branch.id)
 
 function add() {
@@ -83,7 +83,6 @@ const variantCount = computed<number, number>({
   },
 })
 const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScale)
-
 </script>
 <template>
   <BranchCard :branch-id="branch.id">
@@ -95,13 +94,20 @@ const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScal
         <button role="button" class="btn btn-secondary btn-sm" @click="remove()" :disabled="variantCount === 0">
           <span class="material-symbols-outlined">remove</span>
         </button>
-        <button role="button" class="btn btn-secondary btn-sm" @click="add()"
-                :disabled="!fork.canAddBranch">
+        <button
+          role="button"
+          :class="{
+            'btn btn-secondary btn-sm ': true,
+            'disabled': !fork.canAddBranch.value,
+          }"
+          @click="add()"
+          :disabled="!fork.canAddBranch.value"
+        >
           <span class="material-symbols-outlined">add</span>
         </button>
       </div>
       <div class="ms-2">
-        {{ variantCount }} / {{ fork.maxBranchCount }}
+        {{ variantCount }} / {{ fork.maxBranchCount.value! - 1 }}
       </div>
     </template>
     <template #after-nodes>
