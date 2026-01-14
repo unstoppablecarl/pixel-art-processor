@@ -3,6 +3,7 @@ import { BButton, BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
+import type { AnyNode } from '../../lib/pipeline/Node.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
@@ -18,7 +19,7 @@ const {
   branchId,
   branchIndexLabel = '',
   canAddNodes = true,
-  showHeader = true
+  showHeader = true,
 } = defineProps<{
   branchId: NodeId,
   branchIndexLabel?: string | number,
@@ -35,6 +36,15 @@ const displayName = computed(() => {
 const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
   return store.getBranchDescendantNodeIds(branchId)
+})
+
+const childNodes = computed((): AnyNode[] => {
+  if (!branch) return []
+  return nodeIds.value.map(store.get)
+})
+
+const branchChainElapsedMsTotal = computed(() => {
+  return childNodes.value.reduce((accumulator, current: AnyNode) => accumulator + (current.lastExecutionTimeMS ?? 0), 0)
 })
 const indexLabel = computed(() => {
   if (!branch.value) return ''
@@ -53,7 +63,6 @@ const cssStyle = computed(() => {
     <slot name="branch-header">
       <div class="branch-header hstack" v-if="showHeader">
         <div>{{ displayName }}: {{ indexLabel }}</div>
-
         <ExecutionTimer
           class="ms-auto"
           :time-ms="branch?.lastExecutionTimeMS"
@@ -61,7 +70,7 @@ const cssStyle = computed(() => {
         <ExecutionTimer
           class="ms-3"
           label="(Total)"
-          :time-ms="branch?.lastBranchTotalExecutionTimeMS"
+          :time-ms="branchChainElapsedMsTotal"
         />
       </div>
     </slot>
@@ -73,7 +82,7 @@ const cssStyle = computed(() => {
       }"
     >
       <div class="card-header hstack">
-        <NodeInfo :node-id="branch.id" class="me-2"/>
+        <NodeInfo :node-id="branch.id" class="me-2" />
         <slot name="card-header"></slot>
 
         <div class="vr ms-auto me-2"></div>

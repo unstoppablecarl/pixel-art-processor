@@ -29,7 +29,8 @@ export function setLogActive(flag: boolean) {
 
 function log(color: string, nodeId: string, event: string, ...args: any[]) {
   if (!logActive) return
-  console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${color}`, ...args.map((m) => deepUnwrap(m)))
+  console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${color}`, ...args)
+  // console.log(`%c[${nodeId}] %c${event}`, `${blue}`, `${color}`, ...args.map((m) => deepUnwrap(m)))
 }
 
 export function logNodeEvent(nodeId: string, event: string, ...args: any[]) {

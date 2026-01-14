@@ -57,7 +57,8 @@ const siblingBranchVariants = useSiblingBranchVariantsOf(branch.id)
 
 function add() {
   const fork = branch.getPrev(store)
-  store.addBranch(variantStepMeta.def as NodeDef, fork.id, { parentBranchId: branch.id })
+  const seed = siblingBranchVariants.value.length + 1
+  store.addBranch(variantStepMeta.def as NodeDef, fork.id, { parentBranchId: branch.id }, { seed })
 }
 
 function remove() {

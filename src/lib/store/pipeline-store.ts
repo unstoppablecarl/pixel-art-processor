@@ -168,12 +168,16 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return fork
     }
 
-    function addBranch(def: NodeDef, prevNodeId: NodeId, config?: {}): AnyBranchNode {
+    function addBranch(def: NodeDef, prevNodeId: NodeId, config?: {}, extra?: {
+      seed?: number,
+      visible?: boolean
+    }): AnyBranchNode {
       const fork = getFork(prevNodeId) as AnyForkNode
       const branchIndex = fork.branchIds.value.length
 
       const id = _defToId(def)
-      const branch = shallowReactive(new BranchNode({ id, def, prevNodeId, branchIndex, config }))
+      console.log({extra})
+      const branch = shallowReactive(new BranchNode({ id, def, prevNodeId, branchIndex, config, ...extra }))
       nodes[id] = branch
 
       fork.branchIds.value.push(id)

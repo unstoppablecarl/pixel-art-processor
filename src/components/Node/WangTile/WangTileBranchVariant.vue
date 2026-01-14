@@ -11,7 +11,7 @@ export const STEP_META = defineBranch({
 })
 </script>
 <script setup lang="ts">
-import { computed, reactive } from 'vue'
+import { computed } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineBranchHandler, useBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
 import { parseResult, type SingleRunnerResult } from '../../../lib/pipeline/NodeRunner.ts'
@@ -34,7 +34,6 @@ const handler = defineBranchHandler(STEP_META, {
       parentBranchId: null as NodeId | null,
     }
   },
-  reactiveConfig: reactive,
   async run({ config, inputData, meta }) {
     const parentBranch = store.get(config.parentBranchId!)
 
@@ -88,12 +87,12 @@ const variantIndex = computed(() => {
     <template #card-header>
       Variant : {{ variantIndex }}
     </template>
-   <template #card-header-controls>
-     <ExecutionTimer
-       class="me-2"
-       :time-ms="branch?.lastExecutionTimeMS"
-     />
-   </template>
+    <template #card-header-controls>
+      <ExecutionTimer
+        class="me-2"
+        :time-ms="branch?.lastExecutionTimeMS"
+      />
+    </template>
     <template #nodes>
       <div class="d-flex">
         <NodeImage :image-data="branch.forkPreview" />
