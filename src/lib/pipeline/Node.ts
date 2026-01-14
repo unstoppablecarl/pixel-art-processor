@@ -192,15 +192,23 @@ export abstract class BaseNode<
 
   protected getBaseWatcherTargets(): WatcherTarget[] {
     return [
-      {
-        name: 'config',
-        target: () => this.config,
-      },
-      {
-        name: 'seed',
-        target: () => this.seed,
-      },
+      this.configWatcherTarget(),
+      this.seedWatcherTarget(),
     ]
+  }
+
+  configWatcherTarget() {
+    return {
+      name: 'config',
+      target: () => this.config,
+    }
+  }
+
+  seedWatcherTarget() {
+    return {
+      name: 'seed',
+      target: () => this.seed,
+    }
   }
 
   protected async logFunction<T>(func: string, cb: () => Promise<T>): Promise<T> {
@@ -293,8 +301,17 @@ abstract class StepOrBranchNode<
   outputMeta: IRunnerResultMeta | null = null
 
   childIds(store: PipelineStore): NodeId[] {
-    const result = Object.values(store.nodes).find(n => n.prevNodeId === this.id) as AnyNode
-    return result ? [result.id] : []
+    const childId = this.childId(store)
+    if (!childId) return []
+
+    return [childId]
+  }
+
+  childId(store: PipelineStore): NodeId | undefined {
+    // if this node itself is mid-removal and not in the store
+    if (!store.has(this.id)) return
+    const result = Object.values(store.nodes).find(n => n?.prevNodeId === this.id)
+    return result?.id
   }
 
   getOutputSize(): MaybeImgSize {
@@ -400,11 +417,15 @@ export class StepNode<
   }
 
   getWatcherTargets(): WatcherTarget[] {
-    const defaults = [...super.getBaseWatcherTargets(), {
+    const defaults = [...super.getBaseWatcherTargets(), this.mutedWatcherTarget()]
+    return this.handler!.watcherTargets(this as InitializedStepNode<C, SC, RC>, defaults)
+  }
+
+  mutedWatcherTarget() {
+    return {
       name: 'muted',
       target: () => this.muted,
-    }]
-    return this.handler!.watcherTargets(this as InitializedStepNode<C, SC, RC>, defaults)
+    }
   }
 }
 
@@ -578,7 +599,11 @@ export class BranchNode<
   }
 
   getPrev(store: PipelineStore): AnyForkNode {
-    return store.get(this.prevNodeId) as AnyForkNode
+    return store.getFork(this.prevNodeId)
+  }
+
+  maybeGetPrev(store: PipelineStore): AnyForkNode | null {
+    return store.maybeGetFork(this.prevNodeId)
   }
 
   protected async resolveRunner(store: PipelineStore) {

@@ -75,6 +75,20 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return `${def}_${idIncrement.value++}` as NodeId
     }
 
+    function maybeGet(id: NodeId): AnyNode | null {
+      return nodes[id] ?? null
+    }
+
+    function maybeGetStep(id: NodeId): AnyStepNode | null {
+      return nodes[id] ? getStep(id) : null
+    }
+    function maybeGetFork(id: NodeId): AnyForkNode | null {
+      return nodes[id] ? getFork(id) : null
+    }
+    function maybeGetBranch(id: NodeId): AnyBranchNode | null {
+      return nodes[id] ? getBranch(id) : null
+    }
+
     function get(id: NodeId): AnyNode {
       if (!nodes[id]) throw new Error('node not found: ' + id)
       return nodes[id]
@@ -192,9 +206,15 @@ export const usePipelineStore = defineStore('pipeline', () => {
       const node = get(id)
       if (isStep(node)) throw new Error(`${id} is not a branch or fork`)
       for (const descendantId of getDescendantIds(id)) {
-        delete nodes[descendantId]
+        queueMicrotask(() => {
+          console.log('DELETE', descendantId)
+          delete nodes[descendantId]
+        })
       }
-      delete nodes[id]
+      queueMicrotask(() => {
+        console.log('DELETE', id)
+        delete nodes[id]
+      })
     }
 
     function detachStep(node: AnyStepNode) {
@@ -221,6 +241,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
 
       if (isStep(node)) {
         detachStep(node)
+        console.log('DELETE', id)
         delete nodes[id]
         node.handler!?.onRemoved?.(id)
         return
@@ -233,7 +254,9 @@ export const usePipelineStore = defineStore('pipeline', () => {
           const store = usePipelineStore()
           getFork(parentId).removeBranch(store, branch.id)
         }
-        removeBranchOrForkAndDescendants(id)
+        queueMicrotask(() => {
+          removeBranchOrForkAndDescendants(id)
+        })
         node.handler!?.onRemoved?.(id)
         return
       }
@@ -458,12 +481,33 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return !!findInAncestorNodes(id, check)
     }
 
-    function getFallbackOutputWidth(node: AnyNode) {
-      return node.getOutputSize().width || getRootNodeOutputSize().width
+    function getFallbackOutputWidth(node: AnyNode | undefined | null) {
+      return node?.getOutputSize()?.width || getRootNodeOutputSize().width
     }
 
     function getDisplayName(node: AnyNode) {
       return nodeRegistry.get(node.def).displayName
+    }
+
+    function getBranchDescendantNodeIds(branchId: NodeId): NodeId[] {
+      const store = usePipelineStore()
+
+      const ids: NodeId[] = []
+      if (!has(branchId)) return []
+      let currentId = get(branchId).childId(store)
+      while (currentId) {
+        if (!has(currentId)) break
+        ids.push(currentId)
+        const current = get(currentId)
+        // stop after encountering the first fork
+        if (isFork(current)) break
+        // there should never be a branch here
+        if (isBranch(current)) break
+
+        currentId = current.childId(store)
+      }
+
+      return ids
     }
 
     return {
@@ -504,6 +548,11 @@ export const usePipelineStore = defineStore('pipeline', () => {
       nodeIsPassthrough: nodeRegistry.nodeIsPassthrough,
       getFallbackOutputWidth,
       getDisplayName,
+      getBranchDescendantNodeIds,
+      maybeGet,
+      maybeGetStep,
+      maybeGetFork,
+      maybeGetBranch,
       nodesProcessing,
     }
   },

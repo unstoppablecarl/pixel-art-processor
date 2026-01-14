@@ -3,7 +3,6 @@ import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
-import { type InitializedBranchNode, isBranch, isFork } from '../../lib/pipeline/Node.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import PipelineBranch from '../Processor/PipelineBranch.vue'
@@ -13,36 +12,29 @@ import SeedPopOver from '../UI/SeedPopOver.vue'
 const store = usePipelineStore()
 const nodeRegistry = getNodeRegistry()
 
-const { branchId } = defineProps<{
-  branchId: NodeId
+const {
+  branchId,
+  branchIndexLabel = '',
+  canAddNodes = true,
+} = defineProps<{
+  branchId: NodeId,
+  branchIndexLabel?: string | number,
+  canAddNodes?: boolean
 }>()
 
-const branch = computed(() => store.get(branchId) as InitializedBranchNode<any, any, any, any>)
+const branch = computed(() => store.maybeGetBranch(branchId))
 
-const displayName = computed(() => nodeRegistry.get(branch.value.def).displayName)
+const displayName = computed(() => {
+  if (!branch.value?.def) return ''
+  return nodeRegistry.get(branch.value.def).displayName
+})
 const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
-  const ids: NodeId[] = []
-  let currentId = store.get(branch.value.id).childIds(store)[0] as NodeId
-
-  while (currentId) {
-    ids.push(currentId)
-    const current = store.get(currentId)
-    if (isFork(current)) {
-      break
-    }
-    let next
-
-    next = current.childIds(store)[0] as NodeId
-    currentId = next
-    if (isBranch(current)) throw new Error('should not be a branch here')
-  }
-
-  return ids
+  return store.getBranchDescendantNodeIds(branchId)
 })
 
 const cssStyle = computed(() => {
-  const width = branch.value.outputPreview?.width ?? store.getFallbackOutputWidth(branch.value)
+  const width = branch.value?.outputPreview?.width ?? store.getFallbackOutputWidth(branch.value)
   return [
     `--node-img-width: ${width}px;`,
   ].join(' ')
@@ -50,14 +42,15 @@ const cssStyle = computed(() => {
 </script>
 <template>
   <div
+    v-if="branch"
     :style="cssStyle"
     :class="{
       'card card-fork-branch': true,
-      'border-danger': branch.validationErrors.length,
+      'border-danger': branch?.validationErrors.length,
     }"
   >
     <div class="card-header hstack" v-if="branch">
-      <div class="me-auto pe-2">{{ displayName }}: {{ branch.branchIndex + 1 }}</div>
+      <div class="me-auto pe-2">{{ displayName }}: {{ branchId ?? branchIndexLabel ?? (branch.branchIndex + 1) }}</div>
 
       <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
 
@@ -72,7 +65,7 @@ const cssStyle = computed(() => {
           <span class="material-symbols-outlined">content_copy</span>
         </button>
 
-        <template v-if="!nodeIds.length">
+        <template v-if="!nodeIds.length && canAddNodes">
           <AddNodeAfterDropDown
             size="sm"
             :node-id="branch.id"

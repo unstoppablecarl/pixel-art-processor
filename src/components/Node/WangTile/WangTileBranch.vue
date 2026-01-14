@@ -12,11 +12,13 @@ export const STEP_META = defineBranch({
 </script>
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { NodeDef, NodeId } from '../../../lib/pipeline/_types.ts'
+import type { NodeDef, NodeId, WatcherTarget } from '../../../lib/pipeline/_types.ts'
+import type { AnyInitializedNode } from '../../../lib/pipeline/Node.ts'
 import { defineBranchHandler, useBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
 import NodeContainer from '../../NodeSupport/NodeContainer.vue'
+import { useSiblingBranchVariantsOf } from './_WangTileComposables.ts'
 import { STEP_META as variantStepMeta } from './WangTileBranchVariant.vue'
 
 const store = usePipelineStore()
@@ -44,18 +46,15 @@ const handler = defineBranchHandler(STEP_META, {
   onBranchEndResolved() {
     siblingBranchVariants.value.forEach((sibling) => store.markDirty(sibling.id))
   },
+  watcherTargets(node: AnyInitializedNode): WatcherTarget[] {
+    return [node.seedWatcherTarget()]
+  },
 })
 
 const branch = useBranchHandler(nodeId, handler)
 const fork = computed(() => branch.getPrev(store))
 
-const siblingBranchVariants = computed(() => {
-  const siblings = fork.value.branchIds.value.map(store.getBranch)
-  return siblings.filter((otherBranch) => {
-    const parentBranchId = otherBranch?.config?.parentBranchId ?? otherBranch?.loadSerialized?.config?.parentBranchId
-    return parentBranchId === branch.id
-  })
-})
+const siblingBranchVariants = useSiblingBranchVariantsOf(branch.id)
 
 function add() {
   const fork = branch.getPrev(store)
@@ -112,9 +111,8 @@ const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScal
           <label
             for="scale"
             class="form-label form-label-sm mb-0 text-nowrap"
-            style="width: 50px;"
           >
-            Scale: {{ branch.config.variantScale }}
+            Preview Scale: {{ branch.config.variantScale }}
           </label>
           <input type="range"
                  class="form-range form-range-sm"
@@ -128,7 +126,11 @@ const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScal
         </div>
 
         <template v-for="item in siblingBranchVariants">
-          <NodeContainer :node-id="item.id" :node-def="item.def" :force-render="true" />
+          <NodeContainer
+            :node-id="item.id"
+            :node-def="item.def"
+            :force-render="true"
+          />
         </template>
       </div>
     </template>
