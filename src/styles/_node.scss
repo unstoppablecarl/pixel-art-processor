@@ -1,61 +1,13 @@
 @use 'sass:color';
 
+
 [data-bs-theme='dark'],
 :root {
   --node-total-border-width: calc(var(--bs-border-width) * 2);
   --node-card-margin: 5px;
   --node-img-gap: 12px;
   --columns-per-card: 3;
-}
-
-.add-root-nodes-container {
-  position: relative;
-  padding-top: var(--node-card-margin);
-  padding-right: 20px;
-}
-
-.fork-branch-header {
-  padding: 5px calc(var(--node-card-margin) + 0.5rem) 0;
-}
-
-.card {
-  --bs-card-border-color: rgba(255, 255, 255, 0.09);
-
-  &.card-fork-branch {
-    background: rgba(255, 255, 255, 0.015);
-    margin-bottom: 1rem;
-
-    > .card-header {
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    > .card-body,
-    > .auto-animate > .card-body,
-    > .auto-animate > .auto-animate > .card-body {
-      padding: var(--node-card-margin);
-    }
-  }
-}
-
-.branch-child-nodes {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 0.5rem;
-  min-height: 100px;
-
-  > .processor-branch {
-    width: 100%;
-  }
-}
-
-.empty-branch-placeholder {
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  background: rgba(255, 255, 255, 0.015);
-  border-radius: 4px;
-  padding: 0.5rem;
-  min-height: 100px;
-  width: 100%;
+  --node-header-padding: 5px calc(var(--node-card-margin) + 0.5rem) 0;
 }
 
 .node {
@@ -63,7 +15,6 @@
   min-width: 150px;
   --node-total-image-width: 150px;
   --node-image-count: 0;
-  user-select: auto;
 
   width: calc(
           (var(--node-img-width) * var(--node-img-scale)) * var(--columns-per-card)
@@ -73,72 +24,19 @@
           + var(--node-total-border-width)
   );
 
-  &.input-invalid {
-    border-left-color: var(--bs-danger);
-  }
-
   .node-header {
-    padding: 5px calc(var(--node-card-margin) + 0.5rem) 0;
+    padding: var(--node-header-padding);
   }
 }
 
-.card-node {
+.card-step,
+.card-fork,
+.card-branch {
+  margin: var(--node-card-margin);
+
   &.invalid-input-type {
     border-left-color: var(--bs-danger);
   }
-
-  > .card-body,
-  > .auto-animate > .card-body,
-  > .auto-animate > .auto-animate > .card-body {
-    display: grid;
-
-    gap: var(--node-img-gap);
-    --width: calc(var(--node-img-width) * var(--node-img-scale));
-    grid-template-columns: repeat(var(--columns-per-card), var(--width));
-
-    padding: var(--node-img-gap);
-
-    .node-img-container {
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-  }
-
-  > .card-footer,
-  > .auto-animate > .card-footer,
-  > .auto-animate > .auto-animate > .card-footer {
-    padding: 0;
-
-    .form-label {
-      display: block;
-    }
-
-    // flat version of cap color without alpha
-    --bs-card-cap-bg: #{$card-cap-bg-flat};
-
-    .nav-tabs {
-      padding: 0.5rem 0.5rem 0;
-
-      --bs-nav-link-padding-y: calc(0.5rem * 0.66);
-      --bs-nav-link-padding-x: calc(1rem * 0.66);
-
-      .nav-link.active,
-      .nav-item.show .nav-link {
-        background: linear-gradient(
-                        0deg,
-                        rgba(var(--bs-primary-rgb), 0) 0%,
-                        rgba(var(--bs-primary-rgb), 0.15) 100%
-        );
-        border-bottom-color: var(--bs-card-cap-bg);
-      }
-    }
-  }
-}
-
-.card-node,
-.card-fork-branch {
-  margin: var(--node-card-margin);
 
   .section {
     padding: var(--bs-card-cap-padding-y) var(--bs-card-cap-padding-x);
@@ -170,12 +68,93 @@
   }
 }
 
-.card-fork-branch {
-  .node-img-container {
+.card-step,
+.card-fork {
+  > .card-body,
+  > .auto-animate > .card-body,
+  > .auto-animate > .auto-animate > .card-body {
+    display: grid;
+
+    gap: var(--node-img-gap);
+    --width: calc(var(--node-img-width) * var(--node-img-scale));
+    grid-template-columns: repeat(var(--columns-per-card), var(--width));
+
     padding: var(--node-img-gap);
-    .node-img-label {
-      padding-bottom: 5px;
+  }
+
+  > .card-footer,
+  > .auto-animate > .card-footer,
+  > .auto-animate > .auto-animate > .card-footer {
+    padding: 0;
+
+    .form-label {
+      display: block;
     }
+
+    // flat version of cap color without alpha
+    --bs-card-cap-bg: #{$card-cap-bg-flat};
+
+    .nav-tabs {
+      padding: 0.5rem 0.5rem 0;
+
+      --bs-nav-link-padding-y: calc(0.5rem * 0.66);
+      --bs-nav-link-padding-x: calc(1rem * 0.66);
+
+      .nav-link.active,
+      .nav-item.show .nav-link {
+        background: linear-gradient(
+                        0deg,
+                        rgba(var(--bs-primary-rgb), 0) 0%,
+                        rgba(var(--bs-primary-rgb), 0.15) 100%
+        );
+        border-bottom-color: var(--bs-card-cap-bg);
+      }
+    }
+  }
+
+  .node-img-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
+
+.branch {
+  .branch-header {
+    padding: var(--node-header-padding);
+  }
+}
+
+.card-branch {
+  background: rgba(255, 255, 255, 0.015);
+  margin-bottom: 1rem;
+
+  > .card-header {
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  > .card-body,
+  > .auto-animate > .card-body,
+  > .auto-animate > .auto-animate > .card-body {
+    padding: var(--node-card-margin);
+  }
+
+  > .card-footer,
+  > .auto-animate > .card-footer,
+  > .auto-animate > .auto-animate > .card-footer {
+    padding: var(--node-card-margin);
+  }
+}
+
+.branch-child-nodes {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-height: 100px;
+
+  > .processor-branch {
+    width: 100%;
   }
 }
 

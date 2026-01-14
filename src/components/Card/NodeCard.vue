@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { BButton, BButtonGroup, BPopover } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
+import { NodeType } from '../../lib/pipeline/_types.ts'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
-
 import { INVALID_INPUT_STATIC_TYPE_ERROR } from '../../lib/pipeline/errors/InvalidInputStaticTypeError.ts'
 import { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import { type InitializedForkNode, type InitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
@@ -11,6 +11,7 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import type { StepImg } from '../../lib/util/vue-util.ts'
 import NodeImage from '../NodeImage.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
+import ExecutionTimer from '../UI/ExecutionTimer.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -97,11 +98,6 @@ const validationErrors = computed(() => {
   return node.validationErrors.filter((e: StepValidationError) => e.slug !== INVALID_INPUT_STATIC_TYPE_ERROR)
 })
 
-const executionTime = computed(() => {
-  if (node.lastExecutionTimeMS === undefined) return
-  return (node.lastExecutionTimeMS / 1000).toFixed(2)
-})
-
 const registry = getNodeRegistry()
 const header = computed(() => registry.get(node.def).displayName)
 
@@ -116,17 +112,16 @@ const settingsVisible = ref(true)
 </script>
 <template>
   <div ref="stepEl" class="node" :style="cssStyle">
-    <div class="node-header hstack gap-1 align-items-center">
+    <div class="node-header hstack gap-1">
       <div>
         {{ header }} {{ subHeader }}
       </div>
-      <div class="execution-time ms-auto" v-if="executionTime">
-        <span class="material-symbols-outlined">timer</span>
-        {{ executionTime }}s
-      </div>
+      <ExecutionTimer :time-ms="node.lastExecutionTimeMS" class="ms-auto"/>
     </div>
     <div :class="{
-      'card card-node': true,
+      'card': true,
+      'card-step': node.type === NodeType.STEP,
+      'card-fork': node.type === NodeType.FORK,
       'border-warning': isMuted,
       'border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,

@@ -97,6 +97,14 @@ const variantIndex = computed(() => {
   --bs-card-cap-padding-y: calc(var(--bs-spacer, 1rem) * 0.25);
   --bs-card-cap-padding-x: calc(var(--bs-spacer, 1rem) * 0.25);
 
+  .node-img-container {
+    padding: 6px;
+
+    .node-img-label {
+      padding-bottom: 5px;
+    }
+  }
+
   .card-header {
     padding-left: 0.5rem;
   }

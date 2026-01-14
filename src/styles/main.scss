@@ -39,7 +39,7 @@ $card-cap-bg-flat: rgb(39, 43, 47);
 @import 'bootstrap/buttons';
 @import 'bootstrap/popover';
 @import 'bootstrap/collapse';
-
+@import 'bootstrap/card';
 
 [data-bs-theme='dark'],
 :root {
@@ -109,4 +109,10 @@ body {
 
 .tabs-settings-body-content {
   padding: 1rem 0.5rem 0.5rem;
+}
+
+.add-root-nodes-container {
+  position: relative;
+  padding-top: var(--node-card-margin);
+  padding-right: 20px;
 }

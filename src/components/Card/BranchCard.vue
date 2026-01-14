@@ -43,7 +43,7 @@ const cssStyle = computed(() => {
 </script>
 <template>
   <div class="branch">
-    <div class="fork-branch-header hstack">
+    <div class="branch-header hstack">
       <ExecutionTimer
         class="ms-auto"
         :time-ms="branch?.lastExecutionTimeMS"
@@ -58,7 +58,7 @@ const cssStyle = computed(() => {
       v-if="branch"
       :style="cssStyle"
       :class="{
-      'card card-fork-branch': true,
+      'card card-branch': true,
       'border-danger': branch?.validationErrors.length,
     }"
     >
