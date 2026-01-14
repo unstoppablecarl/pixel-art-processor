@@ -9,6 +9,7 @@ import {
   watch,
   type WritableComputedRef,
 } from 'vue'
+import { debounce } from '../../lib/util/misc.ts'
 import OptionalToolTip from '../UI/OptionalToolTip.vue'
 import RangeLabel from './Range/RangeLabel.vue'
 import type { RangeSliderConfig } from './RangeSlider.ts'
@@ -107,7 +108,7 @@ const expandMax = (): void => {
   value.value = max.value
 }
 
-const handleInput = (event: Event): void => {
+const update = debounce((event: Event) => {
   const target = event.target as HTMLInputElement
   const val = Number(target.value)
   value.value = val
@@ -127,6 +128,10 @@ const handleInput = (event: Event): void => {
     clearInterval(expandInterval)
     expandInterval = null
   }
+}, 100)
+
+const handleInput = (event: Event): void => {
+  update(event)
 }
 
 const startDragging = (): void => {
