@@ -1,38 +1,4 @@
-$border-radius: 6px;
-$enable-shadows: true;
-@import '../../node_modules/bootstrap/scss/functions';
-
-//$popover-bg: #fff;
-$accordion-icon-color-dark: #fff;
-$accordion-icon-active-color-dark: #fff;
-
-$font-size-base: 0.9rem;
-
-$dropdown-border-width: 1px;
-$border-color-translucent: rgba(#000, 0.25);
-
-//$dropdown-header-padding-y: .2rem;
-//$dropdown-divider-margin-y: .2rem;
-$table-bg: transparent;
-
-$spacer: 1rem;
-
-$card-spacer-y: $spacer;
-$card-spacer-x: $spacer;
-
-$card-cap-padding-x: $card-spacer-y * .5;
-$card-cap-padding-y: $card-spacer-y * .5;
-
-$enable-shadows: true;
-
-$toast-background-color: rgba(var(--bs-body-bg-rgb), 1);
-
-//$warning: #a82100;
-$transition-fade: opacity .05s linear;
-
-$label-font-size: 0.875em;
-
-$card-cap-bg-flat: rgb(39, 43, 47);
+@import 'variables';
 
 @import '../../node_modules/bootstrap/scss/bootstrap';
 @import '../../node_modules/bootstrap-vue-next/src/styles/styles';
@@ -115,4 +81,8 @@ body {
   position: relative;
   padding-top: var(--node-card-margin);
   padding-right: 20px;
+}
+
+.vr {
+  opacity: 0;
 }

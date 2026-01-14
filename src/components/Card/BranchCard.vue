@@ -17,10 +17,12 @@ const {
   branchId,
   branchIndexLabel = '',
   canAddNodes = true,
+  showHeader = true
 } = defineProps<{
   branchId: NodeId,
   branchIndexLabel?: string | number,
-  canAddNodes?: boolean
+  canAddNodes?: boolean,
+  showHeader?: boolean,
 }>()
 
 const branch = computed(() => store.maybeGetBranch(branchId))
@@ -47,19 +49,21 @@ const cssStyle = computed(() => {
 </script>
 <template>
   <div class="branch" v-if="branch">
-    <div class="branch-header hstack">
-      <div>{{ displayName }}: {{ indexLabel }}</div>
+    <slot name="branch-header">
+      <div class="branch-header hstack" v-if="showHeader">
+        <div>{{ displayName }}: {{ indexLabel }}</div>
 
-      <ExecutionTimer
-        class="ms-auto"
-        :time-ms="branch?.lastExecutionTimeMS"
-      />
-      <ExecutionTimer
-        class="ms-3"
-        label="(Total)"
-        :time-ms="branch?.lastBranchTotalExecutionTimeMS"
-      />
-    </div>
+        <ExecutionTimer
+          class="ms-auto"
+          :time-ms="branch?.lastExecutionTimeMS"
+        />
+        <ExecutionTimer
+          class="ms-3"
+          label="(Total)"
+          :time-ms="branch?.lastBranchTotalExecutionTimeMS"
+        />
+      </div>
+    </slot>
     <div
       :style="cssStyle"
       :class="{
@@ -70,8 +74,11 @@ const cssStyle = computed(() => {
       <div class="card-header hstack">
         <slot name="card-header"></slot>
 
-        <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
+        <div class="vr ms-auto me-2"></div>
 
+        <slot name="card-header-controls"></slot>
+
+        <SeedPopOver class="me-1" v-model="branch.seed" />
         <BButtonGroup class="fork-branch-controls">
           <button role="button" class="btn btn-sm btn-danger d-inline-block"
                   @click="store.remove(branch.id)">

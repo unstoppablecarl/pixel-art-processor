@@ -24,6 +24,7 @@ export default defineConfig(({ mode }) => {
       preprocessorOptions: {
         scss: {
           silenceDeprecations: ['color-functions', 'global-builtin', 'import'],
+          additionalData: `@import "/src/styles/_variables.scss";`
         },
       },
     },

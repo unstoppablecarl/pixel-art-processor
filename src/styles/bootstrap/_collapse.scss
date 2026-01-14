@@ -1,13 +1,13 @@
 :root {
   --#{$prefix}accordion-transition: #{$accordion-transition};
-  --#{$prefix}accordion-btn-bg: #{$accordion-button-bg};
+  //--#{$prefix}accordion-btn-bg: #{$accordion-button-bg};
   //--#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon)};
   //--#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon)};
   --#{$prefix}accordion-btn-icon-width: #{$accordion-icon-width};
   --#{$prefix}accordion-btn-icon-transform: #{$accordion-icon-transform};
   --#{$prefix}accordion-btn-icon-transition: #{$accordion-icon-transition};
-  --#{$prefix}accordion-active-color: #{$accordion-button-active-color};
-  --#{$prefix}accordion-active-bg: #{$accordion-button-active-bg};
+  //--#{$prefix}accordion-active-color: #{$accordion-button-active-color};
+  //--#{$prefix}accordion-active-bg: #{$accordion-button-active-bg};
 
   --#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon-dark)};
   --#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon-dark)};
@@ -59,12 +59,10 @@
   }
 }
 
-
 .btn-collapse:not(.btn-transparent-dark)::after {
   --#{$prefix}accordion-btn-icon: #{escape-svg($accordion-button-icon-dark)};
   --#{$prefix}accordion-btn-active-icon: #{escape-svg($accordion-button-active-icon-dark)};
 }
-
 
 .nav-link-collapse {
   --px: 0.5rem;

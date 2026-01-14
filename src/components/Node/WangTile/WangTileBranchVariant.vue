@@ -20,6 +20,7 @@ import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
 import NodeImage from '../../NodeImage.vue'
+import ExecutionTimer from '../../UI/ExecutionTimer.vue'
 import { useSiblingBranchVariantsOf } from './_WangTileComposables.ts'
 
 const store = usePipelineStore()
@@ -81,9 +82,18 @@ const variantIndex = computed(() => {
   <BranchCard
     :branch-id="branch.id"
     class="card-wang-tile-branch-variant"
-    :branch-index-label="variantIndex"
     :can-add-nodes="false"
+    :show-header="false"
   >
+    <template #card-header>
+      Variant : {{ variantIndex }}
+    </template>
+   <template #card-header-controls>
+     <ExecutionTimer
+       class="me-2"
+       :time-ms="branch?.lastExecutionTimeMS"
+     />
+   </template>
     <template #nodes>
       <div class="d-flex">
         <NodeImage :image-data="branch.forkPreview" />
@@ -112,6 +122,10 @@ const variantIndex = computed(() => {
   .btn-sm {
     --bs-btn-padding-x: 0.2rem;
     --bs-btn-padding-y: 0.1rem;
+  }
+
+  > .card-branch {
+    margin-bottom: 0.5rem;
   }
 }
 </style>

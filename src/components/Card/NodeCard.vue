@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButton, BButtonGroup, BPopover } from 'bootstrap-vue-next'
+import { BButton, BButtonGroup } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
@@ -12,6 +12,7 @@ import type { StepImg } from '../../lib/util/vue-util.ts'
 import NodeImage from '../NodeImage.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import ExecutionTimer from '../UI/ExecutionTimer.vue'
+import NodeInfo from '../UI/NodeInfo.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -136,21 +137,7 @@ const settingsVisible = ref(true)
         <!--          @pointerdown.stop-->
         <!--        >:::-->
         <!--        </span>-->
-        <BPopover>
-          <template #target>
-            <span class="btn btn-sm btn-outline-info" style="opacity: 0.66">?</span>
-          </template>
-
-          <div>
-            <strong>Input:</strong>
-            {{ node.handler?.currentInputDataTypes?.map((t: any) => t.displayName).join(', ') }}
-          </div>
-          <div>
-            <strong>Output:</strong>
-            {{ node.handler?.currentOutputDataType?.displayName }}
-          </div>
-        </BPopover>
-
+        <NodeInfo :node-id="node.id"/>
 
         <SeedPopOver class="ms-auto" v-if="showSeed" v-model="node.seed" />
         <BButtonGroup size="sm" class="node-header-buttons">
