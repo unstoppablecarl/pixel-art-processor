@@ -120,7 +120,7 @@ const variantIndex = computed(() => {
   }
 
   .btn-sm {
-    --bs-btn-padding-x: 0.2rem;
+    --bs-btn-padding-x: 0.3rem;
     --bs-btn-padding-y: 0.1rem;
   }
 

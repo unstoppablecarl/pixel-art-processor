@@ -24,7 +24,7 @@ const def = computed(() => nodeRegistry.get(node.value.def))
   <template v-if="node && def">
     <BPopover>
       <template #target>
-        <span class="btn btn-sm btn-transparent btn-node-info" style="opacity: 0.66">?</span>
+        <span class="btn btn-sm btn-transparent btn-node-info" v-bind="$attrs">?</span>
       </template>
 
       <table class="table table-sm">
@@ -73,8 +73,8 @@ const def = computed(() => nodeRegistry.get(node.value.def))
 </template>
 <style lang="scss">
 .btn-node-info {
-  --bs-btn-color: #{rgba($info, 0.9)};
-  --bs-btn-border-color: #{rgba($info, 0.2)};
+  --bs-btn-color: #{rgba($info, 0.6)};
+  --bs-btn-border-color: #{rgba($info, 0.15)};
 
   --bs-btn-hover-color: #{rgba($info, 1)};
   --bs-btn-hover-border-color: #{rgba($info, 0.5)};

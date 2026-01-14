@@ -73,7 +73,7 @@ const cssStyle = computed(() => {
       }"
     >
       <div class="card-header hstack">
-        <NodeInfo :node-id="branch.id"/>
+        <NodeInfo :node-id="branch.id" class="me-2"/>
         <slot name="card-header"></slot>
 
         <div class="vr ms-auto me-2"></div>
