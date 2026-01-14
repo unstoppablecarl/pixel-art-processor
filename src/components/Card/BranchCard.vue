@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButtonGroup } from 'bootstrap-vue-next'
+import { BButton, BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
@@ -63,11 +63,11 @@ const cssStyle = computed(() => {
     <div
       :style="cssStyle"
       :class="{
-      'card card-branch': true,
-      'border-danger': branch?.validationErrors.length,
-    }"
+        'card card-branch': true,
+        'border-danger': branch?.validationErrors.length,
+      }"
     >
-      <div class="card-header hstack" v-if="branch">
+      <div class="card-header hstack">
         <slot name="card-header"></slot>
 
         <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
@@ -90,44 +90,52 @@ const cssStyle = computed(() => {
             />
           </template>
         </BButtonGroup>
+        <BButton
+          :class="'btn-collapse ms-1 ' + (branch.visible ? null : 'collapsed')"
+          size="sm"
+          variant="transparent"
+          :aria-expanded="branch.visible ? 'true' : 'false'"
+          @click="branch.visible = !branch.visible"
+        />
       </div>
+      <div class="auto-animate" v-auto-animate>
+        <div class="card-body" v-if="branch.visible">
 
-      <div class="card-body" v-if="branch.forkValidationErrors.length">
-        <div class="section-heading text-danger"
-             v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
-          Fork Output
-        </div>
-        <div class="section" v-for="error in branch.forkValidationErrors">
-          <component :is="getValidationErrorComponent(error)" :error="error" />
-        </div>
-      </div>
-
-      <div class="card-body" v-if="branch.validationErrors.length">
-        <div class="section-heading text-danger"
-             v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
-          Branch Output
-        </div>
-        <div class="section" v-for="error in branch.validationErrors">
-          <component :is="getValidationErrorComponent(error)" :error="error" />
-        </div>
-      </div>
-
-      <slot name="before-nodes">
-      </slot>
-
-      <slot name="nodes">
-        <div class="card-body">
-          <div class="branch-child-nodes">
-            <PipelineBranch
-              :node-ids="nodeIds"
-            />
+          <div v-if="branch.forkValidationErrors.length">
+            <div class="section-heading text-danger"
+                 v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+              Fork Output
+            </div>
+            <div class="section" v-for="error in branch.forkValidationErrors">
+              <component :is="getValidationErrorComponent(error)" :error="error" />
+            </div>
           </div>
+
+          <div v-if="branch.validationErrors.length">
+            <div class="section-heading text-danger"
+                 v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+              Branch Output
+            </div>
+            <div class="section" v-for="error in branch.validationErrors">
+              <component :is="getValidationErrorComponent(error)" :error="error" />
+            </div>
+          </div>
+
+          <slot name="before-nodes">
+          </slot>
+
+          <slot name="nodes">
+            <div class="branch-child-nodes">
+              <PipelineBranch
+                :node-ids="nodeIds"
+              />
+            </div>
+          </slot>
+
+          <slot name="after-nodes">
+          </slot>
         </div>
-      </slot>
-
-      <slot name="after-nodes">
-      </slot>
-
+      </div>
     </div>
   </div>
 </template>

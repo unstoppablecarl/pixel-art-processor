@@ -85,7 +85,7 @@ const variantIndex = computed(() => {
     :can-add-nodes="false"
   >
     <template #nodes>
-      <div class="card-body d-flex">
+      <div class="d-flex">
         <NodeImage :image-data="branch.forkPreview" />
         <NodeImage :image-data="branch.outputPreview" />
       </div>
