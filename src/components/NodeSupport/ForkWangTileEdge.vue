@@ -32,7 +32,7 @@ const {
 
 watch(
   () => [
-    // do not trigger on .visible changes
+    // do not trigger on config.value.visible change
     config.value.chunks,
     config.value.shuffleSeed,
     config.value.invert,
