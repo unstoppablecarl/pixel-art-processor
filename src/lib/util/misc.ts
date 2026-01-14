@@ -21,7 +21,7 @@ function makeBgColor(light: string) {
   return `background: light-dark(${light}, ${dark});`
 }
 
-let logActive = true
+let logActive = false
 
 export function setLogActive(flag: boolean) {
   logActive = flag

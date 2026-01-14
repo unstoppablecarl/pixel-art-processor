@@ -35,6 +35,7 @@ import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
+import { prng } from '../../lib/util/prng.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'
@@ -80,6 +81,8 @@ const handler = defineStepHandler(STEP_META, {
       marchingGrowthPixelsPerIteration: 1,
       perlinFactor: 0.5,
 
+      populationFactor: 1,
+
       activeTabIndex: 0,
       ...DEFAULT_SHOW_ISLANDS.CONFIG,
       ...DEFAULT_EXPANDABLE.CONFIG,
@@ -104,7 +107,7 @@ const handler = defineStepHandler(STEP_META, {
     } as const
     const grower = map[config.growType]()
 
-    const islandFilter = ISLAND_FILTERS[C.islandType].filter
+    const islandTypeFiler = ISLAND_FILTERS[C.islandType].filter
     const borderBounds = mask.borderToBounds(C.minDistance)
 
     const pointFilter: IslandPointFilter = (x, y, island) => {
@@ -114,6 +117,16 @@ const handler = defineStepHandler(STEP_META, {
 
       return true
     }
+
+    const selectedIslands = new WeakSet<Island>()
+
+    islands.forEach(i => {
+      if (!islandTypeFiler(i)) return
+      if (config.populationFactor === 1) return
+      if (prng() < config.populationFactor) selectedIslands.add(i)
+    })
+
+    const islandFilter = (i: Island) => selectedIslands.has(i) && islandTypeFiler(i)
 
     const { added, removed } = mutateIslands({
       mask,
@@ -181,6 +194,16 @@ const config = node.config
               <RecordSelect :options="GROW_TYPE_OPTIONS" v-model="config.growType" />
             </div>
           </div>
+
+          <RangeSlider
+            :id="`${nodeId}-population-factor`"
+            label="Population Factor"
+            v-model:value="config.populationFactor"
+            :decimals="2"
+            :min="0"
+            :max="1"
+            :step="0.01"
+          />
 
           <template v-if="config.growType === GrowType.PERLIN">
             <RangeSlider
