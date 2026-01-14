@@ -77,7 +77,7 @@ const handler = defineStepHandler(STEP_META, {
   async run({ config, inputData }) {
     if (!inputData) return
 
-    const mask = inputData
+    const mask = inputData.copy()
     const islands = getIslands(mask)
     const C = config
 
