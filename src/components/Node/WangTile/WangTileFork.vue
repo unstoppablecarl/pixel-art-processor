@@ -62,10 +62,7 @@ const handler = defineForkHandler(STEP_META, {
         name: 'size',
         target: () => n.config.size,
       },
-      {
-        name: 'seed',
-        target: () => n.seed,
-      },
+      n.seedWatcherTarget(),
     ]
   },
   async run({ config, branchIndex }) {
