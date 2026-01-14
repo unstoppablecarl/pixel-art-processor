@@ -33,6 +33,10 @@ const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
   return store.getBranchDescendantNodeIds(branchId)
 })
+const indexLabel = computed(() => {
+  if (!branch.value) return ''
+  return branchIndexLabel ?? (branch.value.branchIndex + 1)
+})
 
 const cssStyle = computed(() => {
   const width = branch.value?.outputPreview?.width ?? store.getFallbackOutputWidth(branch.value)
@@ -42,8 +46,10 @@ const cssStyle = computed(() => {
 })
 </script>
 <template>
-  <div class="branch">
+  <div class="branch" v-if="branch">
     <div class="branch-header hstack">
+      <div>{{ displayName }}: {{ indexLabel }}</div>
+
       <ExecutionTimer
         class="ms-auto"
         :time-ms="branch?.lastExecutionTimeMS"
@@ -55,7 +61,6 @@ const cssStyle = computed(() => {
       />
     </div>
     <div
-      v-if="branch"
       :style="cssStyle"
       :class="{
       'card card-branch': true,
@@ -63,8 +68,7 @@ const cssStyle = computed(() => {
     }"
     >
       <div class="card-header hstack" v-if="branch">
-        <div class="me-auto pe-2">{{ displayName }}: {{ branchIndexLabel ?? (branch.branchIndex + 1) }}
-        </div>
+        <slot name="card-header"></slot>
 
         <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
 

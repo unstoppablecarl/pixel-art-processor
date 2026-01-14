@@ -53,7 +53,6 @@ const handler = defineBranchHandler(STEP_META, {
 
 const branch = useBranchHandler(nodeId, handler)
 const fork = computed(() => branch.getPrev(store))
-
 const siblingBranchVariants = useSiblingBranchVariantsOf(branch.id)
 
 function add() {
@@ -87,22 +86,21 @@ const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScal
 </script>
 <template>
   <BranchCard :branch-id="branch.id">
-    <template #before-nodes>
-      <div class="card-body">
-        <div class="section">
-          <div class="input-group">
-            <span class="input-group-text">Variant Count</span>
-            <input class="form-control" v-model="variantCount" type="number" min="0"
-                   style="width: 100px" />
-            <button role="button" class="btn btn-secondary btn-sm" @click="remove()" :disabled="variantCount === 0">
-              <span class="material-symbols-outlined">remove</span>
-            </button>
-            <button role="button" class="btn btn-secondary btn-sm" @click="add()"
-                    :disabled="!fork.canAddBranch">
-              <span class="material-symbols-outlined">add</span>
-            </button>
-          </div>
-        </div>
+    <template #card-header>
+      <div class="input-group w-auto">
+        <span class="input-group-text">Variants</span>
+        <input class="form-control variant-count" v-model="variantCount" type="number" min="0"
+               style="width: 100px" />
+        <button role="button" class="btn btn-secondary btn-sm" @click="remove()" :disabled="variantCount === 0">
+          <span class="material-symbols-outlined">remove</span>
+        </button>
+        <button role="button" class="btn btn-secondary btn-sm" @click="add()"
+                :disabled="!fork.canAddBranch">
+          <span class="material-symbols-outlined">add</span>
+        </button>
+      </div>
+      <div class="ms-2">
+        {{ variantCount }} / {{ fork.maxBranchCount }}
       </div>
     </template>
     <template #after-nodes>
@@ -136,3 +134,8 @@ const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScal
     </template>
   </BranchCard>
 </template>
+<style lang="scss">
+.variant-count {
+  max-width: 100px;
+}
+</style>
