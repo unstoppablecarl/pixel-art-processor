@@ -208,15 +208,9 @@ export const usePipelineStore = defineStore('pipeline', () => {
       const node = get(id)
       if (isStep(node)) throw new Error(`${id} is not a branch or fork`)
       for (const descendantId of getDescendantIds(id)) {
-        queueMicrotask(() => {
-          console.log('DELETE', descendantId)
-          delete nodes[descendantId]
-        })
+        delete nodes[descendantId]
       }
-      queueMicrotask(() => {
-        console.log('DELETE', id)
-        delete nodes[id]
-      })
+      delete nodes[id]
     }
 
     function detachStep(node: AnyStepNode) {
@@ -256,9 +250,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
           const store = usePipelineStore()
           getFork(parentId).removeBranch(store, branch.id)
         }
-        queueMicrotask(() => {
-          removeBranchOrForkAndDescendants(id)
-        })
+        removeBranchOrForkAndDescendants(id)
         node.handler!?.onRemoved?.(id)
         return
       }
