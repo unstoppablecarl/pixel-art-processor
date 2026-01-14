@@ -72,7 +72,7 @@ describe('isStartMeta', () => {
     const meta: AnyNodeMeta = startMeta
     if (isStartMeta(meta)) {
       expect(meta.noInput).toBe(true)
-      expect(meta.outputDataType).toBe('out')
+      expect(meta.outputDataType).toBe(NormalMap)
     }
   })
 })
@@ -93,8 +93,8 @@ describe('isNormalMeta', () => {
   it('narrows type correctly', () => {
     const meta: AnyNodeMeta = normalMeta
     if (isNormalMeta(meta)) {
-      expect(meta.inputDataTypes).toEqual(['a', 'b'])
-      expect(meta.outputDataType).toBe('out')
+      expect(meta.inputDataTypes).toEqual([BitMask, NormalMap],)
+      expect(meta.outputDataType).toBe(HeightMap)
     }
   })
 })
@@ -102,7 +102,7 @@ describe('isNormalMeta', () => {
 describe('getMetaInput', () => {
   it('returns inputDataTypes for normal meta', () => {
     const result = getMetaInput(normalMeta)
-    expect(result).toEqual(['a', 'b'])
+    expect(result).toEqual([BitMask, NormalMap],)
   })
 
   it('returns [] for passthrough meta', () => {
