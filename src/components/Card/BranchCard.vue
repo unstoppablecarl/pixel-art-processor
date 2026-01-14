@@ -61,67 +61,69 @@ const cssStyle = computed(() => {
       'card card-fork-branch': true,
       'border-danger': branch?.validationErrors.length,
     }"
-  >
-    <div class="card-header hstack" v-if="branch">
-      <div class="me-auto pe-2">{{ displayName }}: {{ branchId ?? branchIndexLabel ?? (branch.branchIndex + 1) }}</div>
+    >
+      <div class="card-header hstack" v-if="branch">
+        <div class="me-auto pe-2">{{ displayName }}: {{ branchIndexLabel ?? (branch.branchIndex + 1) }}
+        </div>
 
-      <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
+        <SeedPopOver class="ms-auto me-1" v-model="branch.seed" />
 
-      <BButtonGroup class="fork-branch-controls">
-        <button role="button" class="btn btn-sm btn-danger d-inline-block"
-                @click="store.remove(branch.id)">
-          <span class="material-symbols-outlined">delete</span>
-        </button>
+        <BButtonGroup class="fork-branch-controls">
+          <button role="button" class="btn btn-sm btn-danger d-inline-block"
+                  @click="store.remove(branch.id)">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
 
-        <button role="button" class="btn btn-sm btn-secondary d-inline-block"
-                @click="store.duplicateBranchNode(branch.id)">
-          <span class="material-symbols-outlined">content_copy</span>
-        </button>
+          <button role="button" class="btn btn-sm btn-secondary d-inline-block"
+                  @click="store.duplicateBranchNode(branch.id)">
+            <span class="material-symbols-outlined">content_copy</span>
+          </button>
 
-        <template v-if="!nodeIds.length && canAddNodes">
-          <AddNodeAfterDropDown
-            size="sm"
-            :node-id="branch.id"
-          />
-        </template>
-      </BButtonGroup>
-    </div>
-
-    <div class="card-body" v-if="branch.forkValidationErrors.length">
-      <div class="section-heading text-danger"
-           v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
-        Fork Output
+          <template v-if="!nodeIds.length && canAddNodes">
+            <AddNodeAfterDropDown
+              size="sm"
+              :node-id="branch.id"
+            />
+          </template>
+        </BButtonGroup>
       </div>
-      <div class="section" v-for="error in branch.forkValidationErrors">
-        <component :is="getValidationErrorComponent(error)" :error="error" />
-      </div>
-    </div>
 
-    <div class="card-body" v-if="branch.validationErrors.length">
-      <div class="section-heading text-danger"
-           v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
-        Branch Output
-      </div>
-      <div class="section" v-for="error in branch.validationErrors">
-        <component :is="getValidationErrorComponent(error)" :error="error" />
-      </div>
-    </div>
-
-    <slot name="before-nodes">
-    </slot>
-
-    <slot name="nodes">
-      <div class="card-body">
-        <div class="branch">
-          <PipelineBranch
-            :node-ids="nodeIds"
-          />
+      <div class="card-body" v-if="branch.forkValidationErrors.length">
+        <div class="section-heading text-danger"
+             v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+          Fork Output
+        </div>
+        <div class="section" v-for="error in branch.forkValidationErrors">
+          <component :is="getValidationErrorComponent(error)" :error="error" />
         </div>
       </div>
-    </slot>
 
-    <slot name="after-nodes">
-    </slot>
+      <div class="card-body" v-if="branch.validationErrors.length">
+        <div class="section-heading text-danger"
+             v-if="branch.forkValidationErrors.length && branch.validationErrors.length">
+          Branch Output
+        </div>
+        <div class="section" v-for="error in branch.validationErrors">
+          <component :is="getValidationErrorComponent(error)" :error="error" />
+        </div>
+      </div>
 
+      <slot name="before-nodes">
+      </slot>
+
+      <slot name="nodes">
+        <div class="card-body">
+          <div class="branch-child-nodes">
+            <PipelineBranch
+              :node-ids="nodeIds"
+            />
+          </div>
+        </div>
+      </slot>
+
+      <slot name="after-nodes">
+      </slot>
+
+    </div>
   </div>
 </template>
