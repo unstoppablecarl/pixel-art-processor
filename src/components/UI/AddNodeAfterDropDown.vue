@@ -1,20 +1,13 @@
 <script setup lang="ts">
 import { BButtonGroup, BDropdown, BDropdownHeader, BDropdownItem, BTooltip } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
-import type { NodeDataType } from '../../lib/node-data-types/_node-data-types.ts'
-import { PassThrough } from '../../lib/node-data-types/PassThrough.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
-import {
-  type AnyNodeDefinition,
-  isNormalMeta,
-  isPassthroughMeta,
-  isStartMeta,
-} from '../../lib/pipeline/types/definitions.ts'
+import { type AnyNodeDefinition } from '../../lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { getNodeDataTypeCssClass } from '../../nodes.ts'
 
 const store = usePipelineStore()
+const nodeRegistry = getNodeRegistry()
 
 const {
   nodeId,
@@ -23,45 +16,17 @@ const {
 }>()
 
 const addableNodes = computed(() => {
-  const nodeRegistry = getNodeRegistry()
   const node = store.get(nodeId)
 
   const result = nodeRegistry.addableToArray()
     .filter(({ def }) => nodeRegistry.canBeChildOf(store, def, node.id))
-    .map((
-        meta: AnyNodeDefinition) => {
-
-        // ⚠️this should be the only place that uses [Passthrough]
-        let input: NodeDataType[] = []
-        let output: NodeDataType
-        let inputNames: string[] = ['None']
-        let outputName: string = 'None'
-        let inputColorCssClass = ['bg-secondary']
-        let outputColorCssClass: string = ''
-
-        if (isPassthroughMeta(meta)) {
-          input = [PassThrough]
-          output = PassThrough
-          inputNames = [PassThrough.displayName]
-          outputName = PassThrough.displayName
-        } else if (isNormalMeta(meta)) {
-          input = meta.inputDataTypes
-          output = meta.outputDataType
-          inputColorCssClass = input.map(getNodeDataTypeCssClass)
-          inputNames = input.map(c => c.displayName)
-        } else if (isStartMeta(meta)) {
-          output = meta.outputDataType
-        }
-        outputColorCssClass = getNodeDataTypeCssClass(output!)
-
+    .map((meta: AnyNodeDefinition) => {
         return {
-          def: meta.def,
-          displayName: meta.displayName,
           compatible: nodeRegistry.isCompatibleWithOutputType(meta.def, node.handler!.currentOutputDataType),
-          inputColorCssClass,
-          outputColorCssClass: outputColorCssClass,
-          inputNames,
-          outputName,
+          meta,
+          color: {
+            ...nodeRegistry.getColorInfo(meta.def),
+          },
         }
       },
     )
@@ -106,9 +71,9 @@ const showAll = ref(true)
     </BDropdownHeader>
 
     <BDropdownItem
-      v-for="{def, displayName, inputColorCssClass, outputColorCssClass, inputNames, outputName, compatible} in addableNodes"
-      :key="def"
-      @click="store.add(def ,nodeId)"
+      v-for="{meta, compatible, color} in addableNodes"
+      :key="meta.def"
+      @click="store.add(meta.def ,nodeId)"
       :class="{ 'incompatible-data-type': !compatible }"
     >
 
@@ -117,12 +82,12 @@ const showAll = ref(true)
         variant="dark"
       >
         <template #target>
-          <span v-for="cssClass in inputColorCssClass" :class="'badge rounded-pill ' + cssClass">&bull;</span>
+          <span v-for="{cssClass} in color.inputDataTypes" :class="'badge rounded-pill ' + cssClass">&bull;</span>
         </template>
-        Input: {{ inputNames.join(', ') }}
+        Input: {{ color.inputDataTypes.map(t => t.displayName).join(', ') }}
       </BTooltip>
       <span class="mx-2">
-        {{ displayName }}
+        {{ meta.displayName }}
       </span>
 
       <BTooltip
@@ -130,13 +95,12 @@ const showAll = ref(true)
         variant="dark"
       >
         <template #target>
-          <span :class="'badge rounded-pill ' + outputColorCssClass">&bull;</span>
+          <span :class="'badge rounded-pill ' + color.outputDataType.cssClass">&bull;</span>
         </template>
-        Output: {{ outputName }}
+        Output: {{ color.outputDataType.displayName }}
       </BTooltip>
 
     </BDropdownItem>
-
   </BDropdown>
 </template>
 <style lang="scss">

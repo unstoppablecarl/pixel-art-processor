@@ -1,21 +1,17 @@
 import type { Component } from 'vue'
 import type { DataStructureConstructor } from '../node-data-types/BaseDataStructure'
 import { type NodeDef, NodeType } from './_types'
-import type {
-  AnyBranchMeta,
-  AnyForkMeta,
-  AnyNodeDefinition,
-  AnyNodeMeta,
-  AnyStepMeta,
-  NormalBranchMeta,
-  NormalForkMeta,
-  NormalStepMeta,
-  StartStepMeta,
+import {
+  type AnyBranchMeta,
+  type AnyForkMeta,
+  type AnyNodeDefinition,
+  type AnyNodeMeta, type AnyNormalMeta,
+  type AnyStartMeta,
+  type AnyStepMeta,
+  type NormalBranchMeta,
+  type NormalForkMeta,
+  type NormalStepMeta,
 } from './types/definitions'
-
-/* ------------------------------------------------------------
-   Public API
------------------------------------------------------------- */
 
 export async function loadNodeComponentsMetaData(
   globResults: Record<string, any>,
@@ -33,10 +29,6 @@ export async function loadNodeComponentsMetaData(
   )
 }
 
-/* ------------------------------------------------------------
-   Error collection
------------------------------------------------------------- */
-
 function collectErrors(
   globResults: Record<string, any>,
   stepDataTypes: DataStructureConstructor[],
@@ -49,10 +41,6 @@ function collectErrors(
       return `${err.path}\n${err.errors.join('\n')}`
     })
 }
-
-/* ------------------------------------------------------------
-   Definition builder (DRY)
------------------------------------------------------------- */
 
 function buildDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefinition {
   switch (meta.type) {
@@ -67,10 +55,6 @@ function buildDefinition(meta: AnyNodeMeta, component: Component): AnyNodeDefini
   }
 }
 
-/* ------------------------------------------------------------
-   Node definition builder
------------------------------------------------------------- */
-
 function getBase(meta: AnyNodeMeta, component: Component) {
   return {
     def: meta.def,
@@ -84,7 +68,7 @@ function getBase(meta: AnyNodeMeta, component: Component) {
 
 function buildDefinitionIO(meta: AnyNodeMeta) {
   if ('noInput' in meta && meta.noInput === true) {
-    const m = meta as StartStepMeta<any>
+    const m = meta as AnyStartMeta
     return {
       noInput: true,
       outputDataType: m.outputDataType,
@@ -97,7 +81,7 @@ function buildDefinitionIO(meta: AnyNodeMeta) {
     }
   }
 
-  const m = meta as NormalStepMeta<any, any>
+  const m = meta as AnyNormalMeta
   return {
     inputDataTypes: m.inputDataTypes,
     outputDataType: m.outputDataType,

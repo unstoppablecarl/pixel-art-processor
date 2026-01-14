@@ -1,6 +1,9 @@
 import { type Component } from 'vue'
+import { getNodeDataTypeCssClass } from '../../nodes.ts'
+import type { NodeDataType } from '../node-data-types/_node-data-types.ts'
 import type { DataStructureConstructor } from '../node-data-types/BaseDataStructure.ts'
 import { NodeDataTypeRegistry } from '../node-data-types/NodeDataTypeRegistry.ts'
+import { PassThrough } from '../node-data-types/PassThrough.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { objectsAreEqual } from '../util/misc.ts'
 import { type NodeDef, type NodeId, NodeType } from './_types.ts'
@@ -19,12 +22,14 @@ export type NodeRegistry = ReturnType<typeof makeNodeRegistry>
 export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], nodeDataTypes: DataStructureConstructor[] = []) {
   const NODE_DEFINITIONS: NodeDefinitions = {}
   const dataTypeRegistry: NodeDataTypeRegistry = new NodeDataTypeRegistry(nodeDataTypes)
+  const NODE_COLORS: Record<NodeDef, NodeDefinitionColorIO> = {}
 
   function defineNode(definition: AnyNodeDefinition) {
     if (NODE_DEFINITIONS[definition.def]) {
       throw new Error('cannot define node that already exists: ' + definition.def)
     }
     NODE_DEFINITIONS[definition.def] = { ...definition }
+    NODE_COLORS[definition.def] = makeNodeDefinitionColorIO(definition)
     return NODE_DEFINITIONS[definition.def]
   }
 
@@ -33,6 +38,14 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
 
   function get(def: string): AnyNodeDefinition {
     const result = NODE_DEFINITIONS[def as NodeDef]
+    if (!result) {
+      throw new Error('Node Definition not found: ' + def)
+    }
+    return result
+  }
+
+  function getColorInfo(def: string): NodeDefinitionColorIO {
+    const result = NODE_COLORS[def as NodeDef]
     if (!result) {
       throw new Error('Node Definition not found: ' + def)
     }
@@ -112,6 +125,7 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
     defineNodes,
     get,
     has,
+    getColorInfo,
     getNodeType: (def: string): NodeType => get(def).type,
     defToComponent: (def: string): Component => get(def).component,
     nodeIsPassthrough: (node: AnyNode): boolean => isPassthroughMeta(get(node.def)),
@@ -128,6 +142,62 @@ export function makeNodeRegistry(nodeDefinitions: AnyNodeDefinition[] = [], node
     rootNodes: () => Object.values(NODE_DEFINITIONS)
       .filter((s) => isStartMeta(s)),
   }
+}
+
+export type NodeDefinitionColorIO = {
+  inputDataTypes: NodeDataTypeColorInfo[],
+  outputDataType: NodeDataTypeColorInfo,
+}
+
+export type NodeDataTypeColorInfo = {
+  displayName: string,
+  cssClass: string,
+}
+
+function makeNodeDefinitionColorIO(meta: AnyNodeDefinition): NodeDefinitionColorIO {
+  // ⚠️this should be the only place that uses [Passthrough]
+
+  const def = meta.def
+
+  if (isPassthroughMeta(meta)) {
+    return {
+      inputDataTypes: [{
+        displayName: PassThrough.displayName,
+        cssClass: getNodeDataTypeCssClass(PassThrough),
+      }],
+      outputDataType: {
+        displayName: PassThrough.displayName,
+        cssClass: getNodeDataTypeCssClass(PassThrough),
+      },
+    }
+
+  } else if (isNormalMeta(meta)) {
+    return {
+      inputDataTypes: meta.inputDataTypes.map((t: NodeDataType) => {
+        return {
+          displayName: t.displayName,
+          cssClass: getNodeDataTypeCssClass(t),
+        }
+      }),
+      outputDataType: {
+        displayName: meta.outputDataType.displayName,
+        cssClass: getNodeDataTypeCssClass(meta.outputDataType!),
+      },
+    }
+  } else if (isStartMeta(meta)) {
+    return {
+      inputDataTypes: [{
+        displayName: 'Start',
+        cssClass: 'bg-black'
+      }],
+      outputDataType: {
+        displayName: meta.outputDataType.displayName,
+        cssClass: getNodeDataTypeCssClass(meta.outputDataType!),
+      },
+    }
+  }
+
+  throw new Error('invalid definition: ' + def)
 }
 
 let REGISTRY: NodeRegistry | undefined
