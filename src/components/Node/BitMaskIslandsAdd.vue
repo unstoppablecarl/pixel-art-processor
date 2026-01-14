@@ -25,11 +25,12 @@ import { parseColorData } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/Sketch.ts'
 import NodeCard from '../Card/NodeCard.vue'
+import NodeFooterBtnCollapse from '../UI/NodeFooterBtnCollapse.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { BTab, BTabs } from 'bootstrap-vue-next'
-import { reactive, ref } from 'vue'
+import { reactive } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -87,14 +88,6 @@ const handler = defineStepHandler(STEP_META, {
 const node = useStepHandler(nodeId, handler)
 
 const config = node.config
-const settingsVisible = ref(true)
-
-function toggleExpand() {
-  if (!settingsVisible.value) {
-    config.activeTabIndex = 0
-  }
-  settingsVisible.value = !settingsVisible.value
-}
 </script>
 <template>
   <NodeCard :node="node">
@@ -113,16 +106,7 @@ function toggleExpand() {
           title="Display"
         />
 
-        <BTab
-          :id="`${nodeId}-show-hide-settings`"
-          title-link-class="nav-link-collapse"
-          title-item-class="ms-auto"
-          @click="toggleExpand()"
-        >
-          <template #title>
-            &nbsp;
-          </template>
-        </BTab>
+        <NodeFooterBtnCollapse :node-id="nodeId" v-model:active-tab-index="config.activeTabIndex" />
       </BTabs>
 
       <div class="auto-animate" v-auto-animate>
