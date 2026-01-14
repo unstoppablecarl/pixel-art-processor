@@ -492,8 +492,6 @@ export class ForkNode<
   async getBranchOutput(store: PipelineStore, branchIndex: number): Promise<SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>> {
     if (this.forkOutputData.value[branchIndex] === undefined) {
       this.forkOutputData.value[branchIndex] = await this.runBranch(store, branchIndex)
-      // trigger reactivity
-      this.forkOutputData.value = [...this.forkOutputData.value]
     }
 
     return this.forkOutputData.value[branchIndex] as SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>
@@ -510,21 +508,21 @@ export class ForkNode<
     SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>
   > {
     return this.logFunction('runBranch', async () => {
-      const {
-        output: inputData,
-        preview: inputPreview,
-        meta,
+    const {
+      output: inputData,
+      preview: inputPreview,
+      meta,
       } = await this.getResultFromPrev(store)
 
-      const output = await this.handler!.run({
-        config: this.config as RC,
-        inputData,
-        inputPreview,
-        branchIndex,
-        meta,
-      })
+    const output = await this.handler!.run({
+      config: this.config as RC,
+      inputData,
+      inputPreview,
+      branchIndex,
+      meta,
+    })
 
-      return parseResult<InstanceType<ForkMetaIO<M>[1]>>(output, meta)
+    return parseResult<InstanceType<ForkMetaIO<M>[1]>>(output, meta)
     })
   }
 
