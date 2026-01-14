@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed } from 'vue'
-import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
+import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
 import { type InitializedBranchNode, isBranch, isFork } from '../../lib/pipeline/Node.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
@@ -13,15 +13,17 @@ import SeedPopOver from '../UI/SeedPopOver.vue'
 const store = usePipelineStore()
 const nodeRegistry = getNodeRegistry()
 
-const { branch } = defineProps<{
-  branch: InitializedBranchNode<any, any, any, any>,
+const { branchId } = defineProps<{
+  branchId: NodeId
 }>()
 
-const displayName = computed(() => nodeRegistry.get(branch.def).displayName)
+const branch = computed(() => store.get(branchId) as InitializedBranchNode<any, any, any, any>)
+
+const displayName = computed(() => nodeRegistry.get(branch.value.def).displayName)
 const nodeIds = computed((): NodeId[] => {
   if (!branch) return []
   const ids: NodeId[] = []
-  let currentId = store.get(branch.id).childIds(store)[0] as NodeId
+  let currentId = store.get(branch.value.id).childIds(store)[0] as NodeId
 
   while (currentId) {
     ids.push(currentId)
@@ -40,7 +42,7 @@ const nodeIds = computed((): NodeId[] => {
 })
 
 const cssStyle = computed(() => {
-  const width = branch.outputPreview?.width ?? store.getFallbackOutputWidth(branch)
+  const width = branch.value.outputPreview?.width ?? store.getFallbackOutputWidth(branch.value)
   return [
     `--node-img-width: ${width}px;`,
   ].join(' ')

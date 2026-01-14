@@ -23,5 +23,5 @@ const branch = useBranchHandler(nodeId, handler)
 
 </script>
 <template>
-  <BranchCard :branch="branch" />
+  <BranchCard :branch-id="branch.id" />
 </template>

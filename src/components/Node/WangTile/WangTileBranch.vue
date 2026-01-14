@@ -16,6 +16,7 @@ import type { NodeDef, NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineBranchHandler, useBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import BranchCard from '../../Card/BranchCard.vue'
+import NodeContainer from '../../NodeSupport/NodeContainer.vue'
 import { STEP_META as variantStepMeta } from './WangTileBranchVariant.vue'
 
 const store = usePipelineStore()
@@ -26,7 +27,9 @@ const { nodeId } = defineProps<{
 
 const handler = defineBranchHandler(STEP_META, {
   config() {
-    return {}
+    return {
+      variantScale: 1,
+    }
   },
   onRemoving(node) {
     siblingBranchVariants.value.forEach((sibling) => store.remove(sibling.id))
@@ -47,13 +50,16 @@ const branch = useBranchHandler(nodeId, handler)
 const fork = computed(() => branch.getPrev(store))
 
 const siblingBranchVariants = computed(() => {
-  return branch.getSiblings(store, (otherBranch) => otherBranch?.config?.parentBranchId === branch.id)
+  const siblings = fork.value.branchIds.value.map(store.getBranch)
+  return siblings.filter((otherBranch) => {
+    const parentBranchId = otherBranch?.config?.parentBranchId ?? otherBranch?.loadSerialized?.config?.parentBranchId
+    return parentBranchId === branch.id
+  })
 })
 
 function add() {
   const fork = branch.getPrev(store)
-  const newBranch = store.addBranch(variantStepMeta.def as NodeDef, fork.id)
-  newBranch.loadSerialized = { config: { parentBranchId: branch.id } }
+  store.addBranch(variantStepMeta.def as NodeDef, fork.id, { parentBranchId: branch.id })
 }
 
 function remove() {
@@ -77,9 +83,11 @@ const variantCount = computed<number, number>({
     }
   },
 })
+const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScale)
+
 </script>
 <template>
-  <BranchCard :branch="branch">
+  <BranchCard :branch-id="branch.id">
     <template #before-nodes>
       <div class="card-body">
         <div class="section">
@@ -96,6 +104,32 @@ const variantCount = computed<number, number>({
             </button>
           </div>
         </div>
+      </div>
+    </template>
+    <template #after-nodes>
+      <div class="p-2" :style="cssStyle">
+        <div class="form-group d-flex align-items-center gap-2 mb-3">
+          <label
+            for="scale"
+            class="form-label form-label-sm mb-0 text-nowrap"
+            style="width: 50px;"
+          >
+            Scale: {{ branch.config.variantScale }}
+          </label>
+          <input type="range"
+                 class="form-range form-range-sm"
+                 id="scale"
+                 min="1"
+                 max="10"
+                 step="1"
+                 style="width: 150px;"
+                 v-model.number="branch.config.variantScale"
+          >
+        </div>
+
+        <template v-for="item in siblingBranchVariants">
+          <NodeContainer :node-id="item.id" :node-def="item.def" :force-render="true" />
+        </template>
       </div>
     </template>
   </BranchCard>

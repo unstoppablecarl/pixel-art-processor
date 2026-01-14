@@ -72,7 +72,7 @@ const handler = defineBranchHandler(STEP_META, {
 const branch = useBranchHandler(nodeId, handler)
 </script>
 <template>
-  <BranchCard :branch="branch">
+  <BranchCard :branch-id="branch.id">
     <template #nodes>
       <div class="card-body d-flex">
         <NodeImage :image-data="branch.forkPreview" />
