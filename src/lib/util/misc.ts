@@ -132,43 +132,43 @@ export function arrayRemove(array: any[], item: any): void {
   }
 }
 
-// export function readonlyTypedArray(arr: any, error = 'Cannot modify readonly TypedArray') {
-//   return new Proxy(arr, {
-//     get: (target, prop) => Reflect.get(target, prop),
-//     set() {
-//       if (__DEV__) {
-//         throw new Error(error)
-//       }
-//       return false
-//     },
-//     defineProperty: () => false,
-//     deleteProperty: () => false,
-//     setPrototypeOf: () => false,
-//   })
-// }
-
-export function deepFreeze<T>(obj: T): T {
-  if (!obj || typeof obj !== 'object') return obj
-
-  // Wrap TypedArrays in readonly proxy
-  // if (ArrayBuffer.isView(obj)) {
-  //   return readonlyTypedArray(obj as any)
-  // }
-
-  // if (obj instanceof ArrayBuffer) {
-  //   return obj
-  // }
-
-  Object.freeze(obj)
-
-  // Recursively freeze all properties
-  for (const key of Object.keys(obj)) {
-    if (Object.isFrozen((obj as any)[key])) continue
-    (obj as any)[key] = deepFreeze((obj as any)[key])
-  }
-
-  return obj
+export function readonlyTypedArray(arr: any, error = 'Cannot modify readonly TypedArray') {
+  return new Proxy(arr, {
+    get: (target, prop) => Reflect.get(target, prop),
+    set() {
+      if (__DEV__) {
+        throw new Error(error)
+      }
+      return false
+    },
+    defineProperty: () => false,
+    deleteProperty: () => false,
+    setPrototypeOf: () => false,
+  })
 }
+
+// export function deepFreeze<T>(obj: T): T {
+//   if (!obj || typeof obj !== 'object') return obj
+//
+//   // Wrap TypedArrays in readonly proxy
+//   // if (ArrayBuffer.isView(obj)) {
+//   //   return readonlyTypedArray(obj as any)
+//   // }
+//
+//   // if (obj instanceof ArrayBuffer) {
+//   //   return obj
+//   // }
+//
+//   Object.freeze(obj)
+//
+//   // Recursively freeze all properties
+//   for (const key of Object.keys(obj)) {
+//     if (Object.isFrozen((obj as any)[key])) continue
+//     (obj as any)[key] = deepFreeze((obj as any)[key])
+//   }
+//
+//   return obj
+// }
 
 export function validateSizes(a: NodeDataTypeInstance, b: NodeDataTypeInstance) {
   if (a.width !== b.width) {

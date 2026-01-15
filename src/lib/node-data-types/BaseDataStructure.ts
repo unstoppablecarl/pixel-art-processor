@@ -1,5 +1,6 @@
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
 import { type RGBA, setImageDataPixelColor } from '../util/ImageData.ts'
+import { readonlyTypedArray } from '../util/misc.ts'
 
 export type Point = {
   x: number,
@@ -768,19 +769,4 @@ export interface DataStructureConstructor<
   T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
 > {
   new(width: number, height: number, ...args: any[]): T
-}
-
-function readonlyTypedArray(arr: any) {
-  return new Proxy(arr, {
-    get: (target, prop) => Reflect.get(target, prop),
-    set() {
-      if (__DEV__) {
-        throw new Error('Cannot modify locked object use obj.copy()')
-      }
-      return false
-    },
-    defineProperty: () => false,
-    deleteProperty: () => false,
-    setPrototypeOf: () => false,
-  })
 }
