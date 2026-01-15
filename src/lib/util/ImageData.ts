@@ -86,6 +86,7 @@ export type SerializedImageData = {
 
 export function serializeImageData(imageData: ImageData | null): SerializedImageData | null {
   if (imageData === null) return null
+  if (imageData.width === 0 && imageData.height === 0 && imageData.data.length === 0) return null
 
   return {
     width: imageData.width,
@@ -96,7 +97,7 @@ export function serializeImageData(imageData: ImageData | null): SerializedImage
 
 export function deserializeImageData(obj: SerializedImageData | null): ImageData | null {
   if (obj === null) return null
-
+  if (!obj?.width && !obj?.height && (!obj?.data?.length)) return null
   return new ImageData(
     new Uint8ClampedArray(obj.data),
     obj.width,
