@@ -18,6 +18,11 @@ const padding = defineModel<number>('padding', { required: true })
 const invert = defineModel<boolean>('invert', { required: true })
 const shuffleSeed = defineModel<number>('shuffleSeed', { required: true })
 
+const eligibleForN = defineModel<boolean>('eligibleForN', { required: true })
+const eligibleForE = defineModel<boolean>('eligibleForE', { required: true })
+const eligibleForS = defineModel<boolean>('eligibleForS', { required: true })
+const eligibleForW = defineModel<boolean>('eligibleForW', { required: true })
+
 const { size, nodeId, index } = defineProps<{
   nodeId: string,
   index: number,
@@ -76,55 +81,90 @@ watch(validRanges, (ranges) => {
 }, { deep: true })
 </script>
 <template>
-    <RangeBandSlider
-      :id="`${nodeId}-${index}-gap-size`"
-      label="Gap Size"
-      :min="validRanges.minGapSize.min"
-      :max="validRanges.maxGapSize.max"
-      v-model:min-value="minGapSize"
-      v-model:max-value="maxGapSize"
-    />
 
-    <RangeBandSlider
-      :id="`${nodeId}-${index}-chunk-size`"
-      label="Chunk Size"
-      :min="validRanges.minChunkSize.min"
-      :max="validRanges.maxChunkSize.max"
-      v-model:min-value="minChunkSize"
-      v-model:max-value="maxChunkSize"
-    />
-
-    <RangeSlider
-      :id="`${nodeId}-${index}-padding`"
-      label="Padding"
-      v-model:value="padding"
-      :min="validRanges.padding.min"
-      :max="validRanges.padding.max"
-      :step="1"
+  <div class="hstack">
+    <div class="form-check form-check-item px-0 me-2">
+      <label class="form-check-label">
+        Limit to Edges
+      </label>
+    </div>
+    <CheckBoxInput
+      :id="`${nodeId}-${index}-eligible-for-n`"
+      label="N"
+      v-model="eligibleForN"
+      class="me-2"
     />
 
     <CheckBoxInput
-      :id="`${nodeId}-${index}-invert`"
-      label="Invert"
-      v-model="invert"
+      :id="`${nodeId}-${index}-eligible-for-s`"
+      label="S"
+      v-model="eligibleForS"
+      class="me-2"
     />
 
-    <RangeSlider
-      :id="`${nodeId}-${index}-chunks`"
-      label="Chunks"
-      v-model:value="chunks"
-      :step="1"
-      :min="validRanges.chunks.min"
-      :max="validRanges.chunks.max"
+    <CheckBoxInput
+      :id="`${nodeId}-${index}-eligible-for-w`"
+      label="W"
+      v-model="eligibleForW"
     />
 
-    <NumberInput
-      :id="`${nodeId}-${index}-chunks-shuffle`"
-      label="Shuffle Seed"
-      :step="1"
-      :min="0"
-      v-model="shuffleSeed"
-      input-width="50%"
+    <CheckBoxInput
+      :id="`${nodeId}-${index}-eligible-for-e`"
+      label="E"
+      v-model="eligibleForE"
+      class="me-2"
     />
+  </div>
+
+  <RangeBandSlider
+    :id="`${nodeId}-${index}-gap-size`"
+    label="Gap Size"
+    :min="validRanges.minGapSize.min"
+    :max="validRanges.maxGapSize.max"
+    v-model:min-value="minGapSize"
+    v-model:max-value="maxGapSize"
+  />
+
+  <RangeBandSlider
+    :id="`${nodeId}-${index}-chunk-size`"
+    label="Chunk Size"
+    :min="validRanges.minChunkSize.min"
+    :max="validRanges.maxChunkSize.max"
+    v-model:min-value="minChunkSize"
+    v-model:max-value="maxChunkSize"
+  />
+
+  <RangeSlider
+    :id="`${nodeId}-${index}-padding`"
+    label="Padding"
+    v-model:value="padding"
+    :min="validRanges.padding.min"
+    :max="validRanges.padding.max"
+    :step="1"
+  />
+
+  <CheckBoxInput
+    :id="`${nodeId}-${index}-invert`"
+    label="Invert"
+    v-model="invert"
+  />
+
+  <RangeSlider
+    :id="`${nodeId}-${index}-chunks`"
+    label="Chunks"
+    v-model:value="chunks"
+    :step="1"
+    :min="validRanges.chunks.min"
+    :max="validRanges.chunks.max"
+  />
+
+  <NumberInput
+    :id="`${nodeId}-${index}-chunks-shuffle`"
+    label="Shuffle Seed"
+    :step="1"
+    :min="0"
+    v-model="shuffleSeed"
+    input-width="50%"
+  />
 
 </template>

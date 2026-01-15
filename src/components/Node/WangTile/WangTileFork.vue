@@ -19,7 +19,7 @@ export const STEP_META = defineFork({
 })
 </script>
 <script setup lang="ts">
-import { computed, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineForkHandler, useForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
@@ -32,7 +32,10 @@ import {
   makeWangTileEdgeConfigDefaults, renderImageEdgeChunks,
   type WangTileEdgeConfig,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
-import { populateIndexedWangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
+import {
+  populateIndexedWangTile, type TileWithEligibleEdges,
+  WangTileset,
+} from '../../../lib/wang-tiles/WangTileset.ts'
 import NodeCard from '../../Card/NodeCard.vue'
 import NodeImage from '../../NodeImage.vue'
 import CheckBoxInput from '../../UIForms/CheckBoxInput.vue'
@@ -72,10 +75,10 @@ const handler = defineForkHandler(STEP_META, {
     ]
   },
   async run({ config, branchIndex }) {
-    if (branchIndex > tileset.value.tiles.length - 1) {
+    if (branchIndex > indexedTileset.value.tiles.length - 1) {
       return {
         validationErrors: [
-          `cannot generate data for Branch ${branchIndex + 1}. There are only ${tileset.value.tiles.length} tile combinations.`,
+          `cannot generate data for Branch ${branchIndex + 1}. There are only ${indexedTileset.value.tiles.length} tile combinations.`,
         ],
       }
     }
@@ -95,7 +98,7 @@ const handler = defineForkHandler(STEP_META, {
       preview,
       meta: {
         wangTileEdges: edges,
-        wangTileInfo: tileset.value.tiles[branchIndex],
+        wangTileInfo: indexedTileset.value.tiles[branchIndex],
       },
     }
   },
@@ -120,15 +123,36 @@ function makePreviewFromWangTile(size: number, tile: WangTile<BinaryArray>) {
 }
 
 function wangTileForBranch(branchIndex: number) {
-  const indexedWangTile = tileset.value.tiles[branchIndex]
+  const indexedWangTile = indexedTileset.value.tiles[branchIndex]
   return populateIndexedWangTile(indexedWangTile, edges.value)
 }
 
 const edges = shallowArrayItemsRef<BinaryArray>([])
 
-const tileset = computed(() => {
-  const edgeIndexes = Array.from(edges.value.keys())
-  return WangTileset.createFromColors<number>(edgeIndexes)
+const tileCount = ref(0)
+
+const indexedTileset = computed(() => {
+  const items: TileWithEligibleEdges<number>[] = edges.value.map((t, i) => {
+    const {
+      eligibleForN,
+      eligibleForE,
+      eligibleForS,
+      eligibleForW,
+    } = node.config.wangTiles[i]
+
+    return {
+      tileValue: i,
+      eligibleForN,
+      eligibleForE,
+      eligibleForS,
+      eligibleForW,
+    }
+  })
+
+  const result = WangTileset.createFromLimitedEdges<number>(items)
+  tileCount.value = result.tiles.length
+  console.log({result})
+  return result
 })
 
 function add() {
@@ -151,8 +175,8 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
   if (!value) return
   edges.value[edgeIndex] = value
 
-  const tiles = tileset.value.tilesWithEdge(edgeIndex)
-  const affectedBranchIndexes = tiles.map(t => tileset.value.tiles.indexOf(t))
+  const tiles = indexedTileset.value.tilesWithEdge(edgeIndex)
+  const affectedBranchIndexes = tiles.map(t => indexedTileset.value.tiles.indexOf(t))
 
   affectedBranchIndexes.forEach(bIndex => {
     if (node.branchIds.value[bIndex]) {
@@ -160,8 +184,6 @@ function updateEdge(edgeIndex: number, value: BinaryArray | undefined) {
     }
   })
 }
-
-const tileCount = computed(() => Math.pow(config.wangTiles.length, 4))
 
 watchEffect(() => {
   node.maxBranchCount.value = tileCount.value

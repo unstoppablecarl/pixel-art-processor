@@ -19,6 +19,11 @@ export function makeWangTileEdgeConfigDefaults() {
     maxChunkSize: 13,
     padding: 4,
     seed: 0,
+
+    eligibleForN: true,
+    eligibleForE: true,
+    eligibleForS: true,
+    eligibleForW: true,
   }
 }
 

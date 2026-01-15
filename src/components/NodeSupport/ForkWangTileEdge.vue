@@ -42,6 +42,10 @@ watch(
     config.value.maxChunkSize,
     config.value.padding,
     config.value.seed,
+    config.value.eligibleForN,
+    config.value.eligibleForE,
+    config.value.eligibleForS,
+    config.value.eligibleForW,
   ],
   () => {
     edge.value = generateWangTileEdgePattern(size, config.value)
@@ -103,6 +107,12 @@ const preview = computed(() => {
           v-model:min-chunk-size="config.minChunkSize"
           v-model:max-chunk-size="config.maxChunkSize"
           v-model:padding="config.padding"
+
+          v-model:eligible-for-n="config.eligibleForN"
+          v-model:eligible-for-e="config.eligibleForE"
+          v-model:eligible-for-s="config.eligibleForS"
+          v-model:eligible-for-w="config.eligibleForW"
+
           :node-id="nodeId"
           :size="size"
         />
