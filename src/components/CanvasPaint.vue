@@ -60,7 +60,6 @@ const updateImageData = (): void => {
     if (!canvas) return
     if (!ctx) return
 
-    console.log('qwe',  ctx.getImageData(0, 0, canvas.width, canvas.height))
     imageData.value = ctx.getImageData(0, 0, canvas.width, canvas.height)
     throttleTimer = null
   }, 100)
