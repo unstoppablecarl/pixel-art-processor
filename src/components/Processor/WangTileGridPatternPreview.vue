@@ -165,21 +165,6 @@ const grid = computed(() => {
             style="width: 100px"
           />
         </BFormFloatingLabel>
-
-        <BFormFloatingLabel
-          label="Seed"
-          label-for="preview-seed"
-        >
-          <BFormInput
-            id="preview-seed"
-            type="number"
-            node="1"
-            min="1"
-            v-model.number="previewStore.seed"
-            style="width: 100px"
-          />
-        </BFormFloatingLabel>
-
       </div>
 
     </div>
