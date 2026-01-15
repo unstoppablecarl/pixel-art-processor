@@ -37,3 +37,8 @@ export type StepLoaderSerialized<
   config: SerializedConfig
 }
 
+export interface Position {
+  x: number;
+  y: number;
+}
+
