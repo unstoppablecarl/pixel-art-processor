@@ -103,8 +103,11 @@ const variantIndex = computed(() => {
 </template>
 <style lang="scss">
 .card-wang-tile-branch-variant {
-  --bs-card-cap-padding-y: calc(var(--bs-spacer, 1rem) * 0.25);
-  --bs-card-cap-padding-x: calc(var(--bs-spacer, 1rem) * 0.25);
+  .card-header {
+    --bs-card-cap-padding-y: 0.25rem;
+    --bs-card-cap-padding-x: 0.25rem;
+    padding-left: 0.5rem;
+  }
 
   .node-img-container {
     padding: 6px;
@@ -112,10 +115,6 @@ const variantIndex = computed(() => {
     .node-img-label {
       padding-bottom: 5px;
     }
-  }
-
-  .card-header {
-    padding-left: 0.5rem;
   }
 
   .btn-sm {

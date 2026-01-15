@@ -11,7 +11,8 @@ export const STEP_META = defineBranch({
 })
 </script>
 <script setup lang="ts">
-import { computed } from 'vue'
+import { BButton } from 'bootstrap-vue-next'
+import { computed, ref } from 'vue'
 import type { NodeDef, NodeId, WatcherTarget } from '../../../lib/pipeline/_types.ts'
 import type { AnyInitializedNode } from '../../../lib/pipeline/Node.ts'
 import { defineBranchHandler, useBranchHandler } from '../../../lib/pipeline/NodeHandler/BranchHandler.ts'
@@ -83,6 +84,16 @@ const variantCount = computed<number, number>({
   },
 })
 const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScale)
+
+const showAll = ref(true)
+
+function expandAll() {
+  siblingBranchVariants.value.forEach((sibling) => sibling.visible = true)
+}
+
+function collapseAll() {
+  siblingBranchVariants.value.forEach((sibling) => sibling.visible = false)
+}
 </script>
 <template>
   <BranchCard :branch-id="branch.id">
@@ -130,13 +141,47 @@ const cssStyle = computed(() => '--node-img-scale: ' + branch.config.variantScal
           >
         </div>
 
-        <template v-for="item in siblingBranchVariants">
-          <NodeContainer
-            :node-id="item.id"
-            :node-def="item.def"
-            :force-render="true"
+        <div class="hstack ps-3 pe-2">
+          <div>
+            Variants: {{ variantCount }}
+          </div>
+
+          <BButton
+            size="sm"
+            class="btn-collapse-all ms-auto"
+            variant="transparent"
+            @click="collapseAll()"
+          >
+            <span class="material-symbols-outlined">keyboard_double_arrow_up</span>
+          </BButton>
+          <BButton
+            size="sm"
+            class="btn-collapse-all ms-1"
+            variant="transparent"
+            @click="expandAll()"
+          >
+            <span class="material-symbols-outlined">keyboard_double_arrow_down</span>
+          </BButton>
+
+          <BButton
+            :class="'btn-collapse ms-1' + (showAll ? '' : ' collapsed')"
+            size="sm"
+            variant="transparent"
+            :aria-expanded="showAll ? 'true' : 'false'"
+            @click="showAll = !showAll"
           />
-        </template>
+        </div>
+        <div class="auto-animate" v-auto-animate>
+          <div v-if="showAll">
+            <template v-for="item in siblingBranchVariants">
+              <NodeContainer
+                :node-id="item.id"
+                :node-def="item.def"
+                :force-render="true"
+              />
+            </template>
+          </div>
+        </div>
       </div>
     </template>
   </BranchCard>
