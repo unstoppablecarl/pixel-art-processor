@@ -182,3 +182,39 @@ export function fillImageData(
   return imageData
 }
 
+
+export function resizeImageData(
+  current: ImageData,
+  newWidth: number,
+  newHeight: number,
+  offsetX = 0,
+  offsetY = 0
+): ImageData {
+  const result = new ImageData(newWidth, newHeight)
+  const oldData = current.data
+  const newData = result.data
+
+  const oldW = current.width
+  const oldH = current.height
+
+  for (let y = 0; y < oldH; y++) {
+    for (let x = 0; x < oldW; x++) {
+      const newX = x + offsetX
+      const newY = y + offsetY
+
+      if (newX < 0 || newY < 0 || newX >= newWidth || newY >= newHeight) {
+        continue
+      }
+
+      const oldIndex = (y * oldW + x) * 4
+      const newIndex = (newY * newWidth + newX) * 4
+
+      newData[newIndex]     = oldData[oldIndex]
+      newData[newIndex + 1] = oldData[oldIndex + 1]
+      newData[newIndex + 2] = oldData[oldIndex + 2]
+      newData[newIndex + 3] = oldData[oldIndex + 3]
+    }
+  }
+
+  return result
+}
