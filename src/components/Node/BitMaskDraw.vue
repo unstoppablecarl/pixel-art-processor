@@ -12,12 +12,14 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, Ref, ref, shallowRef, toRef, useTemplateRef, watch } from 'vue'
-import type { NodeId, Position } from '../../lib/pipeline/_types.ts'
+import { computed, Ref, ref, shallowRef, toRef, useTemplateRef } from 'vue'
+import type { NodeId, Position, WatcherTarget } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
-import { deepUnwrap } from '../../lib/util/vue-util.ts'
+import {
+  deserializeImageData,
+  type SerializedImageData, serializeImageData,
+} from '../../lib/util/ImageData.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'
 import CanvasPaint from '../CanvasPaint.vue'
 import NodeCard from '../Card/NodeCard.vue'
@@ -31,43 +33,48 @@ const canvasPaintRef = useTemplateRef('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const CONFIG_DEFAULTS = {
-  activeTabIndex: 0,
-  maskImageData: null as null | ImageData,
-  size: rangeSliderConfig({
-    value: 64,
-    min: 8,
-    max: 512,
-  }),
-  ...DEFAULT_SHOW_GRID.CONFIG,
-  ...DEFAULT_SHOW_CURSOR.CONFIG,
-}
+const maskImageData = shallowRef<ImageData | null>(null)
+
+const SIZE_DEFAULTS = rangeSliderConfig({
+  value: 64,
+  min: 8,
+  max: 512,
+})
+
 const handler = defineStepHandler(STEP_META, {
   config() {
     return {
-      ...CONFIG_DEFAULTS,
+      ...DEFAULT_SHOW_GRID.CONFIG,
+      ...DEFAULT_SHOW_CURSOR.CONFIG,
+      activeTabIndex: 0,
+      size: {
+        ...SIZE_DEFAULTS,
+      },
+      maskImageData: null as (SerializedImageData | null),
     }
   },
-  serializeConfig(config) {
-    console.log('serializeConfig', config)
-    return {
-      ...config,
-      maskImageData: serializeImageData(config.maskImageData),
-    }
-  },
+  serializeConfig: (config) => ({
+    ...config,
+    maskImageData: serializeImageData(maskImageData.value),
+  }),
   deserializeConfig(config) {
-    return {
-      ...config,
-      maskImageData: deserializeImageData(config.maskImageData),
-    }
+    maskImageData.value = deserializeImageData(config.maskImageData)
+
+    return config
   },
-  async run({ config }) {
-    if (!config.maskImageData) return
+  watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    return [...defaultWatcherTargets, {
+      name: 'maskImageData',
+      target: maskImageData,
+    }]
+  },
+  async run() {
+    if (maskImageData.value === null) return
 
-    const bitMask = BitMask.fromImageData(config.maskImageData)
+    const bitMask = BitMask.fromImageData(maskImageData.value)
 
     return {
-      preview: config.maskImageData,
+      preview: maskImageData.value,
       output: bitMask,
     }
   },
@@ -88,21 +95,13 @@ const gridColor = toRef(config, 'showGridColor')
 const mode = ref<'add' | 'remove'>('add')
 const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
 
-const imageData = shallowRef<ImageData | null>(null)
-
-watch(imageData, () => {
-  console.log('watch ImageData', imageData.value)
-  config.maskImageData = imageData.value
-  console.log('after set ImageData', deepUnwrap(config))
-})
-
 </script>
 <template>
   <NodeCard
     :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
-      imageData: node.config.maskImageData,
+      imageData: maskImageData,
     }]"
   >
     <template #body>
@@ -116,7 +115,7 @@ watch(imageData, () => {
         :cursor-color="cursorColor"
         :grid-color="gridColor"
         :color="color"
-        v-model:image-data="imageData"
+        v-model:image-data="maskImageData"
         v-model:offset="offset"
       />
     </template>
@@ -130,7 +129,7 @@ watch(imageData, () => {
           <RangeSlider
             :id="`${nodeId}-size`"
             label="Size"
-            :defaults="CONFIG_DEFAULTS.size"
+            :defaults="SIZE_DEFAULTS"
             v-model:value="config.size.value"
             v-model:min="config.size.min"
             v-model:max="config.size.max"

@@ -65,16 +65,10 @@ const updateImageData = (): void => {
   }, 100)
 }
 
-const updateView = (): void => {
-  const canvas = canvasRef.value
+const updateSize = () => {
   const viewCanvas = viewCanvasRef.value
-  if (!canvas || !viewCanvas) return
+  if (!viewCanvas) return
 
-  const { ctx } = getViewCanvas()
-  if (!ctx) return
-
-  // Disable image smoothing for sharp pixels
-  ctx.imageSmoothingEnabled = false
   const scaledWidth = Math.floor(width * scale)
   const scaledHeight = Math.floor(height * scale)
 
@@ -82,7 +76,17 @@ const updateView = (): void => {
   if (viewCanvas.width !== scaledWidth || viewCanvas.height !== scaledHeight) {
     viewCanvas.width = scaledWidth
     viewCanvas.height = scaledHeight
+    return true
   }
+  return false
+}
+const updateView = (): void => {
+  const canvas = canvasRef.value
+  const viewCanvas = viewCanvasRef.value
+  if (!canvas || !viewCanvas) return
+
+  const { ctx } = getViewCanvas()
+  if (!ctx) return
 
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, viewCanvas.width, viewCanvas.height)
@@ -304,7 +308,20 @@ defineExpose({
 })
 
 onMounted(() => {
-  fillCanvas(bgColor)
+  updateSize()
+  if (imageData.value) {
+    const { canvas, ctx } = getCanvas()
+    if (!ctx || !canvas) return
+    ctx.putImageData(imageData.value, 0, 0)
+    updateView()
+    updateImageData()
+    // trigger re-paint
+    requestAnimationFrame(() => {
+      updateView()
+    })
+  } else {
+    fillCanvas(bgColor)
+  }
 })
 
 watch([
@@ -315,17 +332,18 @@ watch([
   updateView()
 }, { deep: true })
 
-watch(
-  () => scale,
+watch([
+    () => width,
+    () => height,
+    () => scale,
+  ],
   () => {
     const { canvas } = getCanvas()
     if (!canvas) return
 
-    updateView()
-    // trigger re-paint
-    requestAnimationFrame(() => {
+    if (updateSize()) {
       updateView()
-    })
+    }
   })
 
 watch([
@@ -365,6 +383,5 @@ watch([
 <style>
 .draw-canvas {
   image-rendering: pixelated;
-  image-rendering: crisp-edges;
 }
 </style>

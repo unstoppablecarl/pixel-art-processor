@@ -198,3 +198,23 @@ export const debounce = <T extends (...args: any[]) => any>(
     return result
   }
 }
+
+export function throttle<T extends (...args: any[]) => void>(func: T, wait: number): T {
+  let timeout: NodeJS.Timeout | null = null;
+  let lastArgs: any[] | null = null;
+
+  return function(this: any, ...args: any[]) {
+    lastArgs = args;
+    const context = this;
+
+    if (!timeout) {
+      timeout = setTimeout(() => {
+        if (lastArgs) {
+          func.apply(context, lastArgs);
+          lastArgs = null;
+        }
+        timeout = null;
+      }, wait);
+    }
+  } as T;
+}

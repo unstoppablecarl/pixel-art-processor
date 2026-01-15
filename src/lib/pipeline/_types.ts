@@ -28,7 +28,7 @@ export type WithRequired<T, K extends keyof T> =
 export interface IRunnerResultMeta {
 }
 
-export type NormalizedConfig<C> = C extends {} ? (undefined extends C ? {} : C) : C
+export type NormalizedConfig<C> = C
 export type NormalizedReactiveConfig<C, RC> = RC extends Reactive<C> ? RC : Reactive<NormalizedConfig<C>>
 export type StepLoaderSerialized<
   SerializedConfig
