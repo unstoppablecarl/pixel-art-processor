@@ -41,7 +41,7 @@ const stepOutputNodes = computed(() => {
   if (nodesProcessing.value) return []
 
   return store.getLeafNodes()
-    .filter(n => !isFork(n) && !!n.outputPreview)
+    .filter(n => !isFork(n) && !!n.outputPreview && (n as AnyNode).outputMeta?.wangTileInfo)
     .map(make)
 })
 
