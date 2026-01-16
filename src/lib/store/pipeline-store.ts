@@ -177,7 +177,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       const branchIndex = fork.branchIds.value.length
 
       const id = _defToId(def)
-      console.log({extra})
       const branch = shallowReactive(new BranchNode({ id, def, prevNodeId, branchIndex, config, ...extra }))
       nodes[id] = branch
 
