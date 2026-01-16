@@ -1,3 +1,5 @@
+import { markRaw, type Raw } from 'vue'
+
 // ALL values are 0-255 (including alpha which in CSS is 0-1)
 export type RGBA = { r: number, g: number, b: number, a: number }
 export type SerializedRGBA = string
@@ -84,27 +86,26 @@ export type SerializedImageData = {
   data: number[],
 }
 
-export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : SerializedImageData {
-
+export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
   if (imageData === null) return null as any
   if (imageData.width === 0 && imageData.height === 0 && imageData.data.length === 0) return null as any
 
-  return {
+  return markRaw({
     width: imageData.width,
     height: imageData.height,
     data: Array.from(imageData.data),
-  } as any
+  }) as any
 }
 
-export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : ImageData {
+export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : Raw<ImageData> {
   if (obj === null) return null as any
   if (!obj?.width && !obj?.height && (!obj?.data?.length)) return null as any
 
-  return new ImageData(
+  return markRaw(new ImageData(
     new Uint8ClampedArray(obj.data),
     obj.width,
     obj.height,
-  ) as any
+  )) as any
 }
 
 export function eachImageDataPixel(

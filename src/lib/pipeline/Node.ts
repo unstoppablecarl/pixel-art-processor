@@ -186,6 +186,11 @@ export abstract class BaseNode<
     this.initialized.value = true
   }
 
+  hotLoadConfig(serializedConfig: SC) {
+    if (!__DEV__) return
+    this.handler!.loadConfig(this.config as RC, serializedConfig) as RC
+  }
+
   getSeedSum(store: PipelineStore): number {
     this.seedSum = this.seed
     if (this.prevNodeId) {
@@ -222,7 +227,7 @@ export abstract class BaseNode<
       name: 'paused',
       target: this.paused,
       // only trigger when paused -> un paused
-      filter: (prevValue, newValue) => prevValue && !newValue
+      filter: (prevValue, newValue) => prevValue && !newValue,
     }
   }
 
