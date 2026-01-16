@@ -16,6 +16,7 @@ const {
   brushShape = 'circle',
   brushSize = 10,
   scale = 1,
+  throttleMs = 300
 } = defineProps<{
   imageDataRef: ImageDataRef,
   width?: number,
@@ -27,6 +28,7 @@ const {
   brushShape?: 'circle' | 'square',
   brushSize?: number,
   scale?: number,
+  throttleMs?: number,
 }>()
 
 const buffer = new ImageDataMutator()
@@ -57,7 +59,7 @@ const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 
 const updateImageData = throttle(() => {
   imageDataRef.set(buffer.imageData)
-}, 1000)
+}, throttleMs)
 
 const updateSize = () => {
   const viewCanvas = viewCanvasRef.value
