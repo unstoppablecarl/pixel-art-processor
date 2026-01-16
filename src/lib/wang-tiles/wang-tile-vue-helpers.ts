@@ -4,7 +4,6 @@ import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { makeWangGrid } from './WangGrid.ts'
 import { type TileWithEligibleEdges, type WangTile, type WangTileEdge, WangTileset } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
@@ -89,4 +88,31 @@ export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
   })
 
   return target
+}
+
+export function make4EdgeWangTileset() {
+
+  const verticalA = {
+    edgeValue: 0,
+    eligibleForN: true,
+    eligibleForS: true,
+  }
+  const verticalB = {
+    edgeValue: 1,
+    eligibleForN: true,
+    eligibleForS: true,
+  }
+  const horizontalA = {
+    edgeValue: 2,
+    eligibleForW: true,
+    eligibleForE: true,
+  }
+  const horizontalB = {
+    edgeValue: 3,
+    eligibleForW: true,
+    eligibleForE: true,
+  }
+
+  const edges: TileWithEligibleEdges<number>[] = [verticalA, verticalB, horizontalA, horizontalB] as const
+  return WangTileset.createFromLimitedEdges<number>(edges)
 }

@@ -790,6 +790,38 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return value as unknown as SerializedT
   }
 
+  setEdgeNPadded(value: T, padding: number) {
+    for (let i = padding; i < this.width - padding; i++) {
+      this.set(i, 0, value)
+    }
+  }
+
+  setEdgeSPadded(value: T, padding: number) {
+    for (let i = padding; i < this.width - padding; i++) {
+      this.set(i, this.height - 1, value)
+    }
+  }
+
+  setEdgeWPadded(value: T, padding: number) {
+    for (let i = padding; i < this.height - padding; i++) {
+      this.set(0, i, value)
+    }
+  }
+
+  setEdgeEPadded(value: T, padding: number) {
+    for (let i = padding; i < this.height - padding; i++) {
+      this.set(this.width - 1, i, value)
+    }
+  }
+
+  setEdgePadded(edge: WangTileEdge, value: T, padding: number) {
+    if (edge === 'N') return this.setEdgeNPadded(value, padding)
+    if (edge === 'E') return this.setEdgeEPadded(value, padding)
+    if (edge === 'S') return this.setEdgeSPadded(value, padding)
+    if (edge === 'W') return this.setEdgeWPadded(value, padding)
+    throw new Error('invalid edge: ' + edge)
+  }
+
   setEdgeN(value: T, index?: number) {
     if (index !== undefined) {
       this.set(index, 0, value)

@@ -68,14 +68,20 @@ export class WangTileset<T> {
       for (let E = 0; E < eligibleForE.length; E++) {
         for (let S = 0; S < eligibleForS.length; S++) {
           for (let W = 0; W < eligibleForW.length; W++) {
-            const id = `tile-${N}-${E}-${S}-${W}`
+
+            const iN = eligibleForN[N].edgeValue
+            const iE = eligibleForE[E].edgeValue
+            const iS = eligibleForS[S].edgeValue
+            const iW = eligibleForW[W].edgeValue
+
+            const id = `tile-${iN}-${iE}-${iS}-${iW}`
             tiles.push({
               id: id as TileId,
               edges: {
-                N: eligibleForN[N].edgeValue,
-                E: eligibleForE[E].edgeValue,
-                S: eligibleForS[S].edgeValue,
-                W: eligibleForW[W].edgeValue,
+                N: iN,
+                E: iE,
+                S: iS,
+                W: iW,
               },
             })
           }

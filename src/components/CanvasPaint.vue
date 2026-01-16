@@ -31,9 +31,6 @@ const {
 
 const buffer = new ImageDataMutator()
 
-const offset = defineModel<Position>('offset', { default: { x: 0, y: 0 } })
-// const imageData = defineModel<ImageData | null>('imageData', { required: true })
-
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
 const isDrawing: Ref<boolean> = ref(false)
@@ -41,6 +38,10 @@ const lastPos: Ref<Position> = ref({ x: 0, y: 0 })
 const cursorPos: Ref<Position | null> = ref(null)
 
 const colorRGBA = computed(() => parseColor(color))
+
+const scaledWidth = computed(() => Math.floor(width * scale))
+const scaledHeight = computed(() => Math.floor(height * scale))
+
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
   if (!canvas) return { canvas, ctx: null }
 
@@ -56,55 +57,53 @@ const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 
 const updateImageData = throttle(() => {
   imageDataRef.set(buffer.imageData)
-  // emit('imageUpdated', buffer.imageData)
-}, 10)
+}, 1000)
 
 const updateSize = () => {
   const viewCanvas = viewCanvasRef.value
   if (!viewCanvas) return
 
-  const scaledWidth = Math.floor(width * scale)
-  const scaledHeight = Math.floor(height * scale)
-
-  // Resize the view html-dom to match scaled dimensions
-  if (viewCanvas.width !== scaledWidth || viewCanvas.height !== scaledHeight) {
-    viewCanvas.width = scaledWidth
-    viewCanvas.height = scaledHeight
+  // Set canvas internal dimensions to match the scaled view
+  if (viewCanvas.width !== scaledWidth.value || viewCanvas.height !== scaledHeight.value) {
+    viewCanvas.width = scaledWidth.value
+    viewCanvas.height = scaledHeight.value
     return true
   }
   return false
 }
-const drawGrid = (ctx: CanvasRenderingContext2D, { width, height }: { width: number, height: number }) => {
+
+const drawGrid = (ctx: CanvasRenderingContext2D) => {
+  ctx.save()
   ctx.setTransform(1, 0, 0, 1, 0, 0)
 
   ctx.strokeStyle = gridColor
   ctx.lineWidth = 1
 
-  const startX = Math.floor(-offset.value.x)
-  const startY = Math.floor(-offset.value.y)
-  const endX = Math.ceil((width / scale) - offset.value.x)
-  const endY = Math.ceil((height / scale) - offset.value.y)
-
-  for (let x = startX; x <= endX; x++) {
-    const screenX = (x + offset.value.x) * scale
+  // Draw vertical lines
+  for (let x = 0; x <= width; x++) {
+    const screenX = x * scale
     ctx.beginPath()
     ctx.moveTo(screenX, 0)
-    ctx.lineTo(screenX, height)
+    ctx.lineTo(screenX, scaledHeight.value)
     ctx.stroke()
   }
 
-  for (let y = startY; y <= endY; y++) {
-    const screenY = (y + offset.value.y) * scale
+  // Draw horizontal lines
+  for (let y = 0; y <= height; y++) {
+    const screenY = y * scale
     ctx.beginPath()
     ctx.moveTo(0, screenY)
-    ctx.lineTo(width, screenY)
+    ctx.lineTo(scaledWidth.value, screenY)
     ctx.stroke()
   }
+
+  ctx.restore()
 }
 
 const drawCursor = (ctx: CanvasRenderingContext2D) => {
   if (!cursorPos.value) return
 
+  ctx.save()
   ctx.setTransform(1, 0, 0, 1, 0, 0)
 
   ctx.strokeStyle = cursorColor
@@ -125,25 +124,25 @@ const drawCursor = (ctx: CanvasRenderingContext2D) => {
         if (x * x + y * y < r2) {
           const pixelX = snappedX + x
           const pixelY = snappedY + y
-          const screenX = (pixelX + offset.value.x) * scale
-          const screenY = (pixelY + offset.value.y) * scale
+          const screenX = pixelX * scale
+          const screenY = pixelY * scale
 
-          // Check each edge and draw if neighbor is outside circle (draw on the outside)
+          // Check each edge and draw if neighbor is outside circle
           if ((x - 1) * (x - 1) + y * y >= r2) { // Left edge
-            ctx.moveTo(screenX - 0.5, screenY)
-            ctx.lineTo(screenX - 0.5, screenY + scale)
+            ctx.moveTo(screenX, screenY)
+            ctx.lineTo(screenX, screenY + scale)
           }
           if ((x + 1) * (x + 1) + y * y >= r2) { // Right edge
-            ctx.moveTo(screenX + scale + 0.5, screenY)
-            ctx.lineTo(screenX + scale + 0.5, screenY + scale)
+            ctx.moveTo(screenX + scale, screenY)
+            ctx.lineTo(screenX + scale, screenY + scale)
           }
           if (x * x + (y - 1) * (y - 1) >= r2) { // Top edge
-            ctx.moveTo(screenX, screenY - 0.5)
-            ctx.lineTo(screenX + scale, screenY - 0.5)
+            ctx.moveTo(screenX, screenY)
+            ctx.lineTo(screenX + scale, screenY)
           }
           if (x * x + (y + 1) * (y + 1) >= r2) { // Bottom edge
-            ctx.moveTo(screenX, screenY + scale + 0.5)
-            ctx.lineTo(screenX + scale, screenY + scale + 0.5)
+            ctx.moveTo(screenX, screenY + scale)
+            ctx.lineTo(screenX + scale, screenY + scale)
           }
         }
       }
@@ -152,16 +151,14 @@ const drawCursor = (ctx: CanvasRenderingContext2D) => {
     ctx.stroke()
   } else {
     const halfSize = Math.floor(brushSize / 2)
-    const startX = (snappedX - halfSize + offset.value.x) * scale
-    const startY = (snappedY - halfSize + offset.value.y) * scale
+    const startX = (snappedX - halfSize) * scale
+    const startY = (snappedY - halfSize) * scale
     const size = brushSize * scale
 
-    ctx.strokeRect(startX - 0.5, startY - 0.5, size + 1, size + 1)
+    ctx.strokeRect(startX, startY, size, size)
   }
 
-  // Re-apply transform
-  ctx.translate(offset.value.x * scale, offset.value.y * scale)
-  ctx.scale(scale, scale)
+  ctx.restore()
 }
 
 const updateView = () => {
@@ -171,24 +168,30 @@ const updateView = () => {
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  ctx.translate(offset.value.x, offset.value.y)
+  // Draw the image data scaled up
   ctx.scale(scale, scale)
-
   buffer.drawOnto(ctx)
-  // Only show grid when zoomed in enough
-  if (scale >= 4) {
-    drawGrid(ctx, canvas)
-  }
 
+  // Draw grid and cursor (these handle their own transforms)
+  if (scale >= 4) {
+    drawGrid(ctx)
+  }
   drawCursor(ctx)
 }
+
 const getCanvasCoords = (e: MouseEvent): Position => {
   const canvas = viewCanvasRef.value
   if (!canvas) return { x: 0, y: 0 }
 
   const rect = canvas.getBoundingClientRect()
-  const x = (e.clientX - rect.left) / scale - offset.value.x
-  const y = (e.clientY - rect.top) / scale - offset.value.y
+
+  // Get position in screen pixels
+  const screenX = e.clientX - rect.left
+  const screenY = e.clientY - rect.top
+
+  // Convert to image pixels (unscaled coordinates)
+  const x = screenX / scale
+  const y = screenY / scale
 
   return { x, y }
 }
@@ -216,7 +219,6 @@ const handleMouseMove = (e: MouseEvent): void => {
   cursorPos.value = { x, y }
 
   if (isDrawing.value) {
-
     // Interpolate between last position and current position
     const points = interpolateLine(
       Math.floor(lastPos.value.x),
@@ -295,8 +297,9 @@ watch([
   () => gridColor,
   () => scale,
 ], () => {
+  updateSize()
   updateView()
-}, { deep: true })
+})
 
 watch([
     () => width,
@@ -330,9 +333,7 @@ watch([
   <canvas
     ref="viewCanvasRef"
     :style="{
-      cursor: 'crosshair',
-      width: (width * scale) + 'px',
-      height: (height * scale) + 'px'
+      cursor: 'crosshair'
     }"
     class="draw-canvas"
     @mousedown="handleMouseDown"
