@@ -241,7 +241,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
 
       if (isStep(node)) {
         detachStep(node)
-        console.log('DELETE', id)
         delete nodes[id]
         node.handler!?.onRemoved?.(id)
         return

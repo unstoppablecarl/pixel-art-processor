@@ -135,7 +135,6 @@ export function drawWangGrid<T>(
 
       // North
       ctx.fillStyle = colorForEdge(tile.edges.N)
-      console.log(ctx.fillStyle )
       ctx.fillRect(px, py, tileSize, t)
 
       // South

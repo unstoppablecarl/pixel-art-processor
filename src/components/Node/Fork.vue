@@ -27,7 +27,6 @@ const handler = defineForkHandler(STEP_META, {
     return {}
   },
   async run({ inputData, branchIndex }) {
-    console.log('Fork run', branchIndex, inputData)
     return {
       output: inputData,
       preview: inputData?.toImageData(),
