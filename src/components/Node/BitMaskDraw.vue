@@ -68,16 +68,17 @@ const handler = defineStepHandler(STEP_META, {
   watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
     return [...defaultWatcherTargets, {
       name: 'maskImageData',
-      target: () => maskImageData.image,
+      target: maskImageData.image,
     }]
   },
   async run() {
-    if (maskImageData.image.value === null) return
+    const imageData = maskImageData.image.value
+    if (imageData === null) return
 
-    const bitMask = BitMask.fromImageData(maskImageData.image.value)
+    const bitMask = BitMask.fromImageData(imageData)
 
     return {
-      preview: maskImageData.image.value,
+      preview: imageData,
       output: bitMask,
     }
   },
@@ -98,11 +99,6 @@ const foo = ref<ImageData | null>(null)
 
 const mode = ref<'add' | 'remove'>('add')
 const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
-
-const imageUpdated = (value: ImageData | null) => {
-  maskImageData.image.value = value
-  store.markDirty(nodeId)
-}
 </script>
 <template>
   <NodeCard
@@ -126,8 +122,7 @@ const imageUpdated = (value: ImageData | null) => {
         :color="color"
         v-model:offset="offset"
 
-        :image-data="maskImageData.image.value"
-        @imageUpdated="imageUpdated"
+        :image-data-ref="maskImageData"
       />
     </template>
 

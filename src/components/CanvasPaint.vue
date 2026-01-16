@@ -4,14 +4,10 @@ import type { Position } from '../lib/pipeline/_types.ts'
 import { ImageDataMutator, interpolateLine } from '../lib/util/canvas/canvas-paint.ts'
 import { parseColorData } from '../lib/util/color.ts'
 import { throttle } from '../lib/util/misc.ts'
-
-type Emits = {
-  (e: 'imageUpdated', value: ImageData | null): void;
-}
-
-const emit = defineEmits<Emits>()
+import type { ImageDataRef } from '../lib/util/vue-util.ts'
 
 const {
+  imageDataRef,
   width = 64,
   height = 64,
   color = '#00ff00',
@@ -20,10 +16,10 @@ const {
   brushShape = 'circle',
   brushSize = 10,
   scale = 1,
-  imageData,
 } = defineProps<{
-  width: number,
-  height: number,
+  imageDataRef: ImageDataRef,
+  width?: number,
+  height?: number,
   bgColor?: string,
   cursorColor?: string,
   gridColor?: string,
@@ -31,7 +27,6 @@ const {
   brushShape?: 'circle' | 'square',
   brushSize?: number,
   scale?: number,
-  imageData: ImageData | null,
 }>()
 
 const buffer = new ImageDataMutator()
@@ -60,7 +55,8 @@ const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
 const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 
 const updateImageData = throttle(() => {
-  emit('imageUpdated', buffer.imageData)
+  imageDataRef.set(buffer.imageData)
+  // emit('imageUpdated', buffer.imageData)
 }, 10)
 
 const updateSize = () => {
@@ -285,8 +281,8 @@ onMounted(() => {
   const { ctx } = getViewCanvas()
   if (!ctx) return
 
-  if (imageData) {
-    buffer.set(imageData)
+  if (imageDataRef.image.value) {
+    buffer.set(imageDataRef.image.value)
     updateView()
   } else {
     buffer.set(new ImageData(width, height))
