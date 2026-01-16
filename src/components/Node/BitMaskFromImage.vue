@@ -47,7 +47,7 @@ const handler = defineStepHandler(STEP_META, {
   watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
     return [...defaultWatcherTargets, {
       name: 'maskImageData',
-      target: maskImageData.watchTarget,
+      target: () => maskImageData.watchTarget,
     }]
   },
   async run() {
