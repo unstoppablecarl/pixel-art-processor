@@ -173,7 +173,6 @@ export abstract class BaseNode<
   }
 
   initialize(handler: NodeHandler<C, SC, RC, M>): void {
-
     this.handler = handler
 
     if (this.config === undefined) {
