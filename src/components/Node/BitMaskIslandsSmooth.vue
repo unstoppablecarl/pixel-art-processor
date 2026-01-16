@@ -12,7 +12,6 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { BTab, BTabs } from 'bootstrap-vue-next'
 import { reactive } from 'vue'
 import {
   DEFAULT_SHOW_ADDED,
@@ -31,6 +30,7 @@ import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandle
 import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
 import { type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
 import NodeCard from '../Card/NodeCard.vue'
+import CardFooterSettingsTabs from '../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -110,14 +110,11 @@ const config = node.config
 <template>
   <NodeCard :node="node">
     <template #footer>
-      <BTabs
-        content-class="mt-3 p-2"
-        v-model:index="config.activeTabIndex"
+      <CardFooterSettingsTabs
+        :node-id="nodeId"
+        :active-tab-index="config.activeTabIndex"
       >
-        <BTab
-          title="Settings"
-          id="settings"
-        >
+        <template #settings>
           <RangeSlider
             :id="`${nodeId}-iterations`"
             label="Iterations"
@@ -148,14 +145,11 @@ const config = node.config
             </div>
           </div>
 
-        </BTab>
-        <BTab
-          title="Display"
-          id="display"
-        >
+        </template>
+        <template #display-options>
           <CheckboxColorList :items="islandCheckboxColors(config)" />
-        </BTab>
-      </BTabs>
+        </template>
+      </CardFooterSettingsTabs>
     </template>
   </NodeCard>
 </template>

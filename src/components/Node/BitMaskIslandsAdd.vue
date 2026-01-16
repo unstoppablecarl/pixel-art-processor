@@ -25,11 +25,10 @@ import { parseColor } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/html-dom/Sketch.ts'
 import NodeCard from '../Card/NodeCard.vue'
-import NodeFooterBtnCollapse from '../UI/NodeFooterBtnCollapse.vue'
+import CardFooterSettingsTabs from '../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
-import { BTab, BTabs } from 'bootstrap-vue-next'
 import { reactive } from 'vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -92,25 +91,12 @@ const config = node.config
 <template>
   <NodeCard :node="node">
     <template #footer>
-      <BTabs
-        v-model:index="config.activeTabIndex"
-        no-body
+
+      <CardFooterSettingsTabs
+        :node-id="nodeId"
+        :active-tab-index="config.activeTabIndex"
       >
-        <BTab
-          :id="`${nodeId}-settings`"
-          title="Settings"
-        />
-
-        <BTab
-          :id="`${nodeId}-display`"
-          title="Display"
-        />
-
-        <NodeFooterBtnCollapse :node-id="nodeId" v-model:active-tab-index="config.activeTabIndex" />
-      </BTabs>
-
-      <div class="auto-animate" v-auto-animate>
-        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 0">
+        <template #settings>
           <RangeBandSlider
             v-model:minValue="config.minDistance "
             v-model:maxValue="config.maxDistance "
@@ -149,14 +135,11 @@ const config = node.config
             :max="1"
             :step="0.01"
           />
-        </div>
-
-        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 1">
+        </template>
+        <template #display-options>
           <CheckboxColorList :items="islandCheckboxColors(config)" />
-        </div>
-
-      </div>
-
+        </template>
+      </CardFooterSettingsTabs>
     </template>
   </NodeCard>
 </template>

@@ -12,7 +12,6 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { BTab, BTabs } from 'bootstrap-vue-next'
 import {
   DEFAULT_EXPANDABLE,
   DEFAULT_EXPANDABLE_BOUNDS,
@@ -37,7 +36,7 @@ import { getIslands } from '../../lib/node-data-types/BitMask/island-helpers.ts'
 import { Island, type IslandPointFilter, IslandType } from '../../lib/node-data-types/BitMask/Island.ts'
 import { prng } from '../../lib/util/prng.ts'
 import NodeCard from '../Card/NodeCard.vue'
-import NodeFooterBtnCollapse from '../UI/NodeFooterBtnCollapse.vue'
+import CardFooterSettingsTabs from '../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -158,25 +157,11 @@ const config = node.config
   <NodeCard :node="node">
     <template #footer>
 
-      <BTabs
-        v-model:index="config.activeTabIndex"
-        no-body
+      <CardFooterSettingsTabs
+        :node-id="nodeId"
+        :active-tab-index="config.activeTabIndex"
       >
-        <BTab
-          :id="`${nodeId}-settings`"
-          title="Settings"
-        />
-
-        <BTab
-          :id="`${nodeId}-display`"
-          title="Display"
-        />
-
-        <NodeFooterBtnCollapse :node-id="nodeId" v-model:active-tab-index="config.activeTabIndex" />
-      </BTabs>
-
-      <div class="auto-animate" v-auto-animate>
-        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 0">
+        <template #settings>
           <RangeSlider
             :id="`${nodeId}-grow-min-distance`"
             label="Min Distance"
@@ -244,12 +229,11 @@ const config = node.config
                      class="form-range" />
             </div>
           </template>
-        </div>
-
-        <div class="tabs-settings-body-content" v-if="config.activeTabIndex === 1">
+        </template>
+        <template #display-options>
           <CheckboxColorList :items="islandCheckboxColors(config)" />
-        </div>
-      </div>
+        </template>
+      </CardFooterSettingsTabs>
     </template>
   </NodeCard>
 </template>
