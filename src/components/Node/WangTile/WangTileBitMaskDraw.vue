@@ -19,7 +19,6 @@ import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHan
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { parseColor } from '../../../lib/util/color.ts'
 import {
-  deserializeImageData,
   type SerializedImageData, serializeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
@@ -109,7 +108,7 @@ const canvasHeight = computed(() => tileSize.value * gridHeight.value)
 
 const tileset = make4EdgeWangTileset()
 const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
-
+console.log(tileGrid)
 function makePreviewFromWangTile(size: number, tile: WangTile<number>) {
   const pixelMap = new PixelMap(size, size)
   const nIndex = tile.edges.N
