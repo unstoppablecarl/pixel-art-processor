@@ -32,7 +32,7 @@ const handleFileUpload = (event: Event) => {
 }
 
 function clear() {
-  imageDataRef.set(null)
+  imageDataRef.clear()
 }
 </script>
 <template>

@@ -34,7 +34,11 @@ export function makeNodeRunnerQueue(store: Pick<PipelineStore, 'runNode' | 'getA
     // Run each root (usually 1, but forks may produce multiple)
     for (const rootId of roots) {
       logNodeEvent(rootId, 'store.runNode()')
-      await store.runNode(rootId)
+      queueMicrotaskFn(async () => {
+        // console.profile(rootId)
+        await store.runNode(rootId)
+        // console.profileEnd(rootId)
+      })
     }
   }
 

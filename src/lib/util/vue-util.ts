@@ -1,17 +1,16 @@
 import {
-  computed,
-  type ComputedRef,
   customRef,
   isProxy,
   isReactive,
   isReadonly,
   isRef,
+  readonly,
+  ref,
   type Ref,
   type ShallowRef,
   shallowRef,
   toRaw,
   toValue,
-  triggerRef,
   type UnwrapNestedRefs,
   type UnwrapRef,
 } from 'vue'
@@ -84,29 +83,65 @@ export type StepImg = {
   placeholderHeight?: number,
   validationErrors?: StepValidationError[]
 }
-
 export type ImageDataRef = {
   image: ShallowRef<ImageData | null>,
   set: (newValue: ImageData | null) => void,
-  width: ComputedRef<number>,
-  height: ComputedRef<number>,
+  setQuiet: (newValue: ImageData | null) => void,
+  width: Readonly<Ref<number>>,
+  height: Readonly<Ref<number>>,
+  watchTarget: Readonly<Ref<number>>,
+  triggerRef: () => void,
+  clear: () => void,
 }
 
 export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
   const image = shallowRef<ImageData | null>(initial)
+  const _width = ref(initial?.width ?? 0)
+  const _height = ref(initial?.height ?? 0)
+  const _watchTarget = ref(0)
 
-  const width = computed(() => image.value?.width ?? 0)
-  const height = computed(() => image.value?.height ?? 0)
+  function setQuiet(newValue: ImageData | null) {
+    if (!newValue) {
+      image.value = null
+      _width.value = 0
+      _height.value = 0
+      return
+    }
+
+    // Update dimensions immediately
+    _width.value = newValue.width
+    _height.value = newValue.height
+
+    if (image.value &&
+      image.value.width === newValue.width &&
+      image.value.height === newValue.height) {
+      image.value.data.set(newValue.data)
+    } else {
+      image.value = newValue
+    }
+  }
+
+  function clear() {
+    set(null)
+  }
 
   function set(newValue: ImageData | null) {
-    image.value = newValue
-    triggerRef(image)
+    setQuiet(newValue)
+    _watchTarget.value++
+  }
+
+  function triggerRef() {
+    _watchTarget.value++
   }
 
   return {
     image,
     set,
-    width,
-    height,
+    clear,
+    setQuiet,
+    triggerRef,
+    watchTarget: readonly(_watchTarget),
+    width: readonly(_width),
+    height: readonly(_height),
   }
 }
