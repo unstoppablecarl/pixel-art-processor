@@ -19,8 +19,7 @@ import {
   DEFAULT_SHOW_REMOVED,
   ISLAND_FILTERS,
   ISLAND_TYPES_FILTER_OPTIONS,
-  islandCheckboxColors,
-  IslandFilterType,
+  IslandFilterType, islandsDrawCheckboxColors,
   sketchIslandVisuals,
 } from '../../lib/vue/island-ui.ts'
 import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
@@ -147,7 +146,7 @@ const config = node.config
 
         </template>
         <template #display-options>
-          <CheckboxColorList :items="islandCheckboxColors(config)" />
+          <CheckboxColorList :items="islandsDrawCheckboxColors(config)" />
         </template>
       </CardFooterSettingsTabs>
     </template>

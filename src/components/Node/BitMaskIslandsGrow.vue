@@ -20,8 +20,7 @@ import {
   DEFAULT_SHOW_ISLANDS,
   ISLAND_FILTERS,
   ISLAND_TYPES_FILTER_OPTIONS,
-  islandCheckboxColors,
-  IslandFilterType,
+  IslandFilterType, islandsDrawCheckboxColors,
   sketchIslandVisuals,
 } from '../../lib/vue/island-ui.ts'
 import { mutateIslands, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
@@ -231,7 +230,7 @@ const config = node.config
           </template>
         </template>
         <template #display-options>
-          <CheckboxColorList :items="islandCheckboxColors(config)" />
+          <CheckboxColorList :items="islandsDrawCheckboxColors(config)" />
         </template>
       </CardFooterSettingsTabs>
     </template>

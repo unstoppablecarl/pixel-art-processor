@@ -16,8 +16,8 @@ import { reactive } from 'vue'
 import {
   DEFAULT_SHOW_ISLANDS, DEFAULT_SHOW_REMOVED,
   ISLAND_FILTERS,
-  ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
-  IslandFilterType, sketchIslandVisuals,
+  ISLAND_TYPES_FILTER_OPTIONS,
+  IslandFilterType, islandsDrawCheckboxColors, sketchIslandVisuals,
 } from '../../lib/vue/island-ui.ts'
 import {
   mutateIslands,
@@ -165,7 +165,7 @@ const config = node.config
 
         </template>
         <template #display-options>
-          <CheckboxColorList :items="islandCheckboxColors(config)" />
+          <CheckboxColorList :items="islandsDrawCheckboxColors(config)" />
 
         </template>
       </CardFooterSettingsTabs>

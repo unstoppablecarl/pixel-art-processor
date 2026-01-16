@@ -1,22 +1,16 @@
-import { type Ref, toRef } from 'vue'
-import type { CheckboxColorListItem } from '../../components/UIForms/CheckboxColorList.vue'
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { type Island, IslandType } from '../node-data-types/BitMask/Island.ts'
 import { parseColor } from '../util/color.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
+import { makeCheckboxColorConfig } from './CheckboxColorConfig.ts'
 
-const ALL_FEATURES: FeatureDefinition[] = []
+const {
+  create,
+  configToCheckboxColorListItems,
+} = makeCheckboxColorConfig()
 
-type FeatureDefinition = {
-  label: string,
-  CONFIG: Record<string, unknown>
-}
-
-function create<T extends FeatureDefinition>(obj: T): T {
-  ALL_FEATURES.push(obj)
-  return obj
-}
+export const islandsDrawCheckboxColors = configToCheckboxColorListItems
 
 export const DEFAULT_SHOW_ISLANDS = create({
   label: 'Islands',
@@ -66,44 +60,7 @@ export const DEFAULT_SHOW_REMOVED = create({
   },
 })
 
-type FeatureMeta = {
-  label: string
-  flagKey: string
-  colorKey: string
-  defaultColor: string
-}
-
-function inferMetaFromFeature(feature: { label: string; CONFIG: Record<string, unknown> }): FeatureMeta {
-  const cfg = feature.CONFIG
-  const [flagKey, colorKey] = Object.keys(cfg)
-
-  const defaultColor = String(cfg[colorKey as string])
-
-  return {
-    label: feature.label,
-    flagKey: flagKey as string,
-    colorKey: colorKey as string,
-    defaultColor,
-  }
-}
-
-const FEATURE_REGISTRY: FeatureMeta[] = ALL_FEATURES.map(inferMetaFromFeature)
-const DEFAULT_ISLAND_VISIBILITY_CONFIG = Object.assign({}, ...ALL_FEATURES.map((f) => f.CONFIG))
-
-export function islandCheckboxColors<T extends Record<string, unknown>>(
-  config: T,
-): CheckboxColorListItem[] {
-  return FEATURE_REGISTRY
-    .filter((meta) => meta.flagKey in config && meta.colorKey in config)
-    .map((meta) => ({
-      label: meta.label,
-      active: toRef(config as Record<string, any>, meta.flagKey) as Ref<boolean>,
-      color: toRef(config as Record<string, any>, meta.colorKey),
-      defaultColor: meta.defaultColor,
-    }))
-}
-
-export function sketchIslandVisuals<C extends Partial<typeof DEFAULT_ISLAND_VISIBILITY_CONFIG> & {
+export function sketchIslandVisuals<C extends Partial<any> & {
   minDistance?: number
 }>(
   mask: BitMask,

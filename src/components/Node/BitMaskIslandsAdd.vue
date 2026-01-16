@@ -16,8 +16,7 @@ export const STEP_META = defineStep({
 import { addPointsPoissonDisk } from '../../lib/generators/addPointsPoissonDisk.ts'
 import {
   DEFAULT_SHOW_ADDED,
-  DEFAULT_SHOW_ISLANDS,
-  islandCheckboxColors,
+  DEFAULT_SHOW_ISLANDS, islandsDrawCheckboxColors,
 } from '../../lib/vue/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
@@ -137,7 +136,7 @@ const config = node.config
           />
         </template>
         <template #display-options>
-          <CheckboxColorList :items="islandCheckboxColors(config)" />
+          <CheckboxColorList :items="islandsDrawCheckboxColors(config)" />
         </template>
       </CardFooterSettingsTabs>
     </template>
