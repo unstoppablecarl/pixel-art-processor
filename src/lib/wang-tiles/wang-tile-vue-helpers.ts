@@ -1,10 +1,11 @@
-import type { NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
+import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import type { WangTile, WangTileEdge } from './WangTileset.ts'
+import { makeWangGrid } from './WangGrid.ts'
+import { type TileWithEligibleEdges, type WangTile, type WangTileEdge, WangTileset } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
   return {
@@ -63,13 +64,13 @@ export function makeBitMaskFromWangTile(size: number, tile: WangTile<BinaryArray
 
 export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
   target: T,
-  direction: WangTileEdge,
+  edge: WangTileEdge,
   chunks: BinaryArray,
-  value: any,
+  value: ExtractNodeDataBaseType<T>,
 ) {
   const size = chunks.length
 
-  if (direction === 'N' || direction === 'S') {
+  if (edge === 'N' || edge === 'S') {
     if (target.width < size) {
       const msg = `BitMask width: ${target.width} is less than binary array length: ${chunks.length}`
       console.error(msg)
@@ -83,15 +84,8 @@ export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
     }
   }
 
-  const edges = {
-    N: (i: number) => target.set(i, 0, value),
-    E: (i: number) => target.set(size - 1, i, value),
-    S: (i: number) => target.set(i, size - 1, value),
-    W: (i: number) => target.set(0, i, value),
-  }
-
   chunks.forEach((v, i) => {
-    if (v) edges[direction](i)
+    if (v) target.setEdge(edge, value as any, i)
   })
 
   return target
