@@ -85,7 +85,7 @@ describe('step handler type testing', async () => {
     // type Output = InstanceType<O>
 
     const store = usePipelineStore()
-    const newStep = store.add(STEP_META.def as NodeDef, null)
+    const newStep = store.addRaw(STEP_META.def as NodeDef, null)
 
     const handler = defineStepHandler(STEP_META, {
       config() {

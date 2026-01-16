@@ -123,6 +123,18 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return !!nodes[id]
     }
 
+    function addRaw(def: NodeDef, afterId: NodeId | null): AnyNode {
+      const type = nodeRegistry.getNodeType(def)
+      if (type == NodeType.STEP) return addStepRaw(def, afterId)
+      if (type == NodeType.FORK) return addForkRaw(def, afterId)
+      if (type == NodeType.BRANCH) {
+        if (!afterId) throw new Error('afterId required by BranchNode')
+        return addBranchRaw(def, afterId)
+      }
+
+      throw new Error('Invalid def')
+    }
+
     function add(def: NodeDef, afterId: NodeId | null): AnyNode {
       const type = nodeRegistry.getNodeType(def)
       if (type == NodeType.STEP) return addStep(def, afterId)
@@ -143,33 +155,60 @@ export const usePipelineStore = defineStore('pipeline', () => {
       nodes[serialized.id] = _nodeFromSerialized(serialized)
     }
 
-    function addStep(def: NodeDef, prevNodeId: NodeId | null): AnyStepNode {
-      if (prevNodeId) {
-        const prev = get(prevNodeId)
-        nodeRegistry.validateCanBeChildOf(def, prev.def)
-      }
-
-      const id = _defToId(def)
-      const step = nodes[id] = shallowReactive(new StepNode({ id, def, prevNodeId }))
+    function addStep(def: NodeDef, prevNodeId: NodeId | null, config?: {}, extra?: {
+      seed?: number,
+      visible?: boolean,
+      muted?: boolean,
+      paused?: boolean
+    }): AnyStepNode {
+      const step = addStepRaw(def, prevNodeId, config, extra)
       markDirty(step.id)
-
       return step
     }
 
-    function addFork(def: NodeDef, prevNodeId: NodeId | null): AnyForkNode {
+    function addStepRaw(def: NodeDef, prevNodeId: NodeId | null, config?: {}, extra?: {
+      seed?: number,
+      visible?: boolean
+    }): AnyStepNode {
       if (prevNodeId) {
         const prev = get(prevNodeId)
         nodeRegistry.validateCanBeChildOf(def, prev.def)
       }
-
       const id = _defToId(def)
-      const fork = nodes[id] = shallowReactive(new ForkNode({ id, def, prevNodeId }))
-      markDirty(fork.id)
+      return nodes[id] = shallowReactive(new StepNode({ id, def, prevNodeId, config, ...extra }))
+    }
 
+    function addFork(def: NodeDef, prevNodeId: NodeId | null, config?: {}, extra?: {
+      seed?: number,
+      visible?: boolean
+    }): AnyForkNode {
+      const fork = addForkRaw(def, prevNodeId, config, extra)
+      markDirty(fork.id)
       return fork
     }
 
+    function addForkRaw(def: NodeDef, prevNodeId: NodeId | null, config?: {}, extra?: {
+      seed?: number,
+      visible?: boolean
+    }): AnyForkNode {
+      if (prevNodeId) {
+        const prev = get(prevNodeId)
+        nodeRegistry.validateCanBeChildOf(def, prev.def)
+      }
+      const id = _defToId(def)
+      return nodes[id] = shallowReactive(new ForkNode({ id, def, prevNodeId, config, ...extra }))
+    }
+
     function addBranch(def: NodeDef, prevNodeId: NodeId, config?: {}, extra?: {
+      seed?: number,
+      visible?: boolean
+    }): AnyBranchNode {
+      const branch = addBranchRaw(def, prevNodeId, config, extra)
+      markDirty(branch.id)
+      return branch
+    }
+
+    function addBranchRaw(def: NodeDef, prevNodeId: NodeId, config?: {}, extra?: {
       seed?: number,
       visible?: boolean
     }): AnyBranchNode {
@@ -181,8 +220,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       nodes[id] = branch
 
       fork.branchIds.value.push(id)
-      markDirty(branch.id)
-
       return branch
     }
 
@@ -268,6 +305,11 @@ export const usePipelineStore = defineStore('pipeline', () => {
     }
 
     function moveStepNode(id: NodeId, afterId: NodeId | null) {
+      moveStepNodeRaw(id, afterId)
+      markDirty(id)
+    }
+
+    function moveStepNodeRaw(id: NodeId, afterId: NodeId | null) {
       const node = getStep(id)
       if (isBranch(node)) throw new Error('cannot moveStepNode branch nodes')
       if (isFork(node)) throw new Error('cannot moveStepNode fork nodes')
@@ -281,13 +323,11 @@ export const usePipelineStore = defineStore('pipeline', () => {
           root.prevNodeId = node.id
         }
         node.prevNodeId = null
-        markDirty(id)
         return
       }
 
       detachStep(node)
       insertStepAfter(node, afterId)
-      markDirty(id)
     }
 
     function insertStepAfter(node: AnyStepNode, afterId: NodeId) {
@@ -526,11 +566,16 @@ export const usePipelineStore = defineStore('pipeline', () => {
       getBranch,
       has,
       add,
+      addRaw,
       addStep,
       addFork,
       addBranch,
+      addStepRaw,
+      addForkRaw,
+      addBranchRaw,
       remove,
       moveStepNode,
+      moveStepNodeRaw,
       markDirty,
       runNode,
       loadNode,

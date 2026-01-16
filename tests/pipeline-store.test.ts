@@ -13,15 +13,15 @@ beforeEach(async () => {
 
 // Helpers to reduce noise
 function addStepAfter(store: PipelineStore, prevId: string | null = null): AnyStepNode {
-  return store.addStep('bitmask_islands_add' as any, prevId as any)
+  return store.addStepRaw('bitmask_islands_add' as any, prevId as any)
 }
 
 function addForkAfter(store: PipelineStore, prevId: string | null = null): AnyForkNode {
-  return store.addFork('fork_step' as any, prevId as any)
+  return store.addForkRaw('fork_step' as any, prevId as any)
 }
 
 function addBranchTo(store: PipelineStore, forkId: string): AnyBranchNode {
-  return store.addBranch('branch' as any, forkId as any)
+  return store.addBranchRaw('branch' as any, forkId as any)
 }
 
 describe('PipelineStore remove() and move()', () => {
@@ -117,7 +117,7 @@ describe('PipelineStore remove() and move()', () => {
     expect(store.get(a.id).childIds(store)).toEqual([b.id])
     expect(store.get(b.id).childIds(store)).toEqual([c.id])
 
-    store.moveStepNode(b.id, c.id) // move B after C
+    store.moveStepNodeRaw(b.id, c.id) // move B after C
     await Promise.resolve()
 
     // A → C → B
@@ -138,7 +138,7 @@ describe('PipelineStore remove() and move()', () => {
     // A → B
     expect(store.get(a.id).childIds(store)).toEqual([b.id])
 
-    store.moveStepNode(b.id, null)
+    store.moveStepNodeRaw(b.id, null)
     await Promise.resolve()
 
     // B is now root

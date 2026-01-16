@@ -89,7 +89,7 @@ describe('fork handler type testing', async () => {
     // type Output = InstanceType<O>
 
     const store = usePipelineStore()
-    const newStep = store.add(STEP_META.def as NodeDef, null)
+    const newStep = store.addRaw(STEP_META.def as NodeDef, null)
 
     const handler = defineForkHandler(STEP_META, {
       config() {
