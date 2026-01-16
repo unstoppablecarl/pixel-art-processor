@@ -1,3 +1,4 @@
+import type { BaseDataStructure } from './BaseDataStructure.ts'
 import { BitMask } from './BitMask.ts'
 import { HeightMap } from './HeightMap.ts'
 import { NormalMap } from './NormalMap.ts'
@@ -27,3 +28,20 @@ export type StepInputTypesToInstances<
   Input extends readonly []
     ? never
     : InstanceType<Input[number]>
+
+
+/* NodeDataType and NodeDataTypeInstance validation */
+type InstanceOf<T> = T extends new (...args: any[]) => infer R ? R : never;
+type InstancesFromConstructors = InstanceOf<NodeDataType>;
+type CheckExtendsBase<T> = T extends BaseDataStructure<any> ? T : never;
+
+type CheckInstancesMatch =
+  [NodeDataTypeInstance] extends [InstancesFromConstructors]
+    ? [InstancesFromConstructors] extends [NodeDataTypeInstance]
+      ? true
+      : { error: "Mismatch"; missing: Exclude<InstancesFromConstructors, NodeDataTypeInstance> }
+    : { error: "Mismatch"; extra: Exclude<NodeDataTypeInstance, InstancesFromConstructors> };
+
+// export used to avoid unused type errors
+export type _AssertMatch = CheckInstancesMatch extends true ? true : CheckInstancesMatch;
+export type _AssertBase = CheckExtendsBase<NodeDataTypeInstance> extends never ? "Some types don't extend Base" : true;
