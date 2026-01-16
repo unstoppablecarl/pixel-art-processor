@@ -29,6 +29,16 @@ export type StepInputTypesToInstances<
     ? never
     : InstanceType<Input[number]>
 
+// extract the first generic arg T from a class extending BaseDataStructure
+/* example:
+const setter = <T extends NodeDataTypeInstance, >(
+  target: T,
+  value: ExtractBaseType<T>,
+) => {
+  target.set(1, 1, value)
+}
+ */
+export type ExtractNodeDataBaseType<T extends NodeDataTypeInstance> = T extends BaseDataStructure<infer X, any, any> ? X : never;
 
 /* NodeDataType and NodeDataTypeInstance validation */
 type InstanceOf<T> = T extends new (...args: any[]) => infer R ? R : never;
@@ -39,9 +49,9 @@ type CheckInstancesMatch =
   [NodeDataTypeInstance] extends [InstancesFromConstructors]
     ? [InstancesFromConstructors] extends [NodeDataTypeInstance]
       ? true
-      : { error: "Mismatch"; missing: Exclude<InstancesFromConstructors, NodeDataTypeInstance> }
-    : { error: "Mismatch"; extra: Exclude<NodeDataTypeInstance, InstancesFromConstructors> };
+      : { error: 'Mismatch'; missing: Exclude<InstancesFromConstructors, NodeDataTypeInstance> }
+    : { error: 'Mismatch'; extra: Exclude<NodeDataTypeInstance, InstancesFromConstructors> };
 
 // export used to avoid unused type errors
 export type _AssertMatch = CheckInstancesMatch extends true ? true : CheckInstancesMatch;
-export type _AssertBase = CheckExtendsBase<NodeDataTypeInstance> extends never ? "Some types don't extend Base" : true;
+export type _AssertBase = CheckExtendsBase<NodeDataTypeInstance> extends never ? 'Some types don\'t extend Base' : true;
