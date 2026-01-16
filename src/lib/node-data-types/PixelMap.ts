@@ -1,6 +1,6 @@
 import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/html-dom/ImageData.ts'
 
-import { validateSizes } from './_data-type-converters.ts'
+import { validateSizes } from './_helpers/_data-type-helpers.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
 export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, SerializedRGBA> {

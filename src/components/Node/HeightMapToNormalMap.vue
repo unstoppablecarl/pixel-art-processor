@@ -15,7 +15,7 @@ export const STEP_META = defineStep({
 <script setup lang="ts">
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { heightMapToNormalMap } from '../../lib/node-data-types/_data-type-converters.ts'
+import { heightMapToNormalMap } from '../../lib/node-data-types/_helpers/_data-type-converters.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
