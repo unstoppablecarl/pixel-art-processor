@@ -12,12 +12,11 @@
 
 .node {
   flex-shrink: 0;
-  min-width: 150px;
   --node-total-image-width: 150px;
   --node-image-count: 0;
 
-  width: calc(
-          (var(--node-img-width) * var(--node-img-scale)) * var(--columns-per-card)
+  min-width: calc(
+          (var(--node-img-width, 150px) * var(--node-img-scale, 1)) * var(--columns-per-card)
           + var(--node-img-gap) * (var(--columns-per-card) - 1)
           + var(--node-img-gap) * 2
           + var(--node-card-margin) * 2
