@@ -141,7 +141,7 @@ const indexedTileset = computed(() => {
     } = node.config.wangTiles[i]
 
     return {
-      tileValue: i,
+      edgeValue: i,
       eligibleForN,
       eligibleForE,
       eligibleForS,
@@ -151,7 +151,6 @@ const indexedTileset = computed(() => {
 
   const result = WangTileset.createFromLimitedEdges<number>(items)
   tileCount.value = result.tiles.length
-  console.log({result})
   return result
 })
 
