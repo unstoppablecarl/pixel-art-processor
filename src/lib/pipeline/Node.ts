@@ -2,7 +2,8 @@ import { computed, type Reactive, ref, type Ref } from 'vue'
 import type { NodeDataTypeInstance, StepInputTypesToInstances } from '../node-data-types/_node-data-types.ts'
 import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
-import { logNodeEvent, type MaybeImgSize } from '../util/misc.ts'
+import { logNodeEvent } from '../util/logs.ts'
+import { type MaybeImgSize } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type IRunnerResultMeta,

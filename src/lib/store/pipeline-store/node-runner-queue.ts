@@ -1,5 +1,5 @@
 import type { NodeId } from '../../pipeline/_types.ts'
-import { logNodeEvent } from '../../util/misc.ts'
+import { logNodeEvent } from '../../util/logs.ts'
 import type { PipelineStore } from '../pipeline-store.ts'
 
 // Polyfill/alias for queueMicrotask (works in all environments)

@@ -17,7 +17,8 @@ import {
   StepNode,
 } from '../pipeline/Node.ts'
 import { getNodeRegistry } from '../pipeline/NodeRegistry.ts'
-import { type ImgSize, logNodeEventWarning } from '../util/misc.ts'
+import { logNodeEventWarning } from '../util/logs.ts'
+import { type ImgSize } from '../util/misc.ts'
 import { prng } from '../util/prng.ts'
 import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
 

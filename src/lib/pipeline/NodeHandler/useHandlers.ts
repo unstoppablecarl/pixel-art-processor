@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 import { usePipelineStore } from '../../store/pipeline-store.ts'
-import { logNodeWatch } from '../../util/misc.ts'
+import { logNodeWatch } from '../../util/logs.ts'
 import { type NodeId, NodeType } from '../_types.ts'
 import { BranchNode, ForkNode, type GraphNode, type InitializedNode, StepNode } from '../Node.ts'
 import type { AnyBranchMeta, AnyForkMeta, AnyNodeMeta, AnyStepMeta } from '../types/definitions.ts'
