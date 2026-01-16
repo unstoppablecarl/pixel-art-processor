@@ -84,25 +84,27 @@ export type SerializedImageData = {
   data: number[],
 }
 
-export function serializeImageData(imageData: ImageData | null): SerializedImageData | null {
-  if (imageData === null) return null
-  if (imageData.width === 0 && imageData.height === 0 && imageData.data.length === 0) return null
+export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : SerializedImageData {
+
+  if (imageData === null) return null as any
+  if (imageData.width === 0 && imageData.height === 0 && imageData.data.length === 0) return null as any
 
   return {
     width: imageData.width,
     height: imageData.height,
     data: Array.from(imageData.data),
-  }
+  } as any
 }
 
-export function deserializeImageData(obj: SerializedImageData | null): ImageData | null {
-  if (obj === null) return null
-  if (!obj?.width && !obj?.height && (!obj?.data?.length)) return null
+export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : ImageData {
+  if (obj === null) return null as any
+  if (!obj?.width && !obj?.height && (!obj?.data?.length)) return null as any
+
   return new ImageData(
     new Uint8ClampedArray(obj.data),
     obj.width,
     obj.height,
-  )
+  ) as any
 }
 
 export function eachImageDataPixel(
