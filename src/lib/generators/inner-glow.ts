@@ -1,5 +1,5 @@
 import { EASE, lerp } from '../_helpers.ts'
-import { copyImageData, invertImageData } from '../util/image/ImageData.ts'
+import { copyImageData, invertImageData } from '../util/html-dom/ImageData.ts'
 
 export interface InnerGlowOptions {
   startHeight?: number,  // Inner height (0-255, default 0 for depressed)

@@ -8,7 +8,7 @@ export class ImageDataMutator {
 
   constructor(imageData?: ImageData) {
     const canvas = document.createElement('canvas')
-    if (!canvas) throw new Error('could not create image')
+    if (!canvas) throw new Error('could not create html-dom')
     this.canvas = canvas
 
     const context = canvas.getContext('2d')

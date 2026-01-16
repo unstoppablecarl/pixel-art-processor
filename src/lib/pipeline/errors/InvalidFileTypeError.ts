@@ -5,6 +5,6 @@ export class InvalidFileTypeError extends StepValidationError {
   slug = INVALID_FILE_TYPE_ERROR
 
   constructor() {
-    super('Invalid File format', 'Failed to load image from ArrayBuffer')
+    super('Invalid File format', 'Failed to load html-dom from ArrayBuffer')
   }
 }

@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { type AnyNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
-import { imageDataToUrlImage } from '../../lib/util/image/ImageData.ts'
+import { imageDataToUrlImage } from '../../lib/util/html-dom/ImageData.ts'
 import { normalizeValueToArray } from '../../lib/util/misc.ts'
 import { makePrng } from '../../lib/util/prng.ts'
 

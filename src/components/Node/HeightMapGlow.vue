@@ -16,7 +16,7 @@ export const STEP_META = defineStep({
 import { applyInnerGlow, INNER_GLOW_DEFAULTS, type InnerGlowOptions } from '../../lib/generators/inner-glow.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/image/ImageData.ts'
+import { fillNonTransparentPixels, fillTransparentPixels } from '../../lib/util/html-dom/ImageData.ts'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import RangeBandSlider from '../UIForms/RangeBandSlider.vue'
 import NodeCard from '../Card/NodeCard.vue'

@@ -1,4 +1,4 @@
-import { copyImageData } from '../util/image/ImageData.ts'
+import { copyImageData } from '../util/html-dom/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 import { type HeightMap } from './HeightMap.ts'
 import { PixelMap } from './PixelMap.ts'

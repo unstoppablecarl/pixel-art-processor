@@ -3,7 +3,6 @@ import type { NodeDataTypeInstance, StepInputTypesToInstances } from '../node-da
 import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
 import type { PipelineStore } from '../store/pipeline-store.ts'
 import { logNodeEvent } from '../util/logs.ts'
-import { type MaybeImgSize } from '../util/misc.ts'
 import { deepUnwrap } from '../util/vue-util.ts'
 import {
   type IRunnerResultMeta,
@@ -35,6 +34,7 @@ import {
   type MetaIO,
   type StepMetaIO,
 } from './types/definitions.ts'
+import type { MaybeImgSize } from './types/image-types.ts'
 
 export type BaseNodeSerialized<SC> = {
   id: NodeId,

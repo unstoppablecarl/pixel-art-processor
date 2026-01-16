@@ -21,7 +21,7 @@ import type { ForkRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRun
 import { type AnyNodeDefinition, defineFork } from '../src/lib/pipeline/types/definitions.ts'
 import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
-import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/image/ImageData.ts'
+import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/html-dom/ImageData.ts'
 
 function makeAppContext(cb: () => void) {
   installNodeRegistry(makeNodeRegistry())

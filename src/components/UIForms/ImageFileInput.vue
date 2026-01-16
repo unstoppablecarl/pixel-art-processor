@@ -2,7 +2,7 @@
 import { useTemplateRef } from 'vue'
 import { handleStepValidationError } from '../../lib/pipeline/errors/errors.ts'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
-import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/file-upload.ts'
+import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/html-dom/file-upload.ts'
 
 type Emits = {
   (e: 'error', errors: StepValidationError[]): void;

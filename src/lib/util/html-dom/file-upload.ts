@@ -1,5 +1,5 @@
-import { InvalidFileTypeError } from '../pipeline/errors/InvalidFileTypeError.ts'
-import { imageToCanvas } from './image/ImageData.ts'
+import { InvalidFileTypeError } from '../../pipeline/errors/InvalidFileTypeError.ts'
+import { imageToCanvas } from './ImageData.ts'
 
 export async function getUploadedImageData(input: string | ArrayBuffer | File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
@@ -27,7 +27,7 @@ export async function getUploadedImageData(input: string | ArrayBuffer | File): 
       src = URL.createObjectURL(input)  // File support added for completeness
     } else {
       // ArrayBuffer: Create Blob (as before, but with MIME type for safety)
-      const blob = new Blob([input], { type: 'image/png' })  // Assume PNG; detect if needed
+      const blob = new Blob([input], { type: 'html-dom/png' })  // Assume PNG; detect if needed
       src = URL.createObjectURL(blob)
     }
 
@@ -63,14 +63,14 @@ export async function getFileAsArrayBuffer(e: Event): Promise<ArrayBuffer> {
   })
 }
 
-export async function arrayBufferToDataUrl(arrayBuffer: ArrayBuffer, mimeType: string = 'image/png'): Promise<string> {
+export async function arrayBufferToDataUrl(arrayBuffer: ArrayBuffer, mimeType: string = 'html-dom/png'): Promise<string> {
   return new Promise((resolve, reject) => {
     const blob = new Blob([arrayBuffer], { type: mimeType })
     const reader = new FileReader()
 
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        resolve(reader.result)  // data:image/png;base64,...
+        resolve(reader.result)  // data:html-dom/png;base64,...
       } else {
         reject(new Error('Failed to read blob as data URL'))
       }
@@ -82,7 +82,7 @@ export async function arrayBufferToDataUrl(arrayBuffer: ArrayBuffer, mimeType: s
   })
 }
 
-export async function arrayBufferToImageData(arrayBuffer: ArrayBuffer, mimeType: string = 'image/png'): Promise<ImageData> {
+export async function arrayBufferToImageData(arrayBuffer: ArrayBuffer, mimeType: string = 'html-dom/png'): Promise<ImageData> {
   return new Promise((resolve, reject) => {
     const blob = new Blob([arrayBuffer], { type: mimeType })
     const url = URL.createObjectURL(blob)

@@ -1,7 +1,3 @@
-import type { NodeDataTypeColors } from '../../nodes.ts'
-import type { NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
-import type { NodeDataTypeColor } from '../pipeline/_types.ts'
-
 export function objectsAreEqual(obj1: any, obj2: any, maxDepth = 400, currentDepth = 0) {
   if (obj1 === obj2) return true // Strict equality for primitives or same object reference
 
@@ -46,30 +42,6 @@ export function normalizeValueToArray<T>(value: null | T | T[]): T[] {
   return [value]
 }
 
-export type ImgSize = { width: number, height: number }
-export type MaybeImgSize = { width?: number | undefined, height?: number | undefined }
-
-export function injectCss(cssString: string) {
-  const head = document.head || document.getElementsByTagName('head')[0]
-  const style = document.createElement('style')
-  style.appendChild(document.createTextNode(cssString))
-  head.appendChild(style)
-}
-
-export function buildNodeDataTypeCss(items: NodeDataTypeColor[]) {
-  return items.map(({ cssClass, key, pillCss }) => {
-    return `.${cssClass} { background: var(${key}) !important; ${pillCss} }`
-  }).join(' ')
-}
-
-export function injectNodeDataTypeCss(stepDataTypeColors: NodeDataTypeColors) {
-  const items = [...stepDataTypeColors.values()]
-  for (const { key, color } of items) {
-    document.documentElement.style.setProperty(key, color)
-  }
-  injectCss(buildNodeDataTypeCss(items))
-}
-
 export function arrayRemove(array: any[], item: any): void {
   const index = array.indexOf(item)
   if (index !== -1) {
@@ -90,43 +62,6 @@ export function readonlyTypedArray(arr: any, error = 'Cannot modify readonly Typ
     deleteProperty: () => false,
     setPrototypeOf: () => false,
   })
-}
-
-// export function deepFreeze<T>(obj: T): T {
-//   if (!obj || typeof obj !== 'object') return obj
-//
-//   // Wrap TypedArrays in readonly proxy
-//   // if (ArrayBuffer.isView(obj)) {
-//   //   return readonlyTypedArray(obj as any)
-//   // }
-//
-//   // if (obj instanceof ArrayBuffer) {
-//   //   return obj
-//   // }
-//
-//   Object.freeze(obj)
-//
-//   // Recursively freeze all properties
-//   for (const key of Object.keys(obj)) {
-//     if (Object.isFrozen((obj as any)[key])) continue
-//     (obj as any)[key] = deepFreeze((obj as any)[key])
-//   }
-//
-//   return obj
-// }
-
-export function validateSizes(a: NodeDataTypeInstance, b: NodeDataTypeInstance) {
-  if (a.width !== b.width) {
-    const msg = `A width: ${a.width} does not equal B width: ${b.width}`
-    console.error(msg)
-    throw new Error(msg)
-  }
-
-  if (a.height !== b.height) {
-    const msg = `A height: ${a.height} does not equal B height: ${b.height}`
-    console.error(msg)
-    throw new Error(msg)
-  }
 }
 
 export const debounce = <T extends (...args: any[]) => any>(

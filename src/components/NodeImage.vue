@@ -2,7 +2,7 @@
 import { computed } from 'vue'
 import { getValidationErrorComponent } from '../lib/pipeline/errors/errors.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
-import { imageDataToUrlImage } from '../lib/util/image/ImageData.ts'
+import { imageDataToUrlImage } from '../lib/util/html-dom/ImageData.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'
 
 const store = usePipelineStore()

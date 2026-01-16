@@ -7,7 +7,7 @@ import 'vue-color/style.css'
 import { installNodeRegistry, makeNodeRegistry } from './lib/pipeline/NodeRegistry.ts'
 import { createPersistedState } from './lib/store/_pinia-persist-plugin.ts'
 import { CustomAutoAnimationPlugin } from './lib/util/auto-animate.ts'
-import { injectNodeDataTypeCss } from './lib/util/misc.ts'
+import { injectNodeDataTypeCss } from './lib/util/html-dom/css.ts'
 import { loadNodeDefinitions, NODE_DATA_TYPE_COLORS, NODE_DATA_TYPES } from './nodes.ts'
 
 const app = createApp(App)

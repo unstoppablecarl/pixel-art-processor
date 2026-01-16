@@ -1,5 +1,5 @@
 import type { Reactive, ShallowReactive } from 'vue'
-import { deserializeImageData, type SerializedImageData, serializeImageData } from '../image/ImageData.ts'
+import { deserializeImageData, type SerializedImageData, serializeImageData } from '../html-dom/ImageData.ts'
 
 export type ConfigKeyAdapter<Serialized = any, Deserialized = any> = {
   serialize(value: Deserialized): Serialized,

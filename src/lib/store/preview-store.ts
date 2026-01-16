@@ -8,7 +8,7 @@ type SerializedData = {
   seed: number,
 }
 
-export const usePreviewStore = defineStore('image-preview', () => {
+export const usePreviewStore = defineStore('html-dom-preview', () => {
   const scale = ref(4)
   const seed = ref(0)
 

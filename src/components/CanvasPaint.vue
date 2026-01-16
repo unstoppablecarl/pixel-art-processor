@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
 import type { Position } from '../lib/pipeline/_types.ts'
-import { ImageDataMutator, interpolateLine } from '../lib/util/image/ImageDataMutator.ts'
+import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 import { parseColorData } from '../lib/util/color.ts'
 import { throttle } from '../lib/util/misc.ts'
 import type { ImageDataRef } from '../lib/util/vue-util.ts'
@@ -66,7 +66,7 @@ const updateSize = () => {
   const scaledWidth = Math.floor(width * scale)
   const scaledHeight = Math.floor(height * scale)
 
-  // Resize the view image to match scaled dimensions
+  // Resize the view html-dom to match scaled dimensions
   if (viewCanvas.width !== scaledWidth || viewCanvas.height !== scaledHeight) {
     viewCanvas.width = scaledWidth
     viewCanvas.height = scaledHeight

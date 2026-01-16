@@ -1,5 +1,5 @@
 import { prng } from '../util/prng.ts'
-import { Sketch } from '../util/image/Sketch.ts'
+import { Sketch } from '../util/html-dom/Sketch.ts'
 import type { TileId, WangTile, WangTileset } from './WangTileset.ts'
 
 export class WangGrid<T> {
