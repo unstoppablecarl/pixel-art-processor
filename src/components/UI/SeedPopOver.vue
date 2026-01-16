@@ -29,7 +29,7 @@ function reset(){
       <input
         name="seed"
         type="number"
-        class="form-control seed-input"
+        class="form-control seed-input border-bottom-0"
         min="0"
         node="1"
         v-model="model"

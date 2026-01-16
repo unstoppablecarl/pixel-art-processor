@@ -80,6 +80,8 @@ export abstract class BaseNode<
   isDirty = ref(false)
   isProcessing = ref(false)
   initialized = ref(false)
+  paused = ref(false)
+
   lastExecutionTimeMS: undefined | number
 
   constructor({ id, def, seed = 0, visible = true, config, prevNodeId = null }: BaseNodeOptions<SC>) {
@@ -96,10 +98,10 @@ export abstract class BaseNode<
 
   isReady(store: PipelineStore) {
     if (this.isProcessing.value) return false
-    if (!this.initialized.value) return false
     if (!this.isDirty.value) return false
-
     if (!this.prevNodeId) return true
+    if (this.paused.value) return false
+    if (!this.initialized.value) return false
 
     return store.get(this.prevNodeId).outputReady()
   }
@@ -107,12 +109,14 @@ export abstract class BaseNode<
   outputReady(): boolean {
     return !this.isDirty.value
       && !this.isProcessing.value
+      && !this.paused.value
       && this.initialized.value
   }
 
   computedOutputReady = computed((): boolean => {
     return !this.isDirty.value
       && !this.isProcessing.value
+      && !this.paused.value
       && this.initialized.value
   })
 
@@ -195,6 +199,7 @@ export abstract class BaseNode<
     return [
       this.configWatcherTarget(),
       this.seedWatcherTarget(),
+      this.pausedWatcherTarget(),
     ]
   }
 
@@ -210,7 +215,15 @@ export abstract class BaseNode<
     return {
       name: 'seed',
       target: () => this.seed,
-      deep: false,
+    }
+  }
+
+  pausedWatcherTarget(): WatcherTarget<boolean> {
+    return {
+      name: 'paused',
+      target: this.paused,
+      // only trigger when paused -> un paused
+      filter: (prevValue, newValue) => prevValue && !newValue
     }
   }
 
@@ -509,21 +522,21 @@ export class ForkNode<
     SingleRunnerResult<InstanceType<ForkMetaIO<M>[1]>>
   > {
     return this.logFunction('runBranch', async () => {
-    const {
-      output: inputData,
-      preview: inputPreview,
-      meta,
+      const {
+        output: inputData,
+        preview: inputPreview,
+        meta,
       } = await this.getResultFromPrev(store)
 
-    const output = await this.handler!.run({
-      config: this.config as RC,
-      inputData,
-      inputPreview,
-      branchIndex,
-      meta,
-    })
+      const output = await this.handler!.run({
+        config: this.config as RC,
+        inputData,
+        inputPreview,
+        branchIndex,
+        meta,
+      })
 
-    return parseResult<InstanceType<ForkMetaIO<M>[1]>>(output, meta)
+      return parseResult<InstanceType<ForkMetaIO<M>[1]>>(output, meta)
     })
   }
 

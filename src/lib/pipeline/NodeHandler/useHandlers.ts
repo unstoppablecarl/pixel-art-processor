@@ -37,11 +37,14 @@ export function useNodeHandler<
   node.handler?.onAdded?.(node as InitializedNode<C, SC, RC, any>)
 
   node.getWatcherTargets()
-    .forEach(({ name, target, deep = false }) => {
+    .forEach(({ name, target, filter, deep = false }) => {
 
-      watch(target, () => {
+      watch(target, (next, prev) => {
+
+        if (filter?.(prev, next) === false) return
         logNodeWatch(node.id, name)
         store.markDirty(node.id)
+
       }, { deep })
 
     })

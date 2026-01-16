@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { BButton, BButtonGroup } from 'bootstrap-vue-next'
+import { BButton, BButtonGroup, BPopover } from 'bootstrap-vue-next'
 import { computed, ref } from 'vue'
 import { NodeType } from '../../lib/pipeline/_types.ts'
 import { getValidationErrorComponent } from '../../lib/pipeline/errors/errors.ts'
@@ -12,7 +12,7 @@ import type { StepImg } from '../../lib/util/vue-util.ts'
 import NodeImage from '../NodeImage.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import ExecutionTimer from '../UI/ExecutionTimer.vue'
-import NodeInfo from '../UI/NodeInfo.vue'
+import NodeInfoContent from '../UI/NodeInfoContent.vue'
 import SeedPopOver from '../UI/SeedPopOver.vue'
 
 const store = usePipelineStore()
@@ -107,9 +107,16 @@ function toggleMute() {
   node.muted = !node.muted
 }
 
+const isPaused = node.paused
 const isMuted = computed(() => isStep(node) && node.muted)
 const settingsVisible = ref(true)
 
+const pauseHovered = ref(false)
+const muteHovered = ref(false)
+
+function togglePaused() {
+  node.paused.value = !node.paused.value
+}
 </script>
 <template>
   <div ref="stepEl" class="node" :style="cssStyle">
@@ -117,14 +124,15 @@ const settingsVisible = ref(true)
       <div>
         {{ header }} {{ subHeader }}
       </div>
-      <ExecutionTimer :time-ms="node.lastExecutionTimeMS" class="ms-auto"/>
+      <ExecutionTimer :time-ms="node.lastExecutionTimeMS" class="ms-auto" />
     </div>
     <div :class="{
       'card': true,
       'card-step': node.type === NodeType.STEP,
       'card-fork': node.type === NodeType.FORK,
-      'border-warning': isMuted,
-      'border-danger': validationErrors.length,
+      'node-card-border-warning': isMuted,
+      'node-card-border-info': isPaused,
+      'node-card-border-danger': validationErrors.length,
       'invalid-input-type': invalidInputType,
     }">
 
@@ -137,27 +145,74 @@ const settingsVisible = ref(true)
         <!--          @pointerdown.stop-->
         <!--        >:::-->
         <!--        </span>-->
-        <NodeInfo :node-id="node.id"/>
 
-        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="node.seed" />
         <BButtonGroup size="sm" class="node-header-buttons">
-          <button role="button" class="btn btn-sm btn-danger" @click="remove">
-            <span class="material-symbols-outlined">delete</span>
-          </button>
-
+          <span ref="btnInfo" class="btn btn-sm btn-transparent btn-node-info">
+            <span class="material-symbols-outlined">
+              question_mark
+            </span>
+          </span>
           <button
+            ref="btnMute"
             v-if="mutable && isStep(node)"
             role="button"
             :class="{
               'btn btn-sm': true,
               'active btn-warning': node.muted,
               'btn-secondary': !node.muted,
+              'disabled': isPaused,
             }"
-            @click="toggleMute"
+            @click.prevent="toggleMute"
+            @mouseenter="muteHovered = true"
+            @mouseleave="muteHovered = false"
           >
+
             <span class="material-symbols-outlined">{{ node.muted ? 'visibility_off' : 'visibility' }}</span>
           </button>
+          <button
+            ref="btnPause"
+            role="button"
+            :class="{
+              'btn btn-sm': true,
+              'active btn-info': isPaused,
+              'btn-secondary': !isPaused,
+              'disabled': isMuted,
+            }"
+            @click.prevent="togglePaused"
+            @mouseenter="pauseHovered = true"
+            @mouseleave="pauseHovered = false"
+          >
+            <span class="material-symbols-outlined">{{ isPaused ? 'play_arrow' : 'pause' }}</span>
+          </button>
+        </BButtonGroup>
 
+        <BPopover :target="() => $refs.btnInfo as HTMLElement"
+                  teleport-to="body"
+        >
+          <NodeInfoContent :node-id="node.id" />
+        </BPopover>
+
+        <BPopover :target="() => $refs.btnPause as HTMLElement"
+                  teleport-to="body"
+                  :manual="true"
+                  v-model="pauseHovered"
+        >
+          <strong>Pause:</strong> Node and descendants will not run while paused
+        </BPopover>
+        <BPopover :target="() => $refs.btnMute as HTMLElement"
+                  teleport-to="body"
+                  :manual="true"
+                  v-model="muteHovered"
+        >
+          <strong>Mute:</strong> Skip this node
+        </BPopover>
+
+
+        <SeedPopOver class="ms-auto" v-if="showSeed" v-model="node.seed" />
+        <BButtonGroup size="sm" class="node-header-buttons">
+          <button role="button" class="btn btn-sm btn-danger" @click="remove">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
           <button v-if="copyable" role="button" class="btn btn-sm btn-secondary"
                   @click="store.duplicateStepNode(node.id)">
             <span class="material-symbols-outlined">content_copy</span>

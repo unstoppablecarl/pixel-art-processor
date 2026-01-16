@@ -174,3 +174,55 @@
     color: rgba(#fff, 0.75);
   }
 }
+
+
+.node-card-border-info {
+  border-color: var(--bs-info);
+}
+
+.node-card-border-warning {
+  border-color: var(--bs-warning);
+}
+
+.node-card-border-danger {
+  border-color: var(--bs-danger);
+}
+
+.node-card-border-info.node-card-border-danger,
+.node-card-border-warning.node-card-border-danger {
+  $border: 1px;
+  background-clip: padding-box;
+  border: solid $border transparent;
+
+  &:before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    margin: -$border;
+    border-radius: inherit;
+  }
+}
+
+.node-card-border-info.node-card-border-danger {
+  &:before {
+    background: linear-gradient(
+                    to right,
+                    var(--bs-info),
+                    var(--bs-danger)
+    );
+  }
+}
+
+.node-card-border-warning.node-card-border-danger {
+  &:before {
+    background: linear-gradient(
+                    to right,
+                    var(--bs-warning),
+                    var(--bs-danger)
+    );
+  }
+}
