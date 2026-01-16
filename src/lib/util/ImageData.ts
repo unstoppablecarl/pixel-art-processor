@@ -182,13 +182,12 @@ export function fillImageData(
   return imageData
 }
 
-
 export function resizeImageData(
   current: ImageData,
   newWidth: number,
   newHeight: number,
   offsetX = 0,
-  offsetY = 0
+  offsetY = 0,
 ): ImageData {
   const result = new ImageData(newWidth, newHeight)
   const oldData = current.data
@@ -209,7 +208,7 @@ export function resizeImageData(
       const oldIndex = (y * oldW + x) * 4
       const newIndex = (newY * newWidth + newX) * 4
 
-      newData[newIndex]     = oldData[oldIndex]
+      newData[newIndex] = oldData[oldIndex]
       newData[newIndex + 1] = oldData[oldIndex + 1]
       newData[newIndex + 2] = oldData[oldIndex + 2]
       newData[newIndex + 3] = oldData[oldIndex + 3]
@@ -218,3 +217,23 @@ export function resizeImageData(
 
   return result
 }
+
+export function imageDataEqual(
+  a: ImageData | SerializedImageData | null,
+  b: ImageData | SerializedImageData | null,
+): boolean {
+  if (a === null || b === null) return a === b
+  if (a.width !== b.width || a.height !== b.height) return false
+
+  const ad = a.data
+  const bd = b.data
+
+  if (ad.length !== bd.length) return false
+
+  for (let i = 0; i < ad.length; i++) {
+    if (ad[i] !== bd[i]) return false
+  }
+
+  return true
+}
+

@@ -12,7 +12,7 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, Ref, ref, shallowRef, toRef, useTemplateRef } from 'vue'
+import { computed, Ref, ref, toRef, useTemplateRef } from 'vue'
 import type { NodeId, Position, WatcherTarget } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
@@ -20,6 +20,7 @@ import {
   deserializeImageData,
   type SerializedImageData, serializeImageData,
 } from '../../lib/util/ImageData.ts'
+import { imageDataRef } from '../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'
 import CanvasPaint from '../CanvasPaint.vue'
 import NodeCard from '../Card/NodeCard.vue'
@@ -33,7 +34,7 @@ const canvasPaintRef = useTemplateRef('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const maskImageData = shallowRef<ImageData | null>(null)
+const maskImageData = imageDataRef()
 
 const SIZE_DEFAULTS = rangeSliderConfig({
   value: 64,
@@ -53,28 +54,30 @@ const handler = defineStepHandler(STEP_META, {
       maskImageData: null as (SerializedImageData | null),
     }
   },
-  serializeConfig: (config) => ({
-    ...config,
-    maskImageData: serializeImageData(maskImageData.value),
-  }),
+  serializeConfig: (config) => {
+    return {
+      ...config,
+      maskImageData: serializeImageData(maskImageData.image.value),
+    }
+  },
   deserializeConfig(config) {
-    maskImageData.value = deserializeImageData(config.maskImageData)
+    maskImageData.image.value = deserializeImageData(config.maskImageData)
 
     return config
   },
   watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
     return [...defaultWatcherTargets, {
       name: 'maskImageData',
-      target: maskImageData,
+      target: () => maskImageData.image,
     }]
   },
   async run() {
-    if (maskImageData.value === null) return
+    if (maskImageData.image.value === null) return
 
-    const bitMask = BitMask.fromImageData(maskImageData.value)
+    const bitMask = BitMask.fromImageData(maskImageData.image.value)
 
     return {
-      preview: maskImageData.value,
+      preview: maskImageData.image.value,
       output: bitMask,
     }
   },
@@ -91,18 +94,24 @@ const offset: Ref<Position> = ref({ x: 0, y: 0 })
 
 const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
+const foo = ref<ImageData | null>(null)
 
 const mode = ref<'add' | 'remove'>('add')
 const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
 
+const imageUpdated = (value: ImageData | null) => {
+  maskImageData.image.value = value
+  store.markDirty(nodeId)
+}
 </script>
 <template>
   <NodeCard
     :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
-      imageData: maskImageData,
+      imageData: foo,
     }]"
+    show-dimensions
   >
     <template #body>
       <CanvasPaint
@@ -115,8 +124,10 @@ const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
         :cursor-color="cursorColor"
         :grid-color="gridColor"
         :color="color"
-        v-model:image-data="maskImageData"
         v-model:offset="offset"
+
+        :image-data="maskImageData.image.value"
+        @imageUpdated="imageUpdated"
       />
     </template>
 

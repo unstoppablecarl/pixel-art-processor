@@ -1,16 +1,20 @@
 import {
+  computed,
   customRef,
   isProxy,
   isReactive,
   isReadonly,
   isRef,
   type Ref,
+  shallowRef,
   toRaw,
   toValue,
+  triggerRef,
   type UnwrapNestedRefs,
   type UnwrapRef,
 } from 'vue'
 import { StepValidationError } from '../pipeline/errors/StepValidationError.ts'
+import type { imageDataToUrlImage } from './ImageData.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
   let rawValue: unknown = value
@@ -78,4 +82,35 @@ export type StepImg = {
   placeholderWidth?: number,
   placeholderHeight?: number,
   validationErrors?: StepValidationError[]
+}
+
+export type ImageDataRef = ReturnType<typeof imageDataToUrlImage>
+
+export function imageDataRef(initial: ImageData | null = null) {
+  const image = shallowRef<ImageData | null>(initial)
+  const version = shallowRef(0)
+
+  const width = computed(() => image.value?.width ?? 0)
+  const height = computed(() => image.value?.height ?? 0)
+
+  function markDirty() {
+    version.value++
+    triggerRef(image)
+  }
+
+  // Instead of intercepting sets, provide a method
+  function set(newValue: ImageData | null) {
+    image.value = newValue
+    version.value++
+    triggerRef(image)
+  }
+
+  return {
+    image,
+    set,
+    width,
+    height,
+    version,
+    markDirty,
+  }
 }

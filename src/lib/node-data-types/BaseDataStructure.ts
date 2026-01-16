@@ -668,6 +668,31 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
+  setRectStroke(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    value: T,
+  ): void {
+    const x1 = x
+    const y1 = y
+    const x2 = x + width - 1
+    const y2 = y + height - 1
+
+    // Top + bottom edges
+    for (let px = x1; px <= x2; px++) {
+      this.set(px, y1, value)
+      this.set(px, y2, value)
+    }
+
+    // Left + right edges
+    for (let py = y1; py <= y2; py++) {
+      this.set(x1, py, value)
+      this.set(x2, py, value)
+    }
+  }
+
   // Circle operations
   hasInCircle(
     x: number,

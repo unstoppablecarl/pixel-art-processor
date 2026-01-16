@@ -1,24 +1,116 @@
 import type { Position } from '../../pipeline/_types.ts'
+import { resizeImageData, type RGBA } from '../ImageData.ts'
 
-export const drawPixelPerfectCircle = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, radius: number, fillColor: string): void => {
-  const r = Math.floor(radius)
-  const r2 = r * r
+export class ImageDataMutator {
+  private canvas: HTMLCanvasElement
+  private ctx: CanvasRenderingContext2D
+  private _imageData: ImageData | null = null
 
-  ctx.fillStyle = fillColor
+  constructor(imageData?: ImageData) {
+    const canvas = document.createElement('canvas')
+    if (!canvas) throw new Error('could not create canvas')
+    this.canvas = canvas
 
-  for (let y = -r; y <= r; y++) {
-    for (let x = -r; x <= r; x++) {
-      if (x * x + y * y < r2) {
-        ctx.fillRect(Math.floor(centerX + x), Math.floor(centerY + y), 1, 1)
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('could not create context')
+    this.ctx = context
+    if (imageData) {
+      this.set(imageData)
+    }
+  }
+
+  drawOnto(target: CanvasRenderingContext2D, x = 0, y = 0) {
+    if (!this._imageData) throw new Error('this.imageData not set')
+    this.ctx.putImageData(this._imageData, 0, 0)
+
+    target.drawImage(this.canvas, x, y)
+  }
+
+  get imageData(): ImageData {
+    if (!this._imageData) throw new Error('imageData not set')
+    return this._imageData
+  }
+
+  set(imageData: ImageData) {
+    this._imageData = imageData
+    this.canvas.width = imageData.width
+    this.canvas.height = imageData.height
+  }
+
+  clear() {
+    if (!this._imageData) throw new Error('this.imageData not set')
+    this._imageData.data.fill(0)
+  }
+
+  resize(width: number, height: number) {
+    if (!this._imageData) throw new Error('this.imageData not set')
+    this.set(resizeImageData(this._imageData, width, height))
+  }
+
+  setPixel(
+    x: number,
+    y: number,
+    color: RGBA,
+  ) {
+    if (!this._imageData) throw new Error('this.imageData not set')
+    const width = this._imageData.width
+    const height = this._imageData.height
+
+    if (x < 0 || y < 0 || x >= width || y >= height) return
+
+    const index = (y * width + x) * 4
+    const { r, g, b, a } = color
+    this._imageData.data[index] = r
+    this._imageData.data[index + 1] = g
+    this._imageData.data[index + 2] = b
+    this._imageData.data[index + 3] = a
+  }
+
+  drawPixelPerfectCircle(
+    centerX: number,
+    centerY: number,
+    radius: number,
+    fillColor: RGBA,
+  ): void {
+
+    const r = Math.floor(radius)
+    const r2 = r * r
+
+    for (let y = -r; y <= r; y++) {
+      for (let x = -r; x <= r; x++) {
+        if (x * x + y * y < r2) {
+          const px = Math.floor(centerX + x)
+          const py = Math.floor(centerY + y)
+          this.setPixel(px, py, fillColor)
+        }
       }
     }
   }
-}
 
-export const drawPixelPerfectSquare = (ctx: CanvasRenderingContext2D, centerX: number, centerY: number, size: number, fillColor: string): void => {
-  const halfSize = Math.floor(size / 2)
-  ctx.fillStyle = fillColor
-  ctx.fillRect(Math.floor(centerX - halfSize), Math.floor(centerY - halfSize), size, size)
+  strokeRect(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    fillColor: RGBA,
+  ): void {
+    const x1 = x
+    const y1 = y
+    const x2 = x + width - 1
+    const y2 = y + height - 1
+
+    // Top + bottom edges
+    for (let px = x1; px <= x2; px++) {
+      this.setPixel(px, y1, fillColor)
+      this.setPixel(px, y2, fillColor)
+    }
+
+    // Left + right edges
+    for (let py = y1; py <= y2; py++) {
+      this.setPixel(x1, py, fillColor)
+      this.setPixel(x2, py, fillColor)
+    }
+  }
 }
 
 export const interpolateLine = (x0: number, y0: number, x1: number, y1: number): Position[] => {
