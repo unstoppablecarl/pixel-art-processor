@@ -23,7 +23,7 @@ import {
   islandCheckboxColors,
   IslandFilterType,
   sketchIslandVisuals,
-} from '../../lib/generators/island-ui.ts'
+} from '../../lib/vue/island-ui.ts'
 import { smoothAutomata } from '../../lib/generators/IslandSmoother/island-smoother-automata.ts'
 import { smoothIslandsGaussian } from '../../lib/generators/IslandSmoother/island-smoother-gaussian.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'

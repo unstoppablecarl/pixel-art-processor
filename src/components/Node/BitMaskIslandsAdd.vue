@@ -18,7 +18,7 @@ import {
   DEFAULT_SHOW_ADDED,
   DEFAULT_SHOW_ISLANDS,
   islandCheckboxColors,
-} from '../../lib/generators/island-ui.ts'
+} from '../../lib/vue/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { parseColor } from '../../lib/util/color.ts'

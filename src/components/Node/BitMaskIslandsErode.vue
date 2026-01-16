@@ -19,7 +19,7 @@ import {
   ISLAND_FILTERS,
   ISLAND_TYPES_FILTER_OPTIONS, islandCheckboxColors,
   IslandFilterType, sketchIslandVisuals,
-} from '../../lib/generators/island-ui.ts'
+} from '../../lib/vue/island-ui.ts'
 import {
   mutateIslands,
   type IslandMutator,

@@ -24,7 +24,7 @@ import {
   islandCheckboxColors,
   IslandFilterType,
   sketchIslandVisuals,
-} from '../../lib/generators/island-ui.ts'
+} from '../../lib/vue/island-ui.ts'
 import { mutateIslands, type IslandMutator } from '../../lib/generators/IslandMutator.ts'
 import { clusterGrower } from '../../lib/generators/IslandGrower/ClusterGrower.ts'
 import { directionalGrower } from '../../lib/generators/IslandGrower/DirectionalGrowth.ts'
