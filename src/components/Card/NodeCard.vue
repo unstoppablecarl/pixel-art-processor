@@ -186,20 +186,20 @@ function togglePaused() {
           </button>
         </BButtonGroup>
 
-        <BPopover :target="() => $refs.btnInfo as HTMLElement"
+        <BPopover :target="(() => $refs.btnInfo) as unknown as Readonly<HTMLElement>"
                   teleport-to="body"
         >
           <NodeInfoContent :node-id="node.id" />
         </BPopover>
 
-        <BPopover :target="() => $refs.btnPause as HTMLElement"
+        <BPopover :target="(() => $refs.btnPause) as unknown as Readonly<HTMLElement>"
                   teleport-to="body"
                   :manual="true"
                   v-model="pauseHovered"
         >
           <strong>Pause:</strong> Node and descendants will not run while paused
         </BPopover>
-        <BPopover :target="() => $refs.btnMute as HTMLElement"
+        <BPopover :target="(() => $refs.btnMute) as unknown as Readonly<HTMLElement>"
                   teleport-to="body"
                   :manual="true"
                   v-model="muteHovered"
