@@ -4,7 +4,7 @@ import { computed } from 'vue'
 import { type AnyNode, isFork } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
-import { imageDataToUrlImage } from '../../lib/util/ImageData.ts'
+import { imageDataToUrlImage } from '../../lib/util/image/ImageData.ts'
 import { makeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
 

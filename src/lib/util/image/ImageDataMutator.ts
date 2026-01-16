@@ -1,5 +1,5 @@
 import type { Position } from '../../pipeline/_types.ts'
-import { resizeImageData, type RGBA } from '../ImageData.ts'
+import { resizeImageData, type RGBA } from './ImageData.ts'
 
 export class ImageDataMutator {
   private canvas: HTMLCanvasElement
@@ -8,7 +8,7 @@ export class ImageDataMutator {
 
   constructor(imageData?: ImageData) {
     const canvas = document.createElement('canvas')
-    if (!canvas) throw new Error('could not create canvas')
+    if (!canvas) throw new Error('could not create image')
     this.canvas = canvas
 
     const context = canvas.getContext('2d')

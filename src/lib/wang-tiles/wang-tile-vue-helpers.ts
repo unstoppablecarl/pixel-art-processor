@@ -1,7 +1,7 @@
 import type { NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
-import type { RGBA } from '../util/ImageData.ts'
+import type { RGBA } from '../util/image/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
 import type { WangTile, WangTileEdge } from './WangTileset.ts'

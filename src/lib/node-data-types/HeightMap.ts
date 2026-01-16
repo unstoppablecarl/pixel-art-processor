@@ -1,4 +1,4 @@
-import type { RGBA } from '../util/ImageData.ts'
+import type { RGBA } from '../util/image/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
 export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {

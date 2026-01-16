@@ -4,7 +4,7 @@ import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { type Island, IslandType } from '../node-data-types/BitMask/Island.ts'
 import { parseColorData } from '../util/color.ts'
-import { Sketch } from '../util/Sketch.ts'
+import { Sketch } from '../util/image/Sketch.ts'
 
 const ALL_FEATURES: FeatureDefinition[] = []
 

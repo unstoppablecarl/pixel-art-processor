@@ -1,5 +1,5 @@
 import { InvalidFileTypeError } from '../pipeline/errors/InvalidFileTypeError.ts'
-import { imageToCanvas } from './ImageData.ts'
+import { imageToCanvas } from './image/ImageData.ts'
 
 export async function getUploadedImageData(input: string | ArrayBuffer | File): Promise<ImageData> {
   return new Promise((resolve, reject) => {

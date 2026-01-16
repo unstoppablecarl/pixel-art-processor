@@ -2,7 +2,7 @@
 import { BButtonGroup } from 'bootstrap-vue-next'
 import { computed, watch } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
-import type { RGBA } from '../../lib/util/ImageData.ts'
+import type { RGBA } from '../../lib/util/image/ImageData.ts'
 import type { BinaryArray } from '../../lib/util/prng/binary-array-chunks.ts'
 import {
   generateWangTileEdgePattern,

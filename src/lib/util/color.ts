@@ -1,5 +1,5 @@
 import tinycolor from 'tinycolor2'
-import type { RGBA } from './ImageData.ts'
+import type { RGBA } from './image/ImageData.ts'
 
 export const parseColorData = (color: string): RGBA => {
   const result = tinycolor(color)

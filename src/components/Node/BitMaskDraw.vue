@@ -19,7 +19,7 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import {
   deserializeImageData,
   type SerializedImageData, serializeImageData,
-} from '../../lib/util/ImageData.ts'
+} from '../../lib/util/image/ImageData.ts'
 import { imageDataRef } from '../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'
 import CanvasPaint from '../CanvasPaint.vue'

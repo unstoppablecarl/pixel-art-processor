@@ -1,5 +1,5 @@
-import type { BoundsLike } from './data/Bounds.ts'
-import type { Point } from '../node-data-types/BaseDataStructure.ts'
+import type { BoundsLike } from '../data/Bounds.ts'
+import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 
 export class Sketch {
   readonly canvas: HTMLCanvasElement

@@ -15,7 +15,7 @@ export const STEP_META = defineStep({
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { deserializeImageData, serializeImageData } from '../../lib/util/ImageData.ts'
+import { deserializeImageData, serializeImageData } from '../../lib/util/image/ImageData.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 
