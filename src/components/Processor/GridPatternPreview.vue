@@ -115,7 +115,7 @@ const grid = computed(() => {
                id="scale"
                min="1"
                max="10"
-               node="1"
+               step="1"
                style="width: 150px;"
                v-model.number="previewStore.scale"
         >
@@ -127,7 +127,7 @@ const grid = computed(() => {
           <BFormInput
             id="preview-width"
             type="number"
-            node="1"
+            step="1"
             min="1"
             v-model.number="previewStore.gridWidth"
             style="width: 100px"
@@ -141,7 +141,7 @@ const grid = computed(() => {
           <BFormInput
             id="preview-height"
             type="number"
-            node="1"
+            step="1"
             min="1"
             v-model.number="previewStore.gridHeight"
             style="width: 100px"
@@ -155,7 +155,7 @@ const grid = computed(() => {
           <BFormInput
             id="preview-seed"
             type="number"
-            node="1"
+            step="1"
             min="1"
             v-model.number="previewStore.seed"
             style="width: 100px"
