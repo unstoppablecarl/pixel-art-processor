@@ -1,7 +1,7 @@
 import tinycolor from 'tinycolor2'
 import { deepUnwrap } from './vue-util.ts'
 
-let logActive = true
+let logActive = false
 const unwrap = false
 
 const parseArg = (m: any) => unwrap ? deepUnwrap(m) : m
