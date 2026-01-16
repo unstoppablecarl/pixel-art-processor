@@ -1,6 +1,7 @@
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
 import { type RGBA, setImageDataPixelColor } from '../util/html-dom/ImageData.ts'
 import { readonlyTypedArray } from '../util/misc.ts'
+import type { WangTileEdge } from '../wang-tiles/WangTileset.ts'
 
 export type Point = {
   x: number,
@@ -787,6 +788,56 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   protected serializeValue(value: T): SerializedT {
     return value as unknown as SerializedT
+  }
+
+  setEdgeN(value: T, index?: number) {
+    if (index !== undefined) {
+      this.set(index, 0, value)
+      return
+    }
+
+    for (let i = 0; i < this.width; i++) {
+      this.set(i, 0, value)
+    }
+  }
+
+  setEdgeS(value: T, index?: number) {
+    if (index !== undefined) {
+      this.set(index, this.width - 1, value)
+      return
+    }
+
+    for (let i = 0; i < this.width; i++) {
+      this.set(i, this.width - 1, value)
+    }
+  }
+
+  setEdgeW(value: T, index?: number) {
+    if (index !== undefined) {
+      this.set(0, index, value)
+      return
+    }
+    for (let i = 0; i < this.height; i++) {
+      this.set(0, i, value)
+    }
+  }
+
+  setEdgeE(value: T, index?: number) {
+    if (index !== undefined) {
+      this.set(this.height - 1, index, value)
+      return
+    }
+    for (let i = 0; i < this.height; i++) {
+      this.set(this.height - 1, i, value)
+    }
+  }
+
+  setEdge(edge: WangTileEdge, value: T, index?: number) {
+    if (edge === 'N') return this.setEdgeN(value, index)
+    if (edge === 'E') return this.setEdgeE(value, index)
+    if (edge === 'S') return this.setEdgeS(value, index)
+    if (edge === 'W') return this.setEdgeW(value, index)
+    throw new Error('invalid edge: ' + edge)
   }
 }
 
