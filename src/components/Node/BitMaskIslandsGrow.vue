@@ -158,7 +158,7 @@ const config = node.config
 
       <CardFooterSettingsTabs
         :node-id="nodeId"
-        :active-tab-index="config.activeTabIndex"
+        v-model:active-tab-index="config.activeTabIndex"
       >
         <template #settings>
           <RangeSlider

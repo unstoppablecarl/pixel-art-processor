@@ -129,7 +129,7 @@ const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
     <template #footer>
       <CardFooterSettingsTabs
         :node-id="nodeId"
-        :active-tab-index="config.activeTabIndex"
+        v-model:active-tab-index="config.activeTabIndex"
       >
         <template #settings>
           <RangeSlider
