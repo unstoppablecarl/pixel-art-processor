@@ -8,7 +8,8 @@ import { StepValidationError } from '../../lib/pipeline/errors/StepValidationErr
 import { type InitializedForkNode, type InitializedNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { getNodeRegistry } from '../../lib/pipeline/NodeRegistry.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
-import type { StepImg } from '../../lib/util/vue-util.ts'
+import type { StepImg, StepImgInput } from '../../lib/util/vue-util.ts'
+import { normalizeImageData } from '../../lib/vue/vue-image-data.ts'
 import NodeImage from '../NodeImage.vue'
 import AddNodeAfterDropDown from '../UI/AddNodeAfterDropDown.vue'
 import ExecutionTimer from '../UI/ExecutionTimer.vue'
@@ -33,7 +34,7 @@ const {
 export type NodeProps<N extends InitializedNode<any, any, any, any>> = {
   node: N,
   showDimensions?: boolean,
-  images?: StepImg[],
+  images?: StepImgInput[],
   showAddStepBtn?: boolean,
   // draggable?: boolean,
   copyable?: boolean,
@@ -54,7 +55,7 @@ function remove() {
 }
 
 const nodeImages = computed((): StepImg[] => {
-  if (images) return images
+  if (images) return images.map(t => ({ ...t, imageData: normalizeImageData(t.imageData) }))
 
   if (isBranch(node) || isStep(node)) {
     return [{

@@ -4,7 +4,7 @@ import type { Position } from '../lib/pipeline/_types.ts'
 import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 import { parseColor } from '../lib/util/color.ts'
 import { throttle } from '../lib/util/misc.ts'
-import type { ImageDataRef } from '../lib/util/vue-util.ts'
+import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
 
 const {
   imageDataRef,
@@ -283,8 +283,8 @@ onMounted(() => {
   const { ctx } = getViewCanvas()
   if (!ctx) return
 
-  if (imageDataRef.image.value) {
-    buffer.set(imageDataRef.image.value)
+  if (imageDataRef.hasValue) {
+    buffer.set(imageDataRef.get()!)
     updateView()
   } else {
     buffer.set(new ImageData(width, height))

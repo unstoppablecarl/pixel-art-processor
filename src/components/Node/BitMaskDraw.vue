@@ -17,11 +17,10 @@ import type { NodeId, Position, WatcherTarget } from '../../lib/pipeline/_types.
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import {
-  deserializeImageData,
-  type SerializedImageData, serializeImageData,
+  type SerializedImageData,
 } from '../../lib/util/html-dom/ImageData.ts'
-import { imageDataRef } from '../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'
+import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import CanvasPaint from '../CanvasPaint.vue'
 import NodeCard from '../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../UI/CardFooterSettingsTabs.vue'
@@ -57,22 +56,22 @@ const handler = defineStepHandler(STEP_META, {
   serializeConfig: (config) => {
     return {
       ...config,
-      maskImageData: serializeImageData(maskImageData.image.value),
+      maskImageData: maskImageData.serialize(),
     }
   },
   deserializeConfig(config) {
-    maskImageData.image.value = deserializeImageData(config.maskImageData)
+    maskImageData.setSerialized(config.maskImageData)
 
     return config
   },
   watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
     return [...defaultWatcherTargets, {
       name: 'maskImageData',
-      target: maskImageData.image,
+      target: maskImageData.watchTarget,
     }]
   },
   async run() {
-    const imageData = maskImageData.image.value
+    const imageData = maskImageData.get()
     if (imageData === null) return
 
     const bitMask = BitMask.fromImageData(imageData)

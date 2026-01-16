@@ -3,7 +3,7 @@ import { useTemplateRef } from 'vue'
 import { handleStepValidationError } from '../../lib/pipeline/errors/errors.ts'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/html-dom/file-upload.ts'
-import type { ImageDataRef } from '../../lib/util/vue-util.ts'
+import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
 
 type Emits = {
   (e: 'imageDataLoaded', imageData: ImageData): void;
@@ -36,7 +36,7 @@ function clear() {
 }
 </script>
 <template>
-  <div v-if="!imageDataRef.image.value">
+  <div v-if="!imageDataRef.hasValue">
     <input ref="fileInputEl" type="file" accept="image/*" @change="handleFileUpload" class="form-control" />
   </div>
   <div v-else>

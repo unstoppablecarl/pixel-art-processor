@@ -16,11 +16,10 @@ import type { StepValidationError } from '../../lib/pipeline/errors/StepValidati
 import type { NodeId, WatcherTarget } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import {
-  deserializeImageData,
   type SerializedImageData,
   serializeImageData,
 } from '../../lib/util/html-dom/ImageData.ts'
-import { imageDataRef } from '../../lib/util/vue-util.ts'
+import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 
@@ -37,22 +36,22 @@ const handler = defineStepHandler(STEP_META, {
   serializeConfig: (config) => {
     return {
       ...config,
-      maskImageData: serializeImageData(maskImageData.image.value),
+      maskImageData: serializeImageData(maskImageData.get()),
     }
   },
   deserializeConfig(config) {
-    maskImageData.image.value = deserializeImageData(config.maskImageData)
+    maskImageData.setSerialized(config.maskImageData)
 
     return config
   },
   watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
     return [...defaultWatcherTargets, {
       name: 'maskImageData',
-      target: maskImageData.image,
+      target: maskImageData.watchTarget,
     }]
   },
   async run() {
-    const imageData = maskImageData.image.value
+    const imageData = maskImageData.get()
     if (imageData === null) return
 
     const bitMask = BitMask.fromImageData(imageData)
@@ -75,7 +74,7 @@ function handleError(errors: StepValidationError[]) {
     :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
-      imageData: maskImageData.image.value,
+      imageData: maskImageData,
     }]"
     show-dimensions
   >

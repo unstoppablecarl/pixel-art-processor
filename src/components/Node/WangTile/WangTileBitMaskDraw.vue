@@ -22,8 +22,8 @@ import {
   deserializeImageData,
   type SerializedImageData, serializeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
-import { imageDataRef } from '../../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
+import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import { make4EdgeWangTileset } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import { makeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import { type WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
@@ -62,11 +62,11 @@ const handler = defineStepHandler(STEP_META, {
   serializeConfig: (config) => {
     return {
       ...config,
-      maskImageData: serializeImageData(maskImageData.image.value),
+      maskImageData: serializeImageData(maskImageData.get()),
     }
   },
   deserializeConfig(config) {
-    maskImageData.image.value = deserializeImageData(config.maskImageData)
+    maskImageData.setSerialized(config.maskImageData)
 
     return config
   },
@@ -77,7 +77,7 @@ const handler = defineStepHandler(STEP_META, {
     }]
   },
   async run() {
-    const imageData = maskImageData.image.value
+    const imageData = maskImageData.get()
     if (imageData === null) return
 
     const bitMask = BitMask.fromImageData(imageData)

@@ -18,11 +18,11 @@ import type { StepValidationError } from '../../lib/pipeline/errors/StepValidati
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import {
-  deserializeImageData,
   type SerializedImageData,
   serializeImageData,
 } from '../../lib/util/html-dom/ImageData.ts'
-import { imageDataRef } from '../../lib/util/vue-util.ts'
+
+import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -42,18 +42,18 @@ const handler = defineStepHandler(STEP_META, {
   serializeConfig: (config) => {
     return {
       ...config,
-      textureImageData: serializeImageData(textureImageData.image.value),
+      textureImageData: serializeImageData(textureImageData.get()),
     }
   },
   deserializeConfig(config) {
-    textureImageData.image.value = deserializeImageData(config.textureImageData)
+    textureImageData.setSerialized(config.textureImageData)
 
     return config
   },
   async run({ config, inputData }) {
     if (!inputData) return
 
-    const imageData = textureImageData.image.value
+    const imageData = textureImageData.get()
     if (!imageData) return
 
     const result = inputData.applyLighting(
@@ -74,7 +74,7 @@ const node = useStepHandler(nodeId, handler)
 const images = computed(() => [
   {
     label: 'Texture',
-    imageData: textureImageData.image.value,
+    imageData: textureImageData,
   },
   {
     label: 'Output',

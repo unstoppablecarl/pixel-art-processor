@@ -4,17 +4,14 @@ import {
   isReactive,
   isReadonly,
   isRef,
-  readonly,
-  ref,
   type Ref,
-  type ShallowRef,
-  shallowRef,
   toRaw,
   toValue,
   type UnwrapNestedRefs,
   type UnwrapRef,
 } from 'vue'
 import { StepValidationError } from '../pipeline/errors/StepValidationError.ts'
+import type { ImageDataRef } from '../vue/vue-image-data.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
   let rawValue: unknown = value
@@ -83,65 +80,7 @@ export type StepImg = {
   placeholderHeight?: number,
   validationErrors?: StepValidationError[]
 }
-export type ImageDataRef = {
-  image: ShallowRef<ImageData | null>,
-  set: (newValue: ImageData | null) => void,
-  setQuiet: (newValue: ImageData | null) => void,
-  width: Readonly<Ref<number>>,
-  height: Readonly<Ref<number>>,
-  watchTarget: Readonly<Ref<number>>,
-  triggerRef: () => void,
-  clear: () => void,
-}
 
-export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
-  const image = shallowRef<ImageData | null>(initial)
-  const _width = ref(initial?.width ?? 0)
-  const _height = ref(initial?.height ?? 0)
-  const _watchTarget = ref(0)
-
-  function setQuiet(newValue: ImageData | null) {
-    if (!newValue) {
-      image.value = null
-      _width.value = 0
-      _height.value = 0
-      return
-    }
-
-    // Update dimensions immediately
-    _width.value = newValue.width
-    _height.value = newValue.height
-
-    if (image.value &&
-      image.value.width === newValue.width &&
-      image.value.height === newValue.height) {
-      image.value.data.set(newValue.data)
-    } else {
-      image.value = newValue
-    }
-  }
-
-  function clear() {
-    set(null)
-  }
-
-  function set(newValue: ImageData | null) {
-    setQuiet(newValue)
-    _watchTarget.value++
-  }
-
-  function triggerRef() {
-    _watchTarget.value++
-  }
-
-  return {
-    image,
-    set,
-    clear,
-    setQuiet,
-    triggerRef,
-    watchTarget: readonly(_watchTarget),
-    width: readonly(_width),
-    height: readonly(_height),
-  }
+export type StepImgInput = Omit<StepImg, 'imageData'> & {
+  imageData: ImageDataRef | ImageData | null,
 }
