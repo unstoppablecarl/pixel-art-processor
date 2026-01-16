@@ -16,6 +16,10 @@ export type GenerateChunkedArrayOptions = {
 
 export type BinaryArray = Uint8Array<ArrayBuffer> & { readonly __brand: 'BinaryArray' };
 
+export function makeBinaryArray(length: number, fill = 0): BinaryArray {
+  return new Uint8Array(length).fill(fill) as BinaryArray
+}
+
 export function generateChunkedArray(
   {
     prng,
