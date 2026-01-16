@@ -3,7 +3,7 @@ import type { CheckboxColorListItem } from '../../components/UIForms/CheckboxCol
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { type Island, IslandType } from '../node-data-types/BitMask/Island.ts'
-import { parseColorData } from '../util/color.ts'
+import { parseColor } from '../util/color.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 
 const ALL_FEATURES: FeatureDefinition[] = []
@@ -114,7 +114,7 @@ export function sketchIslandVisuals<C extends Partial<typeof DEFAULT_ISLAND_VISI
   removed?: Point[],
 ) {
   const sketch = new Sketch(mask.width, mask.height)
-  const islandColor = parseColorData(config.showIslandColor)
+  const islandColor = parseColor(config.showIslandColor)
 
   if (config.showIsland) {
     sketch.putImageData(mask.toImageData(islandColor))

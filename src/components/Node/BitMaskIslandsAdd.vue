@@ -21,7 +21,7 @@ import {
 } from '../../lib/generators/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { parseColorData } from '../../lib/util/color.ts'
+import { parseColor } from '../../lib/util/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/html-dom/Sketch.ts'
 import NodeCard from '../Card/NodeCard.vue'
@@ -67,7 +67,7 @@ const handler = defineStepHandler(STEP_META, {
     points.forEach(({ x, y }) => mask.set(x, y, 1))
 
     const sketch = new Sketch(mask.width, mask.height)
-    const islandColor = parseColorData(C.showIslandColor)
+    const islandColor = parseColor(C.showIslandColor)
 
     if (C.showIsland) {
       sketch.putImageData(mask.toImageData(islandColor))

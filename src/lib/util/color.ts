@@ -1,7 +1,7 @@
 import tinycolor from 'tinycolor2'
 import type { RGBA } from './html-dom/ImageData.ts'
 
-export const parseColorData = (color: string): RGBA => {
+export const parseColor = (color: string): RGBA => {
   const result = tinycolor(color)
   const { r, g, b, a } = result.toRgb()
 

@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
 import type { Position } from '../lib/pipeline/_types.ts'
 import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
-import { parseColorData } from '../lib/util/color.ts'
+import { parseColor } from '../lib/util/color.ts'
 import { throttle } from '../lib/util/misc.ts'
 import type { ImageDataRef } from '../lib/util/vue-util.ts'
 
@@ -40,7 +40,7 @@ const isDrawing: Ref<boolean> = ref(false)
 const lastPos: Ref<Position> = ref({ x: 0, y: 0 })
 const cursorPos: Ref<Position | null> = ref(null)
 
-const colorRGBA = computed(() => parseColorData(color))
+const colorRGBA = computed(() => parseColor(color))
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
   if (!canvas) return { canvas, ctx: null }
 
