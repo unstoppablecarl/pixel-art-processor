@@ -109,6 +109,8 @@ function toggleMute() {
 
 const isPaused = node.paused
 const isMuted = computed(() => isStep(node) && node.muted)
+const isMutable = computed(() => mutable && isStep(node))
+
 const settingsVisible = ref(true)
 
 const pauseHovered = ref(false)
@@ -186,23 +188,27 @@ function togglePaused() {
           </button>
         </BButtonGroup>
 
-        <BPopover :target="(() => $refs.btnInfo) as unknown as Readonly<HTMLElement>"
-                  teleport-to="body"
+        <BPopover
+          :target="(() => $refs.btnInfo) as unknown as Readonly<HTMLElement>"
+          teleport-to="body"
         >
           <NodeInfoContent :node-id="node.id" />
         </BPopover>
 
-        <BPopover :target="(() => $refs.btnPause) as unknown as Readonly<HTMLElement>"
-                  teleport-to="body"
-                  :manual="true"
-                  v-model="pauseHovered"
+        <BPopover
+          :target="(() => $refs.btnPause) as unknown as Readonly<HTMLElement>"
+          teleport-to="body"
+          :manual="true"
+          v-model="pauseHovered"
         >
           <strong>Pause:</strong> Node and descendants will not run while paused
         </BPopover>
-        <BPopover :target="(() => $refs.btnMute) as unknown as Readonly<HTMLElement>"
-                  teleport-to="body"
-                  :manual="true"
-                  v-model="muteHovered"
+        <BPopover
+          v-if="isMutable"
+          :target="(() => $refs.btnMute) as unknown as Readonly<HTMLElement>"
+          teleport-to="body"
+          :manual="true"
+          v-model="muteHovered"
         >
           <strong>Mute:</strong> Skip this node
         </BPopover>
