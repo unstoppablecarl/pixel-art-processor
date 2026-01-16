@@ -3,21 +3,28 @@ import { useTemplateRef } from 'vue'
 import { handleStepValidationError } from '../../lib/pipeline/errors/errors.ts'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import { arrayBufferToImageData, getFileAsArrayBuffer } from '../../lib/util/html-dom/file-upload.ts'
+import type { ImageDataRef } from '../../lib/util/vue-util.ts'
 
 type Emits = {
+  (e: 'imageDataLoaded', imageData: ImageData): void;
   (e: 'error', errors: StepValidationError[]): void;
 }
 
-const model = defineModel<ImageData | null>()
 const emit = defineEmits<Emits>()
 const fileInputEl = useTemplateRef('fileInputEl')
+
+const {
+  imageDataRef,
+} = defineProps<{
+  imageDataRef: ImageDataRef,
+}>()
 
 const handleFileUpload = (event: Event) => {
   getFileAsArrayBuffer(event)
     .then(arrayBufferToImageData)
     .then((imageData) => {
       (fileInputEl.value as HTMLInputElement).value = ''
-      model.value = imageData
+      imageDataRef.set(imageData)
     })
     .catch(error => {
       emit('error', [handleStepValidationError(error)])
@@ -25,11 +32,11 @@ const handleFileUpload = (event: Event) => {
 }
 
 function clear() {
-  model.value = null
+  imageDataRef.set(null)
 }
 </script>
 <template>
-  <div v-if="!model">
+  <div v-if="!imageDataRef.image.value">
     <input ref="fileInputEl" type="file" accept="image/*" @change="handleFileUpload" class="form-control" />
   </div>
   <div v-else>

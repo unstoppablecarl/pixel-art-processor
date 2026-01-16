@@ -17,12 +17,18 @@ import { computed } from 'vue'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { deserializeImageData, serializeImageData } from '../../lib/util/html-dom/ImageData.ts'
+import {
+  deserializeImageData,
+  type SerializedImageData,
+  serializeImageData,
+} from '../../lib/util/html-dom/ImageData.ts'
+import { imageDataRef } from '../../lib/util/vue-util.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
+const textureImageData = imageDataRef()
 
 const handler = defineStepHandler(STEP_META, {
   config() {
@@ -30,27 +36,28 @@ const handler = defineStepHandler(STEP_META, {
       lightX: 0.5,
       lightY: -0.5,
       lightZ: 1,
-      textureImageData: null as null | ImageData,
+      textureImageData: null as null | SerializedImageData,
     }
   },
-  serializeConfig(config) {
+  serializeConfig: (config) => {
     return {
       ...config,
-      textureImageData: serializeImageData(config.textureImageData),
+      textureImageData: serializeImageData(textureImageData.image.value),
     }
   },
   deserializeConfig(config) {
-    return {
-      ...config,
-      textureImageData: deserializeImageData(config.textureImageData),
-    }
+    textureImageData.image.value = deserializeImageData(config.textureImageData)
+
+    return config
   },
   async run({ config, inputData }) {
     if (!inputData) return
-    if (!config.textureImageData) return
+
+    const imageData = textureImageData.image.value
+    if (!imageData) return
 
     const result = inputData.applyLighting(
-      config.textureImageData,
+      imageData,
       config.lightX,
       config.lightY,
       config.lightZ,
@@ -67,7 +74,7 @@ const node = useStepHandler(nodeId, handler)
 const images = computed(() => [
   {
     label: 'Texture',
-    imageData: config.textureImageData,
+    imageData: textureImageData.image.value,
   },
   {
     label: 'Output',
@@ -95,7 +102,7 @@ function handleError(errors: StepValidationError[]) {
     <template #footer>
       <div class="section">
         <ImageFileInput
-          v-model="node.config.textureImageData"
+          :image-data-ref="textureImageData"
           @error="handleError"
         />
       </div>

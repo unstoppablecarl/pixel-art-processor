@@ -13,39 +13,52 @@ export const STEP_META = defineStep({
 </script>
 <script setup lang="ts">
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
-import type { NodeId } from '../../lib/pipeline/_types.ts'
+import type { NodeId, WatcherTarget } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { deserializeImageData, serializeImageData } from '../../lib/util/html-dom/ImageData.ts'
+import {
+  deserializeImageData,
+  type SerializedImageData,
+  serializeImageData,
+} from '../../lib/util/html-dom/ImageData.ts'
+import { imageDataRef } from '../../lib/util/vue-util.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import ImageFileInput from '../UIForms/ImageFileInput.vue'
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
+const maskImageData = imageDataRef()
+
 const handler = defineStepHandler(STEP_META, {
   config() {
     return {
-      maskImageData: null as null | ImageData,
+      maskImageData: null as (SerializedImageData | null),
     }
   },
-  serializeConfig(config) {
+  serializeConfig: (config) => {
     return {
       ...config,
-      maskImageData: serializeImageData(config.maskImageData),
+      maskImageData: serializeImageData(maskImageData.image.value),
     }
   },
   deserializeConfig(config) {
-    return {
-      ...config,
-      maskImageData: deserializeImageData(config.maskImageData),
-    }
+    maskImageData.image.value = deserializeImageData(config.maskImageData)
+
+    return config
   },
-  async run({ config }) {
-    if (!config.maskImageData) return
+  watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+    return [...defaultWatcherTargets, {
+      name: 'maskImageData',
+      target: maskImageData.image,
+    }]
+  },
+  async run() {
+    const imageData = maskImageData.image.value
+    if (imageData === null) return
 
-    const bitMask = BitMask.fromImageData(config.maskImageData)
+    const bitMask = BitMask.fromImageData(imageData)
 
     return {
-      preview: config.maskImageData,
+      preview: imageData,
       output: bitMask,
     }
   },
@@ -62,14 +75,14 @@ function handleError(errors: StepValidationError[]) {
     :node="node"
     :images="[{
       label: 'BitMaskFromImage Input',
-      imageData: node.config.maskImageData,
+      imageData: maskImageData.image.value,
     }]"
     show-dimensions
   >
     <template #footer>
       <div class="section">
         <ImageFileInput
-          v-model="node.config.maskImageData"
+          :image-data-ref="maskImageData"
           @error="handleError"
         />
       </div>
