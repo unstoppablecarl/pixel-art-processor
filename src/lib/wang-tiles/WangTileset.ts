@@ -72,10 +72,10 @@ export class WangTileset<T> {
             tiles.push({
               id: id as TileId,
               edges: {
-                N: eligibleForN[N].tileValue,
-                E: eligibleForE[E].tileValue,
-                S: eligibleForS[S].tileValue,
-                W: eligibleForW[W].tileValue,
+                N: eligibleForN[N].edgeValue,
+                E: eligibleForE[E].edgeValue,
+                S: eligibleForS[S].edgeValue,
+                W: eligibleForW[W].edgeValue,
               },
             })
           }
@@ -111,9 +111,9 @@ export class WangTileset<T> {
 }
 
 export type TileWithEligibleEdges<T> = {
-  tileValue: T,
-  eligibleForN: boolean,
-  eligibleForE: boolean,
-  eligibleForS: boolean,
-  eligibleForW: boolean,
+  edgeValue: T,
+  eligibleForN?: boolean,
+  eligibleForE?: boolean,
+  eligibleForS?: boolean,
+  eligibleForW?: boolean,
 }
