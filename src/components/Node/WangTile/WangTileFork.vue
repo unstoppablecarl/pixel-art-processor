@@ -12,7 +12,7 @@ export interface IRunnerResultMeta {
 export const STEP_META = defineFork({
   type: NodeType.FORK,
   def: 'fork_wang_tiles' as NodeDef,
-  displayName: 'Fork: Wang Tiles',
+  displayName: 'Wang Tile | Fork',
   noInput: true,
   outputDataType: BitMask,
   branchDefs: [branchStepMeta.def],
