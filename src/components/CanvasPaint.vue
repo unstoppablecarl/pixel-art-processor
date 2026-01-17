@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
 import type { Position } from '../lib/pipeline/_types.ts'
-import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 import { parseColor } from '../lib/util/color.ts'
+import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 import { throttle } from '../lib/util/misc.ts'
 import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
+
+type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 
 const {
   imageDataRef,
@@ -16,7 +18,9 @@ const {
   brushShape = 'circle',
   brushSize = 10,
   scale = 1,
-  throttleMs = 300
+  drawLayerUnder = null,
+  drawLayerOver = null,
+  throttleMs = 0,
 } = defineProps<{
   imageDataRef: ImageDataRef,
   width?: number,
@@ -29,6 +33,8 @@ const {
   brushSize?: number,
   scale?: number,
   throttleMs?: number,
+  drawLayerUnder?: DrawLayer | null
+  drawLayerOver?: DrawLayer | null
 }>()
 
 const buffer = new ImageDataMutator()
@@ -169,10 +175,13 @@ const updateView = () => {
 
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
+  drawLayerUnder?.(ctx)
 
   // Draw the image data scaled up
   ctx.scale(scale, scale)
   buffer.drawOnto(ctx)
+
+  drawLayerOver?.(ctx)
 
   // Draw grid and cursor (these handle their own transforms)
   if (scale >= 4) {
@@ -282,9 +291,6 @@ defineExpose({
 
 onMounted(() => {
   updateSize()
-  const { ctx } = getViewCanvas()
-  if (!ctx) return
-
   if (imageDataRef.hasValue) {
     buffer.set(imageDataRef.get()!)
     updateView()

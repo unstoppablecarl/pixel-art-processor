@@ -1,4 +1,4 @@
-import { shallowReactive, type ShallowReactive } from 'vue'
+import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
 
 export function normalizeImageData(value: ImageDataOrRef): ImageData | null {
@@ -22,24 +22,34 @@ export type ImageDataRef = ShallowReactive<{
 
   readonly triggerRef: () => void,
   readonly clear: () => void,
-  readonly serialize: () => SerializedImageData | null,
+  readonly serialize: () => Raw<SerializedImageData> | null,
   readonly setSerialized: (serialized: SerializedImageData | null) => void
+  readonly deserializeConfig: <T extends SerializedImageData | null>(serialized: T) => T extends null ? null : Raw<T>
+  readonly onChange: (value: Sync) => void
 }>
 
+type Sync = (serialized: Raw<SerializedImageData> | null) => void
+
 export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
+  if (initial) markRaw(initial)
   let image: ImageData | null = initial
 
-  const capsule = shallowReactive({
+  let sync: Sync | null = null
+  const capsule: ImageDataRef = shallowReactive({
     hasValue: !!initial,
     width: initial?.width ?? 0,
     height: initial?.height ?? 0,
     watchTarget: 0,
+
     setQuiet(newValue: ImageData | null) {
+      if (image === null && newValue === null) return
       if (!newValue) {
         image = null
         capsule.hasValue = false
         capsule.width = 0
         capsule.height = 0
+
+        sync?.(serializeImageData(image))
         return
       }
 
@@ -60,7 +70,10 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
         capsule.width = newValue.width
         capsule.height = newValue.height
         image = newValue
+        markRaw(image)
       }
+
+      sync?.(serializeImageData(image))
     },
     clear() {
       if (!image) return
@@ -70,8 +83,10 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
       capsule.width = 0
       capsule.height = 0
       capsule.watchTarget++
+      sync?.(null)
     },
     set(newValue: ImageData | null) {
+      if (image === null && newValue === null) return
       capsule.setQuiet(newValue)
       capsule.watchTarget++
     },
@@ -81,9 +96,18 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
     triggerRef() {
       capsule.watchTarget++
     },
+    onChange(value: Sync) {
+      sync = value
+    },
     serialize: () => serializeImageData(image),
     setSerialized(serialized: SerializedImageData | null) {
-      image = deserializeImageData(serialized)
+      capsule.set(deserializeImageData(serialized))
+    },
+    // set the capsule value and mark the serialized obj raw so it can be safely set to the config object
+    deserializeConfig<T extends SerializedImageData | null>(serialized: T): T extends null ? null : Raw<T> {
+      capsule.set(deserializeImageData(serialized))
+      if (!serialized) return null as any
+      return markRaw(serialized) as any
     },
   })
 

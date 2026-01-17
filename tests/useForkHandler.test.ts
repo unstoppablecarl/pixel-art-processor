@@ -1,7 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { describe, expect, expectTypeOf, it } from 'vitest'
-import { type Component, type ShallowReactive, shallowReactive } from 'vue'
+import { type Component, type Raw, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
 import { BitMask } from '../src/lib/node-data-types/BitMask'
 import { HeightMap } from '../src/lib/node-data-types/HeightMap'
@@ -62,7 +62,7 @@ describe('fork handler type testing', async () => {
 
     type C = typeof configRaw
     type SC = {
-      maskImageData: SerializedImageData | null,
+      maskImageData: Raw<SerializedImageData> | null,
     }
     type RC = ShallowReactive<C>
 
