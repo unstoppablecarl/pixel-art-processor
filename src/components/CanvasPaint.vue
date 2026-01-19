@@ -4,7 +4,6 @@ import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import type { Position } from '../lib/pipeline/_types.ts'
 import { getPerfectCircleCoords, getRectCoords } from '../lib/util/data/Grid.ts'
 import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
-import { throttle } from '../lib/util/misc.ts'
 
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
@@ -22,7 +21,6 @@ const {
   scale = 1,
   drawLayerUnder = null,
   drawLayerOver = null,
-  throttleMs = 0,
 } = defineProps<{
   width?: number,
   height?: number,
@@ -61,10 +59,6 @@ const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
 }
 
 const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
-
-const updateImageData = throttle(() => {
-  // imageDataRef.set(buffer.imageData)
-}, throttleMs)
 
 const updateSize = () => {
   const viewCanvas = viewCanvasRef.value
@@ -255,7 +249,6 @@ const handleMouseDown = (e: MouseEvent): void => {
   draw(x, y)
   lastPos.value = { x, y }
 
-  updateImageData()
   updateView()
 }
 
@@ -279,7 +272,6 @@ const handleMouseMove = (e: MouseEvent): void => {
       draw(ix, iy)
     }
 
-    updateImageData()
     lastPos.value = { x, y }
   }
 
@@ -313,7 +305,6 @@ function fillCanvas(color: string): void {
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   updateView()
-  updateImageData()
 }
 
 function clearCanvas(): void {
@@ -321,7 +312,6 @@ function clearCanvas(): void {
   if (!ctx || !canvas) return
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   updateView()
-  updateImageData()
 }
 
 defineExpose({

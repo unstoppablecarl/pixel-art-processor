@@ -26,7 +26,6 @@ import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { markRawOrNull } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
   make4EdgeWangTileImages,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
@@ -43,7 +42,6 @@ const canvasPaintRef = useTemplateRef('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const maskImageData = imageDataRef()
 const {
   tileSize,
   gridWidth,
@@ -53,6 +51,7 @@ const {
   tileset,
   tileGrid,
   tilesetImageRefs,
+  maskImageDataSketch,
   tileGridEdgeColorSketch,
   cachedWangTileEdgeColorImageData,
   gridPixelToTilePixel,
@@ -191,7 +190,6 @@ const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
   for (const tileId of dirtyTiles) {
     syncTile(tileId)
   }
-  maskImageData.triggerRef()
 })
 
 async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
@@ -203,20 +201,16 @@ async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
   const borderImageData = cachedWangTileEdgeColorImageData.value[tileId].imageData
   const bitmap = await createImageBitmap(borderImageData)
   ctx.globalAlpha = 0.5
-  ctx.drawImage(bitmap,0, 0)
+  ctx.drawImage(bitmap, 0, 0)
   ctx.globalAlpha = 1
 }
 
-function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
-  const maskImgData = maskImageData.get()
-  if (!maskImgData) return
-  mutator.set(maskImgData!)
-
+function drawTileToMaskSketch(tileId: TileId, imageData: ImageData) {
   if (!tileGrid.value) return
   tileGrid.value.eachWithTileId(tileId, (tileX, tileY, tile) => {
     if (!tile) return
     const { gridX, gridY } = tilePixelToGridPixel(tileX, tileY, 0, 0)
-    mutator.putImageData(imageData, gridX, gridY)
+    maskImageDataSketch.putImageData(imageData, gridX, gridY)
   })
 }
 
@@ -226,7 +220,7 @@ function syncTile(tileId: TileId) {
   if (!imageData) return
 
   drawTileToTileCanvas(tileId, imageData)
-  drawTileToMaskImageDataRef(tileId, imageData)
+  drawTileToMaskSketch(tileId, imageData)
 
   config.wangTiles[tileId] = markRaw({
     tile: markRaw(tileset.byId.get(tileId)!),
@@ -240,11 +234,10 @@ function drawUnder(ctx: CanvasRenderingContext2D) {
 }
 
 function drawOver(ctx: CanvasRenderingContext2D) {
-
-  // ctx.fillStyle = '#ff0000'
-  // ctx.fillRect(0,0,20,20)
-
+  ctx.drawImage(maskImageDataSketch.canvas, 0, 0)
+  ctx.globalAlpha = 0.5
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
+  ctx.globalAlpha = 1
 }
 
 onMounted(() => {
@@ -282,7 +275,6 @@ onMounted(() => {
         :color="color"
         :draw-layer-under="drawUnder"
         :draw-layer-over="drawOver"
-        :image-data-ref="maskImageData"
         @set-pixels="setPixels"
       />
 

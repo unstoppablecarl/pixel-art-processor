@@ -202,14 +202,22 @@ export function make4EdgeWangTileImages() {
   const canvasWidth = computed(() => tileSize.value * gridWidth.value)
   const canvasHeight = computed(() => tileSize.value * gridHeight.value)
   const tileGridEdgeColorSketch = new Sketch(0, 0)
-  watchEffect(() => tileGridEdgeColorSketch.setSize(
-    canvasWidth.value,
-    canvasHeight.value,
-  ))
+  const maskImageDataSketch = new Sketch(0,0)
+  watchEffect(() => {
+    tileGridEdgeColorSketch.setSize(
+      canvasWidth.value,
+      canvasHeight.value,
+    )
+
+    maskImageDataSketch.setSize(
+      canvasWidth.value,
+      canvasHeight.value,
+    )
+  })
 
   const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
 
-// draw colored tile edges
+  // draw colored tile edges
   watchEffect(() => {
     if (!tileGrid.value) return
     tileGrid.value.each((tx, ty, tile) => {
@@ -256,6 +264,7 @@ export function make4EdgeWangTileImages() {
     tileset,
     tileGrid,
     tilesetImageRefs,
+    maskImageDataSketch,
     tileGridEdgeColorSketch,
     cachedWangTileEdgeColorPixelMaps,
     cachedWangTileEdgeColorImageData,
