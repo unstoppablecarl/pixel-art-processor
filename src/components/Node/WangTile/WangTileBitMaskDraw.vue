@@ -107,7 +107,7 @@ const handler = defineStepHandler<Config, SerializedConfig, ReactiveConfig>(STEP
         if (imgDataRef) {
           imageData = imgDataRef.deserializeConfig(tile.imageData)
         } else {
-           imageData = markRawOrNull(tile.imageData)
+          imageData = markRawOrNull(tile.imageData)
         }
 
         return [id, {
@@ -147,12 +147,10 @@ if (import.meta.hot && !import.meta.env.VITEST) {
 
 const brushShape = ref<'circle' | 'square'>('circle')
 const brushSize: Ref<number> = ref(10)
-
+const mode = ref<'add' | 'remove'>('add')
 const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
-
-const mode = ref<'add' | 'remove'>('add')
-const color = computed(() => mode.value === 'add' ? parseColor('#fff') : parseColor('#000'))
+const color = computed(() => mode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
 const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
 
@@ -167,6 +165,7 @@ const {
   canvasHeight,
   tileGrid,
   tileGridEdgeColorSketch,
+  cachedWangTileEdgeColorImageData,
   gridPixelToTilePixel,
   tilePixelToGridPixel,
 } = make4EdgeWangTileImages(tileset)
@@ -179,33 +178,38 @@ function setPixels(pixels: Point[]) {
   if (!tileGrid.value) return
 
   pixels.forEach(({ x, y }) => {
-  const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
-  if (!tile) return
-  const tilesetImageDataRef = tilesetImageRefs[tile.id].imageDataRef!
-  const imageData = tilesetImageDataRef.get()
-  if (!imageData) return
+    const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
+    if (!tile) return
+    const tilesetImageDataRef = tilesetImageRefs[tile.id].imageDataRef!
+    const imageData = tilesetImageDataRef.get()
+    if (!imageData) return
 
-  mutator.set(imageData)
+    mutator.set(imageData)
     mutator.setPixel(pixelX, pixelY, color.value)
 
-  markDirty(tile.id)
+    markDirty(tile.id)
   })
 }
 
 const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
-  // console.log('syncDirtyTiles')
   for (const tileId of dirtyTiles) {
     syncTile(tileId)
   }
   maskImageData.triggerRef()
 })
 
-function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
-  // console.log('drawTileToTileCanvas', tileId, imageData.data.length)
+async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
   const canvas = tilesetCanvases.value[tileId]
   if (!canvas) return
   const ctx = canvas.getContext('2d')!
   ctx.putImageData(imageData, 0, 0)
+
+  const borderImageData = cachedWangTileEdgeColorImageData.value[tileId].imageData
+  const bitmap = await createImageBitmap(borderImageData)
+  console.log({bitmap})
+  ctx.globalAlpha = 0.5
+  ctx.drawImage(bitmap, 0, 0)
+  ctx.globalAlpha = 1
 }
 
 function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
@@ -266,6 +270,7 @@ onMounted(() => {
         :ref="el => setCanvasRef(el as HTMLCanvasElement | null, item.id)"
         :width="tileSize"
         :height="tileSize"
+        class="canvas-tile"
       >
       </canvas>
     </template>
@@ -346,3 +351,10 @@ onMounted(() => {
     </template>
   </NodeCard>
 </template>
+<style lang="scss">
+.canvas-tile {
+  width: calc(var(--node-img-width, 150px) * var(--node-img-scale, 1));
+  height: calc(var(--node-img-width, 150px) * var(--node-img-scale, 1));
+  image-rendering: pixelated;
+}
+</style>

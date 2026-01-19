@@ -148,8 +148,11 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
   return pixelMap
 }
 
-type TilePixelMapRecords = Record<TileId, {
-  tile: WangTile<number>,
+type TileRecord<T> = Record<TileId, {
+  tile: WangTile<number>
+} & T>
+
+type TilePixelMapRecords = TileRecord<{
   pixelMap: PixelMap
 }>
 
@@ -166,6 +169,17 @@ export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
         pixelMap: makeWangTileEdgesPixelMap(tileSize.value, tile),
       }],
     ))
+  })
+
+  const cachedWangTileEdgeColorImageData = computed((): TileRecord<{ imageData: ImageData }> => {
+    return Object.fromEntries(
+      Object.entries(cachedWangTileEdgeColorPixelMaps.value).map(([tileId, item]) => [
+        tileId, {
+          tile: item.tile,
+          imageData: item.pixelMap.toImageData(),
+        }],
+      ),
+    )
   })
 
   const canvasWidth = computed(() => tileSize.value * gridWidth.value)
@@ -226,6 +240,7 @@ export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
     tileGrid,
     tileGridEdgeColorSketch,
     cachedWangTileEdgeColorPixelMaps,
+    cachedWangTileEdgeColorImageData,
     tilePixelToGridPixel,
     gridPixelToTile,
     gridPixelToTilePixel,
