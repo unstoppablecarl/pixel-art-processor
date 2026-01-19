@@ -1,34 +1,19 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
+import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import type { Position } from '../lib/pipeline/_types.ts'
-import { parseColor } from '../lib/util/color.ts'
-import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
-import { throttle } from '../lib/util/misc.ts'
-import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
-import RGBA = tinycolor.ColorFormats.RGBA
+import { getPerfectCircleCoords, getRectCoords } from '../lib/util/data/Grid.ts'
+import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 
-type DrawLayer = (ctx: CanvasRenderingContext2D, buffer: CustomBuffer) => void
+type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
-  (e: 'setPixel', x: number, y: number, color: RGBA): void;
+  (e: 'setPixels', pixels: Point[]): void;
 }
 const emit = defineEmits<Emits>()
 
-class CustomBuffer extends ImageDataMutator {
-  setPixel(x: number, y: number, color: RGBA) {
-    // super.setPixel(x, y, color)
-    emit('setPixel', x, y, color)
-  }
-
-  setPixelQuiet(x: number, y: number, color: RGBA) {
-    super.setPixel(x, y, color)
-  }
-}
-
 const {
-  imageDataRef,
   width = 64,
   height = 64,
-  color = '#00ff00',
   cursorColor = '#fff',
   gridColor = 'rgba(0, 0, 0, 0.2)',
   brushShape = 'circle',
@@ -36,15 +21,11 @@ const {
   scale = 1,
   drawLayerUnder = null,
   drawLayerOver = null,
-  throttleMs = 0,
 } = defineProps<{
-  imageDataRef: ImageDataRef,
   width?: number,
   height?: number,
-  bgColor?: string,
   cursorColor?: string,
   gridColor?: string,
-  color?: string,
   brushShape?: 'circle' | 'square',
   brushSize?: number,
   scale?: number,
@@ -52,8 +33,6 @@ const {
   drawLayerUnder?: DrawLayer | null
   drawLayerOver?: DrawLayer | null
 }>()
-
-const buffer = new CustomBuffer()
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
@@ -64,8 +43,6 @@ let cursorCache: HTMLCanvasElement | null = null
 const isDrawing: Ref<boolean> = ref(false)
 const lastPos: Ref<Position> = ref({ x: 0, y: 0 })
 const cursorPos: Ref<Position | null> = ref(null)
-
-const colorRGBA = computed(() => parseColor(color))
 
 const scaledWidth = computed(() => Math.floor(width * scale))
 const scaledHeight = computed(() => Math.floor(height * scale))
@@ -82,10 +59,6 @@ const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
 }
 
 const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
-
-const updateImageData = throttle(() => {
-  // imageDataRef.set(buffer.imageData)
-}, throttleMs)
 
 const updateSize = () => {
   const viewCanvas = viewCanvasRef.value
@@ -223,12 +196,10 @@ const updateView = () => {
   ctx.scale(scale, scale)
 
   // Draw layers under
-  drawLayerUnder?.(ctx, buffer)
-
-  buffer.drawOnto(ctx)
+  drawLayerUnder?.(ctx)
 
   // Draw layers over
-  drawLayerOver?.(ctx, buffer)
+  drawLayerOver?.(ctx)
 
   // Reset transform for overlays
   ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -262,11 +233,14 @@ const getCanvasCoords = (e: MouseEvent): Position => {
 }
 
 const draw = (x: number, y: number): void => {
+  let pixels: Point[] = []
   if (brushShape === 'circle') {
-    buffer.drawPixelPerfectCircle(x, y, brushSize / 2, colorRGBA.value)
+    pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
   } else {
-    buffer.strokeRect(x, y, brushSize, brushSize, colorRGBA.value)
+    pixels = getRectCoords(x, y, brushSize, brushSize, width, height)
   }
+
+  emit('setPixels', pixels)
 }
 
 const handleMouseDown = (e: MouseEvent): void => {
@@ -275,7 +249,6 @@ const handleMouseDown = (e: MouseEvent): void => {
   draw(x, y)
   lastPos.value = { x, y }
 
-  updateImageData()
   updateView()
 }
 
@@ -299,7 +272,6 @@ const handleMouseMove = (e: MouseEvent): void => {
       draw(ix, iy)
     }
 
-    updateImageData()
     lastPos.value = { x, y }
   }
 
@@ -333,16 +305,13 @@ function fillCanvas(color: string): void {
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
   updateView()
-  updateImageData()
 }
 
 function clearCanvas(): void {
   const { canvas, ctx } = getViewCanvas()
   if (!ctx || !canvas) return
-  buffer.imageData?.data.fill(0)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   updateView()
-  updateImageData()
 }
 
 defineExpose({
@@ -353,13 +322,6 @@ defineExpose({
 onMounted(() => {
   initCaches()
   updateSize()
-
-  if (imageDataRef.hasValue) {
-    buffer.set(imageDataRef.get()!)
-  } else {
-    buffer.set(new ImageData(width, height))
-    buffer.clear()
-  }
 
   updateGridCache()
   updateView()

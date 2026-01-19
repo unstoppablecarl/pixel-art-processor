@@ -12,7 +12,8 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, nextTick, onMounted, type Raw, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import { computed, onMounted, type Raw, reactive, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
@@ -22,11 +23,12 @@ import {
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { ImageDataMutator } from '../../../lib/util/html-dom/ImageDataMutator.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
+import { markRawOrNull } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
-  make4EdgeWangTileImages,
+  make4EdgeWangTileImages, make4EdgeWangTileset,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
@@ -35,7 +37,6 @@ import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
 import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
-import RGBA = tinycolor.ColorFormats.RGBA
 
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef('canvasPaintRef')
@@ -43,7 +44,17 @@ const canvasPaintRef = useTemplateRef('canvasPaintRef')
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const maskImageData = imageDataRef()
-
+const tileset = make4EdgeWangTileset()
+const tilesetImageRefs = reactive(Object.fromEntries(
+  tileset.tiles.map(tile => {
+    return [
+      tile.id, {
+        tile,
+        imageDataRef: imageDataRef(new ImageData(20, 10)),
+      },
+    ]
+  }),
+))
 const SIZE_DEFAULTS = rangeSliderConfig({
   value: 64,
   min: 8,
@@ -61,7 +72,7 @@ const CONFIG_DEFAULTS = () => (
     },
     wangTiles: {} as Record<TileId, {
       tile: WangTile<number>,
-      imageData: SerializedImageData
+      imageData: Raw<SerializedImageData> | null
     }>,
 
     maskImageData: null as (SerializedImageData | null),
@@ -85,6 +96,26 @@ const handler = defineStepHandler<Config, SerializedConfig, ReactiveConfig>(STEP
   },
   deserializeConfig(config) {
     // config.maskImageData = maskImageData.deserializeConfig(config.maskImageData)
+
+    config.wangTiles = Object.fromEntries(
+      Object.entries(config.wangTiles).map(([tileId, tile]) => {
+        const id = tileId as TileId
+
+        const imgDataRef = tilesetImageRefs?.[id]?.imageDataRef
+        //
+        let imageData: Raw<SerializedImageData> | null
+        if (imgDataRef) {
+          imageData = imgDataRef.deserializeConfig(tile.imageData)
+        } else {
+           imageData = markRawOrNull(tile.imageData)
+        }
+
+        return [id, {
+          tile: tile.tile,
+          imageData,
+        }]
+      }),
+    )
 
     return config
   },
@@ -123,7 +154,6 @@ const gridColor = toRef(config, 'showGridColor')
 const mode = ref<'add' | 'remove'>('add')
 const color = computed(() => mode.value === 'add' ? parseColor('#fff') : parseColor('#000'))
 
-
 const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
 
 function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
@@ -133,36 +163,33 @@ function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
 
 const {
   tileSize,
-  gridWidth,
-  gridHeight,
   canvasWidth,
   canvasHeight,
-  tileset,
   tileGrid,
-  tilesetImageRefs,
   tileGridEdgeColorSketch,
   gridPixelToTilePixel,
   tilePixelToGridPixel,
-} = make4EdgeWangTileImages()
+} = make4EdgeWangTileImages(tileset)
 
 tileSize.value = config.size.value
 watch(tileSize, () => config.size.value = tileSize.value)
 const mutator = new ImageDataMutator()
 
-function setPixel(x: number, y: number, color: RGBA) {
+function setPixels(pixels: Point[]) {
   if (!tileGrid.value) return
+
+  pixels.forEach(({ x, y }) => {
   const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
   if (!tile) return
-  const tilesetImageDataRef = tilesetImageRefs.value[tile.id].imageDataRef!
+  const tilesetImageDataRef = tilesetImageRefs[tile.id].imageDataRef!
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
   mutator.set(imageData)
-  mutator.setPixel(pixelX, pixelY, color)
-
-  // console.log('setPixel', x, y, tile.id)
+    mutator.setPixel(pixelX, pixelY, color.value)
 
   markDirty(tile.id)
+  })
 }
 
 const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
@@ -195,17 +222,17 @@ function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
 }
 
 function syncTile(tileId: TileId) {
-  const tilesetImageDataRef = tilesetImageRefs.value[tileId].imageDataRef!
+  const tilesetImageDataRef = tilesetImageRefs[tileId].imageDataRef!
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
   drawTileToTileCanvas(tileId, imageData)
   drawTileToMaskImageDataRef(tileId, imageData)
 
-  // config.wangTiles[tileId] = {
-  //   tile: tileset.byId.get(tileId)!,
-  //   imageData: serializeImageData(imageData),
-  // }
+  config.wangTiles[tileId] = {
+    tile: tileset.byId.get(tileId)!,
+    imageData: serializeImageData(imageData),
+  }
 }
 
 function drawUnder(ctx: CanvasRenderingContext2D) {
@@ -233,7 +260,6 @@ onMounted(() => {
     show-dimensions
   >
     <template #body>
-      Body
       <canvas
         v-for="(item, index) in tileset.tiles"
         :key="index"
@@ -254,11 +280,9 @@ onMounted(() => {
         :brush-size="brushSize"
         :cursor-color="cursorColor"
         :grid-color="gridColor"
-        :color="color"
         :draw-layer-under="drawUnder"
         :draw-layer-over="drawOver"
-        :image-data-ref="maskImageData"
-        @set-pixel="setPixel"
+        @set-pixels="setPixels"
       />
 
       <CardFooterSettingsTabs

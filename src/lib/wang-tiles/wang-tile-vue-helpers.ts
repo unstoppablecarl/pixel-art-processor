@@ -1,4 +1,4 @@
-import { computed, reactive, ref, watchEffect } from 'vue'
+import { computed, ref, watchEffect } from 'vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
@@ -6,7 +6,6 @@ import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { type ImageDataRef, imageDataRef } from '../vue/vue-image-data.ts'
 import { makeWangGrid } from './WangGrid.ts'
 import {
   type TileId,
@@ -154,13 +153,7 @@ type TilePixelMapRecords = Record<TileId, {
   pixelMap: PixelMap
 }>
 
-type TileImageDataRefRecords = Record<TileId, {
-  tile: WangTile<number>,
-  imageDataRef: ImageDataRef
-}>
-
-export function make4EdgeWangTileImages() {
-  const tileset = make4EdgeWangTileset()
+export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
 
   const tileSize = ref(1)
   const gridWidth = ref(6)
@@ -172,19 +165,6 @@ export function make4EdgeWangTileImages() {
         tile,
         pixelMap: makeWangTileEdgesPixelMap(tileSize.value, tile),
       }],
-    ))
-  })
-
-  const tilesetImageRefs = computed((): TileImageDataRefRecords => {
-    return reactive(Object.fromEntries(
-      tileset.tiles.map(tile => {
-        return [
-          tile.id, {
-            tile,
-            imageDataRef: imageDataRef(new ImageData(tileSize.value, tileSize.value)),
-          },
-        ]
-      }),
     ))
   })
 
@@ -244,7 +224,6 @@ export function make4EdgeWangTileImages() {
     canvasHeight,
     tileset,
     tileGrid,
-    tilesetImageRefs,
     tileGridEdgeColorSketch,
     cachedWangTileEdgeColorPixelMaps,
     tilePixelToGridPixel,
