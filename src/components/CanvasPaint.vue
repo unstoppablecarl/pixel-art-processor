@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
+import { computed, nextTick, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import type { Position } from '../lib/pipeline/_types.ts'
 import { getPerfectCircleCoords, getRectCoords } from '../lib/util/data/Grid.ts'
 import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 
-type DrawLayer = (ctx: CanvasRenderingContext2D) => void
+type DrawLayer = (ctx: CanvasRenderingContext2D) => Promise<void>
 type Emits = {
   (e: 'setPixels', pixels: Point[]): void,
   (e: 'clear'): void
@@ -244,7 +244,7 @@ const handleMouseDown = (e: MouseEvent): void => {
   paint(x, y)
   lastPos.value = { x, y }
 
-  updateView()
+  nextTick(() => updateView())
 }
 
 const handleMouseMove = (e: MouseEvent): void => {

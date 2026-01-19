@@ -12,7 +12,7 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, onMounted, type Raw, reactive, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import { computed, markRaw, onMounted, type Raw, reactive, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
@@ -43,7 +43,6 @@ const canvasPaintRef = useTemplateRef('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const maskImageData = imageDataRef()
 const tileset = make4EdgeWangTileset()
 const tilesetImageRefs = reactive(Object.fromEntries(
   tileset.tiles.map(tile => {
@@ -161,6 +160,11 @@ const {
   gridHeight,
 )
 
+let maskImageData = new ImageData(canvasWidth.value, canvasHeight.value)
+watch([canvasWidth, canvasHeight], () => {
+  maskImageData = markRaw(new ImageData(canvasWidth.value, canvasHeight.value))
+})
+
 watch(tileSize, () => {
   Object.values(tilesetImageRefs).forEach(item => {
     if (!item.imageDataRef.hasValue) {
@@ -194,15 +198,13 @@ function setPixels(pixels: Point[]) {
   })
 }
 
-const { markDirty } = useDirtyBatching<TileId>(async (dirtyTiles) => {
+const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
   for (const tileId of dirtyTiles) {
-    await syncTile(tileId)
+    syncTile(tileId)
   }
-  maskImageData.triggerRef()
 })
 
-async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
-  console.log('draw', tileId)
+function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
   const canvas = tilesetCanvases.value[tileId]
   if (!canvas) return
   const ctx = canvas.getContext('2d')!
@@ -210,16 +212,15 @@ async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
   ctx.putImageData(imageData, 0, 0)
 
   const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
-  const bitmap = await createImageBitmap(borderImageData)
+
+  mutator.set(borderImageData)
   ctx.globalAlpha = 0.5
-  ctx.drawImage(bitmap, 0, 0)
+  mutator.drawOnto(ctx)
   ctx.globalAlpha = 1
 }
 
 function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
-  const maskImgData = maskImageData.get()
-  if (!maskImgData) return
-  mutator.set(maskImgData!)
+  mutator.set(maskImageData)
 
   if (!tileGrid.value) return
   tileGrid.value.eachWithTileId(tileId, (tileX, tileY, tile) => {
@@ -229,12 +230,12 @@ function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
   })
 }
 
-async function syncTile(tileId: TileId) {
+function syncTile(tileId: TileId) {
   const tilesetImageDataRef = tilesetImageRefs[tileId].imageDataRef!
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
-  await drawTileToTileCanvas(tileId, imageData)
+  drawTileToTileCanvas(tileId, imageData)
   drawTileToMaskImageDataRef(tileId, imageData)
 
   config.wangTiles[tileId] = {
@@ -244,7 +245,10 @@ async function syncTile(tileId: TileId) {
 }
 
 function draw(ctx: CanvasRenderingContext2D) {
-  // ctx.putImageData(maskImageData.get()!, 0, 0)
+
+  mutator.set(maskImageData)
+  mutator.drawOnto(ctx)
+
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
