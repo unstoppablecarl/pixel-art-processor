@@ -4,6 +4,8 @@ import {
   isReactive,
   isReadonly,
   isRef,
+  markRaw,
+  type Raw,
   type Ref,
   toRaw,
   toValue,
@@ -83,4 +85,9 @@ export type StepImg = {
 
 export type StepImgInput = Omit<StepImg, 'imageData'> & {
   imageData: ImageDataRef | ImageData | null,
+}
+
+export function markRawOrNull<T extends object | null>(value: T): T extends null ? null : Raw<T> {
+  if (value === null) return null as any
+  return markRaw(value) as any
 }

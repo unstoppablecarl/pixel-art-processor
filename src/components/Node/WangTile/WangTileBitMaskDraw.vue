@@ -12,15 +12,18 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, nextTick, onMounted, type Raw, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import { computed, markRaw, onMounted, type Raw, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
+import { parseColor } from '../../../lib/util/color.ts'
 import {
-  type SerializedImageData, serializeImageData,
+  type SerializedImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { ImageDataMutator } from '../../../lib/util/html-dom/ImageDataMutator.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
+import { markRawOrNull } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
@@ -34,7 +37,6 @@ import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
 import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
-import RGBA = tinycolor.ColorFormats.RGBA
 
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef('canvasPaintRef')
@@ -42,6 +44,20 @@ const canvasPaintRef = useTemplateRef('canvasPaintRef')
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
 const maskImageData = imageDataRef()
+const {
+  tileSize,
+  gridWidth,
+  gridHeight,
+  canvasWidth,
+  canvasHeight,
+  tileset,
+  tileGrid,
+  tilesetImageRefs,
+  tileGridEdgeColorSketch,
+  cachedWangTileEdgeColorImageData,
+  gridPixelToTilePixel,
+  tilePixelToGridPixel,
+} = make4EdgeWangTileImages()
 
 const SIZE_DEFAULTS = rangeSliderConfig({
   value: 64,
@@ -60,7 +76,7 @@ const CONFIG_DEFAULTS = () => (
     },
     wangTiles: {} as Record<TileId, {
       tile: WangTile<number>,
-      imageData: SerializedImageData
+      imageData: Raw<SerializedImageData> | null
     }>,
 
     maskImageData: null as (SerializedImageData | null),
@@ -84,6 +100,26 @@ const handler = defineStepHandler<Config, SerializedConfig, ReactiveConfig>(STEP
   },
   deserializeConfig(config) {
     // config.maskImageData = maskImageData.deserializeConfig(config.maskImageData)
+
+    config.wangTiles = Object.fromEntries(
+      Object.entries(config.wangTiles).map(([tileId, tile]) => {
+        const id = tileId as TileId
+
+        const imgDataRef = tilesetImageRefs?.[id]?.imageDataRef
+
+        let imageData: Raw<SerializedImageData> | null
+        if (imgDataRef) {
+          imageData = imgDataRef.deserializeConfig(tile.imageData)
+        } else {
+          imageData = markRawOrNull(tile.imageData)
+        }
+
+        return [id, {
+          tile: tile.tile,
+          imageData,
+        }]
+      }),
+    )
 
     return config
   },
@@ -120,11 +156,11 @@ const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
 
 const mode = ref<'add' | 'remove'>('add')
-const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
+const color = computed(() => mode.value === 'add' ? parseColor('#fff') : parseColor('#000'))
 
-const tileSize = computed(() => config.size.value)
-const gridWidth = ref(4)
-const gridHeight = ref(4)
+tileSize.value = config.size.value
+watch(tileSize, () => config.size.value = tileSize.value)
+
 const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
 
 function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
@@ -132,53 +168,43 @@ function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
   tilesetCanvases.value[tileId] = el
 }
 
-const {
-  canvasWidth,
-  canvasHeight,
-  tileset,
-  tileGrid,
-  tilesetImageRefs,
-  tileGridEdgeColorSketch,
-  gridPixelToTilePixel,
-  tilePixelToGridPixel,
-} = make4EdgeWangTileImages(
-  tileSize,
-  gridWidth,
-  gridHeight,
-)
-
 const mutator = new ImageDataMutator()
 
-function setPixel(x: number, y: number, color: RGBA) {
+function setPixels(pixels: Point[]) {
   if (!tileGrid.value) return
-  const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
-  if (!tile) return
-  const tilesetImageDataRef = tilesetImageRefs.value[tile.id].imageDataRef!
-  const imageData = tilesetImageDataRef.get()
-  if (!imageData) return
 
-  mutator.set(imageData)
-  mutator.setPixel(pixelX, pixelY, color)
+  pixels.forEach(({ x, y }) => {
+    const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
+    if (!tile) return
+    const tilesetImageDataRef = tilesetImageRefs[tile.id].imageDataRef!
+    const imageData = tilesetImageDataRef.get()
+    if (!imageData) return
 
-  // console.log('setPixel', x, y, tile.id)
+    mutator.set(imageData)
+    mutator.setPixel(pixelX, pixelY, color.value)
 
-  markDirty(tile.id)
+    markDirty(tile.id)
+  })
 }
 
 const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
-  // console.log('syncDirtyTiles')
   for (const tileId of dirtyTiles) {
     syncTile(tileId)
   }
   maskImageData.triggerRef()
 })
 
-function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
-  // console.log('drawTileToTileCanvas', tileId, imageData.data.length)
+async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
   const canvas = tilesetCanvases.value[tileId]
   if (!canvas) return
   const ctx = canvas.getContext('2d')!
   ctx.putImageData(imageData, 0, 0)
+
+  const borderImageData = cachedWangTileEdgeColorImageData.value[tileId].imageData
+  const bitmap = await createImageBitmap(borderImageData)
+  ctx.globalAlpha = 0.5
+  ctx.drawImage(bitmap,0, 0)
+  ctx.globalAlpha = 1
 }
 
 function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
@@ -195,17 +221,17 @@ function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
 }
 
 function syncTile(tileId: TileId) {
-  const tilesetImageDataRef = tilesetImageRefs.value[tileId].imageDataRef!
+  const tilesetImageDataRef = tilesetImageRefs[tileId].imageDataRef!
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
   drawTileToTileCanvas(tileId, imageData)
   drawTileToMaskImageDataRef(tileId, imageData)
 
-  // config.wangTiles[tileId] = {
-  //   tile: tileset.byId.get(tileId)!,
-  //   imageData: serializeImageData(imageData),
-  // }
+  config.wangTiles[tileId] = markRaw({
+    tile: markRaw(tileset.byId.get(tileId)!),
+    imageData: tilesetImageDataRef.serialize(),
+  })
 }
 
 function drawUnder(ctx: CanvasRenderingContext2D) {
@@ -233,7 +259,6 @@ onMounted(() => {
     show-dimensions
   >
     <template #body>
-      Body
       <canvas
         v-for="(item, index) in tileset.tiles"
         :key="index"
@@ -258,7 +283,7 @@ onMounted(() => {
         :draw-layer-under="drawUnder"
         :draw-layer-over="drawOver"
         :image-data-ref="maskImageData"
-        @set-pixel="setPixel"
+        @set-pixels="setPixels"
       />
 
       <CardFooterSettingsTabs

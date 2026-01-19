@@ -1,4 +1,4 @@
-import { computed, reactive, type Ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
@@ -149,22 +149,24 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
   return pixelMap
 }
 
-type TilePixelMapRecords = Record<TileId, {
-  tile: WangTile<number>,
+type TileRecord<T> = Record<TileId, {
+  tile: WangTile<number>
+} & T>
+
+type TilePixelMapRecords = TileRecord<{
   pixelMap: PixelMap
 }>
 
-type TileImageDataRefRecords = Record<TileId, {
-  tile: WangTile<number>,
+type TileImageDataRefRecords = TileRecord<{
   imageDataRef: ImageDataRef
 }>
 
-export function make4EdgeWangTileImages(
-  tileSize: Ref<number>,
-  gridWidth: Ref<number>,
-  gridHeight: Ref<number>,
-) {
+export function make4EdgeWangTileImages() {
   const tileset = make4EdgeWangTileset()
+
+  const tileSize = ref(1)
+  const gridWidth = ref(6)
+  const gridHeight = ref(6)
 
   const cachedWangTileEdgeColorPixelMaps = computed((): TilePixelMapRecords => {
     return Object.fromEntries(tileset.tiles.map(tile => [
@@ -175,18 +177,27 @@ export function make4EdgeWangTileImages(
     ))
   })
 
-  const tilesetImageRefs = computed((): TileImageDataRefRecords => {
-    return reactive(Object.fromEntries(
-      tileset.tiles.map(tile => {
-        return [
-          tile.id, {
-            tile,
-            imageDataRef: imageDataRef(new ImageData(tileSize.value, tileSize.value)),
-          },
-        ]
-      }),
-    ))
+  const cachedWangTileEdgeColorImageData = computed((): TileRecord<{ imageData: ImageData }> => {
+    return Object.fromEntries(
+      Object.entries(cachedWangTileEdgeColorPixelMaps.value).map(([tileId, item]) => [
+        tileId, {
+          tile: item.tile,
+          imageData: item.pixelMap.toImageData(),
+        }],
+      ),
+    )
   })
+
+  const tilesetImageRefs: TileImageDataRefRecords = reactive(Object.fromEntries(
+    tileset.tiles.map(tile => {
+      return [
+        tile.id, {
+          tile,
+          imageDataRef: imageDataRef(new ImageData(tileSize.value, tileSize.value)),
+        },
+      ]
+    }),
+  ))
 
   const canvasWidth = computed(() => tileSize.value * gridWidth.value)
   const canvasHeight = computed(() => tileSize.value * gridHeight.value)
@@ -237,6 +248,9 @@ export function make4EdgeWangTileImages(
   }
 
   return {
+    tileSize,
+    gridWidth,
+    gridHeight,
     canvasWidth,
     canvasHeight,
     tileset,
@@ -244,6 +258,7 @@ export function make4EdgeWangTileImages(
     tilesetImageRefs,
     tileGridEdgeColorSketch,
     cachedWangTileEdgeColorPixelMaps,
+    cachedWangTileEdgeColorImageData,
     tilePixelToGridPixel,
     gridPixelToTile,
     gridPixelToTilePixel,
