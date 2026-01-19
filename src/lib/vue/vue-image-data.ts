@@ -22,6 +22,7 @@ export type ImageDataRef = ShallowReactive<{
 
   readonly triggerRef: () => void,
   readonly clear: () => void,
+  readonly clearPixels: () => void,
   readonly serialize: () => Raw<SerializedImageData> | null,
   readonly setSerialized: (serialized: SerializedImageData | null) => void
   readonly deserializeConfig: <T extends SerializedImageData | null>(serialized: T) => T extends null ? null : Raw<T>
@@ -84,6 +85,10 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
       capsule.height = 0
       capsule.watchTarget++
       sync?.(null)
+    },
+    clearPixels() {
+      if (!image) return
+      image.data.fill(0)
     },
     set(newValue: ImageData | null) {
       if (image === null && newValue === null) return

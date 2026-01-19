@@ -316,6 +316,7 @@ function clearCanvas(): void {
 defineExpose({
   clearCanvas,
   fillCanvas,
+  viewCanvasRef,
 })
 
 onMounted(() => {

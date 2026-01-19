@@ -46,12 +46,7 @@ const { nodeId } = defineProps<{ nodeId: NodeId }>()
 const tileset = make4EdgeWangTileset()
 const tilesetImageRefs = reactive(Object.fromEntries(
   tileset.tiles.map(tile => {
-    return [
-      tile.id, {
-        tile,
-        imageDataRef: imageDataRef(),
-      },
-    ]
+    return [tile.id, imageDataRef()]
   }),
 ))
 const SIZE_DEFAULTS = rangeSliderConfig({
@@ -85,7 +80,7 @@ const handler = defineStepHandler<Config>(STEP_META, {
       Object.entries(config.wangTiles).map(([tileId, tile]) => {
         const id = tileId as TileId
 
-        const imgDataRef = tilesetImageRefs?.[id]?.imageDataRef
+        const imgDataRef = tilesetImageRefs?.[id]
         //
         let imageData: Raw<SerializedImageData> | null
         if (imgDataRef) {
@@ -167,8 +162,8 @@ watch([canvasWidth, canvasHeight], () => {
 
 watch(tileSize, () => {
   Object.values(tilesetImageRefs).forEach(item => {
-    if (!item.imageDataRef.hasValue) {
-      item.imageDataRef.set(new ImageData(tileSize.value, tileSize.value))
+    if (!item.hasValue) {
+      item.set(new ImageData(tileSize.value, tileSize.value))
     }
   })
 
@@ -187,7 +182,7 @@ function setPixels(pixels: Point[]) {
   pixels.forEach(({ x, y }) => {
     const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
     if (!tile) return
-    const tilesetImageDataRef = tilesetImageRefs[tile.id].imageDataRef!
+    const tilesetImageDataRef = tilesetImageRefs[tile.id]!
     const imageData = tilesetImageDataRef.get()
     if (!imageData) return
 
@@ -231,7 +226,7 @@ function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
 }
 
 function syncTile(tileId: TileId) {
-  const tilesetImageDataRef = tilesetImageRefs[tileId].imageDataRef!
+  const tilesetImageDataRef = tilesetImageRefs[tileId]!
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
@@ -246,15 +241,17 @@ function syncTile(tileId: TileId) {
 
 function draw(ctx: CanvasRenderingContext2D) {
   mutator.set(maskImageData)
-  mutator.drawOnto(ctx)
+    .drawOnto(ctx)
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
 function clear() {
-  Object.values(tilesetImageRefs).forEach(item => {
-    item.imageDataRef.clear()
-    markDirty(item.tile.id)
-  })
+  Object.entries(tilesetImageRefs).forEach(([tileId, item]) => {
+      item.clearPixels()
+
+      markDirty(tileId as TileId)
+    },
+  )
 }
 
 onMounted(() => {
