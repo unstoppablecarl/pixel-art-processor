@@ -5,7 +5,7 @@ import type { Position } from '../lib/pipeline/_types.ts'
 import { getPerfectCircleCoords, getRectCoords } from '../lib/util/data/Grid.ts'
 import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 
-type DrawLayer = (ctx: CanvasRenderingContext2D) => Promise<void>
+type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
   (e: 'setPixels', pixels: Point[]): void,
   (e: 'clear'): void
@@ -29,7 +29,6 @@ const {
   brushShape?: 'circle' | 'square',
   brushSize?: number,
   scale?: number,
-  throttleMs?: number,
   draw?: DrawLayer | null
 }>()
 

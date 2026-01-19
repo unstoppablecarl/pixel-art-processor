@@ -245,10 +245,8 @@ function syncTile(tileId: TileId) {
 }
 
 function draw(ctx: CanvasRenderingContext2D) {
-
   mutator.set(maskImageData)
   mutator.drawOnto(ctx)
-
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
