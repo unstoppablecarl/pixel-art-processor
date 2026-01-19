@@ -16,6 +16,7 @@ import { computed, nextTick, onMounted, type Raw, Ref, ref, toRef, useTemplateRe
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
+import { parseColor } from '../../../lib/util/color.ts'
 import {
   type SerializedImageData, serializeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
@@ -120,11 +121,9 @@ const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
 
 const mode = ref<'add' | 'remove'>('add')
-const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
+const color = computed(() => mode.value === 'add' ? parseColor('#fff') : parseColor('#000'))
 
-const tileSize = computed(() => config.size.value)
-const gridWidth = ref(4)
-const gridHeight = ref(4)
+
 const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
 
 function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
@@ -133,6 +132,9 @@ function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
 }
 
 const {
+  tileSize,
+  gridWidth,
+  gridHeight,
   canvasWidth,
   canvasHeight,
   tileset,
@@ -141,12 +143,10 @@ const {
   tileGridEdgeColorSketch,
   gridPixelToTilePixel,
   tilePixelToGridPixel,
-} = make4EdgeWangTileImages(
-  tileSize,
-  gridWidth,
-  gridHeight,
-)
+} = make4EdgeWangTileImages()
 
+tileSize.value = config.size.value
+watch(tileSize, () => config.size.value = tileSize.value)
 const mutator = new ImageDataMutator()
 
 function setPixel(x: number, y: number, color: RGBA) {

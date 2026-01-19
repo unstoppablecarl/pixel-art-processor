@@ -91,9 +91,16 @@ export class WangGrid<T> {
 }
 
 export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>): WangGrid<T> | false {
+  const used = new Set<TileId>()
+
   function getValidCandidates(grid: WangGrid<T>, x: number, y: number): readonly WangTile<T>[] {
     const { tiles } = tileset
-    return tiles.filter(tile => grid.isPlacementValid(tileset, x, y, tile.id))
+    const candidates = tiles.filter(tile => grid.isPlacementValid(tileset, x, y, tile.id))
+
+    const unusedCandidates = candidates.filter(tile => !used.has(tile.id))
+
+    if (unusedCandidates.length > 0) return unusedCandidates
+    return candidates
   }
 
   const grid = new WangGrid<T>(width, height)
@@ -108,6 +115,7 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
 
       const chosen = prng.randomArrayValue(candidates as WangTile<T>[])
       grid.set(x, y, chosen)
+      used.add(chosen.id)
     }
   }
 

@@ -4,11 +4,14 @@ import {
   isReactive,
   isReadonly,
   isRef,
+  markRaw,
+  type Raw,
   type Ref,
   toRaw,
   toValue,
   type UnwrapNestedRefs,
   type UnwrapRef,
+  watch,
 } from 'vue'
 import { StepValidationError } from '../pipeline/errors/StepValidationError.ts'
 import type { ImageDataRef } from '../vue/vue-image-data.ts'
@@ -83,4 +86,14 @@ export type StepImg = {
 
 export type StepImgInput = Omit<StepImg, 'imageData'> & {
   imageData: ImageDataRef | ImageData | null,
+}
+
+export function markRawOrNull<T extends object | null>(value: T): T extends null ? null : Raw<T> {
+  if (value === null) return null as any
+  return markRaw(value) as any
+}
+
+export function syncRefToReactive<T>(a: Ref<T>, get: () => T, set: (value: T) => void) {
+  a.value = get()
+  watch(a, () => set(a.value))
 }

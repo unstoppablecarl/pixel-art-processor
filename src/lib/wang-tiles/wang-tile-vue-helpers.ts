@@ -1,4 +1,4 @@
-import { computed, reactive, type Ref, watchEffect } from 'vue'
+import { computed, reactive, ref, watchEffect } from 'vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
@@ -159,12 +159,12 @@ type TileImageDataRefRecords = Record<TileId, {
   imageDataRef: ImageDataRef
 }>
 
-export function make4EdgeWangTileImages(
-  tileSize: Ref<number>,
-  gridWidth: Ref<number>,
-  gridHeight: Ref<number>,
-) {
+export function make4EdgeWangTileImages() {
   const tileset = make4EdgeWangTileset()
+
+  const tileSize = ref(1)
+  const gridWidth = ref(6)
+  const gridHeight = ref(6)
 
   const cachedWangTileEdgeColorPixelMaps = computed((): TilePixelMapRecords => {
     return Object.fromEntries(tileset.tiles.map(tile => [
@@ -237,6 +237,9 @@ export function make4EdgeWangTileImages(
   }
 
   return {
+    tileSize,
+    gridWidth,
+    gridHeight,
     canvasWidth,
     canvasHeight,
     tileset,
