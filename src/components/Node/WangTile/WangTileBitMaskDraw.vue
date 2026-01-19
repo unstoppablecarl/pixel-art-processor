@@ -12,21 +12,21 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, type Raw, Ref, ref, toRef, useTemplateRef, watchEffect } from 'vue'
-import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
-import type { NodeId, WatcherTarget } from '../../../lib/pipeline/_types.ts'
+import { computed, nextTick, onMounted, type Raw, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import {
-  type SerializedImageData,
+  type SerializedImageData, serializeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { ImageDataMutator } from '../../../lib/util/html-dom/ImageDataMutator.ts'
-import { Sketch } from '../../../lib/util/html-dom/Sketch.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
+import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { type ImageDataRef, imageDataRef } from '../../../lib/vue/vue-image-data.ts'
-import { make4EdgeWangTileset, makeWangTileEdgesPixelMap } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
-import { makeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
+import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
+import {
+  make4EdgeWangTileImages,
+} from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
 import NodeCard from '../../Card/NodeCard.vue'
@@ -58,6 +58,11 @@ const CONFIG_DEFAULTS = () => (
     size: {
       ...SIZE_DEFAULTS,
     },
+    wangTiles: {} as Record<TileId, {
+      tile: WangTile<number>,
+      imageData: SerializedImageData
+    }>,
+
     maskImageData: null as (SerializedImageData | null),
   }
 )
@@ -74,30 +79,30 @@ const handler = defineStepHandler<Config, SerializedConfig, ReactiveConfig>(STEP
   serializeConfig: (config) => {
     return {
       ...config,
-      maskImageData: maskImageData.serialize(),
+      // maskImageData: maskImageData.serialize(),
     }
   },
   deserializeConfig(config) {
-    config.maskImageData = maskImageData.deserializeConfig(config.maskImageData)
+    // config.maskImageData = maskImageData.deserializeConfig(config.maskImageData)
 
     return config
   },
-  watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
-    return [...defaultWatcherTargets, {
-      name: 'maskImageData',
-      target: () => maskImageData.watchTarget,
-    }]
-  },
+  // watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
+  //   return [...defaultWatcherTargets, {
+  //     name: 'maskImageData',
+  //     target: () => maskImageData.watchTarget,
+  //   }]
+  // },
   async run() {
-    const imageData = maskImageData.get()
-    if (imageData === null) return
-
-    const bitMask = BitMask.fromImageData(imageData)
-
-    return {
-      preview: imageData,
-      output: bitMask,
-    }
+    // const imageData = maskImageData.get()
+    // if (imageData === null) return
+    //
+    // const bitMask = BitMask.fromImageData(imageData)
+    //
+    // return {
+    //   preview: imageData,
+    //   output: bitMask,
+    // }
   },
 })
 
@@ -120,86 +125,31 @@ const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
 const tileSize = computed(() => config.size.value)
 const gridWidth = ref(4)
 const gridHeight = ref(4)
-const canvasWidth = computed(() => tileSize.value * gridWidth.value)
-const canvasHeight = computed(() => tileSize.value * gridHeight.value)
+const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
 
-type TilePixelMapRecords = Record<TileId, {
-  tile: WangTile<number>,
-  pixelMap: PixelMap
-}>
-
-type TileImageDataRefRecords = Record<TileId, {
-  tile: WangTile<number>,
-  imageDataRef: ImageDataRef
-}>
-
-const tileset = make4EdgeWangTileset()
-
-const cachedWangTileEdgeColorPixelMaps = computed((): TilePixelMapRecords => {
-  return Object.fromEntries(tileset.tiles.map(tile => [
-    tile.id, {
-      tile,
-      pixelMap: makeWangTileEdgesPixelMap(tileSize.value, tile),
-    }],
-  ))
-})
-
-const tilesetImageRefs = computed((): TileImageDataRefRecords => {
-  return Object.fromEntries(
-    tileset.tiles.map(tile => {
-      return [
-        tile.id, {
-          tile,
-          imageDataRef: imageDataRef(new ImageData(tileSize.value, tileSize.value)),
-        },
-      ]
-    }),
-  )
-})
-
-const tileGridEdgeColorSketches = new Sketch(0, 0)
-watchEffect(() => tileGridEdgeColorSketches.setSize(
-  canvasWidth.value,
-  canvasHeight.value,
-))
-
-const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
-
-// draw colored tile edges
-watchEffect(() => {
-  if (!tileGrid.value) return
-  tileGrid.value.each((tx, ty, tile) => {
-    if (!tile) return
-    const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id].pixelMap
-    const x = tx * tileSize.value
-    const y = ty * tileSize.value
-
-    tileGridEdgeColorSketches.putImageData(pixelMap.toImageData(), x, y)
-  })
-})
-
-function gridPixelToTilePixel(gridPixelX: number, gridPixelY: number) {
-  if (!tileGrid.value) return
-  const x = Math.floor(gridPixelX / tileSize.value)
-  const y = Math.floor(gridPixelY / tileSize.value)
-  return {
-    tile: tileGrid.value.get(x, y),
-    pixelX: gridPixelX % tileSize.value,
-    pixelY: gridPixelY % tileSize.value,
-  }
+function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
+  if (!el) throw new Error('invalid canvas element')
+  tilesetCanvases.value[tileId] = el
 }
 
-function tilePixelToGridPixel(tileX: number, tileY: number, pixelX: number, pixelY: number) {
-  return {
-    gridX: tileX * tileSize.value + pixelX,
-    gridY: tileY * tileSize.value + pixelY,
-  }
-}
+const {
+  canvasWidth,
+  canvasHeight,
+  tileset,
+  tileGrid,
+  tilesetImageRefs,
+  tileGridEdgeColorSketch,
+  gridPixelToTilePixel,
+  tilePixelToGridPixel,
+} = make4EdgeWangTileImages(
+  tileSize,
+  gridWidth,
+  gridHeight,
+)
 
 const mutator = new ImageDataMutator()
 
 function setPixel(x: number, y: number, color: RGBA) {
-
   if (!tileGrid.value) return
   const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
   if (!tile) return
@@ -209,33 +159,58 @@ function setPixel(x: number, y: number, color: RGBA) {
 
   mutator.set(imageData)
   mutator.setPixel(pixelX, pixelY, color)
-  tilesetImageDataRef.triggerRef()
 
-// console.log('setPixel', pixelX, pixelY, color)
-  // tileGrid.value.eachWithTileId(tile.id).forEach(t => {
-  //   const tileX = t.x
-  //   const tileY = t.y
-  //
-  //   const gridPixel = tilePixelToGridPixel(tileX, tileY, pixelX, pixelY)
-  //
-  //   // @TODO set pixel on all instances of the tile
-  //
-  // })
+  // console.log('setPixel', x, y, tile.id)
+
+  markDirty(tile.id)
+}
+
+const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
+  // console.log('syncDirtyTiles')
+  for (const tileId of dirtyTiles) {
+    syncTile(tileId)
+  }
+  maskImageData.triggerRef()
+})
+
+function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
+  // console.log('drawTileToTileCanvas', tileId, imageData.data.length)
+  const canvas = tilesetCanvases.value[tileId]
+  if (!canvas) return
+  const ctx = canvas.getContext('2d')!
+  ctx.putImageData(imageData, 0, 0)
+}
+
+function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
+  const maskImgData = maskImageData.get()
+  if (!maskImgData) return
+  mutator.set(maskImgData!)
+
+  if (!tileGrid.value) return
+  tileGrid.value.eachWithTileId(tileId, (tileX, tileY, tile) => {
+    if (!tile) return
+    const { gridX, gridY } = tilePixelToGridPixel(tileX, tileY, 0, 0)
+    mutator.putImageData(imageData, gridX, gridY)
+  })
+}
+
+function syncTile(tileId: TileId) {
+  const tilesetImageDataRef = tilesetImageRefs.value[tileId].imageDataRef!
+  const imageData = tilesetImageDataRef.get()
+  if (!imageData) return
+
+  drawTileToTileCanvas(tileId, imageData)
+  drawTileToMaskImageDataRef(tileId, imageData)
+
+  // config.wangTiles[tileId] = {
+  //   tile: tileset.byId.get(tileId)!,
+  //   imageData: serializeImageData(imageData),
+  // }
 }
 
 function drawUnder(ctx: CanvasRenderingContext2D) {
   // ctx.fillStyle = '#ff0000'
   // ctx.fillRect(0,0,20,20)
-  // ctx.drawImage(tileGridSketch.canvas, 0, 0)
-
-  // if (!tileGrid.value) return
-  // tileGrid.value.each((tileX, tileY, tile) => {
-  //   if (!tile) return
-  //   const { gridX, gridY } = tilePixelToGridPixel(tileX, tileY, 0, 0)
-  //
-  //   const pixelMap = tilesetPixelMaps.value.get(tile.id)!
-  //   ctx.putImageData(pixelMap.toImageData(), gridX, gridY, 0, 0, tileSize.value, tileSize.value)
-  // })
 }
 
 function drawOver(ctx: CanvasRenderingContext2D) {
@@ -243,29 +218,31 @@ function drawOver(ctx: CanvasRenderingContext2D) {
   // ctx.fillStyle = '#ff0000'
   // ctx.fillRect(0,0,20,20)
 
-  ctx.drawImage(tileGridEdgeColorSketches.canvas, 0, 0)
+  ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
-const images = computed(() => Object.values(tilesetImageRefs.value).map(m => {
-  console.log('images')
-  const edgeColorPM = cachedWangTileEdgeColorPixelMaps.value[m.tile.id].pixelMap
-
-  m.imageDataRef.watchTarget
-  const contentPM = PixelMap.fromImageData(m.imageDataRef.get()!)
-  const PM = edgeColorPM.copy().merge(contentPM)
-
-  return {
-    imageData: PM.toImageData(),
-  }
-}))
+onMounted(() => {
+  tileset.tiles.forEach(tile => markDirty(tile.id))
+})
 </script>
 <template>
   <NodeCard
     :node="node"
-    :images="images"
+    :images="[]"
     :img-columns="4"
     show-dimensions
   >
+    <template #body>
+      Body
+      <canvas
+        v-for="(item, index) in tileset.tiles"
+        :key="index"
+        :ref="el => setCanvasRef(el as HTMLCanvasElement | null, item.id)"
+        :width="tileSize"
+        :height="tileSize"
+      >
+      </canvas>
+    </template>
     <template #footer>
 
       <CanvasPaint

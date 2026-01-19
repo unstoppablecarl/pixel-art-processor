@@ -13,6 +13,10 @@ export const parseColor = (color: string): RGBA => {
   }
 }
 
+export function RGBAToCssColor(color: RGBA) {
+  return `rgba(${color.r},${color.g},${color.b},${color.a / 255})`
+}
+
 export function arrayIndexToColor(index: number, length: number, spin: number = 0): RGBA {
   const hue: number = (index * 360) / length
   const color = tinycolor({ h: hue, s: 1, l: .5 }).spin(spin * 360).toRgb()

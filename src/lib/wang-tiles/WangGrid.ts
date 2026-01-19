@@ -42,25 +42,18 @@ export class WangGrid<T> {
     }
   }
 
-  eachWithTileId(tileId: string) {
+  eachWithTileId(tileId: string, cb: (x: number, y: number, tile: WangTile<T>) => void) {
     const width = this.width
     const height = this.height
 
-    const results = []
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
         const tile = this.get(x, y)
         if (tile?.id === tileId) {
-          results.push({
-            x,
-            y,
-            tile,
-          })
+          cb(x, y, tile)
         }
       }
     }
-
-    return results
   }
 
   /** Check if placing tileId at (x, y) is locally valid */

@@ -1,10 +1,20 @@
+import { computed, reactive, type Ref, watchEffect } from 'vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
+import { Sketch } from '../util/html-dom/Sketch.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { type TileWithEligibleEdges, type WangTile, type WangTileEdge, WangTileset } from './WangTileset.ts'
+import { type ImageDataRef, imageDataRef } from '../vue/vue-image-data.ts'
+import { makeWangGrid } from './WangGrid.ts'
+import {
+  type TileId,
+  type TileWithEligibleEdges,
+  type WangTile,
+  type WangTileEdge,
+  WangTileset,
+} from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
   return {
@@ -137,4 +147,105 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
   pixelMap.setEdgeWPadded(colors[wIndex], padding)
 
   return pixelMap
+}
+
+type TilePixelMapRecords = Record<TileId, {
+  tile: WangTile<number>,
+  pixelMap: PixelMap
+}>
+
+type TileImageDataRefRecords = Record<TileId, {
+  tile: WangTile<number>,
+  imageDataRef: ImageDataRef
+}>
+
+export function make4EdgeWangTileImages(
+  tileSize: Ref<number>,
+  gridWidth: Ref<number>,
+  gridHeight: Ref<number>,
+) {
+  const tileset = make4EdgeWangTileset()
+
+  const cachedWangTileEdgeColorPixelMaps = computed((): TilePixelMapRecords => {
+    return Object.fromEntries(tileset.tiles.map(tile => [
+      tile.id, {
+        tile,
+        pixelMap: makeWangTileEdgesPixelMap(tileSize.value, tile),
+      }],
+    ))
+  })
+
+  const tilesetImageRefs = computed((): TileImageDataRefRecords => {
+    return reactive(Object.fromEntries(
+      tileset.tiles.map(tile => {
+        return [
+          tile.id, {
+            tile,
+            imageDataRef: imageDataRef(new ImageData(tileSize.value, tileSize.value)),
+          },
+        ]
+      }),
+    ))
+  })
+
+  const canvasWidth = computed(() => tileSize.value * gridWidth.value)
+  const canvasHeight = computed(() => tileSize.value * gridHeight.value)
+  const tileGridEdgeColorSketch = new Sketch(0, 0)
+  watchEffect(() => tileGridEdgeColorSketch.setSize(
+    canvasWidth.value,
+    canvasHeight.value,
+  ))
+
+  const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
+
+// draw colored tile edges
+  watchEffect(() => {
+    if (!tileGrid.value) return
+    tileGrid.value.each((tx, ty, tile) => {
+      if (!tile) return
+      const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id].pixelMap
+      const x = tx * tileSize.value
+      const y = ty * tileSize.value
+
+      tileGridEdgeColorSketch.putImageData(pixelMap.toImageData(), x, y)
+    })
+  })
+
+  function gridPixelToTile(gridPixelX: number, gridPixelY: number) {
+    if (!tileGrid.value) return
+    const x = Math.floor(gridPixelX / tileSize.value)
+    const y = Math.floor(gridPixelY / tileSize.value)
+    return tileGrid.value.get(x, y)
+  }
+
+  function gridPixelToTilePixel(gridPixelX: number, gridPixelY: number) {
+    if (!tileGrid.value) return
+    const x = Math.floor(gridPixelX / tileSize.value)
+    const y = Math.floor(gridPixelY / tileSize.value)
+    return {
+      tile: tileGrid.value.get(x, y),
+      pixelX: gridPixelX % tileSize.value,
+      pixelY: gridPixelY % tileSize.value,
+    }
+  }
+
+  function tilePixelToGridPixel(tileX: number, tileY: number, pixelX = 0, pixelY = 0) {
+    return {
+      gridX: tileX * tileSize.value + pixelX,
+      gridY: tileY * tileSize.value + pixelY,
+    }
+  }
+
+  return {
+    canvasWidth,
+    canvasHeight,
+    tileset,
+    tileGrid,
+    tilesetImageRefs,
+    tileGridEdgeColorSketch,
+    cachedWangTileEdgeColorPixelMaps,
+    tilePixelToGridPixel,
+    gridPixelToTile,
+    gridPixelToTilePixel,
+  }
 }

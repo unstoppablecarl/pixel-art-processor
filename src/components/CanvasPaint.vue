@@ -15,7 +15,7 @@ const emit = defineEmits<Emits>()
 
 class CustomBuffer extends ImageDataMutator {
   setPixel(x: number, y: number, color: RGBA) {
-    super.setPixel(x, y, color)
+    // super.setPixel(x, y, color)
     emit('setPixel', x, y, color)
   }
 
@@ -84,7 +84,7 @@ const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
 const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 
 const updateImageData = throttle(() => {
-  imageDataRef.set(buffer.imageData)
+  // imageDataRef.set(buffer.imageData)
 }, throttleMs)
 
 const updateSize = () => {

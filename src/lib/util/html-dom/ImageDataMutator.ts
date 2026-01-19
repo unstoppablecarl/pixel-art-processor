@@ -26,6 +26,41 @@ export class ImageDataMutator {
     target.drawImage(this.canvas, x, y)
   }
 
+  putCtx(
+    ctx: CanvasRenderingContext2D,
+    sourceX: number,
+    sourceY: number,
+    sourceWidth: number,
+    sourceHeight: number,
+    targetX: number,
+    targetY: number,
+  ): void {
+    if (!this._imageData) throw new Error('this.imageData not set')
+
+    const sourceImageData = ctx.getImageData(sourceX, sourceY, sourceWidth, sourceHeight)
+    this.putImageData(sourceImageData, targetX, targetY)
+  }
+
+  putImageData(
+    imageData: ImageData,
+    targetX: number,
+    targetY: number,
+  ): void {
+    if (!this._imageData) throw new Error('this.imageData not set')
+
+    for (let y = 0; y < imageData.height; y++) {
+      for (let x = 0; x < imageData.width; x++) {
+        const sourceIdx = (y * imageData.width + x) * 4
+        const targetIdx = ((targetY + y) * this._imageData.width + (targetX + x)) * 4
+
+        this._imageData.data[targetIdx] = imageData.data[sourceIdx]         // R
+        this._imageData.data[targetIdx + 1] = imageData.data[sourceIdx + 1] // G
+        this._imageData.data[targetIdx + 2] = imageData.data[sourceIdx + 2] // B
+        this._imageData.data[targetIdx + 3] = imageData.data[sourceIdx + 3] // A
+      }
+    }
+  }
+
   get imageData(): ImageData {
     if (!this._imageData) throw new Error('imageData not set')
     return this._imageData
