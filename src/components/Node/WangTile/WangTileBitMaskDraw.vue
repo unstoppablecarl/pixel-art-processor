@@ -28,7 +28,7 @@ import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
-  make4EdgeWangTileImages, make4EdgeWangTileset,
+  make4EdgeWangTileImages, make4EdgeWangTileset, useTileCanvases,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
@@ -137,15 +137,16 @@ const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
 const color = computed(() => mode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
-const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
-
-function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
-  if (!el) throw new Error('invalid canvas element')
-  tilesetCanvases.value[tileId] = el
-}
+const tileSize = computed(() => config.size.value)
+const gridWidth = ref(6)
+const gridHeight = ref(6)
 
 const {
-  tileSize,
+  tilesetCanvases,
+  setCanvasRef,
+} = useTileCanvases()
+
+const {
   canvasWidth,
   canvasHeight,
   tileGrid,
@@ -153,16 +154,25 @@ const {
   cachedWangTileEdgeColorImageData,
   gridPixelToTilePixel,
   tilePixelToGridPixel,
-} = make4EdgeWangTileImages(tileset)
+} = make4EdgeWangTileImages(
+  tileset,
+  tileSize,
+  gridWidth,
+  gridHeight,
+)
 
-tileSize.value = config.size.value
 watch(tileSize, () => {
   Object.values(tilesetImageRefs).forEach(item => {
     if (!item.imageDataRef.hasValue) {
       item.imageDataRef.set(new ImageData(tileSize.value, tileSize.value))
     }
   })
-  config.size.value = tileSize.value
+
+  Object.values(tilesetCanvases.value).forEach(canvasEl => {
+    canvasEl.width = tileSize.value
+    canvasEl.height = tileSize.value
+  })
+
 }, { immediate: true })
 
 const mutator = new ImageDataMutator()

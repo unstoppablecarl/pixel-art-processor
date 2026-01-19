@@ -1,4 +1,4 @@
-import { computed, ref, watchEffect } from 'vue'
+import { computed, onBeforeUnmount, type Ref, ref, watchEffect } from 'vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
@@ -148,11 +148,12 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
   return pixelMap
 }
 
-export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
-
-  const tileSize = ref(1)
-  const gridWidth = ref(6)
-  const gridHeight = ref(6)
+export function make4EdgeWangTileImages(
+  tileset: WangTileset<number>,
+  tileSize: Ref<number>,
+  gridWidth: Ref<number>,
+  gridHeight: Ref<number>,
+  ) {
 
   const cachedWangTileEdgeColorPixelMaps = computed((): Record<TileId, PixelMap> => {
     return Object.fromEntries(tileset.tiles.map(tile => [
@@ -234,5 +235,24 @@ export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
     tilePixelToGridPixel,
     gridPixelToTile,
     gridPixelToTilePixel,
+  }
+}
+
+export function useTileCanvases() {
+
+  let unMounting = false
+  const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
+
+  function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
+    if (unMounting) return
+    if (!el) throw new Error('invalid canvas element')
+    tilesetCanvases.value[tileId] = el
+  }
+
+  onBeforeUnmount(() => unMounting = true)
+
+  return {
+    tilesetCanvases,
+    setCanvasRef,
   }
 }
