@@ -148,36 +148,26 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
   return pixelMap
 }
 
-type TileRecord<T> = Record<TileId, {
-  tile: WangTile<number>
-} & T>
-
-type TilePixelMapRecords = TileRecord<{
-  pixelMap: PixelMap
-}>
-
 export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
 
   const tileSize = ref(1)
   const gridWidth = ref(6)
   const gridHeight = ref(6)
 
-  const cachedWangTileEdgeColorPixelMaps = computed((): TilePixelMapRecords => {
+  const cachedWangTileEdgeColorPixelMaps = computed((): Record<TileId, PixelMap> => {
     return Object.fromEntries(tileset.tiles.map(tile => [
-      tile.id, {
-        tile,
-        pixelMap: makeWangTileEdgesPixelMap(tileSize.value, tile),
-      }],
+        tile.id,
+        makeWangTileEdgesPixelMap(tileSize.value, tile),
+      ],
     ))
   })
 
-  const cachedWangTileEdgeColorImageData = computed((): TileRecord<{ imageData: ImageData }> => {
+  const cachedWangTileEdgeColorImageData = computed((): Record<TileId, ImageData> => {
     return Object.fromEntries(
       Object.entries(cachedWangTileEdgeColorPixelMaps.value).map(([tileId, item]) => [
-        tileId, {
-          tile: item.tile,
-          imageData: item.pixelMap.toImageData(),
-        }],
+          tileId,
+          item.toImageData(),
+        ],
       ),
     )
   })
@@ -197,7 +187,7 @@ export function make4EdgeWangTileImages(tileset: WangTileset<number>) {
     if (!tileGrid.value) return
     tileGrid.value.each((tx, ty, tile) => {
       if (!tile) return
-      const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id].pixelMap
+      const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id]
       const x = tx * tileSize.value
       const y = ty * tileSize.value
 

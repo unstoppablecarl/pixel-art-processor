@@ -50,7 +50,7 @@ const tilesetImageRefs = reactive(Object.fromEntries(
     return [
       tile.id, {
         tile,
-        imageDataRef: imageDataRef(new ImageData(20, 10)),
+        imageDataRef: imageDataRef(),
       },
     ]
   }),
@@ -74,29 +74,14 @@ const CONFIG_DEFAULTS = () => (
       tile: WangTile<number>,
       imageData: Raw<SerializedImageData> | null
     }>,
-
-    maskImageData: null as (SerializedImageData | null),
   }
 )
-type ReactiveConfig = Omit<Config, 'maskImageData'> & {
-  maskImageData: Raw<SerializedImageData> | null
-}
 
-type SerializedConfig = Config
-
-const handler = defineStepHandler<Config, SerializedConfig, ReactiveConfig>(STEP_META, {
+const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
     return CONFIG_DEFAULTS()
   },
-  serializeConfig: (config) => {
-    return {
-      ...config,
-      // maskImageData: maskImageData.serialize(),
-    }
-  },
   deserializeConfig(config) {
-    // config.maskImageData = maskImageData.deserializeConfig(config.maskImageData)
-
     config.wangTiles = Object.fromEntries(
       Object.entries(config.wangTiles).map(([tileId, tile]) => {
         const id = tileId as TileId
@@ -171,7 +156,15 @@ const {
 } = make4EdgeWangTileImages(tileset)
 
 tileSize.value = config.size.value
-watch(tileSize, () => config.size.value = tileSize.value)
+watch(tileSize, () => {
+  Object.values(tilesetImageRefs).forEach(item => {
+    if (!item.imageDataRef.hasValue) {
+      item.imageDataRef.set(new ImageData(tileSize.value, tileSize.value))
+    }
+  })
+  config.size.value = tileSize.value
+}, { immediate: true })
+
 const mutator = new ImageDataMutator()
 
 function setPixels(pixels: Point[]) {
@@ -191,22 +184,23 @@ function setPixels(pixels: Point[]) {
   })
 }
 
-const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
+const { markDirty } = useDirtyBatching<TileId>(async (dirtyTiles) => {
   for (const tileId of dirtyTiles) {
-    syncTile(tileId)
+    await syncTile(tileId)
   }
   maskImageData.triggerRef()
 })
 
 async function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
+  console.log('draw', tileId)
   const canvas = tilesetCanvases.value[tileId]
   if (!canvas) return
   const ctx = canvas.getContext('2d')!
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.putImageData(imageData, 0, 0)
 
-  const borderImageData = cachedWangTileEdgeColorImageData.value[tileId].imageData
+  const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
   const bitmap = await createImageBitmap(borderImageData)
-  console.log({bitmap})
   ctx.globalAlpha = 0.5
   ctx.drawImage(bitmap, 0, 0)
   ctx.globalAlpha = 1
@@ -225,12 +219,12 @@ function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
   })
 }
 
-function syncTile(tileId: TileId) {
+async function syncTile(tileId: TileId) {
   const tilesetImageDataRef = tilesetImageRefs[tileId].imageDataRef!
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
-  drawTileToTileCanvas(tileId, imageData)
+  await drawTileToTileCanvas(tileId, imageData)
   drawTileToMaskImageDataRef(tileId, imageData)
 
   config.wangTiles[tileId] = {
@@ -239,17 +233,16 @@ function syncTile(tileId: TileId) {
   }
 }
 
-function drawUnder(ctx: CanvasRenderingContext2D) {
-  // ctx.fillStyle = '#ff0000'
-  // ctx.fillRect(0,0,20,20)
+function draw(ctx: CanvasRenderingContext2D) {
+  // ctx.putImageData(maskImageData.get()!, 0, 0)
+  ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
-function drawOver(ctx: CanvasRenderingContext2D) {
-
-  // ctx.fillStyle = '#ff0000'
-  // ctx.fillRect(0,0,20,20)
-
-  ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
+function clear() {
+  Object.values(tilesetImageRefs).forEach(item => {
+    item.imageDataRef.clear()
+    markDirty(item.tile.id)
+  })
 }
 
 onMounted(() => {
@@ -264,18 +257,20 @@ onMounted(() => {
     show-dimensions
   >
     <template #body>
-      <canvas
-        v-for="(item, index) in tileset.tiles"
-        :key="index"
-        :ref="el => setCanvasRef(el as HTMLCanvasElement | null, item.id)"
-        :width="tileSize"
-        :height="tileSize"
-        class="canvas-tile"
-      >
-      </canvas>
+      <div v-for="(item, index) in tileset.tiles" :key="index">
+        <canvas
+          :ref="el => setCanvasRef(el as HTMLCanvasElement | null, item.id)"
+          :width="tileSize"
+          :height="tileSize"
+          class="canvas-tile"
+        >
+        </canvas>
+        <div>
+          {{ item.id }}
+        </div>
+      </div>
     </template>
     <template #footer>
-
       <CanvasPaint
         ref="canvasPaintRef"
         :scale="store.imgScale"
@@ -285,9 +280,9 @@ onMounted(() => {
         :brush-size="brushSize"
         :cursor-color="cursorColor"
         :grid-color="gridColor"
-        :draw-layer-under="drawUnder"
-        :draw-layer-over="drawOver"
+        :draw="draw"
         @set-pixels="setPixels"
+        @clear="clear"
       />
 
       <CardFooterSettingsTabs

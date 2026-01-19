@@ -7,7 +7,8 @@ import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
-  (e: 'setPixels', pixels: Point[]): void;
+  (e: 'setPixels', pixels: Point[]): void,
+  (e: 'clear'): void
 }
 const emit = defineEmits<Emits>()
 
@@ -19,8 +20,7 @@ const {
   brushShape = 'circle',
   brushSize = 10,
   scale = 1,
-  drawLayerUnder = null,
-  drawLayerOver = null,
+  draw = null,
 } = defineProps<{
   width?: number,
   height?: number,
@@ -30,8 +30,7 @@ const {
   brushSize?: number,
   scale?: number,
   throttleMs?: number,
-  drawLayerUnder?: DrawLayer | null
-  drawLayerOver?: DrawLayer | null
+  draw?: DrawLayer | null
 }>()
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
@@ -195,11 +194,7 @@ const updateView = () => {
   // Draw the image data scaled up
   ctx.scale(scale, scale)
 
-  // Draw layers under
-  drawLayerUnder?.(ctx)
-
-  // Draw layers over
-  drawLayerOver?.(ctx)
+  draw?.(ctx)
 
   // Reset transform for overlays
   ctx.setTransform(1, 0, 0, 1, 0, 0)
@@ -232,7 +227,7 @@ const getCanvasCoords = (e: MouseEvent): Position => {
   return { x, y }
 }
 
-const draw = (x: number, y: number): void => {
+const paint = (x: number, y: number): void => {
   let pixels: Point[] = []
   if (brushShape === 'circle') {
     pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
@@ -246,7 +241,7 @@ const draw = (x: number, y: number): void => {
 const handleMouseDown = (e: MouseEvent): void => {
   isDrawing.value = true
   const { x, y } = getCanvasCoords(e)
-  draw(x, y)
+  paint(x, y)
   lastPos.value = { x, y }
 
   updateView()
@@ -269,7 +264,7 @@ const handleMouseMove = (e: MouseEvent): void => {
     for (const point of points) {
       const ix = Math.floor(point.x)
       const iy = Math.floor(point.y)
-      draw(ix, iy)
+      paint(ix, iy)
     }
 
     lastPos.value = { x, y }
@@ -312,6 +307,7 @@ function clearCanvas(): void {
   if (!ctx || !canvas) return
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   updateView()
+  emit('clear')
 }
 
 defineExpose({
