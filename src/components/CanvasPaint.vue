@@ -5,8 +5,24 @@ import { parseColor } from '../lib/util/color.ts'
 import { ImageDataMutator, interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 import { throttle } from '../lib/util/misc.ts'
 import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
+import RGBA = tinycolor.ColorFormats.RGBA
 
-type DrawLayer = (ctx: CanvasRenderingContext2D) => void
+type DrawLayer = (ctx: CanvasRenderingContext2D, buffer: CustomBuffer) => void
+type Emits = {
+  (e: 'setPixel', x: number, y: number, color: RGBA): void;
+}
+const emit = defineEmits<Emits>()
+
+class CustomBuffer extends ImageDataMutator {
+  setPixel(x: number, y: number, color: RGBA) {
+    super.setPixel(x, y, color)
+    emit('setPixel', x, y, color)
+  }
+
+  setPixelQuiet(x: number, y: number, color: RGBA) {
+    super.setPixel(x, y, color)
+  }
+}
 
 const {
   imageDataRef,
@@ -37,9 +53,13 @@ const {
   drawLayerOver?: DrawLayer | null
 }>()
 
-const buffer = new ImageDataMutator()
+const buffer = new CustomBuffer()
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
+
+// Offscreen canvases for caching
+let gridCache: HTMLCanvasElement | null = null
+let cursorCache: HTMLCanvasElement | null = null
 
 const isDrawing: Ref<boolean> = ref(false)
 const lastPos: Ref<Position> = ref({ x: 0, y: 0 })
@@ -80,10 +100,30 @@ const updateSize = () => {
   return false
 }
 
-const drawGrid = (ctx: CanvasRenderingContext2D) => {
-  ctx.save()
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
+const initCaches = () => {
+  // Create offscreen canvases
+  gridCache = document.createElement('canvas')
+  cursorCache = document.createElement('canvas')
 
+  gridCache.width = scaledWidth.value
+  gridCache.height = scaledHeight.value
+  cursorCache.width = scaledWidth.value
+  cursorCache.height = scaledHeight.value
+}
+
+const updateGridCache = () => {
+  if (!gridCache) return
+
+  const ctx = gridCache.getContext('2d')
+  if (!ctx) return
+
+  // Resize if needed
+  if (gridCache.width !== scaledWidth.value || gridCache.height !== scaledHeight.value) {
+    gridCache.width = scaledWidth.value
+    gridCache.height = scaledHeight.value
+  }
+
+  ctx.clearRect(0, 0, gridCache.width, gridCache.height)
   ctx.strokeStyle = gridColor
   ctx.lineWidth = 1
 
@@ -104,16 +144,21 @@ const drawGrid = (ctx: CanvasRenderingContext2D) => {
     ctx.lineTo(scaledWidth.value, screenY)
     ctx.stroke()
   }
-
-  ctx.restore()
 }
 
-const drawCursor = (ctx: CanvasRenderingContext2D) => {
-  if (!cursorPos.value) return
+const updateCursorCache = () => {
+  if (!cursorCache || !cursorPos.value) return
 
-  ctx.save()
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
+  const ctx = cursorCache.getContext('2d')
+  if (!ctx) return
 
+  // Resize if needed
+  if (cursorCache.width !== scaledWidth.value || cursorCache.height !== scaledHeight.value) {
+    cursorCache.width = scaledWidth.value
+    cursorCache.height = scaledHeight.value
+  }
+
+  ctx.clearRect(0, 0, cursorCache.width, cursorCache.height)
   ctx.strokeStyle = cursorColor
   ctx.lineWidth = 1
 
@@ -165,8 +210,6 @@ const drawCursor = (ctx: CanvasRenderingContext2D) => {
 
     ctx.strokeRect(startX, startY, size, size)
   }
-
-  ctx.restore()
 }
 
 const updateView = () => {
@@ -175,19 +218,30 @@ const updateView = () => {
 
   ctx.setTransform(1, 0, 0, 1, 0, 0)
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  drawLayerUnder?.(ctx)
 
   // Draw the image data scaled up
   ctx.scale(scale, scale)
+
+  // Draw layers under
+  drawLayerUnder?.(ctx, buffer)
+
   buffer.drawOnto(ctx)
 
-  drawLayerOver?.(ctx)
+  // Draw layers over
+  drawLayerOver?.(ctx, buffer)
 
-  // Draw grid and cursor (these handle their own transforms)
-  if (scale >= 4) {
-    drawGrid(ctx)
+  // Reset transform for overlays
+  ctx.setTransform(1, 0, 0, 1, 0, 0)
+
+  // Blit cached grid (if scale is high enough)
+  if (scale >= 4 && gridCache) {
+    ctx.drawImage(gridCache, 0, 0)
   }
-  drawCursor(ctx)
+
+  // Blit cached cursor
+  if (cursorCache && cursorPos.value) {
+    ctx.drawImage(cursorCache, 0, 0)
+  }
 }
 
 const getCanvasCoords = (e: MouseEvent): Position => {
@@ -227,6 +281,7 @@ const handleMouseDown = (e: MouseEvent): void => {
 
 const handleMouseMove = (e: MouseEvent): void => {
   const { x, y } = getCanvasCoords(e)
+  const oldCursorPos = cursorPos.value
   cursorPos.value = { x, y }
 
   if (isDrawing.value) {
@@ -244,13 +299,18 @@ const handleMouseMove = (e: MouseEvent): void => {
       draw(ix, iy)
     }
 
-    updateView()
     updateImageData()
     lastPos.value = { x, y }
-  } else {
-    // Update cursor preview when just hovering
-    updateView()
   }
+
+  // Only update cursor cache if position changed
+  if (!oldCursorPos ||
+    Math.floor(oldCursorPos.x) !== Math.floor(x) ||
+    Math.floor(oldCursorPos.y) !== Math.floor(y)) {
+    updateCursorCache()
+  }
+
+  updateView()
 }
 
 const handleMouseUp = (): void => {
@@ -260,6 +320,7 @@ const handleMouseUp = (): void => {
 const handleMouseLeave = (): void => {
   isDrawing.value = false
   cursorPos.value = null
+  updateCursorCache() // Clear cursor
   updateView()
 }
 
@@ -290,48 +351,39 @@ defineExpose({
 })
 
 onMounted(() => {
+  initCaches()
   updateSize()
+
   if (imageDataRef.hasValue) {
     buffer.set(imageDataRef.get()!)
-    updateView()
   } else {
     buffer.set(new ImageData(width, height))
     buffer.clear()
-    updateView()
   }
+
+  updateGridCache()
+  updateView()
 })
 
 watch([
   () => gridColor,
   () => scale,
+  () => width,
+  () => height,
 ], () => {
   updateSize()
+  updateGridCache()
+  updateCursorCache()
   updateView()
 })
 
 watch([
-    () => width,
-    () => height,
-  ],
-  () => {
-    const { canvas } = getViewCanvas()
-    if (!canvas) return
-
-    buffer.resize(width, height)
-
-    if (updateSize()) {
-      updateImageData()
-      updateView()
-    }
-  })
-
-watch([
   () => brushSize,
   () => brushShape,
-  () => color,
   () => cursorColor,
 ], () => {
   if (cursorPos.value) {
+    updateCursorCache()
     updateView()
   }
 })

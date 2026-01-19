@@ -116,3 +116,25 @@ export function make4EdgeWangTileset() {
   const edges: TileWithEligibleEdges<number>[] = [verticalA, verticalB, horizontalA, horizontalB] as const
   return WangTileset.createFromLimitedEdges<number>(edges)
 }
+
+const defaultColors: RGBA[] = [
+  { r: 255, g: 0, b: 0, a: 255 / 2 },
+  { r: 0, g: 255, b: 0, a: 255 / 2 },
+  { r: 0, g: 0, b: 255, a: 255 / 2 },
+  { r: 255, g: 255, b: 0, a: 255 / 2 },
+]
+
+export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, colors = defaultColors, padding = 1) {
+  const pixelMap = new PixelMap(size, size)
+  const nIndex = tile.edges.N
+  const eIndex = tile.edges.E
+  const sIndex = tile.edges.S
+  const wIndex = tile.edges.W
+
+  pixelMap.setEdgeNPadded(colors[nIndex], padding)
+  pixelMap.setEdgeEPadded(colors[eIndex], padding)
+  pixelMap.setEdgeSPadded(colors[sIndex], padding)
+  pixelMap.setEdgeWPadded(colors[wIndex], padding)
+
+  return pixelMap
+}

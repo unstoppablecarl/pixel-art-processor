@@ -1,5 +1,5 @@
-import { prng } from '../util/prng.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
+import { prng } from '../util/prng.ts'
 import type { TileId, WangTile, WangTileset } from './WangTileset.ts'
 
 export class WangGrid<T> {
@@ -29,6 +29,38 @@ export class WangGrid<T> {
   set(x: number, y: number, tile: WangTile<T>): void {
     if (!this.inBounds(x, y)) return
     this.cells[this.index(x, y)] = tile
+  }
+
+  each(cb: (x: number, y: number, v: WangTile<T> | null) => void): void {
+    const width = this.width
+    const height = this.height
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        cb(x, y, this.get(x, y))
+      }
+    }
+  }
+
+  eachWithTileId(tileId: string) {
+    const width = this.width
+    const height = this.height
+
+    const results = []
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const tile = this.get(x, y)
+        if (tile?.id === tileId) {
+          results.push({
+            x,
+            y,
+            tile,
+          })
+        }
+      }
+    }
+
+    return results
   }
 
   /** Check if placing tileId at (x, y) is locally valid */
@@ -89,7 +121,6 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
   return grid
 }
 
-
 export function drawWangGrid<T>(
   {
     grid,
@@ -123,8 +154,6 @@ export function drawWangGrid<T>(
 
       const px = x * tileSize
       const py = y * tileSize
-
-
 
       // Draw tile background
       ctx.fillStyle = '#fff'

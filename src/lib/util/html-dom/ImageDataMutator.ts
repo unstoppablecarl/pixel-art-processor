@@ -35,6 +35,7 @@ export class ImageDataMutator {
     this._imageData = imageData
     this.canvas.width = imageData.width
     this.canvas.height = imageData.height
+    return this
   }
 
   clear() {

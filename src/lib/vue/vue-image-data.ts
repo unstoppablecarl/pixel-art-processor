@@ -113,3 +113,10 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
 
   return capsule
 }
+
+// export function imageDataRefComputed<T extends ImageData | null>(source: WatchSource<T>): ImageDataRef {
+//   const ref = imageDataRef()
+//   watch(source, (newImageData) => ref.set(newImageData))
+//
+//   return ref
+// }

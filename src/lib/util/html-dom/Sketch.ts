@@ -1,5 +1,5 @@
-import type { BoundsLike } from '../data/Bounds.ts'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
+import type { BoundsLike } from '../data/Bounds.ts'
 
 export class Sketch {
   readonly canvas: HTMLCanvasElement
@@ -14,13 +14,27 @@ export class Sketch {
 
   readonly ctx: CanvasRenderingContext2D
 
-  constructor(width: number, height?: number) {
-    const canvas = document.createElement('canvas')
-    canvas.width = width
-    canvas.height = height ?? width
+  constructor(canvas: HTMLCanvasElement)
+  constructor(width: number, height: number)
+  constructor(width: number | HTMLCanvasElement, height?: number) {
+    if (width instanceof HTMLCanvasElement) {
+      this.canvas = width
+    } else {
+      const canvas = document.createElement('canvas')
+      if (!canvas) throw new Error('cannot create canvas')
+      canvas.width = width
+      canvas.height = height ?? width
 
-    this.canvas = canvas
-    this.ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+      this.canvas = canvas
+    }
+
+    this.ctx = this.canvas.getContext('2d') as CanvasRenderingContext2D
+    if (!this.ctx) throw new Error('cannot create canvas context')
+  }
+
+  setSize(width: number, height: number) {
+    this.canvas.width = width
+    this.canvas.height = height
   }
 
   fillRect(x: number, y: number, width: number, height: number, color: string) {
@@ -28,6 +42,10 @@ export class Sketch {
     this.ctx.fillStyle = color
     this.ctx.fillRect(x, y, width, height)
     this.ctx.restore()
+  }
+
+  clear() {
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
   }
 
   fillRectBounds(bounds: BoundsLike, color: string) {
@@ -39,8 +57,8 @@ export class Sketch {
     this.ctx.restore()
   }
 
-  putImageData(imageData: ImageData) {
-    this.ctx.putImageData(imageData, 0, 0)
+  putImageData(imageData: ImageData, x = 0, y = 0) {
+    this.ctx.putImageData(imageData, x, y)
   }
 
   setPixels(points: Point[], color: string) {
@@ -57,8 +75,8 @@ export class Sketch {
     this.ctx.restore()
   }
 
-  toImageData() {
-    return this.ctx.getImageData(0, 0, this.width, this.height)
+  toImageData(x = 0, y = 0, width = this.canvas.width, height = this.canvas.height) {
+    return this.ctx.getImageData(x, y, width, height)
   }
 
   toEncoded(): string {

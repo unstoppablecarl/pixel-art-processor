@@ -1,3 +1,5 @@
+import type { AnyInitializedNode } from '../pipeline/Node.ts'
+
 type HMROptions<T> = {
   key: string
   save: () => T
@@ -17,6 +19,10 @@ export function handleHMRState<T>(importMetaHot: any, { key, save, restore }: HM
   }
 }
 
-export function handleNodeConfigHMR<T>(importMetaHot: any, { save, restore }: Omit<HMROptions<T>, 'key'>) {
-  handleHMRState(importMetaHot, { key: 'nodeConfig', save, restore } as any)
+export function handleNodeConfigHMR(importMetaHot: any, node: AnyInitializedNode) {
+  handleHMRState(importMetaHot, {
+    key: 'nodeConfig',
+    save: () => node.handler.serializeConfig(node.config),
+    restore: (value: any) => node.hotLoadConfig(value),
+  } as any)
 }

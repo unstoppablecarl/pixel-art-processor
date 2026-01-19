@@ -12,27 +12,29 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, type Raw, Ref, ref, toRef, useTemplateRef } from 'vue'
+import { computed, type Raw, Ref, ref, toRef, useTemplateRef, watchEffect } from 'vue'
 import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import type { NodeId, WatcherTarget } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
-import { parseColor } from '../../../lib/util/color.ts'
 import {
   type SerializedImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
+import { ImageDataMutator } from '../../../lib/util/html-dom/ImageDataMutator.ts'
+import { Sketch } from '../../../lib/util/html-dom/Sketch.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
-import { make4EdgeWangTileset } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
-// import { makeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
-import { type WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
+import { type ImageDataRef, imageDataRef } from '../../../lib/vue/vue-image-data.ts'
+import { make4EdgeWangTileset, makeWangTileEdgesPixelMap } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
+import { makeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
+import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
 import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
+import RGBA = tinycolor.ColorFormats.RGBA
 
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef('canvasPaintRef')
@@ -85,7 +87,6 @@ const handler = defineStepHandler<Config, SerializedConfig, ReactiveConfig>(STEP
       name: 'maskImageData',
       target: () => maskImageData.watchTarget,
     }]
-
   },
   async run() {
     const imageData = maskImageData.get()
@@ -104,10 +105,7 @@ const node = useStepHandler(nodeId, handler)
 const config = node.config
 
 if (import.meta.hot && !import.meta.env.VITEST) {
-  handleNodeConfigHMR(import.meta.hot, {
-    save: () => node.handler.serializeConfig(node.config),
-    restore: (value: any) => node.hotLoadConfig(value),
-  })
+  handleNodeConfigHMR(import.meta.hot, node)
 }
 
 const brushShape = ref<'circle' | 'square'>('circle')
@@ -125,42 +123,146 @@ const gridHeight = ref(4)
 const canvasWidth = computed(() => tileSize.value * gridWidth.value)
 const canvasHeight = computed(() => tileSize.value * gridHeight.value)
 
+type TilePixelMapRecords = Record<TileId, {
+  tile: WangTile<number>,
+  pixelMap: PixelMap
+}>
+
+type TileImageDataRefRecords = Record<TileId, {
+  tile: WangTile<number>,
+  imageDataRef: ImageDataRef
+}>
+
 const tileset = make4EdgeWangTileset()
-// const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
-// console.log(tileGrid)
 
-function makePreviewFromWangTile(size: number, tile: WangTile<number>) {
-  const pixelMap = new PixelMap(size, size)
-  const nIndex = tile.edges.N
-  const eIndex = tile.edges.E
-  const sIndex = tile.edges.S
-  const wIndex = tile.edges.W
-  const colors = [
-    parseColor('#ff0000'),
-    parseColor('#00ff00'),
-    parseColor('#0000ff'),
-    parseColor('#ffff00'),
-  ]
+const cachedWangTileEdgeColorPixelMaps = computed((): TilePixelMapRecords => {
+  return Object.fromEntries(tileset.tiles.map(tile => [
+    tile.id, {
+      tile,
+      pixelMap: makeWangTileEdgesPixelMap(tileSize.value, tile),
+    }],
+  ))
+})
 
-  pixelMap.setEdgeNPadded(colors[nIndex], 1)
-  pixelMap.setEdgeEPadded(colors[eIndex], 1)
-  pixelMap.setEdgeSPadded(colors[sIndex], 1)
-  pixelMap.setEdgeWPadded(colors[wIndex], 1)
+const tilesetImageRefs = computed((): TileImageDataRefRecords => {
+  return Object.fromEntries(
+    tileset.tiles.map(tile => {
+      return [
+        tile.id, {
+          tile,
+          imageDataRef: imageDataRef(new ImageData(tileSize.value, tileSize.value)),
+        },
+      ]
+    }),
+  )
+})
 
-  return pixelMap
+const tileGridEdgeColorSketches = new Sketch(0, 0)
+watchEffect(() => tileGridEdgeColorSketches.setSize(
+  canvasWidth.value,
+  canvasHeight.value,
+))
+
+const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
+
+// draw colored tile edges
+watchEffect(() => {
+  if (!tileGrid.value) return
+  tileGrid.value.each((tx, ty, tile) => {
+    if (!tile) return
+    const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id].pixelMap
+    const x = tx * tileSize.value
+    const y = ty * tileSize.value
+
+    tileGridEdgeColorSketches.putImageData(pixelMap.toImageData(), x, y)
+  })
+})
+
+function gridPixelToTilePixel(gridPixelX: number, gridPixelY: number) {
+  if (!tileGrid.value) return
+  const x = Math.floor(gridPixelX / tileSize.value)
+  const y = Math.floor(gridPixelY / tileSize.value)
+  return {
+    tile: tileGrid.value.get(x, y),
+    pixelX: gridPixelX % tileSize.value,
+    pixelY: gridPixelY % tileSize.value,
+  }
 }
 
-const tilePreviews = tileset.tiles.map((tile) => {
+function tilePixelToGridPixel(tileX: number, tileY: number, pixelX: number, pixelY: number) {
   return {
-    imageData: makePreviewFromWangTile(64, tile).toImageData(),
+    gridX: tileX * tileSize.value + pixelX,
+    gridY: tileY * tileSize.value + pixelY,
   }
+}
 
-})
+const mutator = new ImageDataMutator()
+
+function setPixel(x: number, y: number, color: RGBA) {
+
+  if (!tileGrid.value) return
+  const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
+  if (!tile) return
+  const tilesetImageDataRef = tilesetImageRefs.value[tile.id].imageDataRef!
+  const imageData = tilesetImageDataRef.get()
+  if (!imageData) return
+
+  mutator.set(imageData)
+  mutator.setPixel(pixelX, pixelY, color)
+  tilesetImageDataRef.triggerRef()
+
+// console.log('setPixel', pixelX, pixelY, color)
+  // tileGrid.value.eachWithTileId(tile.id).forEach(t => {
+  //   const tileX = t.x
+  //   const tileY = t.y
+  //
+  //   const gridPixel = tilePixelToGridPixel(tileX, tileY, pixelX, pixelY)
+  //
+  //   // @TODO set pixel on all instances of the tile
+  //
+  // })
+}
+
+function drawUnder(ctx: CanvasRenderingContext2D) {
+  // ctx.fillStyle = '#ff0000'
+  // ctx.fillRect(0,0,20,20)
+  // ctx.drawImage(tileGridSketch.canvas, 0, 0)
+
+  // if (!tileGrid.value) return
+  // tileGrid.value.each((tileX, tileY, tile) => {
+  //   if (!tile) return
+  //   const { gridX, gridY } = tilePixelToGridPixel(tileX, tileY, 0, 0)
+  //
+  //   const pixelMap = tilesetPixelMaps.value.get(tile.id)!
+  //   ctx.putImageData(pixelMap.toImageData(), gridX, gridY, 0, 0, tileSize.value, tileSize.value)
+  // })
+}
+
+function drawOver(ctx: CanvasRenderingContext2D) {
+
+  // ctx.fillStyle = '#ff0000'
+  // ctx.fillRect(0,0,20,20)
+
+  ctx.drawImage(tileGridEdgeColorSketches.canvas, 0, 0)
+}
+
+const images = computed(() => Object.values(tilesetImageRefs.value).map(m => {
+  console.log('images')
+  const edgeColorPM = cachedWangTileEdgeColorPixelMaps.value[m.tile.id].pixelMap
+
+  m.imageDataRef.watchTarget
+  const contentPM = PixelMap.fromImageData(m.imageDataRef.get()!)
+  const PM = edgeColorPM.copy().merge(contentPM)
+
+  return {
+    imageData: PM.toImageData(),
+  }
+}))
 </script>
 <template>
   <NodeCard
     :node="node"
-    :images="tilePreviews"
+    :images="images"
     :img-columns="4"
     show-dimensions
   >
@@ -176,8 +278,10 @@ const tilePreviews = tileset.tiles.map((tile) => {
         :cursor-color="cursorColor"
         :grid-color="gridColor"
         :color="color"
-
+        :draw-layer-under="drawUnder"
+        :draw-layer-over="drawOver"
         :image-data-ref="maskImageData"
+        @set-pixel="setPixel"
       />
 
       <CardFooterSettingsTabs

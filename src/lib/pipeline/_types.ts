@@ -10,7 +10,7 @@ export type NodeId = string & { readonly __nodeIdBrand: unique symbol }
 export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
 
 
-export type WatcherTarget<T, V = any, OV = V | undefined> = {
+export type WatcherTarget<T = any, V = any, OV = V | undefined> = {
   name: string,
   target: WatchSource<T>,
   deep?: boolean,
