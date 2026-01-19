@@ -185,29 +185,33 @@ const updateCursorCache = () => {
 }
 
 const updateView = () => {
-  const { ctx, canvas } = getViewCanvas()
-  if (!ctx || !canvas) return
+  requestAnimationFrame(() => {
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+    const { ctx, canvas } = getViewCanvas()
+    if (!ctx || !canvas) return
 
-  // Draw the image data scaled up
-  ctx.scale(scale, scale)
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-  draw?.(ctx)
+    // Draw the image data scaled up
+    ctx.scale(scale, scale)
 
-  // Reset transform for overlays
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
+    draw?.(ctx)
 
-  // Blit cached grid (if scale is high enough)
-  if (scale >= 4 && gridCache) {
-    ctx.drawImage(gridCache, 0, 0)
-  }
+    // Reset transform for overlays
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
 
-  // Blit cached cursor
-  if (cursorCache && cursorPos.value) {
-    ctx.drawImage(cursorCache, 0, 0)
-  }
+    // Blit cached grid (if scale is high enough)
+    if (scale >= 4 && gridCache) {
+      ctx.drawImage(gridCache, 0, 0)
+    }
+
+    // Blit cached cursor
+    if (cursorCache && cursorPos.value) {
+      ctx.drawImage(cursorCache, 0, 0)
+    }
+
+  })
 }
 
 const getCanvasCoords = (e: MouseEvent): Position => {
