@@ -33,10 +33,10 @@ import {
   type SerializedImageData, serializeImageData, setImageDataPixelColor, writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
-import { markRawOrNull, reactiveFromRefs } from '../../../lib/util/vue-util.ts'
+import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { tilesetSyncedImageDataRef } from '../../../lib/vue/vue-image-data.ts'
+import { imageDataRef, tilesetSyncedImageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
   useTileCanvases,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
@@ -84,8 +84,7 @@ const tileset = computed(() => createAxialEdgeWangTileset(
   verticalEdgeValueCount.value,
   horizontalEdgeValueCount.value,
 ))
-const tilesetImageRefs = tilesetSyncedImageDataRef(tileset)
-
+const tilesetImageRefs = tilesetSyncedImageDataRef(tileset, tileSize)
 
 const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
@@ -113,7 +112,9 @@ const handler = defineStepHandler<Config>(STEP_META, {
         if (imgDataRef) {
           imageData = imgDataRef.deserializeConfig(tile.imageData)
         } else {
-          imageData = markRawOrNull(tile.imageData)
+          const newRef = imageDataRef()
+          tilesetImageRefs[id] = newRef
+          imageData = newRef.deserializeConfig(tile.imageData)
         }
 
         return [id, {
@@ -183,18 +184,12 @@ const {
   tileSize,
 )
 
-let maskImageData = new ImageData(canvasWidth.value, canvasHeight.value)
+let maskImageData = imageDataRef(new ImageData(canvasWidth.value, canvasHeight.value))
 watch([canvasWidth, canvasHeight], () => {
-  maskImageData = markRaw(new ImageData(canvasWidth.value, canvasHeight.value))
+  maskImageData.resize(canvasWidth.value, canvasHeight.value)
 })
 
 watch(tileSize, () => {
-  Object.values(tilesetImageRefs).forEach(item => {
-    if (!item.hasValue) {
-      item.set(new ImageData(tileSize.value, tileSize.value))
-    }
-  })
-
   for (const [_key, item] of tilesetCanvases) {
     item.canvas.width = tileSize.value
     item.canvas.height = tileSize.value
@@ -245,7 +240,7 @@ function drawTileToGrid(tileId: TileId, imageData: ImageData) {
     if (!tile) return
     const { gridX, gridY } = tilePixelToGridPixel(tileX, tileY, 0, 0)
 
-    writeImageData(maskImageData, imageData, gridX, gridY)
+    writeImageData(maskImageData.get()!, imageData, gridX, gridY)
   })
 }
 
@@ -267,7 +262,7 @@ function syncTile(tileId: TileId) {
 }
 
 function drawGridCanvas(ctx: CanvasRenderingContext2D) {
-  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, maskImageData, 0, 0)
+  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, maskImageData.get()!, 0, 0)
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
@@ -345,44 +340,50 @@ onMounted(() => {
       >
         <template #settings>
 
-          <NumberInput
-            :id="`${nodeId}-tile-size`"
-            label="Vertical"
-            v-model="config.tileSize"
-            :step="1"
-            :min="1"
-            input-width="50px"
-          />
-
           <div class="section">
-            <div class="row">
-              <div class="col">
-                <div class="form-label col-form-label text-end pe-2 me-auto section-heading-text">
-                  Edge Variants
-                </div>
-              </div>
-              <div class="col">
-                <NumberInput
-                  :id="`${nodeId}-verticalEdgeValueCount`"
-                  label="Vertical"
-                  v-model="config.verticalEdgeValueCount"
-                  :step="1"
-                  :min="1"
-                  input-width="50px"
-                />
-              </div>
-              <div class="col">
-                <NumberInput
-                  :id="`${nodeId}-horizontalEdgeValueCount`"
-                  label="Horizontal"
-                  v-model="config.horizontalEdgeValueCount"
-                  :step="1"
-                  :min="1"
-                  input-width="50px"
-                />
-              </div>
+            <div class="hstack">
+              <NumberInput
+                :id="`${nodeId}-tile-size`"
+                label="Tile Size"
+                v-model="config.tileSize"
+                :step="1"
+                :min="1"
+                input-width="50px"
+                class="me-auto"
+              />
             </div>
           </div>
+          <div class="section">
+            <div class="hstack">
+
+              <div class="form-label col-form-label text-end pe-2 section-heading-text">
+                Edge Variants
+
+              </div>
+
+              <NumberInput
+                :id="`${nodeId}-verticalEdgeValueCount`"
+                label="Vertical"
+                v-model="config.verticalEdgeValueCount"
+                :step="1"
+                :min="1"
+                input-width="50px"
+                class="me-2"
+              />
+
+              <NumberInput
+                :id="`${nodeId}-horizontalEdgeValueCount`"
+                label="Horizontal"
+                v-model="config.horizontalEdgeValueCount"
+                :step="1"
+                :min="1"
+                input-width="50px"
+              />
+            </div>
+          </div>
+
+        </template>
+        <template #display-options>
           <div class="section">
 
             <RangeSlider
@@ -424,9 +425,9 @@ onMounted(() => {
             </button>
 
           </div>
-        </template>
-        <template #display-options>
-          <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
+          <div class="section">
+            <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
+          </div>
         </template>
       </CardFooterSettingsTabs>
     </template>

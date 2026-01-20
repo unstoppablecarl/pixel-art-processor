@@ -33,6 +33,12 @@ export type ImageDataRef = ShallowReactive<{
   readonly setSerialized: (serialized: SerializedImageData | null) => void
   readonly deserializeConfig: <T extends SerializedImageData | null>(serialized: T) => T extends null ? null : Raw<T>
   readonly onChange: (value: Sync) => void
+  readonly resize: (
+    newWidth: number,
+    newHeight: number,
+    offsetX?: number,
+    offsetY?: number,
+  ) => void
 }>
 
 type Sync = (serialized: Raw<SerializedImageData> | null) => void
@@ -88,7 +94,10 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
       offsetX = 0,
       offsetY = 0,
     ) {
-      if (!image) return
+      if (!image) {
+        capsule.set(new ImageData(newWidth, newHeight))
+        return
+      }
       const newImage = resizeImageData(image, newWidth, newHeight, offsetX, offsetY)
       capsule.set(newImage)
     },
@@ -135,7 +144,7 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
   return capsule
 }
 
-export function tilesetSyncedImageDataRef<T>(tileset: Ref<WangTileset<T>>) {
+export function tilesetSyncedImageDataRef<T>(tileset: Ref<WangTileset<T>>, tileSize: Ref<number>) {
   const tilesetImageRefs = reactive<Record<TileId, ImageDataRef>>({})
 
   watch(tileset, (newTileset) => {
@@ -149,10 +158,17 @@ export function tilesetSyncedImageDataRef<T>(tileset: Ref<WangTileset<T>>) {
 
     for (const tile of newTileset.tiles) {
       if (!(tile.id in tilesetImageRefs)) {
-        tilesetImageRefs[tile.id] = imageDataRef()
+        tilesetImageRefs[tile.id] = imageDataRef(new ImageData(tileSize.value, tileSize.value))
       }
     }
   }, { immediate: true })
+
+  watch(tileSize, (newSize) => {
+    for (const id in tilesetImageRefs) {
+      const item = tilesetImageRefs[id as TileId]
+      item.resize(newSize, newSize)
+    }
+  })
 
   return tilesetImageRefs
 }

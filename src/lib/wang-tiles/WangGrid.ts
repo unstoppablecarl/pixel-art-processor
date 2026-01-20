@@ -279,3 +279,60 @@ function makeDeBruijnPairs<T>(values: readonly T[]): { top: T; bottom: T }[] {
   return result
 }
 
+export function makeRandomWangGrid<T>(
+  tileset: AxialEdgeWangTileset<T>,
+  width: number,
+  height: number
+): AxialEdgeWangGrid<T> {
+
+  const grid = new AxialEdgeWangGrid<T>(width, height, tileset)
+
+  // Pool of unused tiles (shallow copy)
+  const pool = [...tileset.tiles]
+
+  // Helper to remove a tile from the pool
+  const removeFromPool = (tile: WangTile<T>) => {
+    const i = pool.indexOf(tile)
+    if (i !== -1) pool.splice(i, 1)
+  }
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+
+      // Determine required edges from neighbors
+      const requiredN = y > 0 ? grid.get(x, y - 1)!.edges.S : null
+      const requiredW = x > 0 ? grid.get(x - 1, y)!.edges.E : null
+
+      // Filter pool for tiles that match constraints
+      const candidates = pool.filter(tile => {
+        if (requiredN !== null && tile.edges.N !== requiredN) return false
+        if (requiredW !== null && tile.edges.W !== requiredW) return false
+        return true
+      })
+
+      // If no candidates, fallback to ANY matching tile (allow repeats)
+      const fallback = tileset.tiles.filter(tile => {
+        if (requiredN !== null && tile.edges.N !== requiredN) return false
+        if (requiredW !== null && tile.edges.W !== requiredW) return false
+        return true
+      })
+
+      const list = candidates.length > 0 ? candidates : fallback
+
+      if (list.length === 0) {
+        throw new Error("No valid tile found — tileset may be incomplete")
+      }
+
+      // Pick a random tile
+      const tile = list[Math.floor(Math.random() * list.length)]
+
+      // Place it
+      grid.set(x, y, tile)
+
+      // Remove from pool if possible
+      removeFromPool(tile)
+    }
+  }
+
+  return grid
+}
