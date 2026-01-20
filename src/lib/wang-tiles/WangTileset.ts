@@ -123,3 +123,10 @@ export type TileWithEligibleEdges<T> = {
   eligibleForS?: boolean,
   eligibleForW?: boolean,
 }
+
+export const oppositeEdge: Record<WangTileEdge, WangTileEdge> = {
+  N: 'S' as WangTileEdge,
+  S: 'N' as WangTileEdge,
+  E: 'W' as WangTileEdge,
+  W: 'E' as WangTileEdge,
+} as const

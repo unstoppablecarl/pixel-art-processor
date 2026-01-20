@@ -54,3 +54,18 @@ export function getRectCoords(
 
   return result
 }
+
+
+export function mirrorTilePixelHorizontal(x: number, y: number, tileSize: number): Point {
+  return {
+    x: tileSize - 1 - x,
+    y,
+  }
+}
+
+export function mirrorTilePixelVertical(x: number, y: number, tileSize: number): Point {
+  return {
+    x,
+    y: tileSize - 1 - y,
+  }
+}

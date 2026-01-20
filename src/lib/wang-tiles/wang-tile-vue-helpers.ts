@@ -1,20 +1,13 @@
-import { computed, reactive, type Ref, watch, watchEffect } from 'vue'
+import { reactive, watch } from 'vue'
 import type CanvasPaint from '../../components/CanvasPaint.vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
-import { Sketch } from '../util/html-dom/Sketch.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { makeWangGrid } from './WangGrid.ts'
-import {
-  type TileId,
-  type TileWithEligibleEdges,
-  type WangTile,
-  type WangTileEdge,
-  WangTileset,
-} from './WangTileset.ts'
+import { defaultColors } from './WangTile4EdgeBuilder.ts'
+import { type TileId, type WangTile, type WangTileEdge } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
   return {
@@ -100,40 +93,6 @@ export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
   return target
 }
 
-export function make4EdgeWangTileset() {
-
-  const verticalA = {
-    edgeValue: 0,
-    eligibleForN: true,
-    eligibleForS: true,
-  }
-  const verticalB = {
-    edgeValue: 1,
-    eligibleForN: true,
-    eligibleForS: true,
-  }
-  const horizontalA = {
-    edgeValue: 2,
-    eligibleForW: true,
-    eligibleForE: true,
-  }
-  const horizontalB = {
-    edgeValue: 3,
-    eligibleForW: true,
-    eligibleForE: true,
-  }
-
-  const edges: TileWithEligibleEdges<number>[] = [verticalA, verticalB, horizontalA, horizontalB] as const
-  return WangTileset.createFromLimitedEdges<number>(edges)
-}
-
-const defaultColors: RGBA[] = [
-  { r: 255, g: 0, b: 0, a: 255 / 2 },
-  { r: 0, g: 255, b: 0, a: 255 / 2 },
-  { r: 0, g: 0, b: 255, a: 255 / 2 },
-  { r: 255, g: 255, b: 0, a: 255 / 2 },
-]
-
 export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, colors = defaultColors, padding = 1) {
   const pixelMap = new PixelMap(size, size)
   const nIndex = tile.edges.N
@@ -147,96 +106,6 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
   pixelMap.setEdgeWPadded(colors[wIndex], padding)
 
   return pixelMap
-}
-
-export function make4EdgeWangTileImages(
-  tileset: WangTileset<number>,
-  tileSize: Ref<number>,
-  gridWidth: Ref<number>,
-  gridHeight: Ref<number>,
-) {
-
-  const cachedWangTileEdgeColorPixelMaps = computed((): Record<TileId, PixelMap> => {
-    return Object.fromEntries(tileset.tiles.map(tile => [
-        tile.id,
-        makeWangTileEdgesPixelMap(tileSize.value, tile),
-      ],
-    ))
-  })
-
-  const cachedWangTileEdgeColorImageData = computed((): Record<TileId, ImageData> => {
-    return Object.fromEntries(
-      Object.entries(cachedWangTileEdgeColorPixelMaps.value).map(([tileId, item]) => [
-          tileId,
-          item.toImageData(),
-        ],
-      ),
-    )
-  })
-
-  const canvasWidth = computed(() => tileSize.value * gridWidth.value)
-  const canvasHeight = computed(() => tileSize.value * gridHeight.value)
-  const tileGridEdgeColorSketch = new Sketch(0, 0)
-  watchEffect(() => tileGridEdgeColorSketch.setSize(
-    canvasWidth.value,
-    canvasHeight.value,
-  ))
-
-  const tileGrid = computed(() => makeWangGrid(gridWidth.value, gridHeight.value, tileset))
-
-// draw colored tile edges
-  watchEffect(() => {
-    if (!tileGrid.value) return
-    tileGrid.value.each((tx, ty, tile) => {
-      if (!tile) return
-      const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id]
-      const x = tx * tileSize.value
-      const y = ty * tileSize.value
-
-      tileGridEdgeColorSketch.putImageData(pixelMap.toImageData(), x, y)
-    })
-  })
-
-  function gridPixelToTile(gridPixelX: number, gridPixelY: number) {
-    if (!tileGrid.value) return
-    const x = Math.floor(gridPixelX / tileSize.value)
-    const y = Math.floor(gridPixelY / tileSize.value)
-    return tileGrid.value.get(x, y)
-  }
-
-  function gridPixelToTilePixel(gridPixelX: number, gridPixelY: number) {
-    if (!tileGrid.value) return
-    const x = Math.floor(gridPixelX / tileSize.value)
-    const y = Math.floor(gridPixelY / tileSize.value)
-    return {
-      tile: tileGrid.value.get(x, y),
-      pixelX: gridPixelX % tileSize.value,
-      pixelY: gridPixelY % tileSize.value,
-    }
-  }
-
-  function tilePixelToGridPixel(tileX: number, tileY: number, pixelX = 0, pixelY = 0) {
-    return {
-      gridX: tileX * tileSize.value + pixelX,
-      gridY: tileY * tileSize.value + pixelY,
-    }
-  }
-
-  return {
-    tileSize,
-    gridWidth,
-    gridHeight,
-    canvasWidth,
-    canvasHeight,
-    tileset,
-    tileGrid,
-    tileGridEdgeColorSketch,
-    cachedWangTileEdgeColorPixelMaps,
-    cachedWangTileEdgeColorImageData,
-    tilePixelToGridPixel,
-    gridPixelToTile,
-    gridPixelToTilePixel,
-  }
 }
 
 export type TileCanvasItem = {

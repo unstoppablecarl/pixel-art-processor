@@ -39,8 +39,9 @@ import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
-  make4EdgeWangTileImages, make4EdgeWangTileset, useTileCanvases,
+  useTileCanvases,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
+import { make4EdgeWangTileImages, make4EdgeWangTileset } from '../../../lib/wang-tiles/WangTile4EdgeBuilder.ts'
 import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
 import NodeCard from '../../Card/NodeCard.vue'
@@ -143,8 +144,6 @@ const gridColor = toRef(config, 'showGridColor')
 const color = computed(() => mode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
 const tileSize = computed(() => config.size.value)
-const gridWidth = ref(6)
-const gridHeight = ref(6)
 
 const {
   tilesetCanvases,
@@ -165,11 +164,10 @@ const {
   cachedWangTileEdgeColorImageData,
   gridPixelToTilePixel,
   tilePixelToGridPixel,
+  duplicateEdgePixels,
 } = make4EdgeWangTileImages(
   tileset,
   tileSize,
-  gridWidth,
-  gridHeight,
 )
 
 let maskImageData = new ImageData(canvasWidth.value, canvasHeight.value)
@@ -198,9 +196,11 @@ function setPixels(pixels: Point[]) {
     const tilesetImageDataRef = tilesetImageRefs[tile.id]!
     const imageData = tilesetImageDataRef.get()
     if (!imageData) return
-
     setImageDataPixelColor(imageData, pixelX, pixelY, color.value)
 
+    const affectedTiles = duplicateEdgePixels(tilesetImageRefs, tile.id, [{ x: pixelX, y: pixelY }], color.value)
+
+    affectedTiles?.forEach(t => markDirty(t.id))
     markDirty(tile.id)
   })
 }
@@ -213,6 +213,9 @@ function setTilePixels(pixels: Point[], tileId: TileId) {
     setImageDataPixelColor(imageData, x, y, color.value)
   })
 
+  const affectedTiles = duplicateEdgePixels(tilesetImageRefs, tileId, pixels, color.value)
+
+  affectedTiles?.forEach(t => markDirty(t.id))
   markDirty(tileId)
 }
 
@@ -251,7 +254,7 @@ function syncTile(tileId: TileId) {
 }
 
 function drawGridCanvas(ctx: CanvasRenderingContext2D) {
-  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, maskImageData, 0,0)
+  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, maskImageData, 0, 0)
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
@@ -261,12 +264,12 @@ function drawTileCanvas(ctx: CanvasRenderingContext2D, tileId: TileId) {
   if (!imageData) return
 
   ctx.clearRect(0, 0, tileSize.value, tileSize.value)
-  putImageDataScaled(ctx,  tileSize.value, tileSize.value, imageData)
+  putImageDataScaled(ctx, tileSize.value, tileSize.value, imageData)
 
   const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
 
   ctx.globalAlpha = 0.5
-  putImageDataScaled(ctx,  tileSize.value, tileSize.value, borderImageData)
+  putImageDataScaled(ctx, tileSize.value, tileSize.value, borderImageData)
   ctx.globalAlpha = 1
 }
 

@@ -1,4 +1,5 @@
 import { markRaw, type Raw } from 'vue'
+import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 
 // ALL values are 0-255 (including alpha which in CSS is 0-1)
 export type RGBA = { r: number, g: number, b: number, a: number }
@@ -166,6 +167,10 @@ export function setImageDataPixelColor(imageData: ImageData, x: number, y: numbe
   imageData.data[index + 1] = g
   imageData.data[index + 2] = b
   imageData.data[index + 3] = a
+}
+
+export function setImageDataPixelsColor(imageData: ImageData, points: Point[], color: RGBA) {
+  points.forEach(({ x, y }) => setImageDataPixelColor(imageData, x, y, color))
 }
 
 export function fillImageData(
