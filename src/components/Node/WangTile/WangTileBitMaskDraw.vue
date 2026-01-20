@@ -289,8 +289,12 @@ function clear() {
   )
 }
 
-onMounted(() => {
+function redrawAll() {
   tileset.value.tiles.forEach(tile => markDirty(tile.id))
+}
+
+onMounted(() => {
+  watch(tileSize, () => redrawAll(), { immediate: true })
 })
 </script>
 <template>
