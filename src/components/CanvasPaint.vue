@@ -245,7 +245,9 @@ const paint = (x: number, y: number): void => {
 const handleMouseDown = (e: MouseEvent): void => {
   isDrawing.value = true
   const { x, y } = getCanvasCoords(e)
-  paint(x, y)
+  const ix = Math.floor(x)
+  const iy = Math.floor(y)
+  paint(ix, iy)
   lastPos.value = { x, y }
 
   nextTick(() => updateView())
@@ -361,6 +363,7 @@ watch([
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
+    :style="{ width: scaledWidth + 'px', height: scaledHeight + 'px' }"
   ></canvas>
 </template>
 <style lang="scss">
