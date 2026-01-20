@@ -147,14 +147,14 @@ export class AxialEdgeWangTileset<T> extends WangTileset<T> {
 }
 
 export function createAxialEdgeWangTileset(
-  verticalEdgeVariantCount: number,
-  horizontalEdgeVariantCount: number,
+  verticalEdgeValueCount: number,
+  horizontalEdgeValueCount: number,
 ): AxialEdgeWangTileset<number> {
 
-  const vertical = Array.from({ length: verticalEdgeVariantCount }, (_, i) => i)
+  const vertical = Array.from({ length: verticalEdgeValueCount }, (_, i) => i)
   const horizontal = Array.from(
-    { length: horizontalEdgeVariantCount },
-    (_, i) => verticalEdgeVariantCount + i,
+    { length: horizontalEdgeValueCount },
+    (_, i) => verticalEdgeValueCount + i,
   )
 
   const tiles: WangTile<number>[] = []
