@@ -70,6 +70,7 @@ const CONFIG_DEFAULTS = () => (
     }>,
     verticalEdgeValueCount: 2,
     horizontalEdgeValueCount: 2,
+    tileMarginCopySize: 3,
   }
 )
 
@@ -203,7 +204,13 @@ function setPixels(pixels: Point[]) {
     if (!imageData) return
     setImageDataPixelColor(imageData, pixelX, pixelY, color.value)
 
-    const affectedTiles = duplicateEdgePixels(tilesetImageRefs, tile.id, [{ x: pixelX, y: pixelY }], color.value)
+    const affectedTiles = duplicateEdgePixels(
+      tilesetImageRefs,
+      tile.id,
+      [{ x: pixelX, y: pixelY }],
+      color.value,
+      config.tileMarginCopySize,
+    )
 
     affectedTiles?.forEach(t => markDirty(t.id))
     markDirty(tile.id)
@@ -218,7 +225,13 @@ function setTilePixels(pixels: Point[], tileId: TileId) {
     setImageDataPixelColor(imageData, x, y, color.value)
   })
 
-  const affectedTiles = duplicateEdgePixels(tilesetImageRefs, tileId, pixels, color.value)
+  const affectedTiles = duplicateEdgePixels(
+    tilesetImageRefs,
+    tileId,
+    pixels,
+    color.value,
+    config.tileMarginCopySize,
+  )
 
   affectedTiles?.forEach(t => markDirty(t.id))
   markDirty(tileId)
@@ -246,8 +259,6 @@ function syncTile(tileId: TileId) {
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
-  const { updateView } = tilesetCanvases.get(tileId)!
-
   drawTileToGrid(tileId, imageData)
 
   config.wangTiles[tileId] = {
@@ -255,7 +266,8 @@ function syncTile(tileId: TileId) {
     imageData: serializeImageData(imageData),
   }
 
-  updateView()
+  const item = tilesetCanvases.get(tileId)!
+  item?.updateView()
 }
 
 function drawGridCanvas(ctx: CanvasRenderingContext2D) {
@@ -388,6 +400,15 @@ onMounted(() => {
 
         <template #extra>
           <div class="section">
+
+            <RangeSlider
+              :id="`${nodeId}-tile-copy-margin`"
+              label="Tile Copy Margin"
+              v-model:value="config.tileMarginCopySize"
+              :min="1"
+              :max="50"
+              :step="1"
+            />
 
             <RangeSlider
               :id="`${nodeId}-brush-size`"
