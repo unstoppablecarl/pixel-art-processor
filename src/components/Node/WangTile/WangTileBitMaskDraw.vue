@@ -33,7 +33,6 @@ import {
   putImageDataScaled,
   type SerializedImageData, serializeImageData, setImageDataPixelColor, writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
-import { Sketch } from '../../../lib/util/html-dom/Sketch.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { markRawOrNull } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
@@ -262,12 +261,12 @@ function drawTileCanvas(ctx: CanvasRenderingContext2D, tileId: TileId) {
   if (!imageData) return
 
   ctx.clearRect(0, 0, tileSize.value, tileSize.value)
-  ctx.putImageData(imageData, 0, 0)
+  putImageDataScaled(ctx,  tileSize.value, tileSize.value, imageData)
 
   const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
 
   ctx.globalAlpha = 0.5
-  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, borderImageData)
+  putImageDataScaled(ctx,  tileSize.value, tileSize.value, borderImageData)
   ctx.globalAlpha = 1
 }
 
