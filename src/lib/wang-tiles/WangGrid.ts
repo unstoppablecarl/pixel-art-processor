@@ -1,5 +1,4 @@
 import { Sketch } from '../util/html-dom/Sketch.ts'
-import { prng } from '../util/prng.ts'
 import type { TileId, WangTile, WangTileset } from './WangTileset.ts'
 
 export class WangGrid<T> {
@@ -90,7 +89,7 @@ export class WangGrid<T> {
   }
 }
 
-export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>): WangGrid<T> | false {
+export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>, chooseCandidate?: (candidates: readonly WangTile<T>[]) => WangTile<T>): WangGrid<T> | false {
   const used = new Set<TileId>()
 
   function getValidCandidates(grid: WangGrid<T>, x: number, y: number): readonly WangTile<T>[] {
@@ -113,7 +112,8 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
         return false
       }
 
-      const chosen = prng.randomArrayValue(candidates as WangTile<T>[])
+      // const chosen = prng.randomArrayValue(candidates as WangTile<T>[])
+      const chosen = chooseCandidate?.(candidates) ?? candidates[0]
       grid.set(x, y, chosen)
       used.add(chosen.id)
     }
