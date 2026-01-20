@@ -1,13 +1,14 @@
 import { computed, ref, type Ref, watchEffect } from 'vue'
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
+import type { Direction } from '../pipeline/_types.ts'
 import { getPointsInEdgeMargins, mirrorTilePixelHorizontal, mirrorTilePixelVertical } from '../util/data/Grid.ts'
 import { type RGBA, setImageDataPixelsColor } from '../util/html-dom/ImageData.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import type { ImageDataRef } from '../vue/vue-image-data.ts'
 import { makeWangTileEdgesPixelMap } from './wang-tile-vue-helpers.ts'
 import { makeAxialEdgeWangGrid } from './WangGrid.ts'
-import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileEdge } from './WangTileset.ts'
+import { AxialEdgeWangTileset, type TileId, type WangTile } from './WangTileset.ts'
 
 export const defaultColors: RGBA[] = [
   { r: 255, g: 0, b: 0, a: 255 / 2 },
@@ -97,7 +98,7 @@ export function makeAxialEdgeWangTileManager(
     color: RGBA,
     borderThickness: number = 10,
   ) {
-    const pixelEdges: Record<WangTileEdge, Point[]> = {
+    const pixelEdges: Record<Direction, Point[]> = {
       N: [],
       S: [],
       E: [],
@@ -116,7 +117,7 @@ export function makeAxialEdgeWangTileManager(
     let affectedTiles: WangTile<number>[] = []
 
     Object.entries(pixelEdges).forEach(([e, pixels]) => {
-      const edge = e as WangTileEdge
+      const edge = e as Direction
       const { sameEdge, mirroredEdge } = tileset.getTilesWithSameEdge(tile, edge)
 
       affectedTiles = [...affectedTiles, ...sameEdge, ...mirroredEdge]

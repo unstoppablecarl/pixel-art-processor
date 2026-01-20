@@ -1,7 +1,7 @@
+import type { Direction } from '../pipeline/_types.ts'
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
 import { type RGBA, setImageDataPixelColor } from '../util/html-dom/ImageData.ts'
 import { readonlyTypedArray } from '../util/misc.ts'
-import type { WangTileEdge } from '../wang-tiles/WangTileset.ts'
 
 export type Point = {
   x: number,
@@ -814,7 +814,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  setEdgePadded(edge: WangTileEdge, value: T, padding: number) {
+  setEdgePadded(edge: Direction, value: T, padding: number) {
     if (edge === 'N') return this.setEdgeNPadded(value, padding)
     if (edge === 'E') return this.setEdgeEPadded(value, padding)
     if (edge === 'S') return this.setEdgeSPadded(value, padding)
@@ -864,7 +864,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  setEdge(edge: WangTileEdge, value: T, index?: number) {
+  setEdge(edge: Direction, value: T, index?: number) {
     if (edge === 'N') return this.setEdgeN(value, index)
     if (edge === 'E') return this.setEdgeE(value, index)
     if (edge === 'S') return this.setEdgeS(value, index)

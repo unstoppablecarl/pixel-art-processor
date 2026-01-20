@@ -9,7 +9,6 @@ export enum NodeType {
 export type NodeId = string & { readonly __nodeIdBrand: unique symbol }
 export type NodeDef = string & { readonly __nodeDefBrand: unique symbol }
 
-
 export type WatcherTarget<T = any, V = any, OV = V | undefined> = {
   name: string,
   target: WatchSource<T>,
@@ -44,3 +43,4 @@ export interface Position {
   y: number;
 }
 
+export type Direction = 'N' | 'S' | 'E' | 'W'

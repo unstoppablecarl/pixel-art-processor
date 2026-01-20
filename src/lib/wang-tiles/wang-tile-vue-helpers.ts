@@ -3,11 +3,12 @@ import type CanvasPaint from '../../components/CanvasPaint.vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
+import type { Direction } from '../pipeline/_types.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
 import { defaultColors } from './AxialEdgeWangTileManager.ts'
-import { type TileId, type WangTile, type WangTileEdge } from './WangTileset.ts'
+import { type TileId, type WangTile } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
   return {
@@ -66,7 +67,7 @@ export function makeBitMaskFromWangTile(size: number, tile: WangTile<BinaryArray
 
 export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
   target: T,
-  edge: WangTileEdge,
+  edge: Direction,
   chunks: BinaryArray,
   value: ExtractNodeDataBaseType<T>,
 ) {

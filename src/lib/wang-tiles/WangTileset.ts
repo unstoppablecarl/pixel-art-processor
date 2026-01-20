@@ -1,7 +1,13 @@
+import type { Direction } from '../pipeline/_types.ts'
+
 export type TileId = string & { readonly __tileId: unique symbol };
 
-export type WangTileEdge = keyof WangTile<any>['edges']
-
+export type DirectionSet<T> =  {
+  readonly N: T;
+  readonly E: T;
+  readonly S: T;
+  readonly W: T;
+};
 export interface WangTile<T> {
   readonly id: TileId;
   readonly edges: {
@@ -115,7 +121,7 @@ export class WangTileset<T> {
     return this.byEdgeValue!.get(value) ?? []
   }
 
-  getTilesWithSameEdge(tile: WangTile<T>, edge: WangTileEdge) {
+  getTilesWithSameEdge(tile: WangTile<T>, edge: Direction) {
     const edgeId = tile.edges[edge]
     const tilesWithEdge = this.tilesWithEdge(edgeId)
     const tilesWithSameEdgeOnSameSide = tilesWithEdge.filter(t => t.edges[edge] === edgeId)
@@ -182,11 +188,11 @@ export type TileWithEligibleEdges<T> = {
   eligibleForW?: boolean,
 }
 
-export const oppositeEdge: Record<WangTileEdge, WangTileEdge> = {
-  N: 'S' as WangTileEdge,
-  S: 'N' as WangTileEdge,
-  E: 'W' as WangTileEdge,
-  W: 'E' as WangTileEdge,
+export const oppositeEdge: Record<Direction, Direction> = {
+  N: 'S' as Direction,
+  S: 'N' as Direction,
+  E: 'W' as Direction,
+  W: 'E' as Direction,
 } as const
 
 export function makeAxialEdgeWangTileset(horizontalCount: number = 2, verticalCount?: number) {
