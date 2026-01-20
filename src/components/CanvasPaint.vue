@@ -155,20 +155,20 @@ const updateCursorCache = () => {
 
           // Check each edge and draw if neighbor is outside circle
           if ((x - 1) * (x - 1) + y * y >= r2) { // Left edge
-            ctx.moveTo(screenX, screenY)
-            ctx.lineTo(screenX, screenY + scale)
+            ctx.moveTo(screenX - 0.5, screenY)
+            ctx.lineTo(screenX - 0.5, screenY + scale)
           }
           if ((x + 1) * (x + 1) + y * y >= r2) { // Right edge
-            ctx.moveTo(screenX + scale, screenY)
-            ctx.lineTo(screenX + scale, screenY + scale)
+            ctx.moveTo(screenX + scale + 0.5, screenY)
+            ctx.lineTo(screenX + scale + 0.5, screenY + scale)
           }
           if (x * x + (y - 1) * (y - 1) >= r2) { // Top edge
-            ctx.moveTo(screenX, screenY)
-            ctx.lineTo(screenX + scale, screenY)
+            ctx.moveTo(screenX, screenY - 0.5)
+            ctx.lineTo(screenX + scale, screenY - 0.5)
           }
           if (x * x + (y + 1) * (y + 1) >= r2) { // Bottom edge
-            ctx.moveTo(screenX, screenY + scale)
-            ctx.lineTo(screenX + scale, screenY + scale)
+            ctx.moveTo(screenX, screenY + scale + 0.5)
+            ctx.lineTo(screenX + scale, screenY + scale + 0.5)
           }
         }
       }
@@ -177,9 +177,9 @@ const updateCursorCache = () => {
     ctx.stroke()
   } else {
     const halfSize = Math.floor(brushSize / 2)
-    const startX = (snappedX - halfSize) * scale
-    const startY = (snappedY - halfSize) * scale
-    const size = brushSize * scale
+    const startX = (snappedX - halfSize) * scale - 0.5
+    const startY = (snappedY - halfSize) * scale - 0.5
+    const size = brushSize * scale + 1
 
     ctx.strokeRect(startX, startY, size, size)
   }
