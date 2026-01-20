@@ -1,4 +1,5 @@
-import { computed, onBeforeUnmount, type Ref, ref, watchEffect } from 'vue'
+import { computed, reactive, type Ref, watch, watchEffect } from 'vue'
+import type CanvasPaint from '../../components/CanvasPaint.vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
@@ -153,7 +154,7 @@ export function make4EdgeWangTileImages(
   tileSize: Ref<number>,
   gridWidth: Ref<number>,
   gridHeight: Ref<number>,
-  ) {
+) {
 
   const cachedWangTileEdgeColorPixelMaps = computed((): Record<TileId, PixelMap> => {
     return Object.fromEntries(tileset.tiles.map(tile => [
@@ -238,21 +239,45 @@ export function make4EdgeWangTileImages(
   }
 }
 
+export type TileCanvasItem = {
+  canvas: HTMLCanvasElement,
+  ctx: CanvasRenderingContext2D,
+  updateView: () => void
+}
+
 export function useTileCanvases() {
+  const tilesetCanvases = reactive(new Map<string, TileCanvasItem>())
 
-  let unMounting = false
-  const tilesetCanvases = ref<Record<TileId, HTMLCanvasElement>>({})
+  function setCanvasPaintRef(comp: typeof CanvasPaint | null, tileId: TileId) {
+    if (!comp) {
+      tilesetCanvases.delete(tileId)
+      return
+    }
+    if (tilesetCanvases.has(tileId)) return
 
-  function setCanvasRef(el: HTMLCanvasElement | null, tileId: TileId) {
-    if (unMounting) return
-    if (!el) throw new Error('invalid canvas element')
-    tilesetCanvases.value[tileId] = el
+    const registered = set(comp, tileId)
+    if (!registered) {
+      const stopWatch = watch(() => comp?.viewCanvasRef, (canvas) => {
+        set(comp, canvas)
+        queueMicrotask(() => stopWatch())
+      })
+    }
   }
 
-  onBeforeUnmount(() => unMounting = true)
+  function set(comp: typeof CanvasPaint | null, tileId: TileId) {
+    const canvas = comp?.viewCanvasRef
+
+    if (canvas) {
+      const ctx = canvas.getContext('2d')
+      if (!ctx) throw new Error('cannot get canvas context')
+      tilesetCanvases.set(tileId, { canvas, ctx, updateView: comp.updateView })
+      return true
+    }
+    return false
+  }
 
   return {
     tilesetCanvases,
-    setCanvasRef,
+    setCanvasPaintRef,
   }
 }

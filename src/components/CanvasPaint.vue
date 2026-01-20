@@ -8,7 +8,7 @@ import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
   (e: 'setPixels', pixels: Point[]): void,
-  (e: 'clear'): void
+  (e: 'clear'): void,
 }
 const emit = defineEmits<Emits>()
 
@@ -21,6 +21,7 @@ const {
   brushSize = 10,
   scale = 1,
   draw = null,
+  id,
 } = defineProps<{
   width?: number,
   height?: number,
@@ -29,7 +30,8 @@ const {
   brushShape?: 'circle' | 'square',
   brushSize?: number,
   scale?: number,
-  draw?: DrawLayer | null
+  draw?: DrawLayer | null,
+  id: string,
 }>()
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
@@ -185,7 +187,6 @@ const updateCursorCache = () => {
 
 const updateView = () => {
   requestAnimationFrame(() => {
-
     const { ctx, canvas } = getViewCanvas()
     if (!ctx || !canvas) return
 
@@ -316,6 +317,7 @@ function clearCanvas(): void {
 defineExpose({
   clearCanvas,
   fillCanvas,
+  updateView,
   viewCanvasRef,
 })
 
@@ -349,14 +351,11 @@ watch([
     updateView()
   }
 })
-
 </script>
 <template>
   <canvas
+    :id="id"
     ref="viewCanvasRef"
-    :style="{
-      cursor: 'crosshair'
-    }"
     class="draw-canvas"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
@@ -364,8 +363,9 @@ watch([
     @mouseleave="handleMouseLeave"
   ></canvas>
 </template>
-<style>
+<style lang="scss">
 .draw-canvas {
   image-rendering: pixelated;
+  cursor: crosshair;
 }
 </style>

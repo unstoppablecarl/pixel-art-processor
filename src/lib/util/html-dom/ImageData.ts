@@ -240,3 +240,42 @@ export function imageDataEqual(
   return true
 }
 
+export function writeImageData(
+  target: ImageData,
+  source: ImageData,
+  targetX: number,
+  targetY: number,
+): void {
+
+  for (let y = 0; y < source.height; y++) {
+    for (let x = 0; x < source.width; x++) {
+      const sourceIdx = (y * source.width + x) * 4
+      const targetIdx = ((targetY + y) * target.width + (targetX + x)) * 4
+
+      target.data[targetIdx] = source.data[sourceIdx]         // R
+      target.data[targetIdx + 1] = source.data[sourceIdx + 1] // G
+      target.data[targetIdx + 2] = source.data[sourceIdx + 2] // B
+      target.data[targetIdx + 3] = source.data[sourceIdx + 3] // A
+    }
+  }
+}
+
+let ctx: CanvasRenderingContext2D
+let canvas: HTMLCanvasElement
+
+export function putImageDataScaled(target: CanvasRenderingContext2D, width: number, height: number, imageData: ImageData, x = 0, y = 0) {
+  if (!canvas) {
+    canvas = document.createElement('canvas')
+    if (!canvas) throw new Error('could not create html-dom')
+  }
+  if (!ctx) {
+    ctx = canvas.getContext('2d')!
+    if (!ctx) throw new Error('could not create context')
+  }
+
+  canvas.width = width
+  canvas.height = height
+
+  ctx.putImageData(imageData, 0, 0)
+  target.drawImage(canvas, x, y)
+}

@@ -12,16 +12,28 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
-import { computed, markRaw, onMounted, type Raw, reactive, Ref, ref, toRef, useTemplateRef, watch } from 'vue'
+import {
+  computed,
+  markRaw,
+  onMounted,
+  type Raw,
+  reactive,
+  Ref,
+  ref,
+  toRef,
+  useTemplateRef,
+  watch,
+} from 'vue'
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { parseColor } from '../../../lib/util/color.ts'
 import {
-  type SerializedImageData, serializeImageData,
+  putImageDataScaled,
+  type SerializedImageData, serializeImageData, setImageDataPixelColor, writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
-import { ImageDataMutator } from '../../../lib/util/html-dom/ImageDataMutator.ts'
+import { Sketch } from '../../../lib/util/html-dom/Sketch.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { markRawOrNull } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
@@ -39,7 +51,7 @@ import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 const store = usePipelineStore()
-const canvasPaintRef = useTemplateRef('canvasPaintRef')
+const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -64,7 +76,7 @@ const CONFIG_DEFAULTS = () => (
     size: {
       ...SIZE_DEFAULTS,
     },
-    wangTiles: {} as Record<TileId, {
+    wangTiles: markRaw({}) as Record<TileId, {
       tile: WangTile<number>,
       imageData: Raw<SerializedImageData> | null
     }>,
@@ -137,8 +149,14 @@ const gridHeight = ref(6)
 
 const {
   tilesetCanvases,
-  setCanvasRef,
+  setCanvasPaintRef,
 } = useTileCanvases()
+
+function setCanvasPaint(comp: typeof CanvasPaint | null, tileId: TileId) {
+  if (tilesetCanvases.has(tileId)) return
+  setCanvasPaintRef(comp, tileId)
+  markDirty(tileId)
+}
 
 const {
   canvasWidth,
@@ -167,18 +185,14 @@ watch(tileSize, () => {
     }
   })
 
-  Object.values(tilesetCanvases.value).forEach(canvasEl => {
-    canvasEl.width = tileSize.value
-    canvasEl.height = tileSize.value
-  })
-
+  for (const [_key, item] of tilesetCanvases) {
+    item.canvas.width = tileSize.value
+    item.canvas.height = tileSize.value
+  }
 }, { immediate: true })
-
-const mutator = new ImageDataMutator()
 
 function setPixels(pixels: Point[]) {
   if (!tileGrid.value) return
-
   pixels.forEach(({ x, y }) => {
     const { tile, pixelX, pixelY } = gridPixelToTilePixel(x, y)!
     if (!tile) return
@@ -186,42 +200,37 @@ function setPixels(pixels: Point[]) {
     const imageData = tilesetImageDataRef.get()
     if (!imageData) return
 
-    mutator.set(imageData)
-    mutator.setPixel(pixelX, pixelY, color.value)
+    setImageDataPixelColor(imageData, pixelX, pixelY, color.value)
 
     markDirty(tile.id)
   })
+}
+
+function setTilePixels(pixels: Point[], tileId: TileId) {
+  pixels.forEach(({ x, y }) => {
+    const tilesetImageDataRef = tilesetImageRefs[tileId]
+    const imageData = tilesetImageDataRef.get()!
+
+    setImageDataPixelColor(imageData, x, y, color.value)
+  })
+
+  markDirty(tileId)
 }
 
 const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
   for (const tileId of dirtyTiles) {
     syncTile(tileId)
   }
+  canvasPaintRef.value!.updateView()
 })
 
-function drawTileToTileCanvas(tileId: TileId, imageData: ImageData) {
-  const canvas = tilesetCanvases.value[tileId]
-  if (!canvas) return
-  const ctx = canvas.getContext('2d')!
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
-  ctx.putImageData(imageData, 0, 0)
-
-  const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
-
-  mutator.set(borderImageData)
-  ctx.globalAlpha = 0.5
-  mutator.drawOnto(ctx)
-  ctx.globalAlpha = 1
-}
-
-function drawTileToMaskImageDataRef(tileId: TileId, imageData: ImageData) {
-  mutator.set(maskImageData)
-
+function drawTileToGrid(tileId: TileId, imageData: ImageData) {
   if (!tileGrid.value) return
   tileGrid.value.eachWithTileId(tileId, (tileX, tileY, tile) => {
     if (!tile) return
     const { gridX, gridY } = tilePixelToGridPixel(tileX, tileY, 0, 0)
-    mutator.putImageData(imageData, gridX, gridY)
+
+    writeImageData(maskImageData, imageData, gridX, gridY)
   })
 }
 
@@ -230,25 +239,41 @@ function syncTile(tileId: TileId) {
   const imageData = tilesetImageDataRef.get()
   if (!imageData) return
 
-  drawTileToTileCanvas(tileId, imageData)
-  drawTileToMaskImageDataRef(tileId, imageData)
+  const { updateView } = tilesetCanvases.get(tileId)!
+
+  drawTileToGrid(tileId, imageData)
 
   config.wangTiles[tileId] = {
     tile: tileset.byId.get(tileId)!,
     imageData: serializeImageData(imageData),
   }
+
+  updateView()
 }
 
-function draw(ctx: CanvasRenderingContext2D) {
-  mutator.set(maskImageData)
-    .drawOnto(ctx)
+function drawGridCanvas(ctx: CanvasRenderingContext2D) {
+  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, maskImageData, 0,0)
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
+}
+
+function drawTileCanvas(ctx: CanvasRenderingContext2D, tileId: TileId) {
+  const tilesetImageDataRef = tilesetImageRefs[tileId]!
+  const imageData = tilesetImageDataRef.get()
+  if (!imageData) return
+
+  ctx.clearRect(0, 0, tileSize.value, tileSize.value)
+  ctx.putImageData(imageData, 0, 0)
+
+  const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
+
+  ctx.globalAlpha = 0.5
+  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, borderImageData)
+  ctx.globalAlpha = 1
 }
 
 function clear() {
   Object.entries(tilesetImageRefs).forEach(([tileId, item]) => {
       item.clearPixels()
-
       markDirty(tileId as TileId)
     },
   )
@@ -266,14 +291,21 @@ onMounted(() => {
     show-dimensions
   >
     <template #body>
-      <div v-for="(item, index) in tileset.tiles" :key="index">
-        <canvas
-          :ref="el => setCanvasRef(el as HTMLCanvasElement | null, item.id)"
+      <div v-for="item in tileset.tiles" :key="item.id">
+        <CanvasPaint
+          :ref="comp => setCanvasPaint(comp as any, item.id)"
+          :id="item.id"
+          :scale="store.imgScale"
           :width="tileSize"
           :height="tileSize"
+          :brush-shape="brushShape"
+          :brush-size="brushSize"
+          :cursor-color="cursorColor"
+          :grid-color="gridColor"
+          :draw="($event) => drawTileCanvas($event, item.id)"
+          @set-pixels="setTilePixels($event, item.id)"
           class="canvas-tile"
-        >
-        </canvas>
+        />
         <div>
           {{ item.id }}
         </div>
@@ -282,6 +314,7 @@ onMounted(() => {
     <template #footer>
       <CanvasPaint
         ref="canvasPaintRef"
+        id="grid"
         :scale="store.imgScale"
         :width="canvasWidth"
         :height="canvasHeight"
@@ -289,7 +322,7 @@ onMounted(() => {
         :brush-size="brushSize"
         :cursor-color="cursorColor"
         :grid-color="gridColor"
-        :draw="draw"
+        :draw="drawGridCanvas"
         @set-pixels="setPixels"
         @clear="clear"
       />
