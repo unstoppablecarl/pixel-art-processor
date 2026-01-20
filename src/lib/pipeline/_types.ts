@@ -44,3 +44,4 @@ export interface Position {
 }
 
 export type Direction = 'N' | 'S' | 'E' | 'W'
+export type DirectionSet<T> = Readonly<Record<Direction, T>>

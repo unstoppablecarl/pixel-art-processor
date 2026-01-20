@@ -1,21 +1,10 @@
-import type { Direction } from '../pipeline/_types.ts'
+import type { Direction, DirectionSet } from '../pipeline/_types.ts'
 
 export type TileId = string & { readonly __tileId: unique symbol };
 
-export type DirectionSet<T> =  {
-  readonly N: T;
-  readonly E: T;
-  readonly S: T;
-  readonly W: T;
-};
 export interface WangTile<T> {
   readonly id: TileId;
-  readonly edges: {
-    readonly N: T;
-    readonly E: T;
-    readonly S: T;
-    readonly W: T;
-  };
+  readonly edges: DirectionSet<T>;
 }
 
 export function populateIndexedWangTile<T>(tile: WangTile<number>, values: T[]): WangTile<T> {
