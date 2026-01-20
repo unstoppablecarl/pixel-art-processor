@@ -6,12 +6,12 @@ import {
   isRef,
   markRaw,
   type Raw,
+  reactive,
   type Ref,
   toRaw,
   toValue,
   type UnwrapNestedRefs,
   type UnwrapRef,
-  watch,
 } from 'vue'
 import { StepValidationError } from '../pipeline/errors/StepValidationError.ts'
 import type { ImageDataRef } from '../vue/vue-image-data.ts'
@@ -93,7 +93,30 @@ export function markRawOrNull<T extends object | null>(value: T): T extends null
   return markRaw(value) as any
 }
 
-export function syncRefToReactive<T>(a: Ref<T>, get: () => T, set: (value: T) => void) {
-  a.value = get()
-  watch(a, () => set(a.value))
+export function reactiveFromRefs<
+  C extends Record<string, any>,
+  R extends { [P in keyof R]: Ref<any> }
+>(defaults: C, refs: R) {
+  type K = keyof R
+
+  const obj: any = { ...defaults }
+
+  for (const key in refs) {
+    Object.defineProperty(obj, key, {
+      enumerable: true,
+      configurable: true,
+      get() {
+        return refs[key].value
+      },
+      set(v) {
+        refs[key].value = v
+      },
+    })
+  }
+
+  // Replace the keys in R with their unwrapped types
+  type Result = Omit<C, K> & { [P in K]: R[P] extends Ref<infer U> ? U : never }
+
+  return reactive(obj) as Result
 }
+

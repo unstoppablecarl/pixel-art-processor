@@ -71,40 +71,6 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
     }
   }
 
-  toWrapped(): this {
-    const w = this.width
-    const h = this.height
-
-    const Ctor = this.constructor as {
-      new(width: number, height: number, tileset: TS): WangGrid<T, TS>
-    }
-
-    // Create a new instance of the same subclass
-    const wrapped = new Ctor(w + 1, h + 1, this.tileSet) as this
-
-    // 1. Copy original grid
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
-        wrapped.set(x, y, this.get(x, y))
-      }
-    }
-
-    // 2. Copy first column to last column
-    for (let y = 0; y < h; y++) {
-      wrapped.set(w, y, this.get(0, y))
-    }
-
-    // 3. Copy first row to last row
-    for (let x = 0; x < w; x++) {
-      wrapped.set(x, h, this.get(x, 0))
-    }
-
-    // 4. Bottom-right corner = top-left tile
-    wrapped.set(w, h, this.get(0, 0))
-
-    return wrapped
-  }
-
   /** Check if placing tileId at (x, y) is locally valid */
   isPlacementValid(tileset: WangTileset<T>, x: number, y: number, tileId: TileId): boolean {
     const tile = tileset.byId.get(tileId)
@@ -237,44 +203,79 @@ export function drawWangGrid<T>(
 
   return sketch
 }
+export function makeAxialEdgeWangGrid<T>(
+  tileset: AxialEdgeWangTileset<T>,
+  wrapEdges = true
+): AxialEdgeWangGrid<T> {
 
-export function makeAxialEdgeWangGrid<T>(tileset: AxialEdgeWangTileset<T>): AxialEdgeWangGrid<T> {
-  const northSouthVariants = tileset.verticalEdgeValues
-  const eastWestVariants = tileset.horizontalEdgeValues
-  // Build all (N,S) pairs
-  const verticalPairs = []
-  for (const N of northSouthVariants) {
-    for (const S of northSouthVariants) {
-      verticalPairs.push({ N, S })
-    }
-  }
+  const vertical = tileset.verticalEdgeValues
+  const horizontal = tileset.horizontalEdgeValues
 
-  // Build all (W,E) pairs
-  const horizontalPairs = []
-  for (const W of eastWestVariants) {
-    for (const E of eastWestVariants) {
-      horizontalPairs.push({ W, E })
-    }
-  }
+  const verticalPairs = makeDeBruijnPairs(vertical)
+  const horizontalPairs = makeDeBruijnPairs(horizontal)
 
-  const height = verticalPairs.length
-  const width = horizontalPairs.length
+  const baseHeight = verticalPairs.length
+  const baseWidth = horizontalPairs.length
+
+  const height = wrapEdges ? baseHeight + 2 : baseHeight
+  const width = wrapEdges ? baseWidth + 2 : baseWidth
 
   const grid = new AxialEdgeWangGrid<T>(width, height, tileset)
 
-  for (let y = 0; y < height; y++) {
-    const { N, S } = verticalPairs[y]
+  // --- Fill the core grid ---
+  for (let y = 0; y < baseHeight; y++) {
+    const { top: N, bottom: S } = verticalPairs[y]
 
-    for (let x = 0; x < width; x++) {
-      const { W, E } = horizontalPairs[x]
+    for (let x = 0; x < baseWidth; x++) {
+      const { top: W, bottom: E } = horizontalPairs[x]
 
       const id = `tile-${N}-${E}-${S}-${W}` as TileId
       const tile = tileset.byId.get(id)
-      if (!tile) throw new Error('failed to generate tile grid')
+      if (!tile) throw new Error(`Missing tile ${id}`)
 
-      grid.set(x, y, tile)
+      const gx = wrapEdges ? x + 1 : x
+      const gy = wrapEdges ? y + 1 : y
+
+      grid.set(gx, gy, tile)
     }
   }
 
+  if (!wrapEdges) return grid
+
+  // --- Copy left → right and right → left ---
+  for (let y = 1; y <= baseHeight; y++) {
+    grid.set(0, y, grid.get(baseWidth, y)!)       // left = rightmost
+    grid.set(baseWidth + 1, y, grid.get(1, y)!)   // right = leftmost
+  }
+
+  // --- Copy top → bottom and bottom → top ---
+  for (let x = 1; x <= baseWidth; x++) {
+    grid.set(x, 0, grid.get(x, baseHeight)!)      // top = bottommost
+    grid.set(x, baseHeight + 1, grid.get(x, 1)!)  // bottom = topmost
+  }
+
+  // --- Copy corners ---
+  grid.set(0, 0, grid.get(baseWidth, baseHeight)!)
+  grid.set(baseWidth + 1, 0, grid.get(1, baseHeight)!)
+  grid.set(0, baseHeight + 1, grid.get(baseWidth, 1)!)
+  grid.set(baseWidth + 1, baseHeight + 1, grid.get(1, 1)!)
+
   return grid
 }
+
+
+function makeDeBruijnPairs<T>(values: readonly T[]): { top: T; bottom: T }[] {
+  const n = values.length
+  const result: { top: T; bottom: T }[] = []
+
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const top = values[i]
+      const bottom = values[(i + j) % n] // <-- key insight
+      result.push({ top, bottom })
+    }
+  }
+
+  return result
+}
+

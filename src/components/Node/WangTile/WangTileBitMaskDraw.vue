@@ -16,8 +16,7 @@ import {
   computed,
   markRaw,
   onMounted,
-  type Raw,
-  reactive,
+  type Raw, type Reactive,
   Ref,
   ref,
   toRef,
@@ -34,10 +33,10 @@ import {
   type SerializedImageData, serializeImageData, setImageDataPixelColor, writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
-import { markRawOrNull } from '../../../lib/util/vue-util.ts'
+import { markRawOrNull, reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
+import { tilesetSyncedImageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
   useTileCanvases,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
@@ -51,7 +50,7 @@ import CanvasPaint from '../../CanvasPaint.vue'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
-import { rangeSliderConfig } from '../../UIForms/RangeSlider.ts'
+import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 const store = usePipelineStore()
@@ -59,37 +58,50 @@ const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const tileset = computed(() => createAxialEdgeWangTileset([0, 1], [2, 3]))
-const tilesetImageRefs = reactive(Object.fromEntries(
-  tileset.value.tiles.map(tile => {
-    return [tile.id, imageDataRef()]
-  }),
-))
-const SIZE_DEFAULTS = rangeSliderConfig({
-  value: 64,
-  min: 8,
-  max: 512,
-})
-
 type Config = ReturnType<typeof CONFIG_DEFAULTS>
 const CONFIG_DEFAULTS = () => (
   {
     ...DEFAULT_SHOW_GRID.CONFIG,
     ...DEFAULT_SHOW_CURSOR.CONFIG,
     activeTabIndex: 0,
-    size: {
-      ...SIZE_DEFAULTS,
-    },
+    tileSize: 64,
     wangTiles: markRaw({}) as Record<TileId, {
       tile: WangTile<number>,
       imageData: Raw<SerializedImageData> | null
     }>,
+    verticalEdgeValueCount: 2,
+    horizontalEdgeValueCount: 2,
   }
 )
+
+const defaults = CONFIG_DEFAULTS()
+
+const tileSize = ref(defaults.tileSize)
+const verticalEdgeValueCount = ref(defaults.verticalEdgeValueCount)
+const horizontalEdgeValueCount = ref(defaults.horizontalEdgeValueCount)
+
+const tileset = computed(() => createAxialEdgeWangTileset(
+  verticalEdgeValueCount.value,
+  horizontalEdgeValueCount.value,
+))
+const tilesetImageRefs = tilesetSyncedImageDataRef(tileset)
+
 
 const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
     return CONFIG_DEFAULTS()
+  },
+  reactiveConfig(defaults) {
+
+    verticalEdgeValueCount.value = defaults.verticalEdgeValueCount
+    horizontalEdgeValueCount.value = defaults.horizontalEdgeValueCount
+    tileSize.value = defaults.tileSize
+
+    return reactiveFromRefs(defaults, {
+      verticalEdgeValueCount,
+      horizontalEdgeValueCount,
+      tileSize,
+    }) as Reactive<Config>
   },
   deserializeConfig(config) {
     config.wangTiles = Object.fromEntries(
@@ -97,7 +109,6 @@ const handler = defineStepHandler<Config>(STEP_META, {
         const id = tileId as TileId
 
         const imgDataRef = tilesetImageRefs?.[id]
-        //
         let imageData: Raw<SerializedImageData> | null
         if (imgDataRef) {
           imageData = imgDataRef.deserializeConfig(tile.imageData)
@@ -146,8 +157,6 @@ const mode = ref<'add' | 'remove'>('add')
 const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
 const color = computed(() => mode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
-
-const tileSize = computed(() => config.size.value)
 
 const {
   tilesetCanvases,
@@ -312,9 +321,6 @@ onMounted(() => {
           @set-pixels="setTilePixels($event, item.id)"
           class="canvas-tile"
         />
-        <div>
-          {{ item.id }}
-        </div>
       </div>
     </template>
     <template #footer>
@@ -338,54 +344,86 @@ onMounted(() => {
         v-model:active-tab-index="config.activeTabIndex"
       >
         <template #settings>
-          {{ store.imgScale }}
-          <RangeSlider
-            :id="`${nodeId}-size`"
-            label="Size"
-            :defaults="SIZE_DEFAULTS"
-            v-model:value="config.size.value"
-            v-model:min="config.size.min"
-            v-model:max="config.size.max"
-            v-model:step="config.size.step"
-          />
 
-          <RangeSlider
-            :id="`${nodeId}-brush-size`"
-            label="Brush Size"
-            v-model:value="brushSize"
-            :min="1"
-            :max="50"
+          <NumberInput
+            :id="`${nodeId}-tile-size`"
+            label="Vertical"
+            v-model="config.tileSize"
             :step="1"
+            :min="1"
+            input-width="50px"
           />
 
-          <div class="btn-group" role="group">
-            <button
-              @click="brushShape = 'square'"
-              :class="['btn btn-sm', brushShape === 'square' ? 'btn-primary' : 'btn-outline-primary']"
-              title="Square Brush"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18"></rect>
-              </svg>
-            </button>
-            <button
-              @click="brushShape = 'circle'"
-              :class="['btn btn-sm', brushShape === 'circle' ? 'btn-primary' : 'btn-outline-primary']"
-              title="Circle Brush"
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="9"></circle>
-              </svg>
-            </button>
+          <div class="section">
+            <div class="row">
+              <div class="col">
+                <div class="form-label col-form-label text-end pe-2 me-auto section-heading-text">
+                  Edge Variants
+                </div>
+              </div>
+              <div class="col">
+                <NumberInput
+                  :id="`${nodeId}-verticalEdgeValueCount`"
+                  label="Vertical"
+                  v-model="config.verticalEdgeValueCount"
+                  :step="1"
+                  :min="1"
+                  input-width="50px"
+                />
+              </div>
+              <div class="col">
+                <NumberInput
+                  :id="`${nodeId}-horizontalEdgeValueCount`"
+                  label="Horizontal"
+                  v-model="config.horizontalEdgeValueCount"
+                  :step="1"
+                  :min="1"
+                  input-width="50px"
+                />
+              </div>
+            </div>
           </div>
+          <div class="section">
 
-          <button
-            role="button"
-            @click="canvasPaintRef?.clearCanvas()"
-            class="btn btn-danger btn-sm ms-2"
-          >
-            Clear Canvas
-          </button>
+            <RangeSlider
+              :id="`${nodeId}-brush-size`"
+              label="Brush Size"
+              v-model:value="brushSize"
+              :min="1"
+              :max="50"
+              :step="1"
+            />
+
+            <div class="btn-group" role="group">
+              <button
+                @click="brushShape = 'square'"
+                :class="['btn btn-sm', brushShape === 'square' ? 'btn-primary' : 'btn-outline-primary']"
+                title="Square Brush"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18"></rect>
+                </svg>
+              </button>
+              <button
+                @click="brushShape = 'circle'"
+                :class="['btn btn-sm', brushShape === 'circle' ? 'btn-primary' : 'btn-outline-primary']"
+                title="Circle Brush"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="9"></circle>
+                </svg>
+              </button>
+            </div>
+
+            <button
+              role="button"
+              @click="canvasPaintRef?.clearCanvas()"
+              class="btn btn-danger btn-sm ms-2"
+            >
+              Clear Canvas
+            </button>
+
+          </div>
         </template>
         <template #display-options>
           <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />

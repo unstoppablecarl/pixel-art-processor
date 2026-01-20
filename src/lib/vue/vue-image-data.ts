@@ -1,5 +1,11 @@
-import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
-import { deserializeImageData, type SerializedImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
+import { markRaw, type Raw, reactive, type Ref, shallowReactive, type ShallowReactive, watch } from 'vue'
+import {
+  deserializeImageData,
+  resizeImageData,
+  type SerializedImageData,
+  serializeImageData,
+} from '../util/html-dom/ImageData.ts'
+import { type TileId, WangTileset } from '../wang-tiles/WangTileset.ts'
 
 export function normalizeImageData(value: ImageDataOrRef): ImageData | null {
   if (!value) return null
@@ -76,6 +82,16 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
 
       sync?.(serializeImageData(image))
     },
+    resize(
+      newWidth: number,
+      newHeight: number,
+      offsetX = 0,
+      offsetY = 0,
+    ) {
+      if (!image) return
+      const newImage = resizeImageData(image, newWidth, newHeight, offsetX, offsetY)
+      capsule.set(newImage)
+    },
     clear() {
       if (!image) return
 
@@ -117,6 +133,28 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
   })
 
   return capsule
+}
+
+export function tilesetSyncedImageDataRef<T>(tileset: Ref<WangTileset<T>>) {
+  const tilesetImageRefs = reactive<Record<TileId, ImageDataRef>>({})
+
+  watch(tileset, (newTileset) => {
+    const newIds = new Set(newTileset.tiles.map(t => t.id))
+
+    for (const id in tilesetImageRefs) {
+      if (!newIds.has(id as TileId)) {
+        delete tilesetImageRefs[id as TileId]
+      }
+    }
+
+    for (const tile of newTileset.tiles) {
+      if (!(tile.id in tilesetImageRefs)) {
+        tilesetImageRefs[tile.id] = imageDataRef()
+      }
+    }
+  }, { immediate: true })
+
+  return tilesetImageRefs
 }
 
 // export function imageDataRefComputed<T extends ImageData | null>(source: WatchSource<T>): ImageDataRef {

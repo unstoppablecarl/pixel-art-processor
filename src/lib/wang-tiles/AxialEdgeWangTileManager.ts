@@ -39,7 +39,7 @@ export function makeAxialEdgeWangTileManager(
     )
   })
 
-  const tileGrid = computed(() => makeAxialEdgeWangGrid(tileset.value).toWrapped())
+  const tileGrid = computed(() => makeAxialEdgeWangGrid(tileset.value))
   const gridWidth = computed(() => tileGrid.value.width)
   const gridHeight = computed(() => tileGrid.value.height)
 

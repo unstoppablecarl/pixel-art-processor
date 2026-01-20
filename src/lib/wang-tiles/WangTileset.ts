@@ -146,40 +146,36 @@ export class AxialEdgeWangTileset<T> extends WangTileset<T> {
   }
 }
 
-export function createAxialEdgeWangTileset<T>(verticalEdgeValues: T[], horizontalEdgeValues: T[]): AxialEdgeWangTileset<T> {
-  const tiles: WangTile<T>[] = []
+export function createAxialEdgeWangTileset(
+  verticalEdgeVariantCount: number,
+  horizontalEdgeVariantCount: number,
+): AxialEdgeWangTileset<number> {
 
-  const eligibleForN = verticalEdgeValues
-  const eligibleForE = horizontalEdgeValues
-  const eligibleForS = verticalEdgeValues
-  const eligibleForW = horizontalEdgeValues
+  const vertical = Array.from({ length: verticalEdgeVariantCount }, (_, i) => i)
+  const horizontal = Array.from(
+    { length: horizontalEdgeVariantCount },
+    (_, i) => verticalEdgeVariantCount + i,
+  )
 
-  for (let N = 0; N < eligibleForN.length; N++) {
-    for (let E = 0; E < eligibleForE.length; E++) {
-      for (let S = 0; S < eligibleForS.length; S++) {
-        for (let W = 0; W < eligibleForW.length; W++) {
+  const tiles: WangTile<number>[] = []
 
-          const iN = eligibleForN[N]
-          const iE = eligibleForE[E]
-          const iS = eligibleForS[S]
-          const iW = eligibleForW[W]
+  for (const N of vertical) {
+    for (const E of horizontal) {
+      for (const S of vertical) {
+        for (const W of horizontal) {
 
-          const id = `tile-${iN}-${iE}-${iS}-${iW}`
+          const id = `tile-${N}-${E}-${S}-${W}` as TileId
+
           tiles.push({
-            id: id as TileId,
-            edges: {
-              N: iN,
-              E: iE,
-              S: iS,
-              W: iW,
-            },
+            id,
+            edges: { N, E, S, W },
           })
         }
       }
     }
   }
 
-  return new AxialEdgeWangTileset<T>(tiles, verticalEdgeValues, horizontalEdgeValues)
+  return new AxialEdgeWangTileset(tiles, vertical, horizontal)
 }
 
 export type TileWithEligibleEdges<T> = {
