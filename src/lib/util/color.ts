@@ -17,10 +17,10 @@ export function RGBAToCssColor(color: RGBA) {
   return `rgba(${color.r},${color.g},${color.b},${color.a / 255})`
 }
 
-export function arrayIndexToColor(index: number, length: number, spin: number = 0): RGBA {
+export function arrayIndexToColor(index: number, length: number, alpha = 255, spin = 0): RGBA {
   const hue: number = (index * 360) / length
   const color = tinycolor({ h: hue, s: 1, l: .5 }).spin(spin * 360).toRgb()
-  color.a = 255
+  color.a = alpha
   return color
 }
 

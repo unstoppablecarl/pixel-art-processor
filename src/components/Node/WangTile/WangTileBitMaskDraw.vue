@@ -59,9 +59,9 @@ const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const tileset = createAxialEdgeWangTileset([0, 1], [2, 3])
+const tileset = computed(() => createAxialEdgeWangTileset([0, 1], [2, 3]))
 const tilesetImageRefs = reactive(Object.fromEntries(
-  tileset.tiles.map(tile => {
+  tileset.value.tiles.map(tile => {
     return [tile.id, imageDataRef()]
   }),
 ))
@@ -250,7 +250,7 @@ function syncTile(tileId: TileId) {
   drawTileToGrid(tileId, imageData)
 
   config.wangTiles[tileId] = {
-    tile: tileset.byId.get(tileId)!,
+    tile: tileset.value.byId.get(tileId)!,
     imageData: serializeImageData(imageData),
   }
 
@@ -286,7 +286,7 @@ function clear() {
 }
 
 onMounted(() => {
-  tileset.tiles.forEach(tile => markDirty(tile.id))
+  tileset.value.tiles.forEach(tile => markDirty(tile.id))
 })
 </script>
 <template>

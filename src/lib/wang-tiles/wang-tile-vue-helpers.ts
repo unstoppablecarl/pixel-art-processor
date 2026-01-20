@@ -7,7 +7,6 @@ import type { Direction } from '../pipeline/_types.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { defaultColors } from './AxialEdgeWangTileManager.ts'
 import { type TileId, type WangTile } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
@@ -94,6 +93,14 @@ export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
   return target
 }
 
+export const defaultColors: RGBA[] = [
+  { r: 255, g: 0, b: 0, a: 255 / 2 },
+  { r: 0, g: 255, b: 0, a: 255 / 2 },
+  { r: 0, g: 0, b: 255, a: 255 / 2 },
+  { r: 255, g: 255, b: 0, a: 255 / 2 },
+]
+
+// arrayIndexToColor()
 export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, colors = defaultColors, padding = 1) {
   const pixelMap = new PixelMap(size, size)
   const nIndex = tile.edges.N

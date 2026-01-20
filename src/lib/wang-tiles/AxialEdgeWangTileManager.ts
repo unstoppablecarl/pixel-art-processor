@@ -1,7 +1,8 @@
-import { computed, ref, type Ref, watchEffect } from 'vue'
+import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { Direction } from '../pipeline/_types.ts'
+import { arrayIndexToColor } from '../util/color.ts'
 import { getPointsInEdgeMargins, mirrorTilePixelHorizontal, mirrorTilePixelVertical } from '../util/data/Grid.ts'
 import { type RGBA, setImageDataPixelsColor } from '../util/html-dom/ImageData.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
@@ -10,22 +11,20 @@ import { makeWangTileEdgesPixelMap } from './wang-tile-vue-helpers.ts'
 import { makeAxialEdgeWangGrid } from './WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId, type WangTile } from './WangTileset.ts'
 
-export const defaultColors: RGBA[] = [
-  { r: 255, g: 0, b: 0, a: 255 / 2 },
-  { r: 0, g: 255, b: 0, a: 255 / 2 },
-  { r: 0, g: 0, b: 255, a: 255 / 2 },
-  { r: 255, g: 255, b: 0, a: 255 / 2 },
-]
-
 export function makeAxialEdgeWangTileManager(
-  tileset: AxialEdgeWangTileset<number>,
+  tileset: ComputedRef<AxialEdgeWangTileset<number>>,
   tileSize: Ref<number>,
 ) {
 
+  const edgeColors = computed(() => {
+    const edgeValues = tileset.value.edgeValues()
+    return edgeValues.map((edgeValue) => arrayIndexToColor(edgeValue, edgeValues.length, 255 * 0.5))
+  })
+
   const cachedWangTileEdgeColorPixelMaps = computed((): Record<TileId, PixelMap> => {
-    return Object.fromEntries(tileset.tiles.map(tile => [
+    return Object.fromEntries(tileset.value.tiles.map((tile, index) => [
         tile.id,
-        makeWangTileEdgesPixelMap(tileSize.value, tile),
+        makeWangTileEdgesPixelMap(tileSize.value, tile, edgeColors.value),
       ],
     ))
   })
@@ -40,18 +39,17 @@ export function makeAxialEdgeWangTileManager(
     )
   })
 
-  const gridWidth = ref(5)
-  const gridHeight = ref(5)
+  const tileGrid = computed(() => makeAxialEdgeWangGrid(tileset.value).toWrapped())
+  const gridWidth = computed(() => tileGrid.value.width)
+  const gridHeight = computed(() => tileGrid.value.height)
 
   const canvasWidth = computed(() => tileSize.value * gridWidth.value)
   const canvasHeight = computed(() => tileSize.value * gridHeight.value)
   const tileGridEdgeColorSketch = new Sketch(0, 0)
-  watchEffect(() => tileGridEdgeColorSketch.setSize(
+  watchEffect(() => tileGridEdgeColorSketch.resize(
     canvasWidth.value,
     canvasHeight.value,
   ))
-
-  const tileGrid = computed(() => makeAxialEdgeWangGrid(tileset).toWrapped())
 
   // draw colored tile edges
   watchEffect(() => {
@@ -104,7 +102,7 @@ export function makeAxialEdgeWangTileManager(
       E: [],
       W: [],
     }
-    const tile = tileset.byId.get(tileId)!
+    const tile = tileset.value.byId.get(tileId)!
 
     pixels.forEach(p => getPointsInEdgeMargins(p, tileSize.value, borderThickness, pixelEdges))
 
@@ -118,7 +116,7 @@ export function makeAxialEdgeWangTileManager(
 
     Object.entries(pixelEdges).forEach(([e, pixels]) => {
       const edge = e as Direction
-      const { sameEdge, mirroredEdge } = tileset.getTilesWithSameEdge(tile, edge)
+      const { sameEdge, mirroredEdge } = tileset.value.getTilesWithSameEdge(tile, edge)
 
       affectedTiles = [...affectedTiles, ...sameEdge, ...mirroredEdge]
 
@@ -159,5 +157,6 @@ export function makeAxialEdgeWangTileManager(
     tilePixelToGridPixel,
     gridPixelToTile,
     gridPixelToTilePixel,
+    edgeColors,
   }
 }

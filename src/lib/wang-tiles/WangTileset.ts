@@ -24,6 +24,8 @@ export class WangTileset<T> {
   readonly byId: ReadonlyMap<TileId, WangTile<T>>
   private byEdgeValue: Map<T, readonly WangTile<T>[]> | undefined
 
+  private _edgeValues: T[] | undefined
+
   static createFromColors<T>(colors: T[]): WangTileset<T> {
     const tiles: WangTile<T>[] = []
     for (let N = 0; N < colors.length; N++) {
@@ -108,6 +110,17 @@ export class WangTileset<T> {
       this.buildEdgeIndex()
     }
     return this.byEdgeValue!.get(value) ?? []
+  }
+
+  edgeValues(): readonly T[] {
+    if (this._edgeValues === undefined) {
+      if (this.byEdgeValue === undefined) {
+        this.buildEdgeIndex()
+      }
+
+      this._edgeValues = [...this.byEdgeValue!.keys()]
+    }
+    return this._edgeValues
   }
 
   getTilesWithSameEdge(tile: WangTile<T>, edge: Direction) {

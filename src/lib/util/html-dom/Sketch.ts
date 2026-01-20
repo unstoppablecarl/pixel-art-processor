@@ -79,6 +79,37 @@ export class Sketch {
     return this.ctx.getImageData(x, y, width, height)
   }
 
+  resize(
+    newWidth: number,
+    newHeight: number,
+    offsetX = 0,
+    offsetY = 0,
+  ) {
+
+    const canvas = this.canvas
+    if (canvas.width === 0 || canvas.height === 0) {
+      this.setSize(newWidth, newHeight)
+      return
+    }
+    // 1. Copy old canvas into an offscreen canvas
+    const oldWidth = canvas.width
+    const oldHeight = canvas.height
+
+    const off = document.createElement('canvas')
+    off.width = oldWidth
+    off.height = oldHeight
+    const offCtx = off.getContext('2d')!
+    offCtx.drawImage(canvas, 0, 0)
+
+    // 2. Resize the real canvas (this clears it)
+    canvas.width = newWidth
+    canvas.height = newHeight
+
+    // 3. Draw the old pixels back into the resized canvas
+    const ctx = canvas.getContext('2d')!
+    ctx.drawImage(off, offsetX, offsetY)
+  }
+
   toEncoded(): string {
     return this.canvas.toDataURL()
   }
