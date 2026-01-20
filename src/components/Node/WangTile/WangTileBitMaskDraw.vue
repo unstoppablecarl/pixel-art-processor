@@ -86,7 +86,6 @@ const tileset = computed(() => createAxialEdgeWangTileset(
 ))
 const tilesetImageRefs = tilesetSyncedImageDataRef(tileset)
 
-
 const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
     return CONFIG_DEFAULTS()
@@ -191,7 +190,7 @@ watch([canvasWidth, canvasHeight], () => {
 watch(tileSize, () => {
   Object.values(tilesetImageRefs).forEach(item => {
     if (!item.hasValue) {
-      item.set(new ImageData(tileSize.value, tileSize.value))
+      item.resize(tileSize.value, tileSize.value)
     }
   })
 
@@ -345,44 +344,50 @@ onMounted(() => {
       >
         <template #settings>
 
-          <NumberInput
-            :id="`${nodeId}-tile-size`"
-            label="Vertical"
-            v-model="config.tileSize"
-            :step="1"
-            :min="1"
-            input-width="50px"
-          />
-
           <div class="section">
-            <div class="row">
-              <div class="col">
-                <div class="form-label col-form-label text-end pe-2 me-auto section-heading-text">
-                  Edge Variants
-                </div>
-              </div>
-              <div class="col">
-                <NumberInput
-                  :id="`${nodeId}-verticalEdgeValueCount`"
-                  label="Vertical"
-                  v-model="config.verticalEdgeValueCount"
-                  :step="1"
-                  :min="1"
-                  input-width="50px"
-                />
-              </div>
-              <div class="col">
-                <NumberInput
-                  :id="`${nodeId}-horizontalEdgeValueCount`"
-                  label="Horizontal"
-                  v-model="config.horizontalEdgeValueCount"
-                  :step="1"
-                  :min="1"
-                  input-width="50px"
-                />
-              </div>
+            <div class="hstack">
+              <NumberInput
+                :id="`${nodeId}-tile-size`"
+                label="Tile Size"
+                v-model="config.tileSize"
+                :step="1"
+                :min="1"
+                input-width="50px"
+                class="me-auto"
+              />
             </div>
           </div>
+          <div class="section">
+            <div class="hstack">
+
+              <div class="form-label col-form-label text-end pe-2 section-heading-text">
+                Edge Variants
+
+              </div>
+
+              <NumberInput
+                :id="`${nodeId}-verticalEdgeValueCount`"
+                label="Vertical"
+                v-model="config.verticalEdgeValueCount"
+                :step="1"
+                :min="1"
+                input-width="50px"
+                class="me-2"
+              />
+
+              <NumberInput
+                :id="`${nodeId}-horizontalEdgeValueCount`"
+                label="Horizontal"
+                v-model="config.horizontalEdgeValueCount"
+                :step="1"
+                :min="1"
+                input-width="50px"
+              />
+            </div>
+          </div>
+
+        </template>
+        <template #display-options>
           <div class="section">
 
             <RangeSlider
@@ -424,9 +429,9 @@ onMounted(() => {
             </button>
 
           </div>
-        </template>
-        <template #display-options>
-          <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
+          <div class="section">
+            <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
+          </div>
         </template>
       </CardFooterSettingsTabs>
     </template>

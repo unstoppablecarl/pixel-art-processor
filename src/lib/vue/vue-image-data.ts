@@ -33,6 +33,12 @@ export type ImageDataRef = ShallowReactive<{
   readonly setSerialized: (serialized: SerializedImageData | null) => void
   readonly deserializeConfig: <T extends SerializedImageData | null>(serialized: T) => T extends null ? null : Raw<T>
   readonly onChange: (value: Sync) => void
+  readonly resize: (
+    newWidth: number,
+    newHeight: number,
+    offsetX?: number,
+    offsetY?: number,
+  ) => void
 }>
 
 type Sync = (serialized: Raw<SerializedImageData> | null) => void
