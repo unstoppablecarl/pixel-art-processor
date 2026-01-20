@@ -28,8 +28,7 @@ export function getPerfectCircleCoords(
 
   return result
 }
-
-export function getRectCoords(
+export function getRectCenterCoords(
   x: number,
   y: number,
   width: number,
@@ -40,11 +39,20 @@ export function getRectCoords(
 
   const result: Point[] = []
 
+  // Compute top-left corner from center
+  const halfW = Math.floor(width / 2)
+  const halfH = Math.floor(height / 2)
+
+  const rawStartX = x - halfW
+  const rawStartY = y - halfH
+  const rawEndX = rawStartX + width
+  const rawEndY = rawStartY + height
+
   // Clamp to bounds
-  const startX = Math.max(0, x)
-  const startY = Math.max(0, y)
-  const endX = Math.min(targetWidth, x + width)
-  const endY = Math.min(targetHeight, y + height)
+  const startX = Math.max(0, rawStartX)
+  const startY = Math.max(0, rawStartY)
+  const endX = Math.min(targetWidth, rawEndX)
+  const endY = Math.min(targetHeight, rawEndY)
 
   for (let py = startY; py < endY; py++) {
     for (let px = startX; px < endX; px++) {

@@ -19,7 +19,6 @@ import {
   type Raw, type Reactive,
   Ref,
   ref,
-  toRef,
   useTemplateRef,
   watch,
 } from 'vue'
@@ -154,10 +153,8 @@ if (import.meta.hot && !import.meta.env.VITEST) {
 
 const brushShape = ref<'circle' | 'square'>('circle')
 const brushSize: Ref<number> = ref(10)
-const mode = ref<'add' | 'remove'>('add')
-const cursorColor = toRef(config, 'showCursorColor')
-const gridColor = toRef(config, 'showGridColor')
-const color = computed(() => mode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
+const brushMode = ref<'add' | 'remove'>('add')
+const color = computed(() => brushMode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
 const {
   tilesetCanvases,
@@ -314,8 +311,8 @@ onMounted(() => {
           :height="tileSize"
           :brush-shape="brushShape"
           :brush-size="brushSize"
-          :cursor-color="cursorColor"
-          :grid-color="gridColor"
+          :cursor-color="config.showCursorColor"
+          :grid-color="config.showGridColor"
           :draw="($event) => drawTileCanvas($event, item.id)"
           @set-pixels="setTilePixels($event, item.id)"
           class="canvas-tile"
@@ -331,8 +328,8 @@ onMounted(() => {
         :height="canvasHeight"
         :brush-shape="brushShape"
         :brush-size="brushSize"
-        :cursor-color="cursorColor"
-        :grid-color="gridColor"
+        :cursor-color="config.showCursorColor"
+        :grid-color="config.showGridColor"
         :draw="drawGridCanvas"
         @set-pixels="setPixels"
         @clear="clear"
@@ -407,18 +404,31 @@ onMounted(() => {
                 :class="['btn btn-sm', brushShape === 'square' ? 'btn-primary' : 'btn-outline-primary']"
                 title="Square Brush"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <rect x="3" y="3" width="18" height="18"></rect>
-                </svg>
+                <span class="material-symbols-outlined">square</span>
               </button>
               <button
                 @click="brushShape = 'circle'"
                 :class="['btn btn-sm', brushShape === 'circle' ? 'btn-primary' : 'btn-outline-primary']"
                 title="Circle Brush"
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <circle cx="12" cy="12" r="9"></circle>
-                </svg>
+                <span class="material-symbols-outlined">circle</span>
+              </button>
+            </div>
+
+            <div class="btn-group mx-2" role="group">
+              <button
+                @click="brushMode = 'add'"
+                :class="['btn btn-sm', brushMode === 'add' ? 'btn-primary' : 'btn-outline-primary']"
+                title="Add"
+              >
+                <span class="material-symbols-outlined">ink_highlighter</span>
+              </button>
+              <button
+                @click="brushMode = 'remove'"
+                :class="['btn btn-sm', brushMode === 'remove' ? 'btn-primary' : 'btn-outline-primary']"
+                title="Remove"
+              >
+                <span class="material-symbols-outlined">ink_eraser</span>
               </button>
             </div>
 

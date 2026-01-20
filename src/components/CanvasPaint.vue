@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import type { Position } from '../lib/pipeline/_types.ts'
-import { getPerfectCircleCoords, getRectCoords } from '../lib/util/data/Grid.ts'
+import { getPerfectCircleCoords, getRectCenterCoords } from '../lib/util/data/Grid.ts'
 import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
 
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
@@ -236,7 +236,7 @@ const paint = (x: number, y: number): void => {
   if (brushShape === 'circle') {
     pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
   } else {
-    pixels = getRectCoords(x, y, brushSize, brushSize, width, height)
+    pixels = getRectCenterCoords(x, y, brushSize, brushSize, width, height)
   }
 
   emit('setPixels', pixels)
