@@ -25,7 +25,7 @@ export class WangGrid<T> {
     return this.cells[this.index(x, y)]
   }
 
-  set(x: number, y: number, tile: WangTile<T>): void {
+  set(x: number, y: number, tile: WangTile<T> | null): void {
     if (!this.inBounds(x, y)) return
     this.cells[this.index(x, y)] = tile
   }
@@ -39,6 +39,23 @@ export class WangGrid<T> {
         cb(x, y, this.get(x, y))
       }
     }
+  }
+
+  filter(cb: (x: number, y: number, tile: WangTile<T> | null) => boolean) {
+    const width = this.width
+    const height = this.height
+
+    const result = []
+
+    for (let y = 0; y < height; y++) {
+      for (let x = 0; x < width; x++) {
+        const tile = this.get(x, y)
+        if (cb(x, y, tile)) {
+          result.push({ x, y, tile })
+        }
+      }
+    }
+    return result
   }
 
   eachWithTileId(tileId: string, cb: (x: number, y: number, tile: WangTile<T>) => void) {
