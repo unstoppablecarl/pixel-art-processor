@@ -1,72 +1,13 @@
 import { computed, ref, type Ref, watchEffect } from 'vue'
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
-import { mirrorTilePixelHorizontal, mirrorTilePixelVertical } from '../util/data/Grid.ts'
+import { getPointsInEdgeMargins, mirrorTilePixelHorizontal, mirrorTilePixelVertical } from '../util/data/Grid.ts'
 import { type RGBA, setImageDataPixelsColor } from '../util/html-dom/ImageData.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import type { ImageDataRef } from '../vue/vue-image-data.ts'
 import { makeWangTileEdgesPixelMap } from './wang-tile-vue-helpers.ts'
-import { WangGrid } from './WangGrid.ts'
-import {
-  oppositeEdge,
-  type TileId,
-  type TileWithEligibleEdges,
-  type WangTile,
-  type WangTileEdge,
-  WangTileset,
-} from './WangTileset.ts'
-
-export function make4EdgeWangGrid<T>(tileset: WangTileset<T>): WangGrid<T> | false {
-  const width = 5
-  const height = 5
-  const grid = new WangGrid<T>(5, 5)
-
-  const tileIds: string[][] = [
-    ['tile-0-3-1-2', 'tile-0-3-1-3', 'tile-0-2-1-3', 'tile-0-2-1-2', 'tile-0-3-1-2'],
-    ['tile-1-3-1-2', 'tile-1-3-1-3', 'tile-1-2-1-3', 'tile-1-2-1-2', 'tile-1-3-1-2'],
-    ['tile-1-3-0-2', 'tile-1-3-0-3', 'tile-1-2-0-3', 'tile-1-2-0-2', 'tile-1-3-0-2'],
-    ['tile-0-3-0-2', 'tile-0-3-0-3', 'tile-0-2-0-3', 'tile-0-2-0-2', 'tile-0-3-0-2'],
-    ['tile-0-3-1-2', 'tile-0-3-1-3', 'tile-0-2-1-3', 'tile-0-2-1-2', 'tile-0-3-1-2'],
-  ]
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      const id = tileIds[y][x]
-      const tile = tileset.byId.get(id as TileId)
-      if (!tile) return false
-      grid.set(x, y, tile)
-    }
-  }
-
-  return grid
-}
-
-export function make4EdgeWangTileset() {
-
-  const verticalA = {
-    edgeValue: 0,
-    eligibleForN: true,
-    eligibleForS: true,
-  }
-  const verticalB = {
-    edgeValue: 1,
-    eligibleForN: true,
-    eligibleForS: true,
-  }
-  const horizontalA = {
-    edgeValue: 2,
-    eligibleForW: true,
-    eligibleForE: true,
-  }
-  const horizontalB = {
-    edgeValue: 3,
-    eligibleForW: true,
-    eligibleForE: true,
-  }
-
-  const edges: TileWithEligibleEdges<number>[] = [verticalA, verticalB, horizontalA, horizontalB] as const
-  return WangTileset.createFromLimitedEdges<number>(edges)
-}
+import { makeAxialEdgeWangGrid } from './WangGrid.ts'
+import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileEdge } from './WangTileset.ts'
 
 export const defaultColors: RGBA[] = [
   { r: 255, g: 0, b: 0, a: 255 / 2 },
@@ -75,8 +16,8 @@ export const defaultColors: RGBA[] = [
   { r: 255, g: 255, b: 0, a: 255 / 2 },
 ]
 
-export function make4EdgeWangTileImages(
-  tileset: WangTileset<number>,
+export function makeAxialEdgeWangTileManager(
+  tileset: AxialEdgeWangTileset<number>,
   tileSize: Ref<number>,
 ) {
 
@@ -109,7 +50,7 @@ export function make4EdgeWangTileImages(
     canvasHeight.value,
   ))
 
-  const tileGrid = computed(() => make4EdgeWangGrid(tileset))
+  const tileGrid = computed(() => makeAxialEdgeWangGrid(tileset).toWrapped())
 
   // draw colored tile edges
   watchEffect(() => {
@@ -149,38 +90,6 @@ export function make4EdgeWangTileImages(
     }
   }
 
-  function getTilesWithSameEdge(tile: WangTile<number>, edge: WangTileEdge) {
-    const edgeId = tile.edges[edge]
-    const tilesWithEdge = tileset.tilesWithEdge(edgeId)
-    const tilesWithSameEdgeOnSameSide = tilesWithEdge.filter(t => t.edges[edge] === edgeId)
-    const tilesWithSameEdgeOnOppositeSide = tilesWithEdge.filter(t => t.edges[oppositeEdge[edge]] === edgeId)
-
-    return {
-      sameEdge: tilesWithSameEdgeOnSameSide,
-      mirroredEdge: tilesWithSameEdgeOnOppositeSide,
-    }
-  }
-
-  function getPixelEdgeDirections(
-    point: Point,
-    tileSize: number,
-    borderThickness: number = 1,
-    result: Record<WangTileEdge, Point[]>,
-  ): Record<WangTileEdge, Point[]> {
-    const dir: Record<WangTileEdge, (p: Point) => boolean> = {
-      N: (p: Point) => p.y < borderThickness,
-      S: (p: Point) => p.y >= tileSize - borderThickness,
-      E: (p: Point) => p.x >= tileSize - borderThickness,
-      W: (p: Point) => p.x < borderThickness,
-    }
-
-    Object.entries(dir).forEach(([edge, fn]) => {
-      if (!fn(point)) return
-      result[edge as WangTileEdge].push({ x: point.x, y: point.y })
-    })
-    return result
-  }
-
   function duplicateEdgePixels(
     tilesetImageRefs: Record<TileId, ImageDataRef>,
     tileId: TileId,
@@ -196,7 +105,7 @@ export function make4EdgeWangTileImages(
     }
     const tile = tileset.byId.get(tileId)!
 
-    pixels.forEach(p => getPixelEdgeDirections(p, tileSize.value, borderThickness, pixelEdges))
+    pixels.forEach(p => getPointsInEdgeMargins(p, tileSize.value, borderThickness, pixelEdges))
 
     if (pixelEdges.N.length === 0
       && pixelEdges.S.length === 0
@@ -204,12 +113,11 @@ export function make4EdgeWangTileImages(
       && pixelEdges.W.length === 0
     ) return
 
-    console.log({ pixelEdges })
     let affectedTiles: WangTile<number>[] = []
 
     Object.entries(pixelEdges).forEach(([e, pixels]) => {
       const edge = e as WangTileEdge
-      const { sameEdge, mirroredEdge } = getTilesWithSameEdge(tile, edge)
+      const { sameEdge, mirroredEdge } = tileset.getTilesWithSameEdge(tile, edge)
 
       affectedTiles = [...affectedTiles, ...sameEdge, ...mirroredEdge]
 

@@ -110,6 +110,7 @@ const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
   >
     <template #body>
       <CanvasPaint
+        :id="`${nodeId}-canvas-paint`"
         ref="canvasPaintRef"
         :scale="store.imgScale"
         :width="width"

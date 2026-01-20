@@ -1,12 +1,14 @@
 import { Sketch } from '../util/html-dom/Sketch.ts'
-import type { TileId, WangTile, WangTileset } from './WangTileset.ts'
+import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
 
-export class WangGrid<T> {
-  readonly width: number
-  readonly height: number
+export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
   private readonly cells: (WangTile<T> | null)[]
 
-  constructor(width: number, height: number) {
+  constructor(
+    readonly width: number,
+    readonly height: number,
+    readonly tileSet: TS,
+  ) {
     this.width = width
     this.height = height
     this.cells = Array<WangTile<T> | null>(width * height).fill(null)
@@ -59,17 +61,48 @@ export class WangGrid<T> {
   }
 
   eachWithTileId(tileId: string, cb: (x: number, y: number, tile: WangTile<T>) => void) {
-    const width = this.width
-    const height = this.height
-
-    for (let y = 0; y < height; y++) {
-      for (let x = 0; x < width; x++) {
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
         const tile = this.get(x, y)
         if (tile?.id === tileId) {
           cb(x, y, tile)
         }
       }
     }
+  }
+
+  toWrapped(): this {
+    const w = this.width
+    const h = this.height
+
+    const Ctor = this.constructor as {
+      new(width: number, height: number, tileset: TS): WangGrid<T, TS>
+    }
+
+    // Create a new instance of the same subclass
+    const wrapped = new Ctor(w + 1, h + 1, this.tileSet) as this
+
+    // 1. Copy original grid
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        wrapped.set(x, y, this.get(x, y))
+      }
+    }
+
+    // 2. Copy first column to last column
+    for (let y = 0; y < h; y++) {
+      wrapped.set(w, y, this.get(0, y))
+    }
+
+    // 3. Copy first row to last row
+    for (let x = 0; x < w; x++) {
+      wrapped.set(x, h, this.get(x, 0))
+    }
+
+    // 4. Bottom-right corner = top-left tile
+    wrapped.set(w, h, this.get(0, 0))
+
+    return wrapped
   }
 
   /** Check if placing tileId at (x, y) is locally valid */
@@ -106,6 +139,10 @@ export class WangGrid<T> {
   }
 }
 
+export class AxialEdgeWangGrid<T> extends WangGrid<T, AxialEdgeWangTileset<T>> {
+
+}
+
 export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>, chooseCandidate?: (candidates: readonly WangTile<T>[]) => WangTile<T>): WangGrid<T> | false {
   const used = new Set<TileId>()
 
@@ -119,7 +156,7 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
     return candidates
   }
 
-  const grid = new WangGrid<T>(width, height)
+  const grid = new WangGrid<T>(width, height, tileset)
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -199,4 +236,45 @@ export function drawWangGrid<T>(
   }
 
   return sketch
+}
+
+export function makeAxialEdgeWangGrid<T>(tileset: AxialEdgeWangTileset<T>): AxialEdgeWangGrid<T> {
+  const northSouthVariants = tileset.verticalEdgeValues
+  const eastWestVariants = tileset.horizontalEdgeValues
+  // Build all (N,S) pairs
+  const verticalPairs = []
+  for (const N of northSouthVariants) {
+    for (const S of northSouthVariants) {
+      verticalPairs.push({ N, S })
+    }
+  }
+
+  // Build all (W,E) pairs
+  const horizontalPairs = []
+  for (const W of eastWestVariants) {
+    for (const E of eastWestVariants) {
+      horizontalPairs.push({ W, E })
+    }
+  }
+
+  const height = verticalPairs.length
+  const width = horizontalPairs.length
+
+  const grid = new AxialEdgeWangGrid<T>(width, height, tileset)
+
+  for (let y = 0; y < height; y++) {
+    const { N, S } = verticalPairs[y]
+
+    for (let x = 0; x < width; x++) {
+      const { W, E } = horizontalPairs[x]
+
+      const id = `tile-${N}-${E}-${S}-${W}` as TileId
+      const tile = tileset.byId.get(id)
+      if (!tile) throw new Error('failed to generate tile grid')
+
+      grid.set(x, y, tile)
+    }
+  }
+
+  return grid
 }

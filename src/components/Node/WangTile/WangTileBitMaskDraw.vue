@@ -41,8 +41,12 @@ import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
   useTileCanvases,
 } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
-import { make4EdgeWangTileImages, make4EdgeWangTileset } from '../../../lib/wang-tiles/WangTile4EdgeBuilder.ts'
-import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
+import { makeAxialEdgeWangTileManager } from '../../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
+import {
+  createAxialEdgeWangTileset,
+  type TileId,
+  type WangTile,
+} from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
@@ -55,7 +59,7 @@ const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const tileset = make4EdgeWangTileset()
+const tileset = createAxialEdgeWangTileset([0, 1], [2, 3])
 const tilesetImageRefs = reactive(Object.fromEntries(
   tileset.tiles.map(tile => {
     return [tile.id, imageDataRef()]
@@ -165,7 +169,7 @@ const {
   gridPixelToTilePixel,
   tilePixelToGridPixel,
   duplicateEdgePixels,
-} = make4EdgeWangTileImages(
+} = makeAxialEdgeWangTileManager(
   tileset,
   tileSize,
 )

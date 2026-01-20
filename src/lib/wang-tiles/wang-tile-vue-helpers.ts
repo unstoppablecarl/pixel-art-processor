@@ -6,7 +6,7 @@ import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { defaultColors } from './WangTile4EdgeBuilder.ts'
+import { defaultColors } from './AxialEdgeWangTileManager.ts'
 import { type TileId, type WangTile, type WangTileEdge } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {

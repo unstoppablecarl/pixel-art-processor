@@ -55,7 +55,6 @@ export function getRectCoords(
   return result
 }
 
-
 export function mirrorTilePixelHorizontal(x: number, y: number, tileSize: number): Point {
   return {
     x: tileSize - 1 - x,
@@ -68,4 +67,24 @@ export function mirrorTilePixelVertical(x: number, y: number, tileSize: number):
     x,
     y: tileSize - 1 - y,
   }
+}
+
+export function getPointsInEdgeMargins(
+  point: Point,
+  tileSize: number,
+  margin: number = 1,
+  result: Record<string, Point[]>,
+): Record<string, Point[]> {
+  const dir: Record<string, (p: Point) => boolean> = {
+    N: (p: Point) => p.y < margin,
+    S: (p: Point) => p.y >= tileSize - margin,
+    E: (p: Point) => p.x >= tileSize - margin,
+    W: (p: Point) => p.x < margin,
+  }
+
+  Object.entries(dir).forEach(([edge, fn]) => {
+    if (!fn(point)) return
+    result[edge].push({ x: point.x, y: point.y })
+  })
+  return result
 }

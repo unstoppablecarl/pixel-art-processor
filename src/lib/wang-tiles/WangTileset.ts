@@ -114,6 +114,64 @@ export class WangTileset<T> {
     }
     return this.byEdgeValue!.get(value) ?? []
   }
+
+  getTilesWithSameEdge(tile: WangTile<T>, edge: WangTileEdge) {
+    const edgeId = tile.edges[edge]
+    const tilesWithEdge = this.tilesWithEdge(edgeId)
+    const tilesWithSameEdgeOnSameSide = tilesWithEdge.filter(t => t.edges[edge] === edgeId)
+    const tilesWithSameEdgeOnOppositeSide = tilesWithEdge.filter(t => t.edges[oppositeEdge[edge]] === edgeId)
+
+    return {
+      sameEdge: tilesWithSameEdgeOnSameSide,
+      mirroredEdge: tilesWithSameEdgeOnOppositeSide,
+    }
+  }
+}
+
+export class AxialEdgeWangTileset<T> extends WangTileset<T> {
+  constructor(
+    tiles: WangTile<T>[],
+    readonly verticalEdgeValues: T[],
+    readonly horizontalEdgeValues: T[],
+  ) {
+    super(tiles)
+  }
+}
+
+export function createAxialEdgeWangTileset<T>(verticalEdgeValues: T[], horizontalEdgeValues: T[]): AxialEdgeWangTileset<T> {
+  const tiles: WangTile<T>[] = []
+
+  const eligibleForN = verticalEdgeValues
+  const eligibleForE = horizontalEdgeValues
+  const eligibleForS = verticalEdgeValues
+  const eligibleForW = horizontalEdgeValues
+
+  for (let N = 0; N < eligibleForN.length; N++) {
+    for (let E = 0; E < eligibleForE.length; E++) {
+      for (let S = 0; S < eligibleForS.length; S++) {
+        for (let W = 0; W < eligibleForW.length; W++) {
+
+          const iN = eligibleForN[N]
+          const iE = eligibleForE[E]
+          const iS = eligibleForS[S]
+          const iW = eligibleForW[W]
+
+          const id = `tile-${iN}-${iE}-${iS}-${iW}`
+          tiles.push({
+            id: id as TileId,
+            edges: {
+              N: iN,
+              E: iE,
+              S: iS,
+              W: iW,
+            },
+          })
+        }
+      }
+    }
+  }
+
+  return new AxialEdgeWangTileset<T>(tiles, verticalEdgeValues, horizontalEdgeValues)
 }
 
 export type TileWithEligibleEdges<T> = {
@@ -130,3 +188,30 @@ export const oppositeEdge: Record<WangTileEdge, WangTileEdge> = {
   E: 'W' as WangTileEdge,
   W: 'E' as WangTileEdge,
 } as const
+
+export function makeAxialEdgeWangTileset(horizontalCount: number = 2, verticalCount?: number) {
+  verticalCount ??= horizontalCount
+
+  const edges: TileWithEligibleEdges<number>[] = []
+  let index = 0
+
+  for (let i = 0; i < horizontalCount; i++) {
+    edges.push({
+      edgeValue: index,
+      eligibleForN: true,
+      eligibleForS: true,
+    })
+    index++
+  }
+
+  for (let i = 0; i < verticalCount; i++) {
+    edges.push({
+      edgeValue: index,
+      eligibleForW: true,
+      eligibleForE: true,
+    })
+    index++
+  }
+
+  return WangTileset.createFromLimitedEdges<number>(edges)
+}
