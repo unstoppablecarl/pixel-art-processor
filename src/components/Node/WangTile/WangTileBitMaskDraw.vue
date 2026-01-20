@@ -341,6 +341,7 @@ onMounted(() => {
       <CardFooterSettingsTabs
         :node-id="nodeId"
         v-model:active-tab-index="config.activeTabIndex"
+        extra-tab-label="Editor"
       >
         <template #settings>
 
@@ -387,7 +388,8 @@ onMounted(() => {
           </div>
 
         </template>
-        <template #display-options>
+
+        <template #extra>
           <div class="section">
 
             <RangeSlider
@@ -429,10 +431,14 @@ onMounted(() => {
             </button>
 
           </div>
+        </template>
+        <template #display-options>
+
           <div class="section">
             <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
           </div>
         </template>
+
       </CardFooterSettingsTabs>
     </template>
   </NodeCard>

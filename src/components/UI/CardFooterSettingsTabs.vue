@@ -1,11 +1,20 @@
 <script setup lang="ts">
 
 import { BTab, BTabs } from 'bootstrap-vue-next'
+import { computed } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import NodeFooterBtnCollapse from './NodeFooterBtnCollapse.vue'
 
 const activeTabIndex = defineModel<number>('activeTabIndex', { required: true })
-const { nodeId } = defineProps<{ nodeId: NodeId }>()
+const {
+  nodeId,
+  extraTabLabel = '',
+} = defineProps<{
+  nodeId: NodeId,
+  extraTabLabel?: string
+}>()
+
+const displayTabIndex = computed(() => extraTabLabel ? 2 : 1)
 
 </script>
 <template>
@@ -16,6 +25,12 @@ const { nodeId } = defineProps<{ nodeId: NodeId }>()
     <BTab
       :id="`${nodeId}-settings`"
       title="Settings"
+    />
+
+    <BTab
+      v-if="extraTabLabel"
+      :id="`${nodeId}-${extraTabLabel}`"
+      :title="extraTabLabel"
     />
 
     <BTab
@@ -30,9 +45,15 @@ const { nodeId } = defineProps<{ nodeId: NodeId }>()
     <div class="tabs-settings-body-content" v-if="activeTabIndex === 0">
       <slot name="settings"></slot>
     </div>
-    <div class="tabs-settings-body-content" v-if="activeTabIndex === 1">
+
+    <div class="tabs-settings-body-content" v-if="extraTabLabel && activeTabIndex === 1">
+      <slot name="extra"></slot>
+    </div>
+
+    <div class="tabs-settings-body-content" v-if="activeTabIndex === displayTabIndex">
       <slot name="display-options"></slot>
     </div>
+
   </div>
 </template>
 <style scoped lang="scss">
