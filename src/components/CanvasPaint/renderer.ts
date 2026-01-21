@@ -63,7 +63,7 @@ export function makeEditor() {
     if (!canvas) return
     canvas.width = state.width * state.scale
     canvas.height = state.height * state.scale
-    ctx!.imageSmoothingEnabled = false;
+    ctx!.imageSmoothingEnabled = false
   }
 
   function queueRender() {
@@ -77,10 +77,7 @@ export function makeEditor() {
   }
 
   function renderFrame() {
-    console.log('renderFrame')
     if (!canvas || !ctx) return
-    console.log('renderFrame 2')
-    // ctx.imageSmoothingEnabled = false;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -150,7 +147,7 @@ export function makeEditor() {
 
   const cursorCache = document.createElement('canvas')
   const cursorCacheCtx = cursorCache.getContext('2d')!
-  cursorCacheCtx.imageSmoothingEnabled = false;
+  cursorCacheCtx.imageSmoothingEnabled = false
 
   function updateCursorCache() {
     const ctx = cursorCacheCtx
@@ -220,7 +217,7 @@ export function makeEditor() {
   function drawCursor(ctx: CanvasRenderingContext2D) {
     const { cursorX, cursorY, scale, brushSize, mouseIsOver } = state
     if (!mouseIsOver) return
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = false
 
     const snappedX = Math.floor(cursorX)
     const snappedY = Math.floor(cursorY)
