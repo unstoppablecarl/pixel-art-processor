@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { nextTick, onMounted, useTemplateRef, watch } from 'vue'
+import { onMounted, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
-import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../lib/util/data/Grid.ts'
-import { makeEditor } from './CanvasPaint/renderer.ts'
+import { makeRenderer, Tool } from './CanvasPaint/renderer.ts'
+import { makeToolManager } from './CanvasPaint/tools.ts'
 
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<{
   gridColor?: string
   brushShape?: 'circle' | 'square'
   brushSize?: number
+  currentTool?: Tool,
   draw?: DrawLayer | null
   id: string
 }>(), {
@@ -30,9 +31,12 @@ const props = withDefaults(defineProps<{
   brushShape: 'circle',
   brushSize: 10,
   draw: null,
+  currentTool: Tool.BRUSH,
 })
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
+
+const renderer = makeRenderer()
 
 const {
   state,
@@ -41,7 +45,9 @@ const {
   initRenderer,
   queueRender,
   resizeCanvas,
-} = makeEditor()
+} = renderer
+
+const tools = makeToolManager(state, renderer)
 
 function syncPropsToEditorState() {
   state.width = props.width
@@ -54,6 +60,8 @@ function syncPropsToEditorState() {
   state.brushShape = props.brushShape
   state.brushSize = props.brushSize
   state.externalDraw = props.draw
+
+  state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
@@ -77,68 +85,22 @@ function getCanvasCoords(e: MouseEvent) {
   }
 }
 
-const paint = (x: number, y: number): void => {
-  let pixels: Point[] = []
-  const { width, height, brushSize, brushShape } = state
-  if (brushShape === 'circle') {
-    pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
-  } else {
-    pixels = getRectCenterCoords(x, y, brushSize, brushSize, width, height)
-  }
-
-  emit('setPixels', pixels)
-}
-
 const handleMouseDown = (e: MouseEvent): void => {
-  state.isDrawing = true
   const { x, y } = getCanvasCoords(e)
-  paint(x, y)
-  state.lastX = x
-  state.lastY = y
-
-  nextTick(() => queueRender())
+  tools.onMouseDown(x, y)
 }
 
 const handleMouseMove = (e: MouseEvent): void => {
-  state.mouseIsOver = true
-  const { lastX, lastY } = state
   const { x, y } = getCanvasCoords(e)
-
-  state.cursorX = x
-  state.cursorY = y
-
-  if (state.isDrawing) {
-    // Interpolate between last position and current position
-    const points = interpolateLine(
-      Math.floor(lastX),
-      Math.floor(lastY),
-      Math.floor(x),
-      Math.floor(y),
-    )
-
-    for (const point of points) {
-      const ix = Math.floor(point.x)
-      const iy = Math.floor(point.y)
-      paint(ix, iy)
-    }
-
-    state.lastX = x
-    state.lastY = y
-  }
-
-  queueRender()
+  tools.onMouseMove(x, y)
 }
 
-const handleMouseUp = (): void => {
-  state.isDrawing = false
+const handleMouseUp = (e: MouseEvent): void => {
+  const { x, y } = getCanvasCoords(e)
+  tools.onMouseUp(x, y)
 }
 
-const handleMouseLeave = (): void => {
-  state.isDrawing = false
-  state.mouseIsOver = false
-  updateCursorCache() // Clear cursor
-  queueRender()
-}
+const handleMouseLeave = (): void => tools.onMouseLeave()
 
 function fillCanvas(color: string): void {
   const { canvas, ctx } = getViewCanvas()
@@ -198,6 +160,11 @@ watch([
     queueRender()
   },
 )
+
+watch(() => props.currentTool, () => {
+  tools.setTool(props.currentTool)
+  queueRender()
+})
 
 watch(
   [

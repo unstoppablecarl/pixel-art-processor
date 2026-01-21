@@ -1,11 +1,15 @@
-export type Tool = 'pencil' | 'line' | 'select' | 'move'
+export enum Tool {
+  BRUSH = 'BRUSH',
+  SELECT = 'SELECT'
+}
 
 export type BrushShape = 'circle' | 'square'
 export type BrushMode = 'add' | 'remove'
 
 export type EditorState = ReturnType<typeof makeEditorState>
-export function makeEditorState() {
+export type Renderer = ReturnType<typeof makeRenderer>
 
+export function makeEditorState() {
   return {
     width: 64,
     height: 64,
@@ -20,7 +24,7 @@ export function makeEditorState() {
 
     imageData: null as ImageData | null,
 
-    tool: 'pencil' as Tool,
+    tool: Tool.BRUSH as Tool,
     brushSize: 1,
     brushShape: 'circle' as BrushShape,
 
@@ -35,17 +39,25 @@ export function makeEditorState() {
       return this.scale * this.height
     },
 
-    selection: null as { x: number; y: number; w: number; h: number } | null,
-
     externalDraw: null as ((ctx: CanvasRenderingContext2D) => void) | null,
 
     emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
+
+    selection: null as null | {
+      x: number
+      y: number
+      w: number
+      h: number
+      pixels: ImageData | null
+      dragging: boolean
+      offsetX: number
+      offsetY: number
+    },
   }
 }
 
-export function makeEditor() {
+export function makeRenderer() {
   const state = makeEditorState()
-
   let canvas: HTMLCanvasElement | null = null
   let ctx: CanvasRenderingContext2D | null = null
 
@@ -101,6 +113,12 @@ export function makeEditor() {
     ctx.strokeStyle = 'cyan'
     ctx.lineWidth = 1 / state.scale
     ctx.strokeRect(sel.x, sel.y, sel.w, sel.h)
+
+    if (sel.pixels) {
+      ctx.setTransform(state.scale, 0, 0, state.scale, 0, 0)
+      ctx.putImageData(sel.pixels, sel.x, sel.y)
+      ctx.setTransform(1,0,0,1,0,0)
+    }
   }
 
   const gridCache = document.createElement('canvas')
@@ -201,14 +219,6 @@ export function makeEditor() {
 
       ctx.stroke()
     } else {
-      // square brush: full rect in the brush canvas
-      const size = brushSize * scale
-      cursorCache.width = size
-      cursorCache.height = size
-
-      ctx.clearRect(0, 0, size, size)
-      ctx.strokeStyle = cursorColor
-      ctx.lineWidth = 1
 
       // mimic original: pixel-aligned square
       ctx.strokeRect(0.5, 0.5, size - 1, size - 1)
@@ -241,6 +251,11 @@ export function makeEditor() {
     initRenderer,
     resizeCanvas,
     queueRender,
+    get canvas() {
+      return canvas
+    },
+    get ctx() {
+      return ctx
+    },
   }
 }
-

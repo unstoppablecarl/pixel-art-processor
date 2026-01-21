@@ -55,7 +55,7 @@ import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 nodeUsesSidebar()
-const { brushMode, brushShape, brushSizeDebounced } = storeToRefs(useCanvasPaintStore())
+const { brushMode, brushShape, brushSizeDebounced, currentTool } = storeToRefs(useCanvasPaintStore())
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
@@ -328,6 +328,7 @@ onMounted(() => {
           :cursor-color="config.showCursorColor"
           :grid-color="config.showGridColor"
           :draw="($event) => drawTileCanvas($event, item.id)"
+          :current-tool="currentTool"
           @set-pixels="setTilePixels($event, item.id)"
         />
       </div>
@@ -344,6 +345,7 @@ onMounted(() => {
         :cursor-color="config.showCursorColor"
         :grid-color="config.showGridColor"
         :draw="drawGridCanvas"
+        :current-tool="currentTool"
         @set-pixels="setPixels"
         @clear="clear"
       />
