@@ -287,3 +287,32 @@ export function putImageDataScaled(target: CanvasRenderingContext2D, width: numb
   ctx.putImageData(imageData, 0, 0)
   target.drawImage(canvas, x, y)
 }
+
+export function extractImageData(
+  src: ImageData,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): ImageData {
+  const out = new Uint8ClampedArray(w * h * 4)
+  const srcData = src.data
+  const srcW = src.width
+
+  for (let iy = 0; iy < h; iy++) {
+    const srcRow = (y + iy) * srcW
+    const dstRow = iy * w
+
+    for (let ix = 0; ix < w; ix++) {
+      const srcIndex = (srcRow + (x + ix)) * 4
+      const dstIndex = (dstRow + ix) * 4
+
+      out[dstIndex] = srcData[srcIndex]
+      out[dstIndex + 1] = srcData[srcIndex + 1]
+      out[dstIndex + 2] = srcData[srcIndex + 2]
+      out[dstIndex + 3] = srcData[srcIndex + 3]
+    }
+  }
+
+  return new ImageData(out, w, h)
+}

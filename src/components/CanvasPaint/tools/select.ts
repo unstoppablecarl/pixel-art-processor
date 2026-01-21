@@ -1,3 +1,4 @@
+import { extractImageData, putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import type { EditorState, Renderer } from '../renderer.ts'
 import type { ToolHandler } from '../tools.ts'
 
@@ -102,15 +103,11 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
       sel.origW = sel.w
       sel.origH = sel.h
 
-      // switch to pixel space
-      renderer.ctx!.setTransform(state.scale, 0, 0, state.scale, 0, 0)
+      const targetImageData = state.target?.get()
+      if (targetImageData) {
 
-      // extract pixels in pixel coords
-      sel.pixels = renderer.ctx!.getImageData(sel.x, sel.y, sel.w, sel.h)
-
-      // switch back to screen space for clearing
-      renderer.ctx!.setTransform(1, 0, 0, 1, 0, 0)
-
+        sel.pixels = extractImageData(targetImageData, sel.x, sel.y, sel.w, sel.h)
+      }
 
       renderer.queueRender()
     },
@@ -130,9 +127,8 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
       const sel = state.selection
       if (!sel || !sel.pixels) return
 
-      console.log(sel.pixels)
       ctx.clearRect(sel.origX, sel.origY, sel.origW, sel.origH)
-      ctx.putImageData(sel.pixels, sel.x, sel.y)
+      putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y)
     },
     screenOverlayDraw(ctx: CanvasRenderingContext2D) {
       const sel = state.selection
