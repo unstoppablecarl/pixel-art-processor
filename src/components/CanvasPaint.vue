@@ -2,15 +2,7 @@
 import { nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../lib/util/data/Grid.ts'
-import { editorState } from './CanvasPaint/editorState.ts'
-import {
-  drawCursor,
-  drawGrid,
-  initRenderer,
-  scheduleRender,
-  updateCursorCache,
-  updateGridCache,
-} from './CanvasPaint/renderer.ts'
+import { makeEditor } from './CanvasPaint/renderer.ts'
 
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
@@ -43,17 +35,27 @@ const {
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
+const {
+  state,
+  drawCursor,
+  updateCursorCache,
+  updateGridCache,
+  drawGrid,
+  initRenderer,
+  scheduleRender,
+} = makeEditor()
+
 function syncPropsToEditorState() {
-  editorState.width = width
-  editorState.height = height
-  editorState.scale = scale
+  state.width = width
+  state.height = height
+  state.scale = scale
 
-  editorState.cursorColor = cursorColor
-  editorState.gridColor = gridColor
+  state.cursorColor = cursorColor
+  state.gridColor = gridColor
 
-  editorState.brushShape = brushShape
-  editorState.brushSize = brushSize
-  editorState.externalDraw = draw
+  state.brushShape = brushShape
+  state.brushSize = brushSize
+  state.externalDraw = draw
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
@@ -72,7 +74,7 @@ const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 function resizeCanvas() {
   const viewCanvas = viewCanvasRef.value
   if (!viewCanvas) return
-  const { scaledWidth, scaledHeight } = editorState
+  const { scaledWidth, scaledHeight } = state
   if (viewCanvas.width !== scaledWidth || viewCanvas.height !== scaledHeight) {
 
     viewCanvas.width = scaledWidth
@@ -103,7 +105,7 @@ const updateView = () => {
       drawGrid(ctx)
     }
 
-    if (editorState.mouseIsOver) {
+    if (state.mouseIsOver) {
       drawCursor(ctx)
     }
   })
@@ -112,8 +114,8 @@ const updateView = () => {
 function getCanvasCoords(e: MouseEvent) {
   const rect = viewCanvasRef.value!.getBoundingClientRect()
   return {
-    x: Math.floor((e.clientX - rect.left) / editorState.scale),
-    y: Math.floor((e.clientY - rect.top) / editorState.scale),
+    x: Math.floor((e.clientX - rect.left) / state.scale),
+    y: Math.floor((e.clientY - rect.top) / state.scale),
   }
 }
 
@@ -129,24 +131,24 @@ const paint = (x: number, y: number): void => {
 }
 
 const handleMouseDown = (e: MouseEvent): void => {
-  editorState.isDrawing = true
+  state.isDrawing = true
   const { x, y } = getCanvasCoords(e)
   paint(x, y)
-  editorState.lastX = x
-  editorState.lastY = y
+  state.lastX = x
+  state.lastY = y
 
   nextTick(() => updateView())
 }
 
 const handleMouseMove = (e: MouseEvent): void => {
-  editorState.mouseIsOver = true
-  const { lastX, lastY } = editorState
+  state.mouseIsOver = true
+  const { lastX, lastY } = state
   const { x, y } = getCanvasCoords(e)
 
-  editorState.cursorX = x
-  editorState.cursorY = y
+  state.cursorX = x
+  state.cursorY = y
 
-  if (editorState.isDrawing) {
+  if (state.isDrawing) {
     // Interpolate between last position and current position
     const points = interpolateLine(
       Math.floor(lastX),
@@ -161,20 +163,20 @@ const handleMouseMove = (e: MouseEvent): void => {
       paint(ix, iy)
     }
 
-    editorState.lastX = x
-    editorState.lastY = y
+    state.lastX = x
+    state.lastY = y
   }
 
   updateView()
 }
 
 const handleMouseUp = (): void => {
-  editorState.isDrawing = false
+  state.isDrawing = false
 }
 
 const handleMouseLeave = (): void => {
-  editorState.isDrawing = false
-  editorState.mouseIsOver = false
+  state.isDrawing = false
+  state.mouseIsOver = false
   updateCursorCache() // Clear cursor
   updateView()
 }

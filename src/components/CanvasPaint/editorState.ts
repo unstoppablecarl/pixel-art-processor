@@ -1,39 +1,43 @@
 export type Tool = 'pencil' | 'line' | 'select' | 'move'
 
 export type BrushShape = 'circle' | 'square'
-export type EditorState = typeof editorState
-export const editorState = {
-  width: 64,
-  height: 64,
-  scale: 8,
+export type EditorState = ReturnType<typeof makeEditorState>
 
-  cursorX: 0,
-  cursorY: 0,
-  mouseIsOver: false,
-  isDrawing: false,
-  lastX: 0,
-  lastY: 0,
+export function makeEditorState() {
 
-  imageData: null as ImageData | null,
+  return {
+    width: 64,
+    height: 64,
+    scale: 8,
 
-  tool: 'pencil' as Tool,
-  brushSize: 1,
-  brushShape: 'circle' as BrushShape,
+    cursorX: 0,
+    cursorY: 0,
+    mouseIsOver: false,
+    isDrawing: false,
+    lastX: 0,
+    lastY: 0,
 
-  gridColor: 'rgba(0, 0, 0, 0.2)',
-  cursorColor: 'rgba(0, 255, 255, 1)',
+    imageData: null as ImageData | null,
 
-  get scaledWidth() {
-    return this.scale * this.width
-  },
+    tool: 'pencil' as Tool,
+    brushSize: 1,
+    brushShape: 'circle' as BrushShape,
 
-  get scaledHeight() {
-    return this.scale * this.height
-  },
+    gridColor: 'rgba(0, 0, 0, 0.2)',
+    cursorColor: 'rgba(0, 255, 255, 1)',
 
-  selection: null as { x: number; y: number; w: number; h: number } | null,
+    get scaledWidth() {
+      return this.scale * this.width
+    },
 
-  externalDraw: null as ((ctx: CanvasRenderingContext2D) => void) | null,
+    get scaledHeight() {
+      return this.scale * this.height
+    },
 
-  emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
+    selection: null as { x: number; y: number; w: number; h: number } | null,
+
+    externalDraw: null as ((ctx: CanvasRenderingContext2D) => void) | null,
+
+    emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
+  }
 }

@@ -314,7 +314,7 @@ onMounted(() => {
     show-dimensions
   >
     <template #body>
-      <div v-for="item in tileset.tiles" :key="item.id">
+      <div class="canvas-tile-container" v-for="item in tileset.tiles" :key="item.id">
         <CanvasPaint
           :ref="comp => setCanvasPaint(comp as any, item.id)"
           :id="item.id"
@@ -327,7 +327,6 @@ onMounted(() => {
           :grid-color="config.showGridColor"
           :draw="($event) => drawTileCanvas($event, item.id)"
           @set-pixels="setTilePixels($event, item.id)"
-          class="canvas-tile"
         />
       </div>
     </template>
@@ -475,9 +474,8 @@ onMounted(() => {
   </NodeCard>
 </template>
 <style lang="scss">
-.canvas-tile {
+.canvas-tile-container {
   width: calc(var(--node-img-width, 150px) * var(--node-img-scale, 1));
   height: calc(var(--node-img-width, 150px) * var(--node-img-scale, 1));
-  image-rendering: pixelated;
 }
 </style>
