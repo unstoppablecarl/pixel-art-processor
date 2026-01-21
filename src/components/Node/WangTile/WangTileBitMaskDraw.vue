@@ -2,6 +2,7 @@
 import { BitMask } from '../../../lib/node-data-types/BitMask.ts'
 import { type NodeDef, NodeType } from '../../../lib/pipeline/_types.ts'
 import { defineStep } from '../../../lib/pipeline/types/definitions.ts'
+import { nodeUsesSidebar } from '../../../lib/vue/useSidebar.ts'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
@@ -35,6 +36,7 @@ import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
+import { nodeUsesSidebar } from '../../../lib/vue/useSidebar.ts'
 import { imageDataRef, tilesetSyncedImageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
   useTileCanvases,
@@ -54,6 +56,8 @@ import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
+
+nodeUsesSidebar()
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -125,6 +129,9 @@ const handler = defineStepHandler<Config>(STEP_META, {
     )
 
     return config
+  },
+  onAdded() {
+    nodeUsesSidebar()
   },
   // watcherTargets(_node, defaultWatcherTargets: WatcherTarget[]): WatcherTarget[] {
   //   return [...defaultWatcherTargets, {
@@ -311,7 +318,6 @@ onMounted(() => {
     :node="node"
     :images="[]"
     :img-columns="4"
-    show-dimensions
   >
     <template #body>
       <div class="canvas-tile-container" v-for="item in tileset.tiles" :key="item.id">

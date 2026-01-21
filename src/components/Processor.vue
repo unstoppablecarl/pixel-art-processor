@@ -3,7 +3,9 @@ import { computed, onMounted, watch } from 'vue'
 import type { NodeId } from '../lib/pipeline/_types.ts'
 import { isFork } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
+import { useSidebar } from '../lib/vue/useSidebar.ts'
 import AppHeader from './AppHeader.vue'
+import CanvasPaintSidebar from './CanvasPaint/CanvasPaintSidebar.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
 import WangTileGridPatternPreview from './Processor/WangTileGridPatternPreview.vue'
@@ -37,12 +39,17 @@ watch(() => store.imgScale, () => {
 onMounted(() => {
   store.markRootDirty()
 })
-</script>
 
+const { visible } = useSidebar()
+</script>
 <template>
   <AppHeader />
 
-  <div class="overflow">
+  <div :class="{
+    'overflow': true,
+    'sidebar-visible' : visible
+  }">
+    <CanvasPaintSidebar />
     <div class="processor-container pb-3">
       <PipelineBranch
         :node-ids="rootNodeIds"

@@ -48,5 +48,6 @@ const store = usePipelineStore()
   background-color: var(--bs-body-bg);
   border-bottom: 1px solid var(--bs-border-color);
   position: absolute;
+  height: var(--navbar-height);
 }
 </style>

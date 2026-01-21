@@ -10,6 +10,9 @@
 [data-bs-theme='dark'],
 :root {
   --form-row-margin-bottom: #{$card-cap-padding-y};
+  --canvas-paint-sidebar-width: 100px;
+  --navbar-height: 55px;
+  --sidebar-transition-time: 150ms;
 }
 
 @import 'fonts/icons';
@@ -41,6 +44,12 @@ body {
   right: 0;
   bottom: 0;
   padding-top: 1rem;
+  transition: left var(--sidebar-transition-time) ease-in-out;
+  z-index: 10;
+
+  &.sidebar-visible {
+    left: var(--canvas-paint-sidebar-width);
+  }
 }
 
 .processor-container {
