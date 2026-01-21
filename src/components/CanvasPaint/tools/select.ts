@@ -81,14 +81,6 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
 
       renderer.queueRender()
     },
-    onSelectTool() {
-      // commit previous selection if switching away
-      if (state.selection?.pixels) {
-        renderer.ctx!.putImageData(state.selection.pixels, state.selection.x, state.selection.y)
-        state.selection = null
-        renderer.queueRender()
-      }
-    },
 
     onUnSelectTool() {
       // commit selection when leaving the tool

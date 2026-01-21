@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
+import { useCanvasPaintStore } from '../lib/store/canvas-paint-store.ts'
 import { type DrawLayer, makeRenderer, Tool } from './CanvasPaint/renderer.ts'
 import { makeToolManager } from './CanvasPaint/tools.ts'
 
@@ -33,13 +34,13 @@ const props = withDefaults(defineProps<{
   currentTool: Tool.BRUSH,
 })
 
+const store = useCanvasPaintStore()
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
 const renderer = makeRenderer()
 
 const {
   state,
-  drawGrid,
   updateCursorCache,
   updateGridCache,
   initRenderer,
@@ -59,6 +60,7 @@ function syncPropsToEditorState() {
 
   state.brushShape = props.brushShape
   state.brushSize = props.brushSize
+  state.tool = store.currentTool
 
   state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
 

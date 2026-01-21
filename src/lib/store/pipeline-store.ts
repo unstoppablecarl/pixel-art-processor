@@ -599,8 +599,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
     }
   },
   {
-    persist: {
-      key: 'pipeline',
-    },
+    persist: true,
   },
 )
