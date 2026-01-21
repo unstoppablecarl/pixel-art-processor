@@ -3,22 +3,29 @@ import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '..
 import type { EditorState } from '../renderer.ts'
 import type { ToolHandler } from '../tools.ts'
 
-
 // cursor cache can safely be re-used by multiple instances
-const cursorCache = !import.meta.env.VITEST ? document.createElement('canvas') : {} as HTMLCanvasElement
-const cursorCacheCtx = cursorCache?.getContext?.('2d') ?? {} as CanvasRenderingContext2D
-cursorCacheCtx.imageSmoothingEnabled = false
+let canvas: HTMLCanvasElement
+let ctx: CanvasRenderingContext2D
 
 export function updateCursorCache(state: EditorState) {
-  const ctx = cursorCacheCtx
+  if (!canvas) {
+    canvas = document.createElement('canvas')
+    if (!canvas) throw new Error('could not create html-dom')
+  }
+  if (!ctx) {
+    ctx = canvas.getContext('2d')!
+    if (!ctx) throw new Error('could not create context')
+    ctx.imageSmoothingEnabled = false
+  }
+
   const { scale, cursorColor, brushShape, brushSize } = state
 
   const size = brushSize * scale
-  cursorCache.width = size + 1
-  cursorCache.height = size + 1
+  canvas.width = size + 1
+  canvas.height = size + 1
 
   ctx.setTransform(1, 0, 0, 1, 0, 0)
-  ctx.clearRect(0, 0, cursorCache.width, cursorCache.height)
+  ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.strokeStyle = cursorColor
   ctx.lineWidth = 1
 
@@ -120,7 +127,7 @@ export function makeBrushTool(state: EditorState): ToolHandler {
       const screenY = snappedY * scale - cx * scale
 
       ctx.setTransform(1, 0, 0, 1, 0, 0)
-      ctx.drawImage(cursorCache, Math.floor(screenX), Math.floor(screenY))
+      ctx.drawImage(canvas, Math.floor(screenX), Math.floor(screenY))
     },
   }
 }
