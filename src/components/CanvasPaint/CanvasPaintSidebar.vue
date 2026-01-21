@@ -1,81 +1,47 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
-import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import BrushToolOptions from './BrushToolOptions.vue'
+import { Tool } from './renderer.ts'
 
-const { brushShape, brushMode, brushSize } = storeToRefs(useCanvasPaintStore())
+const { currentTool } = storeToRefs(useCanvasPaintStore())
 
-const store = usePipelineStore()
 </script>
 <template>
   <div :class="{
     'canvas-paint-sidebar shadow-sm': true,
   }">
-    <div class="section">
-      <div class="range-label hstack mt-1 mx-auto">
-        <div class="fw-medium me-1">
-          <span class="material-symbols-outlined">ink_highlighter</span>
-        </div>
-        <div class="text-muted ms-auto">
-          {{ brushSize }}px
-        </div>
-      </div>
-      <div class="slider-wrapper mb-2">
-        <input
-          id="brush-size"
-          type="range"
-          class="form-range"
-          :step="1"
-          :min="1"
-          :max="store.getRootNodeOutputSize().width * 1.5"
-          v-model="brushSize"
-        />
-      </div>
-    </div>
+
     <div class="section">
       <div class="btn-group w-100" role="group">
         <button
-          @click="brushShape = 'square'"
+          @click="currentTool = Tool.BRUSH"
           :class="{
             'btn btn-sm': true,
-            'btn-primary': brushShape === 'square',
-            'btn-outline-primary': brushShape !== 'square',
+            'btn-primary': currentTool === Tool.BRUSH,
+            'btn-outline-primary': currentTool !== Tool.BRUSH,
           }"
-          title="Square Brush"
-        >
-          <span class="material-symbols-outlined">square</span>
-        </button>
-        <button
-          @click="brushShape = 'circle'"
-          :class="{
-            'btn btn-sm': true,
-            'btn-primary': brushShape === 'circle',
-            'btn-outline-primary': brushShape !== 'circle',
-          }"
-          title="Circle Brush"
-        >
-          <span class="material-symbols-outlined">circle</span>
-        </button>
-      </div>
-    </div>
-    <div class="section">
-      <div class="btn-group w-100" role="group">
-        <button
-          @click="brushMode = 'add'"
-          :class="['btn btn-sm', brushMode === 'add' ? 'btn-primary' : 'btn-outline-primary']"
-          title="Add"
+          title="Brush"
         >
           <span class="material-symbols-outlined">ink_highlighter</span>
         </button>
         <button
-          @click="brushMode = 'remove'"
-          :class="['btn btn-sm', brushMode === 'remove' ? 'btn-primary' : 'btn-outline-primary']"
-          title="Remove"
+          @click="currentTool = Tool.SELECT"
+          :class="{
+            'btn btn-sm': true,
+            'btn-primary': currentTool === Tool.SELECT,
+            'btn-outline-primary': currentTool !== Tool.SELECT,
+          }"
+          title="Select"
         >
-          <span class="material-symbols-outlined">ink_eraser</span>
+          <span class="material-symbols-outlined">select</span>
         </button>
       </div>
+
     </div>
+
+    <BrushToolOptions v-if="currentTool === Tool.BRUSH" />
+
   </div>
 </template>
 <style lang="scss">
