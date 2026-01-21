@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, Ref, useTemplateRef, watch } from 'vue'
+import { nextTick, onMounted, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
-import type { Position } from '../lib/pipeline/_types.ts'
-import { getPerfectCircleCoords, getRectCenterCoords } from '../lib/util/data/Grid.ts'
-import { interpolateLine } from '../lib/util/html-dom/ImageDataMutator.ts'
+import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../lib/util/data/Grid.ts'
+import { editorState } from './CanvasPaint/editorState.ts'
+import {
+  drawCursor,
+  drawGrid,
+  initRenderer,
+  scheduleRender,
+  updateCursorCache,
+  updateGridCache,
+} from './CanvasPaint/renderer.ts'
 
 type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 type Emits = {
@@ -25,27 +32,29 @@ const {
 } = defineProps<{
   width?: number,
   height?: number,
+  scale?: number,
   cursorColor?: string,
   gridColor?: string,
   brushShape?: 'circle' | 'square',
   brushSize?: number,
-  scale?: number,
   draw?: DrawLayer | null,
   id: string,
 }>()
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
-// Offscreen canvases for caching
-let gridCache: HTMLCanvasElement | null = null
-let cursorCache: HTMLCanvasElement | null = null
+function syncPropsToEditorState() {
+  editorState.width = width
+  editorState.height = height
+  editorState.scale = scale
 
-const isDrawing: Ref<boolean> = ref(false)
-const lastPos: Ref<Position> = ref({ x: 0, y: 0 })
-const cursorPos: Ref<Position | null> = ref(null)
+  editorState.cursorColor = cursorColor
+  editorState.gridColor = gridColor
 
-const scaledWidth = computed(() => Math.floor(width * scale))
-const scaledHeight = computed(() => Math.floor(height * scale))
+  editorState.brushShape = brushShape
+  editorState.brushSize = brushSize
+  editorState.externalDraw = draw
+}
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
   if (!canvas) return { canvas, ctx: null }
@@ -60,129 +69,17 @@ const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
 
 const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 
-const updateSize = () => {
+function resizeCanvas() {
   const viewCanvas = viewCanvasRef.value
   if (!viewCanvas) return
+  const { scaledWidth, scaledHeight } = editorState
+  if (viewCanvas.width !== scaledWidth || viewCanvas.height !== scaledHeight) {
 
-  // Set canvas internal dimensions to match the scaled view
-  if (viewCanvas.width !== scaledWidth.value || viewCanvas.height !== scaledHeight.value) {
-    viewCanvas.width = scaledWidth.value
-    viewCanvas.height = scaledHeight.value
+    viewCanvas.width = scaledWidth
+    viewCanvas.height = scaledHeight
     return true
   }
   return false
-}
-
-const initCaches = () => {
-  // Create offscreen canvases
-  gridCache = document.createElement('canvas')
-  cursorCache = document.createElement('canvas')
-
-  gridCache.width = scaledWidth.value
-  gridCache.height = scaledHeight.value
-  cursorCache.width = scaledWidth.value
-  cursorCache.height = scaledHeight.value
-}
-
-const updateGridCache = () => {
-  if (!gridCache) return
-
-  const ctx = gridCache.getContext('2d')
-  if (!ctx) return
-
-  // Resize if needed
-  if (gridCache.width !== scaledWidth.value || gridCache.height !== scaledHeight.value) {
-    gridCache.width = scaledWidth.value
-    gridCache.height = scaledHeight.value
-  }
-
-  ctx.clearRect(0, 0, gridCache.width, gridCache.height)
-  ctx.strokeStyle = gridColor
-  ctx.lineWidth = 1
-
-  // Draw vertical lines
-  for (let x = 0; x <= width; x++) {
-    const screenX = x * scale
-    ctx.beginPath()
-    ctx.moveTo(screenX, 0)
-    ctx.lineTo(screenX, scaledHeight.value)
-    ctx.stroke()
-  }
-
-  // Draw horizontal lines
-  for (let y = 0; y <= height; y++) {
-    const screenY = y * scale
-    ctx.beginPath()
-    ctx.moveTo(0, screenY)
-    ctx.lineTo(scaledWidth.value, screenY)
-    ctx.stroke()
-  }
-}
-
-const updateCursorCache = () => {
-  if (!cursorCache || !cursorPos.value) return
-
-  const ctx = cursorCache.getContext('2d')
-  if (!ctx) return
-
-  // Resize if needed
-  if (cursorCache.width !== scaledWidth.value || cursorCache.height !== scaledHeight.value) {
-    cursorCache.width = scaledWidth.value
-    cursorCache.height = scaledHeight.value
-  }
-
-  ctx.clearRect(0, 0, cursorCache.width, cursorCache.height)
-  ctx.strokeStyle = cursorColor
-  ctx.lineWidth = 1
-
-  const snappedX = Math.floor(cursorPos.value.x)
-  const snappedY = Math.floor(cursorPos.value.y)
-
-  if (brushShape === 'circle') {
-    const r = Math.floor(brushSize / 2)
-    const r2 = r * r
-
-    ctx.beginPath()
-
-    // Trace the outline by checking each pixel and drawing edges
-    for (let y = -r; y <= r; y++) {
-      for (let x = -r; x <= r; x++) {
-        if (x * x + y * y < r2) {
-          const pixelX = snappedX + x
-          const pixelY = snappedY + y
-          const screenX = pixelX * scale
-          const screenY = pixelY * scale
-
-          // Check each edge and draw if neighbor is outside circle
-          if ((x - 1) * (x - 1) + y * y >= r2) { // Left edge
-            ctx.moveTo(screenX - 0.5, screenY)
-            ctx.lineTo(screenX - 0.5, screenY + scale)
-          }
-          if ((x + 1) * (x + 1) + y * y >= r2) { // Right edge
-            ctx.moveTo(screenX + scale + 0.5, screenY)
-            ctx.lineTo(screenX + scale + 0.5, screenY + scale)
-          }
-          if (x * x + (y - 1) * (y - 1) >= r2) { // Top edge
-            ctx.moveTo(screenX, screenY - 0.5)
-            ctx.lineTo(screenX + scale, screenY - 0.5)
-          }
-          if (x * x + (y + 1) * (y + 1) >= r2) { // Bottom edge
-            ctx.moveTo(screenX, screenY + scale + 0.5)
-            ctx.lineTo(screenX + scale, screenY + scale + 0.5)
-          }
-        }
-      }
-    }
-
-    ctx.stroke()
-  } else {
-    const halfSize = Math.floor(brushSize / 2)
-    const startX = (snappedX - halfSize) * scale - 0.5
-    const startY = (snappedY - halfSize) * scale - 0.5
-    const size = brushSize * scale + 1
-
-    ctx.strokeRect(startX, startY, size, size)
-  }
 }
 
 const updateView = () => {
@@ -202,33 +99,22 @@ const updateView = () => {
     ctx.setTransform(1, 0, 0, 1, 0, 0)
 
     // Blit cached grid (if scale is high enough)
-    if (scale >= 4 && gridCache) {
-      ctx.drawImage(gridCache, 0, 0)
+    if (scale >= 4) {
+      drawGrid(ctx)
     }
 
-    // Blit cached cursor
-    if (cursorCache && cursorPos.value) {
-      ctx.drawImage(cursorCache, 0, 0)
+    if (editorState.mouseIsOver) {
+      drawCursor(ctx)
     }
-
   })
 }
 
-const getCanvasCoords = (e: MouseEvent): Position => {
-  const canvas = viewCanvasRef.value
-  if (!canvas) return { x: 0, y: 0 }
-
-  const rect = canvas.getBoundingClientRect()
-
-  // Get position in screen pixels
-  const screenX = e.clientX - rect.left
-  const screenY = e.clientY - rect.top
-
-  // Convert to image pixels (unscaled coordinates)
-  const x = screenX / scale
-  const y = screenY / scale
-
-  return { x, y }
+function getCanvasCoords(e: MouseEvent) {
+  const rect = viewCanvasRef.value!.getBoundingClientRect()
+  return {
+    x: Math.floor((e.clientX - rect.left) / editorState.scale),
+    y: Math.floor((e.clientY - rect.top) / editorState.scale),
+  }
 }
 
 const paint = (x: number, y: number): void => {
@@ -243,26 +129,28 @@ const paint = (x: number, y: number): void => {
 }
 
 const handleMouseDown = (e: MouseEvent): void => {
-  isDrawing.value = true
+  editorState.isDrawing = true
   const { x, y } = getCanvasCoords(e)
-  const ix = Math.floor(x)
-  const iy = Math.floor(y)
-  paint(ix, iy)
-  lastPos.value = { x, y }
+  paint(x, y)
+  editorState.lastX = x
+  editorState.lastY = y
 
   nextTick(() => updateView())
 }
 
 const handleMouseMove = (e: MouseEvent): void => {
+  editorState.mouseIsOver = true
+  const { lastX, lastY } = editorState
   const { x, y } = getCanvasCoords(e)
-  const oldCursorPos = cursorPos.value
-  cursorPos.value = { x, y }
 
-  if (isDrawing.value) {
+  editorState.cursorX = x
+  editorState.cursorY = y
+
+  if (editorState.isDrawing) {
     // Interpolate between last position and current position
     const points = interpolateLine(
-      Math.floor(lastPos.value.x),
-      Math.floor(lastPos.value.y),
+      Math.floor(lastX),
+      Math.floor(lastY),
       Math.floor(x),
       Math.floor(y),
     )
@@ -273,26 +161,20 @@ const handleMouseMove = (e: MouseEvent): void => {
       paint(ix, iy)
     }
 
-    lastPos.value = { x, y }
-  }
-
-  // Only update cursor cache if position changed
-  if (!oldCursorPos ||
-    Math.floor(oldCursorPos.x) !== Math.floor(x) ||
-    Math.floor(oldCursorPos.y) !== Math.floor(y)) {
-    updateCursorCache()
+    editorState.lastX = x
+    editorState.lastY = y
   }
 
   updateView()
 }
 
 const handleMouseUp = (): void => {
-  isDrawing.value = false
+  editorState.isDrawing = false
 }
 
 const handleMouseLeave = (): void => {
-  isDrawing.value = false
-  cursorPos.value = null
+  editorState.isDrawing = false
+  editorState.mouseIsOver = false
   updateCursorCache() // Clear cursor
   updateView()
 }
@@ -324,35 +206,46 @@ defineExpose({
 })
 
 onMounted(() => {
-  initCaches()
-  updateSize()
-
-  updateGridCache()
-  updateView()
-})
-
-watch([
-  () => gridColor,
-  () => scale,
-  () => width,
-  () => height,
-], () => {
-  updateSize()
+  syncPropsToEditorState()
   updateGridCache()
   updateCursorCache()
+  initRenderer(viewCanvasRef.value!)
   updateView()
 })
 
+watch(
+  () => gridColor,
+  () => {
+    syncPropsToEditorState()
+    updateGridCache()
+    scheduleRender()
+  },
+)
+
 watch([
-  () => brushSize,
-  () => brushShape,
-  () => cursorColor,
-], () => {
-  if (cursorPos.value) {
+    () => cursorColor,
+    () => brushShape,
+    () => brushSize,
+  ],
+  () => {
+    syncPropsToEditorState()
     updateCursorCache()
-    updateView()
-  }
-})
+    scheduleRender()
+  },
+)
+
+watch(
+  [
+    () => width,
+    () => height,
+    () => scale,
+  ],
+  () => {
+    syncPropsToEditorState()
+    resizeCanvas()
+    scheduleRender()
+  },
+)
 </script>
 <template>
   <canvas
@@ -363,7 +256,6 @@ watch([
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
-    :style="{ width: scaledWidth + 'px', height: scaledHeight + 'px' }"
   ></canvas>
 </template>
 <style lang="scss">
