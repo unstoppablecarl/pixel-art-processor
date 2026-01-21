@@ -1,8 +1,9 @@
 export type Tool = 'pencil' | 'line' | 'select' | 'move'
 
 export type BrushShape = 'circle' | 'square'
-export type EditorState = ReturnType<typeof makeEditorState>
+export type BrushMode = 'add' | 'remove'
 
+export type EditorState = ReturnType<typeof makeEditorState>
 export function makeEditorState() {
 
   return {

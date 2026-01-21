@@ -5,6 +5,9 @@ import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 export type RGBA = { r: number, g: number, b: number, a: number }
 export type SerializedRGBA = string
 
+export const RGBA_ERASE: Readonly<RGBA> = { r: 0, g: 0, b: 0, a: 0 } as const
+export const RGBA_WHITE: Readonly<RGBA> = { r: 255, g: 255, b: 255, a: 255 } as const
+
 export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
   return `${r},${g},${b},${a}`
 }

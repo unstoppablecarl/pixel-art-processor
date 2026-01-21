@@ -8,6 +8,10 @@ export function nodeUsesSidebar() {
   onUnmounted(() => {
     sidebarNodeCount.value--
   })
+
+  return {
+    visible,
+  }
 }
 
 export function useSidebar() {

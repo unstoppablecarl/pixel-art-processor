@@ -13,12 +13,12 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
+import { storeToRefs } from 'pinia'
 import {
   computed,
   markRaw,
   onMounted,
   type Raw, type Reactive,
-  Ref,
   ref,
   useTemplateRef,
   watch,
@@ -26,6 +26,7 @@ import {
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { parseColor } from '../../../lib/util/color.ts'
 import {
@@ -36,7 +37,6 @@ import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { nodeUsesSidebar } from '../../../lib/vue/useSidebar.ts'
 import { imageDataRef, tilesetSyncedImageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import {
   useTileCanvases,
@@ -54,10 +54,10 @@ import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
 import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
+nodeUsesSidebar()
+const { brushMode, brushShape, brushSizeDebounced } = storeToRefs(useCanvasPaintStore())
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
-
-nodeUsesSidebar()
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
@@ -158,10 +158,6 @@ const config = node.config
 if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
-
-const brushShape = ref<'circle' | 'square'>('circle')
-const brushSize: Ref<number> = ref(10)
-const brushMode = ref<'add' | 'remove'>('add')
 const color = computed(() => brushMode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
 const {
@@ -328,7 +324,7 @@ onMounted(() => {
           :width="tileSize"
           :height="tileSize"
           :brush-shape="brushShape"
-          :brush-size="brushSize"
+          :brush-size="brushSizeDebounced"
           :cursor-color="config.showCursorColor"
           :grid-color="config.showGridColor"
           :draw="($event) => drawTileCanvas($event, item.id)"
@@ -344,7 +340,7 @@ onMounted(() => {
         :width="canvasWidth"
         :height="canvasHeight"
         :brush-shape="brushShape"
-        :brush-size="brushSize"
+        :brush-size="brushSizeDebounced"
         :cursor-color="config.showCursorColor"
         :grid-color="config.showGridColor"
         :draw="drawGridCanvas"
@@ -415,48 +411,6 @@ onMounted(() => {
               :step="1"
             />
 
-            <RangeSlider
-              :id="`${nodeId}-brush-size`"
-              label="Brush Size"
-              v-model:value="brushSize"
-              :min="1"
-              :max="50"
-              :step="1"
-            />
-
-            <div class="btn-group" role="group">
-              <button
-                @click="brushShape = 'square'"
-                :class="['btn btn-sm', brushShape === 'square' ? 'btn-primary' : 'btn-outline-primary']"
-                title="Square Brush"
-              >
-                <span class="material-symbols-outlined">square</span>
-              </button>
-              <button
-                @click="brushShape = 'circle'"
-                :class="['btn btn-sm', brushShape === 'circle' ? 'btn-primary' : 'btn-outline-primary']"
-                title="Circle Brush"
-              >
-                <span class="material-symbols-outlined">circle</span>
-              </button>
-            </div>
-
-            <div class="btn-group mx-2" role="group">
-              <button
-                @click="brushMode = 'add'"
-                :class="['btn btn-sm', brushMode === 'add' ? 'btn-primary' : 'btn-outline-primary']"
-                title="Add"
-              >
-                <span class="material-symbols-outlined">ink_highlighter</span>
-              </button>
-              <button
-                @click="brushMode = 'remove'"
-                :class="['btn btn-sm', brushMode === 'remove' ? 'btn-primary' : 'btn-outline-primary']"
-                title="Remove"
-              >
-                <span class="material-symbols-outlined">ink_eraser</span>
-              </button>
-            </div>
 
             <button
               role="button"
