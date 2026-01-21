@@ -1,3 +1,5 @@
+import { putImageDataScaled } from '../../lib/util/html-dom/ImageData.ts'
+import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
 import { updateCursorCache } from './tools/brush.ts'
 import type { Selection } from './tools/select.ts'
 
@@ -44,14 +46,15 @@ export function makeEditorState() {
       return this.scale * this.height
     },
 
-    externalDraw: null as DrawLayer | null,
     pixelOverlayDraw: null as DrawLayer | null,
     screenOverlayDraw: null as DrawLayer | null,
 
     emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
 
     selecting: false,
-    selection: null as null | Selection
+    selection: null as null | Selection,
+
+    target: null as null | ImageDataRef,
   }
 }
 
@@ -96,7 +99,10 @@ export function makeRenderer() {
 
     ctx.scale(state.scale, state.scale)
 
-    state?.externalDraw?.(ctx)
+    const targetImageData = state.target?.get()
+    if (targetImageData) {
+      putImageDataScaled(ctx, targetImageData.width, targetImageData.height, targetImageData)
+    }
 
     state.pixelOverlayDraw?.(ctx)
 

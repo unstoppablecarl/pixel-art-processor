@@ -55,7 +55,7 @@ import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 nodeUsesSidebar()
-const { brushMode, brushShape, brushSizeDebounced, currentTool } = storeToRefs(useCanvasPaintStore())
+const { brushMode } = storeToRefs(useCanvasPaintStore())
 const store = usePipelineStore()
 const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
@@ -273,19 +273,11 @@ function syncTile(tileId: TileId) {
   item?.queueRender()
 }
 
-function drawGridCanvas(ctx: CanvasRenderingContext2D) {
-  putImageDataScaled(ctx, canvasWidth.value, canvasHeight.value, maskImageData.get()!, 0, 0)
+function drawGridScreenOverlay(ctx: CanvasRenderingContext2D) {
   ctx.drawImage(tileGridEdgeColorSketch.canvas, 0, 0)
 }
 
-function drawTileCanvas(ctx: CanvasRenderingContext2D, tileId: TileId) {
-  const tilesetImageDataRef = tilesetImageRefs[tileId]!
-  const imageData = tilesetImageDataRef.get()
-  if (!imageData) return
-
-  ctx.clearRect(0, 0, tileSize.value, tileSize.value)
-  putImageDataScaled(ctx, tileSize.value, tileSize.value, imageData)
-
+function drawTileScreenOverlay(ctx: CanvasRenderingContext2D, tileId: TileId) {
   const borderImageData = cachedWangTileEdgeColorImageData.value[tileId]
 
   ctx.globalAlpha = 0.5
@@ -323,12 +315,10 @@ onMounted(() => {
           :scale="store.imgScale"
           :width="tileSize"
           :height="tileSize"
-          :brush-shape="brushShape"
-          :brush-size="brushSizeDebounced"
+          :target="tilesetImageRefs[item.id]"
           :cursor-color="config.showCursorColor"
           :grid-color="config.showGridColor"
-          :draw="($event) => drawTileCanvas($event, item.id)"
-          :current-tool="currentTool"
+          :pixel-overlay-draw="(ctx) => drawTileScreenOverlay(ctx, item.id)"
           @set-pixels="setTilePixels($event, item.id)"
         />
       </div>
@@ -340,12 +330,10 @@ onMounted(() => {
         :scale="store.imgScale"
         :width="canvasWidth"
         :height="canvasHeight"
-        :brush-shape="brushShape"
-        :brush-size="brushSizeDebounced"
+        :target="maskImageData"
         :cursor-color="config.showCursorColor"
         :grid-color="config.showGridColor"
-        :draw="drawGridCanvas"
-        :current-tool="currentTool"
+        :pixel-overlay-draw="drawGridScreenOverlay"
         @set-pixels="setPixels"
         @clear="clear"
       />

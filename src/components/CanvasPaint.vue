@@ -2,7 +2,8 @@
 import { onMounted, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import { useCanvasPaintStore } from '../lib/store/canvas-paint-store.ts'
-import { type DrawLayer, makeRenderer, Tool } from './CanvasPaint/renderer.ts'
+import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
+import { type DrawLayer, makeRenderer } from './CanvasPaint/renderer.ts'
 import { makeToolManager } from './CanvasPaint/tools.ts'
 
 type Emits = {
@@ -17,10 +18,9 @@ const props = withDefaults(defineProps<{
   scale?: number
   cursorColor?: string
   gridColor?: string
-  brushShape?: 'circle' | 'square'
-  brushSize?: number
-  currentTool?: Tool,
-  draw?: DrawLayer | null
+  pixelOverlayDraw?: DrawLayer | null,
+  screenOverlayDraw?: DrawLayer | null,
+  target: ImageDataRef,
   id: string
 }>(), {
   width: 64,
@@ -28,10 +28,6 @@ const props = withDefaults(defineProps<{
   scale: 1,
   cursorColor: '#fff',
   gridColor: 'rgba(0, 0, 0, 0.2)',
-  brushShape: 'circle',
-  brushSize: 10,
-  draw: null,
-  currentTool: Tool.BRUSH,
 })
 
 const store = useCanvasPaintStore()
@@ -58,15 +54,22 @@ function syncPropsToEditorState() {
   state.cursorColor = props.cursorColor
   state.gridColor = props.gridColor
 
-  state.brushShape = props.brushShape
-  state.brushSize = props.brushSize
+  state.brushShape = store.brushShape
+  state.brushSize = store.brushSize
   state.tool = store.currentTool
 
   state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
 
-  state.externalDraw = props.draw
-  state.pixelOverlayDraw = (ctx) => tools.currentToolPixelOverlayDraw(ctx)
-  state.screenOverlayDraw = (ctx) => tools.currentToolScreenOverlayDraw(ctx)
+  state.target = props.target
+
+  state.pixelOverlayDraw = (ctx) => {
+    props?.pixelOverlayDraw?.(ctx)
+    tools.currentToolPixelOverlayDraw(ctx)
+  }
+  state.screenOverlayDraw = (ctx) => {
+    props?.screenOverlayDraw?.(ctx)
+    tools.currentToolScreenOverlayDraw(ctx)
+  }
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
@@ -156,8 +159,8 @@ watch(
 watch([
     () => props.scale,
     () => props.cursorColor,
-    () => props.brushShape,
-    () => props.brushSize,
+    () => store.brushShape,
+    () => store.brushSize,
   ],
   () => {
     syncPropsToEditorState()
@@ -166,8 +169,8 @@ watch([
   },
 )
 
-watch(() => props.currentTool, () => {
-  tools.setTool(props.currentTool)
+watch(() => store.currentTool, () => {
+  tools.setTool(store.currentTool)
   queueRender()
 })
 
