@@ -241,7 +241,7 @@ const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
   for (const tileId of dirtyTiles) {
     syncTile(tileId)
   }
-  canvasPaintRef.value!.updateView()
+  canvasPaintRef.value!.queueRender()
 })
 
 function drawTileToGrid(tileId: TileId, imageData: ImageData) {
@@ -267,7 +267,7 @@ function syncTile(tileId: TileId) {
   }
 
   const item = tilesetCanvases.get(tileId)!
-  item?.updateView()
+  item?.queueRender()
 }
 
 function drawGridCanvas(ctx: CanvasRenderingContext2D) {

@@ -1,29 +1,72 @@
-import { makeEditorState } from './editorState.ts'
+export type Tool = 'pencil' | 'line' | 'select' | 'move'
 
-let canvas: HTMLCanvasElement | null = null
-let ctx: CanvasRenderingContext2D | null = null
+export type BrushShape = 'circle' | 'square'
+export type EditorState = ReturnType<typeof makeEditorState>
 
-let needsRender = false
+export function makeEditorState() {
+
+  return {
+    width: 64,
+    height: 64,
+    scale: 8,
+
+    cursorX: 0,
+    cursorY: 0,
+    mouseIsOver: false,
+    isDrawing: false,
+    lastX: 0,
+    lastY: 0,
+
+    imageData: null as ImageData | null,
+
+    tool: 'pencil' as Tool,
+    brushSize: 1,
+    brushShape: 'circle' as BrushShape,
+
+    gridColor: 'rgba(0, 0, 0, 0.2)',
+    cursorColor: 'rgba(0, 255, 255, 1)',
+
+    get scaledWidth() {
+      return this.scale * this.width
+    },
+
+    get scaledHeight() {
+      return this.scale * this.height
+    },
+
+    selection: null as { x: number; y: number; w: number; h: number } | null,
+
+    externalDraw: null as ((ctx: CanvasRenderingContext2D) => void) | null,
+
+    emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
+  }
+}
 
 export function makeEditor() {
   const state = makeEditorState()
 
+  let canvas: HTMLCanvasElement | null = null
+  let ctx: CanvasRenderingContext2D | null = null
+
+  let needsRender = false
+
   function initRenderer(el: HTMLCanvasElement) {
     canvas = el
-    ctx = canvas.getContext('2d')
+    ctx = canvas.getContext('2d', { willReadFrequently: true })
     if (!ctx) throw new Error('Canvas 2D context unavailable')
 
     resizeCanvas()
-    scheduleRender()
+    queueRender()
   }
 
   function resizeCanvas() {
     if (!canvas) return
     canvas.width = state.width * state.scale
     canvas.height = state.height * state.scale
+    ctx!.imageSmoothingEnabled = false;
   }
 
-  function scheduleRender() {
+  function queueRender() {
     if (needsRender) return
     needsRender = true
 
@@ -34,7 +77,10 @@ export function makeEditor() {
   }
 
   function renderFrame() {
+    console.log('renderFrame')
     if (!canvas || !ctx) return
+    console.log('renderFrame 2')
+    // ctx.imageSmoothingEnabled = false;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
@@ -68,12 +114,13 @@ export function makeEditor() {
     const scaledWidth = state.scaledWidth
     const scaledHeight = state.scaledHeight
 
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
     // Resize if needed
     if (gridCache.width !== scaledWidth || gridCache.height !== scaledHeight) {
       gridCache.width = scaledWidth
       gridCache.height = scaledHeight
     }
-
+    ctx.translate(0.5, 0.5)
     ctx.clearRect(0, 0, gridCache.width, gridCache.height)
     ctx.strokeStyle = gridColor
     ctx.lineWidth = 1
@@ -103,6 +150,7 @@ export function makeEditor() {
 
   const cursorCache = document.createElement('canvas')
   const cursorCacheCtx = cursorCache.getContext('2d')!
+  cursorCacheCtx.imageSmoothingEnabled = false;
 
   function updateCursorCache() {
     const ctx = cursorCacheCtx
@@ -113,7 +161,7 @@ export function makeEditor() {
     cursorCache.height = size + 1
 
     ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, size, size)
+    ctx.clearRect(0, 0, cursorCache.width, cursorCache.height)
     ctx.strokeStyle = cursorColor
     ctx.lineWidth = 1
 
@@ -170,7 +218,9 @@ export function makeEditor() {
   }
 
   function drawCursor(ctx: CanvasRenderingContext2D) {
-    const { cursorX, cursorY, scale, brushSize } = state
+    const { cursorX, cursorY, scale, brushSize, mouseIsOver } = state
+    if (!mouseIsOver) return
+    ctx.imageSmoothingEnabled = false;
 
     const snappedX = Math.floor(cursorX)
     const snappedY = Math.floor(cursorY)
@@ -191,7 +241,8 @@ export function makeEditor() {
     drawGrid,
     drawSelection,
     initRenderer,
-    scheduleRender,
+    resizeCanvas,
+    queueRender,
   }
 }
 

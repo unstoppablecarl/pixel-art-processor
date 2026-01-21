@@ -11,51 +11,49 @@ type Emits = {
 }
 const emit = defineEmits<Emits>()
 
-const {
-  width = 64,
-  height = 64,
-  cursorColor = '#fff',
-  gridColor = 'rgba(0, 0, 0, 0.2)',
-  brushShape = 'circle',
-  brushSize = 10,
-  scale = 1,
-  draw = null,
-  id,
-} = defineProps<{
-  width?: number,
-  height?: number,
-  scale?: number,
-  cursorColor?: string,
-  gridColor?: string,
-  brushShape?: 'circle' | 'square',
-  brushSize?: number,
-  draw?: DrawLayer | null,
-  id: string,
-}>()
+const props = withDefaults(defineProps<{
+  width?: number
+  height?: number
+  scale?: number
+  cursorColor?: string
+  gridColor?: string
+  brushShape?: 'circle' | 'square'
+  brushSize?: number
+  draw?: DrawLayer | null
+  id: string
+}>(), {
+  width: 64,
+  height: 64,
+  scale: 1,
+  cursorColor: '#fff',
+  gridColor: 'rgba(0, 0, 0, 0.2)',
+  brushShape: 'circle',
+  brushSize: 10,
+  draw: null,
+})
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
 const {
   state,
-  drawCursor,
   updateCursorCache,
   updateGridCache,
-  drawGrid,
   initRenderer,
-  scheduleRender,
+  queueRender,
+  resizeCanvas,
 } = makeEditor()
 
 function syncPropsToEditorState() {
-  state.width = width
-  state.height = height
-  state.scale = scale
+  state.width = props.width
+  state.height = props.height
+  state.scale = props.scale
 
-  state.cursorColor = cursorColor
-  state.gridColor = gridColor
+  state.cursorColor = props.cursorColor
+  state.gridColor = props.gridColor
 
-  state.brushShape = brushShape
-  state.brushSize = brushSize
-  state.externalDraw = draw
+  state.brushShape = props.brushShape
+  state.brushSize = props.brushSize
+  state.externalDraw = props.draw
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
@@ -71,46 +69,6 @@ const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
 
 const getViewCanvas = () => canvasFromRef(viewCanvasRef.value)
 
-function resizeCanvas() {
-  const viewCanvas = viewCanvasRef.value
-  if (!viewCanvas) return
-  const { scaledWidth, scaledHeight } = state
-  if (viewCanvas.width !== scaledWidth || viewCanvas.height !== scaledHeight) {
-
-    viewCanvas.width = scaledWidth
-    viewCanvas.height = scaledHeight
-    return true
-  }
-  return false
-}
-
-const updateView = () => {
-  requestAnimationFrame(() => {
-    const { ctx, canvas } = getViewCanvas()
-    if (!ctx || !canvas) return
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // Draw the image data scaled up
-    ctx.scale(scale, scale)
-
-    draw?.(ctx)
-
-    // Reset transform for overlays
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-
-    // Blit cached grid (if scale is high enough)
-    if (scale >= 4) {
-      drawGrid(ctx)
-    }
-
-    if (state.mouseIsOver) {
-      drawCursor(ctx)
-    }
-  })
-}
-
 function getCanvasCoords(e: MouseEvent) {
   const rect = viewCanvasRef.value!.getBoundingClientRect()
   return {
@@ -121,6 +79,7 @@ function getCanvasCoords(e: MouseEvent) {
 
 const paint = (x: number, y: number): void => {
   let pixels: Point[] = []
+  const { width, height, brushSize, brushShape } = state
   if (brushShape === 'circle') {
     pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
   } else {
@@ -137,7 +96,7 @@ const handleMouseDown = (e: MouseEvent): void => {
   state.lastX = x
   state.lastY = y
 
-  nextTick(() => updateView())
+  nextTick(() => queueRender())
 }
 
 const handleMouseMove = (e: MouseEvent): void => {
@@ -167,7 +126,7 @@ const handleMouseMove = (e: MouseEvent): void => {
     state.lastY = y
   }
 
-  updateView()
+  queueRender()
 }
 
 const handleMouseUp = (): void => {
@@ -178,7 +137,7 @@ const handleMouseLeave = (): void => {
   state.isDrawing = false
   state.mouseIsOver = false
   updateCursorCache() // Clear cursor
-  updateView()
+  queueRender()
 }
 
 function fillCanvas(color: string): void {
@@ -189,21 +148,21 @@ function fillCanvas(color: string): void {
   ctx.clearRect(0, 0, canvas.width, canvas.height)
   ctx.fillRect(0, 0, canvas.width, canvas.height)
 
-  updateView()
+  queueRender()
 }
 
 function clearCanvas(): void {
   const { canvas, ctx } = getViewCanvas()
   if (!ctx || !canvas) return
   ctx.clearRect(0, 0, canvas.width, canvas.height)
-  updateView()
+  queueRender()
   emit('clear')
 }
 
 defineExpose({
   clearCanvas,
+  queueRender,
   fillCanvas,
-  updateView,
   viewCanvasRef,
 })
 
@@ -212,40 +171,44 @@ onMounted(() => {
   updateGridCache()
   updateCursorCache()
   initRenderer(viewCanvasRef.value!)
-  updateView()
+  queueRender()
 })
 
 watch(
-  () => gridColor,
+  [
+    () => props.scale,
+    () => props.gridColor,
+  ],
   () => {
     syncPropsToEditorState()
     updateGridCache()
-    scheduleRender()
+    queueRender()
   },
 )
 
 watch([
-    () => cursorColor,
-    () => brushShape,
-    () => brushSize,
+    () => props.scale,
+    () => props.cursorColor,
+    () => props.brushShape,
+    () => props.brushSize,
   ],
   () => {
     syncPropsToEditorState()
     updateCursorCache()
-    scheduleRender()
+    queueRender()
   },
 )
 
 watch(
   [
-    () => width,
-    () => height,
-    () => scale,
+    () => props.width,
+    () => props.height,
+    () => props.scale,
   ],
   () => {
     syncPropsToEditorState()
     resizeCanvas()
-    scheduleRender()
+    queueRender()
   },
 )
 </script>

@@ -119,7 +119,7 @@ export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, 
 export type TileCanvasItem = {
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
-  updateView: () => void
+  queueRender: () => void
 }
 
 export function useTileCanvases() {
@@ -147,7 +147,7 @@ export function useTileCanvases() {
     if (canvas) {
       const ctx = canvas.getContext('2d')
       if (!ctx) throw new Error('cannot get canvas context')
-      tilesetCanvases.set(tileId, { canvas, ctx, updateView: comp.updateView })
+      tilesetCanvases.set(tileId, { canvas, ctx, queueRender: comp.queueRender })
       return true
     }
     return false
