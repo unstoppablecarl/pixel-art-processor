@@ -1,43 +1,69 @@
 import type { EditorState, Renderer } from '../renderer.ts'
 import type { ToolHandler } from '../tools.ts'
 
+export type Selection = {
+  x: number
+  y: number
+  w: number
+  h: number
+  pixels: ImageData | null
+  dragging: boolean
+  offsetX: number
+  offsetY: number
+
+  origX: number
+  origY: number
+  origW: number
+  origH: number
+}
+
 export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHandler {
+
+  function makeSelection(x: number, y: number): Selection {
+    return {
+      x,
+      y,
+      w: 0,
+      h: 0,
+      pixels: null,
+      dragging: false,
+
+      origX: x,
+      origY: y,
+      origW: 0,
+      origH: 0,
+
+      offsetX: 0,
+      offsetY: 0,
+    }
+  }
 
   return {
     onMouseDown(x: number, y: number) {
       if (!state.selection) {
         // start new selection
-        state.selection = {
-          x,
-          y,
-          w: 0,
-          h: 0,
-          pixels: null,
-          dragging: false,
-          offsetX: 0,
-          offsetY: 0,
-        }
+        state.selection = makeSelection(x, y)
+        state.selecting = true
+
+        return
+      }
+
+      // check if clicking inside selection
+      const sel = state.selection
+      const clickedSelection = x >= sel.x
+        && x < sel.x + sel.w
+        && y >= sel.y
+        && y < sel.y + sel.h
+
+      if (clickedSelection) {
+        state.selecting = false
+        sel.dragging = true
+        sel.offsetX = x - sel.x
+        sel.offsetY = y - sel.y
       } else {
-        // check if clicking inside selection
-        const sel = state.selection
-        if (x >= sel.x && x < sel.x + sel.w &&
-          y >= sel.y && y < sel.y + sel.h) {
-          sel.dragging = true
-          sel.offsetX = x - sel.x
-          sel.offsetY = y - sel.y
-        } else {
-          // clicked outside → start new selection
-          state.selection = {
-            x,
-            y,
-            w: 0,
-            h: 0,
-            pixels: null,
-            dragging: false,
-            offsetX: 0,
-            offsetY: 0,
-          }
-        }
+        // clicked outside → start new selection
+        state.selection = makeSelection(x, y)
+        state.selecting = true
       }
     },
     onMouseMove(x, y) {
@@ -47,7 +73,7 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
         const sel = state.selection
         sel.x = x - sel.offsetX
         sel.y = y - sel.offsetY
-      } else {
+      } else if (state.selecting) {
         const sel = state.selection
         sel.w = x - sel.x
         sel.h = y - sel.y
@@ -58,8 +84,8 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     onMouseUp() {
       const sel = state.selection
       if (!sel) return
-
       sel.dragging = false
+      state.selecting = false
 
       // normalize
       if (sel.w < 0) {
@@ -71,17 +97,23 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
         sel.h = -sel.h
       }
 
-      if (!renderer.ctx) return
+      sel.origX = sel.x
+      sel.origY = sel.y
+      sel.origW = sel.w
+      sel.origH = sel.h
 
-      // extract pixels
-      sel.pixels = renderer.ctx.getImageData(sel.x, sel.y, sel.w, sel.h)
+      // switch to pixel space
+      renderer.ctx!.setTransform(state.scale, 0, 0, state.scale, 0, 0)
 
-      // clear original area
-      renderer.ctx.clearRect(sel.x, sel.y, sel.w, sel.h)
+      // extract pixels in pixel coords
+      sel.pixels = renderer.ctx!.getImageData(sel.x, sel.y, sel.w, sel.h)
+
+      // switch back to screen space for clearing
+      renderer.ctx!.setTransform(1, 0, 0, 1, 0, 0)
+
 
       renderer.queueRender()
     },
-
     onUnSelectTool() {
       // commit selection when leaving the tool
       if (state.selection?.pixels && renderer.ctx) {
@@ -94,19 +126,26 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
         renderer.queueRender()
       }
     },
-    draw(ctx: CanvasRenderingContext2D) {
+    pixelOverlayDraw(ctx) {
+      const sel = state.selection
+      if (!sel || !sel.pixels) return
+
+      console.log(sel.pixels)
+      ctx.clearRect(sel.origX, sel.origY, sel.origW, sel.origH)
+      ctx.putImageData(sel.pixels, sel.x, sel.y)
+    },
+    screenOverlayDraw(ctx: CanvasRenderingContext2D) {
       const sel = state.selection
       if (!sel) return
 
       ctx.strokeStyle = 'cyan'
-      ctx.lineWidth = 1 / state.scale
-      ctx.strokeRect(sel.x, sel.y, sel.w, sel.h)
-
-      if (sel.pixels) {
-        ctx.setTransform(state.scale, 0, 0, state.scale, 0, 0)
-        ctx.putImageData(sel.pixels, sel.x, sel.y)
-        ctx.setTransform(1, 0, 0, 1, 0, 0)
-      }
+      ctx.lineWidth = 1
+      ctx.strokeRect(
+        sel.x * state.scale - 0.5,
+        sel.y * state.scale - 0.5,
+        sel.w * state.scale + 2,
+        sel.h * state.scale + 2,
+      )
     },
   }
 }

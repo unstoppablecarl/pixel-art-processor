@@ -65,7 +65,8 @@ function syncPropsToEditorState() {
   state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
 
   state.externalDraw = props.draw
-  state.overlayDraw = (ctx) => tools.drawCurrentTool(ctx)
+  state.pixelOverlayDraw = (ctx) => tools.currentToolPixelOverlayDraw(ctx)
+  state.screenOverlayDraw = (ctx) => tools.currentToolScreenOverlayDraw(ctx)
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {

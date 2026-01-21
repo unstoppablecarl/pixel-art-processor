@@ -107,7 +107,7 @@ export function makeBrushTool(state: EditorState): ToolHandler {
         state.lastY = y
       }
     },
-    draw(ctx: CanvasRenderingContext2D) {
+    screenOverlayDraw(ctx: CanvasRenderingContext2D) {
       const { cursorX, cursorY, scale, brushSize, mouseIsOver } = state
       if (!mouseIsOver) return
       ctx.imageSmoothingEnabled = false

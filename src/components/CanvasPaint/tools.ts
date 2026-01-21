@@ -11,12 +11,14 @@ type Shared = {
 export type ToolHandler = Partial<Shared> & {
   onSelectTool?: () => void,
   onUnSelectTool?: () => void,
-  draw?: (ctx: CanvasRenderingContext2D) => void
+  pixelOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
+  screenOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
 }
 
 export type ToolManager = Shared & {
   setTool: (tool: Tool) => void,
-  drawCurrentTool: (ctx: CanvasRenderingContext2D) => void
+  currentToolScreenOverlayDraw: (ctx: CanvasRenderingContext2D) => void,
+  currentToolPixelOverlayDraw: (ctx: CanvasRenderingContext2D) => void,
 }
 
 export function makeToolManager(state: EditorState, renderer: Renderer): ToolManager {
@@ -45,8 +47,9 @@ export function makeToolManager(state: EditorState, renderer: Renderer): ToolMan
 
       renderer.queueRender()
     },
-    onMouseUp() {
+    onMouseUp(x: number, y: number) {
       state.isDrawing = false
+      tools[state.tool]?.onMouseUp?.(x, y)
     },
     onMouseLeave() {
       state.isDrawing = false
@@ -64,9 +67,17 @@ export function makeToolManager(state: EditorState, renderer: Renderer): ToolMan
 
       renderer.queueRender()
     },
-    drawCurrentTool(ctx) {
-      tools.SELECT.draw!(ctx)
-      tools[state.tool]?.draw?.(ctx)
+    currentToolPixelOverlayDraw(ctx) {
+      tools.SELECT.pixelOverlayDraw!(ctx)
+      if (state.tool !== Tool.SELECT) {
+        tools[state.tool]?.pixelOverlayDraw?.(ctx)
+      }
+    },
+    currentToolScreenOverlayDraw(ctx) {
+      tools.SELECT.screenOverlayDraw!(ctx)
+      if (state.tool !== Tool.SELECT) {
+        tools[state.tool]?.screenOverlayDraw?.(ctx)
+      }
     },
   }
 }

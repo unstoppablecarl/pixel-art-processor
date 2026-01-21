@@ -1,4 +1,5 @@
 import { updateCursorCache } from './tools/brush.ts'
+import type { Selection } from './tools/select.ts'
 
 export enum Tool {
   BRUSH = 'BRUSH',
@@ -44,20 +45,13 @@ export function makeEditorState() {
     },
 
     externalDraw: null as DrawLayer | null,
-    overlayDraw: null as DrawLayer | null,
+    pixelOverlayDraw: null as DrawLayer | null,
+    screenOverlayDraw: null as DrawLayer | null,
 
     emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
 
-    selection: null as null | {
-      x: number
-      y: number
-      w: number
-      h: number
-      pixels: ImageData | null
-      dragging: boolean
-      offsetX: number
-      offsetY: number
-    },
+    selecting: false,
+    selection: null as null | Selection
   }
 }
 
@@ -104,11 +98,13 @@ export function makeRenderer() {
 
     state?.externalDraw?.(ctx)
 
+    state.pixelOverlayDraw?.(ctx)
+
     ctx.setTransform(1, 0, 0, 1, 0, 0)
 
     drawGrid(ctx)
 
-    state?.overlayDraw?.(ctx)
+    state?.screenOverlayDraw?.(ctx)
   }
 
   const gridCache = document.createElement('canvas')
