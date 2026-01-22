@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { BrushMode, useCanvasPaintStore } from '../../../../lib/store/canvas-paint-store.ts'
+import { useCanvasPaintStore } from '../../../../lib/store/canvas-paint-store.ts'
 import { usePipelineStore } from '../../../../lib/store/pipeline-store.ts'
 import ToolButton from '../../../UI/ToolButton.vue'
+import { BrushMode } from '../../_canvas-editor-types.ts'
 
 import { BrushShape } from '../../tools/brush.ts'
 

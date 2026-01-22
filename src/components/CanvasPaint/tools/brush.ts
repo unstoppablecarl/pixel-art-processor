@@ -1,19 +1,21 @@
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../lib/util/data/Grid.ts'
 import type { ToolHandler } from '../_canvas-editor-types.ts'
-import type { EditorState } from '../editor-state.ts'
-import type { Renderer } from '../renderer.ts'
+import type { EditorState } from '../EditorState.ts'
+import type { GlobalToolContext } from '../GlobalToolManager.ts'
 
 export enum BrushShape {
   CIRCLE = 'CIRCLE',
   SQUARE = 'SQUARE'
 }
 
-export function makeBrushTool(state: EditorState, renderer: Renderer): ToolHandler {
+export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
-  function paint(x: number, y: number) {
+  function paint(state: EditorState, x: number, y: number) {
     let pixels: Point[] = []
-    const { width, height, brushSize, brushShape } = state
+    const { width, height } = state
+    const { brushSize, brushShape } = toolContext
+
     if (brushShape === BrushShape.CIRCLE) {
       pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
     } else {
@@ -24,8 +26,12 @@ export function makeBrushTool(state: EditorState, renderer: Renderer): ToolHandl
   }
 
   return {
-    onMouseDown: paint,
-    onMouseMove(x: number, y: number): void {
+    inputBindings: {
+      '[': () => toolContext.decreaseBrushSize(),
+      ']': () => toolContext.increaseBrushSize(),
+    },
+    onMouseDown: ({ state }, x, y) => paint(state, x, y),
+    onMouseMove({ state }, x: number, y: number): void {
       const { lastX, lastY } = state
 
       state.cursorX = x
@@ -43,15 +49,17 @@ export function makeBrushTool(state: EditorState, renderer: Renderer): ToolHandl
         for (const point of points) {
           const ix = Math.floor(point.x)
           const iy = Math.floor(point.y)
-          paint(ix, iy)
+          paint(state, ix, iy)
         }
 
         state.lastX = x
         state.lastY = y
       }
     },
-    screenOverlayDraw(ctx: CanvasRenderingContext2D) {
-      const { cursorX, cursorY, scale, brushSize, mouseIsOver } = state
+    screenOverlayDraw({ state, renderer }, ctx: CanvasRenderingContext2D) {
+      const { cursorX, cursorY, scale, mouseIsOver } = state
+      const { brushSize } = toolContext
+
       if (!mouseIsOver) return
       ctx.imageSmoothingEnabled = false
 

@@ -4,9 +4,7 @@ import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import { useCanvasPaintStore } from '../lib/store/canvas-paint-store.ts'
 import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
 import type { DrawLayer } from './CanvasPaint/_canvas-editor-types.ts'
-import { makeEditorState } from './CanvasPaint/editor-state.ts'
-import { makeRenderer } from './CanvasPaint/renderer.ts'
-import { makeToolManager } from './CanvasPaint/tools.ts'
+import { makeLocalToolManager } from './CanvasPaint/LocalToolManager.ts'
 
 type Emits = {
   (e: 'setPixels', pixels: Point[]): void,
@@ -35,7 +33,7 @@ const props = withDefaults(defineProps<{
 const store = useCanvasPaintStore()
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
-const renderer = makeRenderer(makeEditorState())
+const tools = makeLocalToolManager()
 
 const {
   state,
@@ -44,9 +42,8 @@ const {
   initRenderer,
   queueRender,
   resizeCanvas,
-} = renderer
+} = tools.renderer
 
-const tools = makeToolManager(state, renderer)
 state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
 
 state.pixelOverlayDraw = (ctx) => {
@@ -66,13 +63,7 @@ function syncPropsToEditorState() {
   state.cursorColor = props.cursorColor
   state.gridColor = props.gridColor
 
-  state.brushShape = store.brushShape
-  state.brushSize = store.brushSize
-  state.tool = store.currentTool
-
   state.target = props.target
-
-  state.selectMoveBlendMode = store.selectMoveBlendMode
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
@@ -181,7 +172,6 @@ watch(
 )
 
 watch(() => store.currentTool, () => {
-  tools.setTool(store.currentTool)
   queueRender()
 })
 

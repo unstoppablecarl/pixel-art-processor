@@ -1,14 +1,14 @@
 import { makeReusablePixelCanvas } from '../../../lib/util/misc.ts'
 
-import type { EditorState } from '../editor-state.ts'
+import type { EditorState } from '../EditorState.ts'
+import type { GlobalToolContext } from '../GlobalToolManager.ts'
 import { BrushShape } from './brush.ts'
 
 const pixelCanvas = makeReusablePixelCanvas()
 
-type BrushSettings = Pick<EditorState, 'scale' | 'cursorColor' | 'brushShape' | 'brushSize'>
+type BrushSettings = Pick<EditorState, 'scale' | 'cursorColor'> & Pick<GlobalToolContext, 'brushShape' | 'brushSize'>
 
-export function makeCursorCache(state: EditorState) {
-
+export function makeCursorCache(state: EditorState, toolContext: GlobalToolContext) {
   const { canvas, ctx } = pixelCanvas(1, 1)
 
   let prev: BrushSettings | undefined
@@ -22,8 +22,8 @@ export function makeCursorCache(state: EditorState) {
   }
 
   function updateCache() {
-    const { scale, cursorColor, brushShape, brushSize } = state
-
+    const { scale, cursorColor } = state
+    const { brushShape, brushSize } = toolContext
     if (!changed({ scale, cursorColor, brushShape, brushSize })) {
       return
     }

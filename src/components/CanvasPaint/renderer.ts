@@ -1,11 +1,11 @@
 import { putImageDataScaled } from '../../lib/util/html-dom/ImageData.ts'
-
-import type { EditorState } from './editor-state.ts'
+import { type EditorState } from './EditorState.ts'
+import { type GlobalToolContext } from './GlobalToolManager.ts'
 import { makeCursorCache } from './tools/brush-cursor.ts'
 
-export type Renderer = ReturnType<typeof makeRenderer>
+export type ToolRenderer = ReturnType<typeof makeRenderer>
 
-export function makeRenderer(state: EditorState) {
+export function makeRenderer(state: EditorState, toolContext: GlobalToolContext) {
 
   let canvas: HTMLCanvasElement | null = null
   let ctx: CanvasRenderingContext2D | null = null
@@ -104,12 +104,13 @@ export function makeRenderer(state: EditorState) {
 
   return {
     state,
-    cursor: makeCursorCache(state),
+    cursor: makeCursorCache(state, toolContext),
     updateGridCache,
     drawGrid,
     initRenderer,
     resizeCanvas,
     queueRender,
+    toolContext,
     get canvas() {
       return canvas
     },

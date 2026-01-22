@@ -11,8 +11,10 @@ import {
   writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import type { ToolHandler } from '../_canvas-editor-types.ts'
-import type { EditorState } from '../editor-state.ts'
-import type { Renderer } from '../renderer.ts'
+import type { EditorState } from '../EditorState.ts'
+
+import type { GlobalToolContext } from '../GlobalToolManager.ts'
+import type { ToolRenderer } from '../renderer.ts'
 
 export enum SelectMoveBlendMode {
   OVERWRITE = 'OVERWRITE',
@@ -36,7 +38,7 @@ export type Selection = {
   origH: number
 }
 
-export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHandler {
+export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
   function makeSelection(x: number, y: number): Selection {
     return {
@@ -57,7 +59,7 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     }
   }
 
-  function mouseUpSelecting(sel: Selection) {
+  function mouseUpSelecting(state: EditorState, sel: Selection) {
     // normalize
     if (sel.w < 0) {
       sel.x += sel.w
@@ -80,7 +82,7 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     state.selecting = false
   }
 
-  function commit() {
+  function commit(state: EditorState, renderer: ToolRenderer) {
     const sel = state.selection
     if (!sel?.pixels) return
 
@@ -88,7 +90,7 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     if (target && sel.w && sel.h) {
       clearImageDataRect(target, sel.origX, sel.origY, sel.origW, sel.origH)
 
-      const mode = state.selectMoveBlendMode
+      const mode = toolContext.selectMoveBlendMode
       if (mode === SelectMoveBlendMode.OVERWRITE) {
         writeImageData(target, sel.pixels, sel.x, sel.y)
       } else if (mode === SelectMoveBlendMode.IGNORE_TRANSPARENT) {
@@ -104,7 +106,7 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
   }
 
   return {
-    onMouseDown(x: number, y: number) {
+    onMouseDown({ state, renderer }, x: number, y: number) {
       if (!state.selection) {
         // start new selection
         state.selection = makeSelection(x, y)
@@ -127,12 +129,12 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
         sel.offsetY = y - sel.y
       } else {
         // clicked outside → start new selection
-        commit()
+        commit(state, renderer)
         state.selection = makeSelection(x, y)
         state.selecting = true
       }
     },
-    onMouseMove(x, y) {
+    onMouseMove({ state, renderer }, x, y) {
       if (!state.selection) return
 
       if (state.selection?.dragging) {
@@ -147,28 +149,27 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
 
       renderer.queueRender()
     },
-    onMouseUp() {
+    onMouseUp({ state, renderer }) {
       const sel = state.selection
       if (!sel) return
 
       if (state.selecting) {
-        mouseUpSelecting(sel)
+        mouseUpSelecting(state, sel)
       } else if (sel.dragging) {
         sel.dragging = false
       }
       renderer.queueRender()
     },
-    onUnSelectTool() {
-      commit()
+    onUnSelectTool({ state, renderer }) {
+      commit(state, renderer)
     },
-    pixelOverlayDraw(ctx) {
+    pixelOverlayDraw({ state }, ctx) {
       const sel = state.selection
       if (!sel || !sel.pixels) return
 
       ctx.clearRect(sel.origX, sel.origY, sel.origW, sel.origH)
 
-      const mode = state.selectMoveBlendMode
-
+      const mode = toolContext.selectMoveBlendMode
       if (mode === SelectMoveBlendMode.OVERWRITE) {
         ctx.clearRect(sel.x, sel.y, sel.w, sel.h)
         putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y)
@@ -177,9 +178,8 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
       } else if (mode === SelectMoveBlendMode.IGNORE_SOLID) {
         putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y, blendSourceAlphaOver(0.5))
       }
-
     },
-    screenOverlayDraw(ctx: CanvasRenderingContext2D) {
+    screenOverlayDraw({ state }, ctx: CanvasRenderingContext2D) {
       const sel = state.selection
       if (!sel) return
 
@@ -192,5 +192,6 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
         sel.h * state.scale + 2,
       )
     },
+
   }
 }

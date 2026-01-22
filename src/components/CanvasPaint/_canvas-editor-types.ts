@@ -1,20 +1,24 @@
-type Shared = {
-  onMouseMove: (x: number, y: number) => void,
-  onMouseDown: (x: number, y: number) => void,
-  onMouseUp: (x: number, y: number) => void,
-  onMouseLeave: () => void,
-}
-export type ToolHandler = Partial<Shared> & {
-  onSelectTool?: () => void,
-  onUnSelectTool?: () => void,
-  pixelOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
-  screenOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
+import type { InputBindings } from '../../lib/util/html-dom/keyboard.ts'
+import type { EditorState } from './EditorState.ts'
+import type { ToolRenderer } from './renderer.ts'
+
+export type LocalTool = {
+  state: EditorState,
+  renderer: ToolRenderer
 }
 
-export type ToolManager = Shared & {
-  setTool: (tool: Tool) => void,
-  currentToolScreenOverlayDraw: (ctx: CanvasRenderingContext2D) => void,
-  currentToolPixelOverlayDraw: (ctx: CanvasRenderingContext2D) => void,
+type Shared = {
+  onMouseMove: (local: LocalTool, x: number, y: number) => void,
+  onMouseDown: (local: LocalTool, x: number, y: number) => void,
+  onMouseUp: (local: LocalTool, x: number, y: number) => void,
+  onMouseLeave: (local: LocalTool) => void,
+}
+export type ToolHandler = Partial<Shared> & {
+  onSelectTool?: (local: LocalTool) => void,
+  onUnSelectTool?: (local: LocalTool) => void,
+  pixelOverlayDraw?: (local: LocalTool, ctx: CanvasRenderingContext2D) => void,
+  screenOverlayDraw?: (local: LocalTool, ctx: CanvasRenderingContext2D) => void,
+  inputBindings?: InputBindings,
 }
 
 export enum Tool {
@@ -24,4 +28,7 @@ export enum Tool {
 
 export type DrawLayer = (ctx: CanvasRenderingContext2D) => void
 
-
+export enum BrushMode {
+  ADD = 'ADD',
+  REMOVE = 'REMOVE'
+}
