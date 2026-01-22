@@ -1,72 +1,11 @@
 import { putImageDataScaled } from '../../lib/util/html-dom/ImageData.ts'
-import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
-import { updateCursorCache } from './tools/brush.ts'
-import type { Selection } from './tools/select.ts'
 
-export enum Tool {
-  BRUSH = 'BRUSH',
-  SELECT = 'SELECT'
-}
+import type { EditorState } from './editor-state.ts'
+import { makeCursorCache } from './tools/brush-cursor.ts'
 
-export enum BrushShape {
-  CIRCLE = 'CIRCLE',
-  SQUARE = 'SQUARE'
-}
-
-export enum BrushMode {
-  ADD = 'ADD',
-  REMOVE = 'REMOVE'
-}
-
-export type EditorState = ReturnType<typeof makeEditorState>
 export type Renderer = ReturnType<typeof makeRenderer>
 
-export type DrawLayer = (ctx: CanvasRenderingContext2D) => void
-
-export function makeEditorState() {
-  return {
-    width: 64,
-    height: 64,
-    scale: 8,
-
-    cursorX: 0,
-    cursorY: 0,
-    mouseIsOver: false,
-    isDrawing: false,
-    lastX: 0,
-    lastY: 0,
-
-    imageData: null as ImageData | null,
-
-    tool: Tool.BRUSH as Tool,
-    brushSize: 1,
-    brushShape: 'circle' as BrushShape,
-
-    gridColor: 'rgba(0, 0, 0, 0.2)',
-    cursorColor: 'rgba(0, 255, 255, 1)',
-
-    get scaledWidth() {
-      return this.scale * this.width
-    },
-
-    get scaledHeight() {
-      return this.scale * this.height
-    },
-
-    pixelOverlayDraw: null as DrawLayer | null,
-    screenOverlayDraw: null as DrawLayer | null,
-
-    emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
-
-    selecting: false,
-    selection: null as null | Selection,
-
-    target: null as null | ImageDataRef,
-  }
-}
-
-export function makeRenderer() {
-  const state = makeEditorState()
+export function makeRenderer(state: EditorState) {
 
   let canvas: HTMLCanvasElement | null = null
   let ctx: CanvasRenderingContext2D | null = null
@@ -165,7 +104,7 @@ export function makeRenderer() {
 
   return {
     state,
-    updateCursorCache: () => updateCursorCache(state),
+    cursor: makeCursorCache(state),
     updateGridCache,
     drawGrid,
     initRenderer,

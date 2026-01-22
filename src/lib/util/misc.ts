@@ -98,3 +98,13 @@ export function throttle<T extends (...args: any[]) => void>(func: T, wait: numb
     }
   } as T
 }
+
+export function makePixelCanvas() {
+  let canvas = document.createElement('canvas')
+  if (!canvas) throw new Error('could not create html-dom')
+  let ctx = canvas.getContext('2d')!
+  if (!ctx) throw new Error('could not create context')
+  ctx.imageSmoothingEnabled = false
+
+  return { canvas, ctx }
+}

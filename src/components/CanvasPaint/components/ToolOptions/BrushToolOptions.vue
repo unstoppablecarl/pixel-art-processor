@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
-import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
-import ToolButton from '../../UI/ToolButton.vue'
-import { BrushMode } from '../renderer.ts'
+import { BrushMode, useCanvasPaintStore } from '../../../../lib/store/canvas-paint-store.ts'
+import { usePipelineStore } from '../../../../lib/store/pipeline-store.ts'
+import ToolButton from '../../../UI/ToolButton.vue'
+
+import { BrushShape } from '../../tools/brush.ts'
 
 const { brushShape, brushMode, brushSize } = storeToRefs(useCanvasPaintStore())
 const store = usePipelineStore()
@@ -54,14 +55,14 @@ const store = usePipelineStore()
       <ToolButton
         label="Square Brush"
         v-model="brushShape"
-        value="square"
+        :value="BrushShape.SQUARE"
         icon="square"
       />
 
       <ToolButton
         label="Circle Brush"
         v-model="brushShape"
-        value="circle"
+        :value="BrushShape.CIRCLE"
         icon="circle"
       />
     </div>

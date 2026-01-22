@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
-import ToolButton from '../../UI/ToolButton.vue'
-import { SelectMoveBlendMode } from '../tools/select.ts'
+import { useCanvasPaintStore } from '../../../../lib/store/canvas-paint-store.ts'
+import ToolButton from '../../../UI/ToolButton.vue'
+import { SelectMoveBlendMode } from '../../tools/select.ts'
 
 const { selectMoveBlendMode } = storeToRefs(useCanvasPaintStore())
 </script>

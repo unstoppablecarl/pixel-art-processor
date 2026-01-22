@@ -3,7 +3,9 @@ import { onMounted, useTemplateRef, watch } from 'vue'
 import type { Point } from '../lib/node-data-types/BaseDataStructure.ts'
 import { useCanvasPaintStore } from '../lib/store/canvas-paint-store.ts'
 import type { ImageDataRef } from '../lib/vue/vue-image-data.ts'
-import { type DrawLayer, makeRenderer } from './CanvasPaint/renderer.ts'
+import type { DrawLayer } from './CanvasPaint/_canvas-editor-types.ts'
+import { makeEditorState } from './CanvasPaint/editor-state.ts'
+import { makeRenderer } from './CanvasPaint/renderer.ts'
 import { makeToolManager } from './CanvasPaint/tools.ts'
 
 type Emits = {
@@ -33,11 +35,11 @@ const props = withDefaults(defineProps<{
 const store = useCanvasPaintStore()
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
 
-const renderer = makeRenderer()
+const renderer = makeRenderer(makeEditorState())
 
 const {
   state,
-  updateCursorCache,
+  cursor,
   updateGridCache,
   initRenderer,
   queueRender,
@@ -139,7 +141,7 @@ defineExpose({
 onMounted(() => {
   syncPropsToEditorState()
   updateGridCache()
-  updateCursorCache()
+  cursor.updateCache()
   initRenderer(viewCanvasRef.value!)
   queueRender()
 })
@@ -164,7 +166,7 @@ watch([
   ],
   () => {
     syncPropsToEditorState()
-    updateCursorCache()
+    cursor.updateCache()
     queueRender()
   },
 )

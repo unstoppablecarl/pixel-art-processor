@@ -26,7 +26,7 @@ import {
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
+import { BrushMode, useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { parseColor } from '../../../lib/util/color.ts'
 import {
@@ -48,7 +48,7 @@ import {
   type WangTile,
 } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
-import { BrushMode } from '../../CanvasPaint/renderer.ts'
+
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'

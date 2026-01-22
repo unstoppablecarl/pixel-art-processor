@@ -1,29 +1,12 @@
-import { type EditorState, type Renderer, Tool } from './renderer.ts'
+import { Tool, type ToolHandler, type ToolManager } from './_canvas-editor-types.ts'
+import type { EditorState } from './editor-state.ts'
+import type { Renderer } from './renderer.ts'
 import { makeBrushTool } from './tools/brush.ts'
 import { makeSelectTool } from './tools/select.ts'
 
-type Shared = {
-  onMouseMove: (x: number, y: number) => void,
-  onMouseDown: (x: number, y: number) => void,
-  onMouseUp: (x: number, y: number) => void,
-  onMouseLeave: () => void,
-}
-export type ToolHandler = Partial<Shared> & {
-  onSelectTool?: () => void,
-  onUnSelectTool?: () => void,
-  pixelOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
-  screenOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
-}
-
-export type ToolManager = Shared & {
-  setTool: (tool: Tool) => void,
-  currentToolScreenOverlayDraw: (ctx: CanvasRenderingContext2D) => void,
-  currentToolPixelOverlayDraw: (ctx: CanvasRenderingContext2D) => void,
-}
-
 export function makeToolManager(state: EditorState, renderer: Renderer): ToolManager {
   const tools: Record<Tool, ToolHandler> = {
-    [Tool.BRUSH]: makeBrushTool(state),
+    [Tool.BRUSH]: makeBrushTool(state, renderer),
     [Tool.SELECT]: makeSelectTool(state, renderer),
   }
 
@@ -57,7 +40,7 @@ export function makeToolManager(state: EditorState, renderer: Renderer): ToolMan
 
       tools[state.tool]?.onMouseLeave?.()
       // Clear cursor
-      renderer.updateCursorCache()
+      renderer.cursor.updateCache()
       renderer.queueRender()
     },
     setTool(tool: Tool) {

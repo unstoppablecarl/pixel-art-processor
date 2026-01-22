@@ -1,11 +1,12 @@
 import {
-  blendImageData,
   clearImageDataRect,
   extractImageData,
   putImageDataScaled,
+  writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
-import type { EditorState, Renderer } from '../renderer.ts'
-import type { ToolHandler } from '../tools.ts'
+import type { ToolHandler } from '../_canvas-editor-types.ts'
+import type { EditorState } from '../editor-state.ts'
+import type { Renderer } from '../renderer.ts'
 
 export enum SelectMoveBlendMode {
   OVERWRITE = 'OVERWRITE',
@@ -80,7 +81,15 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     const target = state.target?.get()
     if (target && sel.w && sel.h) {
       clearImageDataRect(target, sel.origX, sel.origY, sel.origW, sel.origH)
-      blendImageData(target, sel.pixels!, sel.x, sel.y)
+
+      if (SelectMoveBlendMode.OVERWRITE) {
+        writeImageData(target, sel.pixels, sel.x, sel.y)
+      }
+      // else if (SelectMoveBlendMode.IGNORE_TRANSPARENT) {
+        // blendImageDataIgnoreTransparent(target, sel.pixels!, sel.x, sel.y)
+      // } else if (SelectMoveBlendMode.IGNORE_SOLID) {
+        // blendImageDataIgnoreSolid(target, sel.pixels!, sel.x, sel.y)
+      // }
     }
 
     state.selecting = false
