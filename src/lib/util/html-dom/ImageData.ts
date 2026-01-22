@@ -248,25 +248,27 @@ export function imageDataEqual(
   return true
 }
 
-export function writeImageData(
-  target: ImageData,
-  source: ImageData,
-  targetX: number,
-  targetY: number,
-): void {
+export function writeImageData(target: ImageData, source: ImageData, x: number, y: number) {
+  const dstData = target.data
+  const srcData = source.data
+  const width = target.width
 
-  for (let y = 0; y < source.height; y++) {
-    for (let x = 0; x < source.width; x++) {
-      const sourceIdx = (y * source.width + x) * 4
-      const targetIdx = ((targetY + y) * target.width + (targetX + x)) * 4
+  for (let iy = 0; iy < source.height; iy++) {
+    const dstRow = (iy + y) * width
+    const srcRow = iy * source.width
 
-      target.data[targetIdx] = source.data[sourceIdx]         // R
-      target.data[targetIdx + 1] = source.data[sourceIdx + 1] // G
-      target.data[targetIdx + 2] = source.data[sourceIdx + 2] // B
-      target.data[targetIdx + 3] = source.data[sourceIdx + 3] // A
+    for (let ix = 0; ix < source.width; ix++) {
+      const di = (dstRow + ix + x) * 4
+      const si = (srcRow + ix) * 4
+
+      dstData[di]     = srcData[si]
+      dstData[di + 1] = srcData[si + 1]
+      dstData[di + 2] = srcData[si + 2]
+      dstData[di + 3] = srcData[si + 3]
     }
   }
 }
+
 
 let ctx: CanvasRenderingContext2D
 let canvas: HTMLCanvasElement
