@@ -1,4 +1,9 @@
-import { extractImageData, putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
+import {
+  blendImageData,
+  clearImageDataRect,
+  extractImageData,
+  putImageDataScaled,
+} from '../../../lib/util/html-dom/ImageData.ts'
 import type { EditorState, Renderer } from '../renderer.ts'
 import type { ToolHandler } from '../tools.ts'
 
@@ -39,6 +44,44 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     }
   }
 
+  function mouseUpSelecting(sel: Selection) {
+    // normalize
+    if (sel.w < 0) {
+      sel.x += sel.w
+      sel.w = -sel.w
+    }
+    if (sel.h < 0) {
+      sel.y += sel.h
+      sel.h = -sel.h
+    }
+
+    sel.origX = sel.x
+    sel.origY = sel.y
+    sel.origW = sel.w
+    sel.origH = sel.h
+
+    const targetImageData = state.target?.get()
+    if (targetImageData && sel.w && sel.h) {
+      sel.pixels = extractImageData(targetImageData, sel.x, sel.y, sel.w, sel.h)
+    }
+    state.selecting = false
+  }
+
+  function commit() {
+    const sel = state.selection
+    if (!sel?.pixels) return
+
+    const target = state.target?.get()
+    if (target && sel.w && sel.h) {
+      clearImageDataRect(target, sel.origX, sel.origY, sel.origW, sel.origH)
+      blendImageData(target, sel.pixels!, sel.x, sel.y)
+    }
+
+    state.selecting = false
+    state.selection = null
+    renderer.queueRender()
+  }
+
   return {
     onMouseDown(x: number, y: number) {
       if (!state.selection) {
@@ -63,6 +106,7 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
         sel.offsetY = y - sel.y
       } else {
         // clicked outside → start new selection
+        commit()
         state.selection = makeSelection(x, y)
         state.selecting = true
       }
@@ -85,43 +129,16 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     onMouseUp() {
       const sel = state.selection
       if (!sel) return
-      sel.dragging = false
-      state.selecting = false
 
-      // normalize
-      if (sel.w < 0) {
-        sel.x += sel.w
-        sel.w = -sel.w
+      if (state.selecting) {
+        mouseUpSelecting(sel)
+      } else if (sel.dragging) {
+        sel.dragging = false
       }
-      if (sel.h < 0) {
-        sel.y += sel.h
-        sel.h = -sel.h
-      }
-
-      sel.origX = sel.x
-      sel.origY = sel.y
-      sel.origW = sel.w
-      sel.origH = sel.h
-
-      const targetImageData = state.target?.get()
-      if (targetImageData) {
-
-        sel.pixels = extractImageData(targetImageData, sel.x, sel.y, sel.w, sel.h)
-      }
-
       renderer.queueRender()
     },
     onUnSelectTool() {
-      // commit selection when leaving the tool
-      if (state.selection?.pixels && renderer.ctx) {
-        renderer.ctx.putImageData(
-          state.selection.pixels,
-          state.selection.x,
-          state.selection.y,
-        )
-        state.selection = null
-        renderer.queueRender()
-      }
+      commit()
     },
     pixelOverlayDraw(ctx) {
       const sel = state.selection

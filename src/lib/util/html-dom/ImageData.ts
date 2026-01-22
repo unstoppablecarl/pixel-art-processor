@@ -271,18 +271,25 @@ export function writeImageData(
 let ctx: CanvasRenderingContext2D
 let canvas: HTMLCanvasElement
 
-export function putImageDataScaled(target: CanvasRenderingContext2D, width: number, height: number, imageData: ImageData, x = 0, y = 0) {
+export function putImageDataScaled(
+  target: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  imageData: ImageData,
+  x = 0,
+  y = 0,
+) {
   if (!canvas) {
     canvas = document.createElement('canvas')
-    if (!canvas) throw new Error('could not create html-dom')
-  }
-  if (!ctx) {
     ctx = canvas.getContext('2d')!
-    if (!ctx) throw new Error('could not create context')
   }
 
-  canvas.width = width
-  canvas.height = height
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width
+    canvas.height = height
+  } else {
+    ctx.clearRect(0, 0, width, height)
+  }
 
   ctx.putImageData(imageData, 0, 0)
   target.drawImage(canvas, x, y)
@@ -316,3 +323,90 @@ export function extractImageData(
 
   return new ImageData(out, w, h)
 }
+
+export function blendImageData(
+  dst: ImageData,
+  src: ImageData,
+  dx: number,
+  dy: number,
+) {
+  const dstData = dst.data
+  const srcData = src.data
+  const dstW = dst.width
+  const srcW = src.width
+  const srcH = src.height
+
+  for (let sy = 0; sy < srcH; sy++) {
+    for (let sx = 0; sx < srcW; sx++) {
+      const dstX = dx + sx
+      const dstY = dy + sy
+
+      if (dstX < 0 || dstY < 0 || dstX >= dst.width || dstY >= dst.height)
+        continue
+
+      const si = (sy * srcW + sx) * 4
+      const di = (dstY * dstW + dstX) * 4
+
+      const sr = srcData[si] / 255
+      const sg = srcData[si + 1] / 255
+      const sb = srcData[si + 2] / 255
+      const sa = srcData[si + 3] / 255
+
+      if (sa === 0) continue
+
+      const dr = dstData[di] / 255
+      const dg = dstData[di + 1] / 255
+      const db = dstData[di + 2] / 255
+      const da = dstData[di + 3] / 255
+
+      const outA = sa + da * (1 - sa)
+
+      dstData[di] = ((sr * sa + dr * da * (1 - sa)) / outA) * 255
+      dstData[di + 1] = ((sg * sa + dg * da * (1 - sa)) / outA) * 255
+      dstData[di + 2] = ((sb * sa + db * da * (1 - sa)) / outA) * 255
+      dstData[di + 3] = outA * 255
+    }
+  }
+}
+
+export function clearImageDataRect(
+  img: ImageData,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+) {
+  fillImageDataRect(img, x, y, w, h, RGBA_ERASE)
+}
+
+export function fillImageDataRect(
+  img: ImageData,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  { r, g, b, a }: RGBA,
+) {
+  const data = img.data
+  const width = img.width
+  const height = img.height
+
+  // clamp to bounds
+  const startX = Math.max(0, x)
+  const startY = Math.max(0, y)
+  const endX = Math.min(width, x + w)
+  const endY = Math.min(height, y + h)
+
+  for (let iy = startY; iy < endY; iy++) {
+    const row = iy * width
+    for (let ix = startX; ix < endX; ix++) {
+      const idx = (row + ix) * 4
+
+      data[idx] = r
+      data[idx + 1] = g
+      data[idx + 2] = b
+      data[idx + 3] = a
+    }
+  }
+}
+
