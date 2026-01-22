@@ -172,10 +172,3 @@ export function tilesetSyncedImageDataRef<T>(tileset: Ref<WangTileset<T>>, tileS
 
   return tilesetImageRefs
 }
-
-// export function imageDataRefComputed<T extends ImageData | null>(source: WatchSource<T>): ImageDataRef {
-//   const ref = imageDataRef()
-//   watch(source, (newImageData) => ref.set(newImageData))
-//
-//   return ref
-// }
