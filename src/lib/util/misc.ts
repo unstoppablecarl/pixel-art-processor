@@ -100,11 +100,38 @@ export function throttle<T extends (...args: any[]) => void>(func: T, wait: numb
 }
 
 export function makePixelCanvas() {
-  let canvas = document.createElement('canvas')
-  if (!canvas) throw new Error('could not create html-dom')
-  let ctx = canvas.getContext('2d')!
-  if (!ctx) throw new Error('could not create context')
+  const canvas = document.createElement('canvas')
+  const ctx = canvas.getContext('2d')
+
+  if (!ctx) {
+    throw new Error('could not create 2d context')
+  }
+
   ctx.imageSmoothingEnabled = false
 
   return { canvas, ctx }
+}
+
+export function makeReusablePixelCanvas() {
+  let canvas: HTMLCanvasElement | null = null
+  let ctx: CanvasRenderingContext2D | null = null
+
+  return function getReusableCanvas(width: number, height: number) {
+    if (!canvas || !ctx) {
+      const c = makePixelCanvas()
+      canvas = c.canvas
+      ctx = c.ctx
+    }
+
+    // Resize if needed (resizing auto-clears)
+    if (canvas.width !== width || canvas.height !== height) {
+      canvas.width = width
+      canvas.height = height
+    } else {
+      // Same size → manually clear
+      ctx.clearRect(0, 0, width, height)
+    }
+
+    return { canvas, ctx }
+  }
 }

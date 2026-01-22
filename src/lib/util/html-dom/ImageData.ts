@@ -1,12 +1,16 @@
 import { markRaw, type Raw } from 'vue'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
+import { makeReusablePixelCanvas } from '../misc.ts'
+import { type BlendFn, makeByteBlendAdapter } from './blit.ts'
 
 // ALL values are 0-255 (including alpha which in CSS is 0-1)
 export type RGBA = { r: number, g: number, b: number, a: number }
+// ALL values are 0-1
+export type RGBAFloat = { r: number, g: number, b: number, a: number, readonly __brandRGBAFloat: unique symbol }
 export type SerializedRGBA = string
 
-export const RGBA_ERASE: Readonly<RGBA> = { r: 0, g: 0, b: 0, a: 0 } as const
-export const RGBA_WHITE: Readonly<RGBA> = { r: 255, g: 255, b: 255, a: 255 } as const
+export const RGBA_ERASE = { r: 0, g: 0, b: 0, a: 0 } as Readonly<RGBA>
+export const RGBA_WHITE = { r: 255, g: 255, b: 255, a: 255 } as Readonly<RGBA>
 
 export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
   return `${r},${g},${b},${a}`
@@ -261,7 +265,7 @@ export function writeImageData(target: ImageData, source: ImageData, x: number, 
       const di = (dstRow + ix + x) * 4
       const si = (srcRow + ix) * 4
 
-      dstData[di]     = srcData[si]
+      dstData[di] = srcData[si]
       dstData[di + 1] = srcData[si + 1]
       dstData[di + 2] = srcData[si + 2]
       dstData[di + 3] = srcData[si + 3]
@@ -269,9 +273,8 @@ export function writeImageData(target: ImageData, source: ImageData, x: number, 
   }
 }
 
-
-let ctx: CanvasRenderingContext2D
-let canvas: HTMLCanvasElement
+const pixelCanvas = makeReusablePixelCanvas()
+const getTmpImageData = makeReusableImageData()
 
 export function putImageDataScaled(
   target: CanvasRenderingContext2D,
@@ -280,20 +283,29 @@ export function putImageDataScaled(
   imageData: ImageData,
   x = 0,
   y = 0,
+  blend?: BlendFn,
 ) {
-  if (!canvas) {
-    canvas = document.createElement('canvas')
-    ctx = canvas.getContext('2d')!
-  }
 
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width
-    canvas.height = height
+  const { canvas, ctx } = pixelCanvas(width, height)
+
+  if (!blend) {
+    // Fast path: no blending
+    ctx.putImageData(imageData, 0, 0)
   } else {
-    ctx.clearRect(0, 0, width, height)
+    // Blended path
+    const tmp = getTmpImageData(width, height)
+    const dst = tmp.data
+    const src = imageData.data
+
+    const byteBlend = makeByteBlendAdapter(blend)
+
+    for (let i = 0; i < src.length; i += 4) {
+      byteBlend(src, dst, i, i)
+    }
+
+    ctx.putImageData(tmp, 0, 0)
   }
 
-  ctx.putImageData(imageData, 0, 0)
   target.drawImage(canvas, x, y)
 }
 
@@ -324,51 +336,6 @@ export function extractImageData(
   }
 
   return new ImageData(out, w, h)
-}
-
-export function blendImageData(
-  dst: ImageData,
-  src: ImageData,
-  dx: number,
-  dy: number,
-) {
-  const dstData = dst.data
-  const srcData = src.data
-  const dstW = dst.width
-  const srcW = src.width
-  const srcH = src.height
-
-  for (let sy = 0; sy < srcH; sy++) {
-    for (let sx = 0; sx < srcW; sx++) {
-      const dstX = dx + sx
-      const dstY = dy + sy
-
-      if (dstX < 0 || dstY < 0 || dstX >= dst.width || dstY >= dst.height)
-        continue
-
-      const si = (sy * srcW + sx) * 4
-      const di = (dstY * dstW + dstX) * 4
-
-      const sr = srcData[si] / 255
-      const sg = srcData[si + 1] / 255
-      const sb = srcData[si + 2] / 255
-      const sa = srcData[si + 3] / 255
-
-      if (sa === 0) continue
-
-      const dr = dstData[di] / 255
-      const dg = dstData[di + 1] / 255
-      const db = dstData[di + 2] / 255
-      const da = dstData[di + 3] / 255
-
-      const outA = sa + da * (1 - sa)
-
-      dstData[di] = ((sr * sa + dr * da * (1 - sa)) / outA) * 255
-      dstData[di + 1] = ((sg * sa + dg * da * (1 - sa)) / outA) * 255
-      dstData[di + 2] = ((sb * sa + db * da * (1 - sa)) / outA) * 255
-      dstData[di + 3] = outA * 255
-    }
-  }
 }
 
 export function clearImageDataRect(
@@ -409,6 +376,25 @@ export function fillImageDataRect(
       data[idx + 2] = b
       data[idx + 3] = a
     }
+  }
+}
+
+export function makeReusableImageData() {
+  let imageData: ImageData | null = null
+  let buffer: Uint8ClampedArray | null = null
+
+  return function getReusableImageData(width: number, height: number) {
+    const size = width * height * 4
+
+    // Allocate or resize if needed
+    if (!buffer || buffer.length !== size) {
+      buffer = new Uint8ClampedArray(size)
+      imageData = new ImageData(buffer as ImageDataArray, width, height)
+    }
+
+    // If size matches, we reuse the buffer as-is.
+    // Caller can clear or overwrite only what they need.
+    return imageData!
   }
 }
 
