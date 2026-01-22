@@ -27,7 +27,7 @@ const store = usePipelineStore()
         :step="1"
         :min="1"
         :max="store.getRootNodeOutputSize().width * 1.5"
-        v-model="brushSize"
+        v-model.number="brushSize"
       />
     </div>
   </div>
