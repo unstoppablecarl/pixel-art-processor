@@ -48,6 +48,7 @@ import {
   type WangTile,
 } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
+import { BrushMode } from '../../CanvasPaint/renderer.ts'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
@@ -158,7 +159,7 @@ const config = node.config
 if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
-const color = computed(() => brushMode.value === 'add' ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
+const color = computed(() => brushMode.value === BrushMode.ADD ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
 const {
   tilesetCanvases,

@@ -1,46 +1,35 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
-import BrushToolOptions from './BrushToolOptions.vue'
+import ToolButton from '../UI/ToolButton.vue'
 import { Tool } from './renderer.ts'
+import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
+import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 
 const { currentTool } = storeToRefs(useCanvasPaintStore())
-
 </script>
 <template>
-  <div :class="{
-    'canvas-paint-sidebar shadow-sm': true,
-  }">
+  <div class="canvas-paint-sidebar shadow-sm">
 
     <div class="section">
       <div class="btn-group w-100" role="group">
-        <button
-          @click="currentTool = Tool.BRUSH"
-          :class="{
-            'btn btn-sm': true,
-            'btn-primary': currentTool === Tool.BRUSH,
-            'btn-outline-primary': currentTool !== Tool.BRUSH,
-          }"
-          title="Brush"
-        >
-          <span class="material-symbols-outlined">ink_highlighter</span>
-        </button>
-        <button
-          @click="currentTool = Tool.SELECT"
-          :class="{
-            'btn btn-sm': true,
-            'btn-primary': currentTool === Tool.SELECT,
-            'btn-outline-primary': currentTool !== Tool.SELECT,
-          }"
-          title="Select"
-        >
-          <span class="material-symbols-outlined">select</span>
-        </button>
+        <ToolButton
+          label="Brush"
+          v-model="currentTool"
+          :value="Tool.BRUSH"
+          icon="ink_highlighter"
+        />
+        <ToolButton
+          label="Select"
+          v-model="currentTool"
+          :value="Tool.SELECT"
+          icon="select"
+        />
       </div>
-
     </div>
 
     <BrushToolOptions v-if="currentTool === Tool.BRUSH" />
+    <SelectToolOptions v-if="currentTool === Tool.SELECT" />
 
   </div>
 </template>

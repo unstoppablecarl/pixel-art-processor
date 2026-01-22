@@ -8,8 +8,15 @@ export enum Tool {
   SELECT = 'SELECT'
 }
 
-export type BrushShape = 'circle' | 'square'
-export type BrushMode = 'add' | 'remove'
+export enum BrushShape {
+  CIRCLE = 'CIRCLE',
+  SQUARE = 'SQUARE'
+}
+
+export enum BrushMode {
+  ADD = 'ADD',
+  REMOVE = 'REMOVE'
+}
 
 export type EditorState = ReturnType<typeof makeEditorState>
 export type Renderer = ReturnType<typeof makeRenderer>

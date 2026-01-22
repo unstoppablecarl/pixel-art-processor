@@ -1,51 +1,68 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import { type BrushMode, type BrushShape, Tool } from '../../components/CanvasPaint/renderer.ts'
+import { BrushMode, BrushShape, Tool } from '../../components/CanvasPaint/renderer.ts'
+import { SelectMoveBlendMode } from '../../components/CanvasPaint/tools/select.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
+import { makeStateMapper } from './_store-helpers.ts'
 
 type SerializedData = {
+  currentTool: Tool,
+
   brushShape: BrushShape,
   brushMode: BrushMode,
   primaryColor: RGBA,
   brushSize: number,
-  currentTool: Tool,
+
+  selectMoveBlendMode: SelectMoveBlendMode,
 }
 
 export const useCanvasPaintStore = defineStore('canvas-paint', () => {
-  const brushShape = ref<BrushShape>('circle')
-  const brushMode = ref<BrushMode>('add')
-  const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
-  const brushColor = computed(() => brushMode.value === 'add' ? primaryColor.value : RGBA_ERASE)
-
-  const brushSize = shallowRef<number>(10)
-  const brushSizeDebounced = refDebounced(brushSize, 200)
   const currentTool = ref<Tool>(Tool.BRUSH)
 
+  const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
+
+  const brushShape = ref<BrushShape>(BrushShape.CIRCLE)
+  const brushMode = ref<BrushMode>(BrushMode.ADD)
+  const brushSize = shallowRef<number>(10)
+
+  const selectMoveBlendMode = ref<SelectMoveBlendMode>(SelectMoveBlendMode.IGNORE_TRANSPARENT)
+
+  const brushSizeDebounced = refDebounced(brushSize, 200)
+  const brushColor = computed(() => brushMode.value === BrushMode.ADD ? primaryColor.value : RGBA_ERASE)
+  const brushBitMaskColor = computed(() => brushMode.value === BrushMode.ADD ? RGBA_WHITE : RGBA_ERASE)
+
+  const mapper = makeStateMapper<SerializedData>(
+    {
+      currentTool,
+      primaryColor,
+      brushShape,
+      brushMode,
+      brushSize,
+      selectMoveBlendMode,
+    },
+    {
+      currentTool: Tool.BRUSH,
+      primaryColor: RGBA_WHITE,
+      brushShape: BrushShape.CIRCLE,
+      brushMode: BrushMode.ADD,
+      brushSize: 10,
+      selectMoveBlendMode: SelectMoveBlendMode.IGNORE_TRANSPARENT,
+    },
+  )
+
   function $reset() {
-    brushShape.value = 'circle'
-    brushSize.value = 10
-    brushMode.value = 'add'
-    primaryColor.value = RGBA_WHITE
-    currentTool.value = Tool.BRUSH
+    mapper.$reset()
   }
 
   function $serializeState(): SerializedData {
     return {
-      brushShape: brushShape.value,
-      brushSize: brushSize.value,
-      brushMode: brushMode.value,
-      primaryColor: primaryColor.value,
-      currentTool: currentTool.value,
+      ...mapper.$serializeState(),
     }
   }
 
   function $restoreState(data: SerializedData) {
-    brushShape.value = data.brushShape
-    brushSize.value = data.brushSize
-    brushMode.value = data.brushMode
-    primaryColor.value = data.primaryColor
-    currentTool.value = data.currentTool
+    mapper.$restoreState(data)
   }
 
   return {
@@ -53,17 +70,18 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
     $serializeState,
     $restoreState,
 
-    brushShape,
-    brushSize,
-    brushSizeDebounced,
-
-    brushMode,
-    primaryColor,
-    brushColor,
-
     currentTool,
-  }
+    primaryColor,
 
+    brushShape,
+    brushMode,
+    brushSize,
+
+    brushSizeDebounced,
+    brushColor,
+    brushBitMaskColor,
+    selectMoveBlendMode,
+  }
 }, {
   persist: true,
 })

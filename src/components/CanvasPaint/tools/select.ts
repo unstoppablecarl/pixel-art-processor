@@ -7,6 +7,12 @@ import {
 import type { EditorState, Renderer } from '../renderer.ts'
 import type { ToolHandler } from '../tools.ts'
 
+export enum SelectMoveBlendMode {
+  OVERWRITE = 'OVERWRITE',
+  IGNORE_TRANSPARENT = 'IGNORE_TRANSPARENT',
+  IGNORE_SOLID = 'IGNORE_SOLID'
+}
+
 export type Selection = {
   x: number
   y: number

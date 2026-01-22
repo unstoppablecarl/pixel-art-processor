@@ -1,6 +1,6 @@
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../lib/util/data/Grid.ts'
-import type { EditorState } from '../renderer.ts'
+import { BrushShape, type EditorState } from '../renderer.ts'
 import type { ToolHandler } from '../tools.ts'
 
 // cursor cache can safely be re-used by multiple instances
@@ -29,7 +29,7 @@ export function updateCursorCache(state: EditorState) {
   ctx.strokeStyle = cursorColor
   ctx.lineWidth = 1
 
-  if (brushShape === 'circle') {
+  if (brushShape === BrushShape.CIRCLE) {
     const r = Math.floor(brushSize / 2)
     const r2 = r * r
     const cx = Math.floor(brushSize / 2)
@@ -78,7 +78,7 @@ export function makeBrushTool(state: EditorState): ToolHandler {
   function paint(x: number, y: number) {
     let pixels: Point[] = []
     const { width, height, brushSize, brushShape } = state
-    if (brushShape === 'circle') {
+    if (brushShape === BrushShape.CIRCLE) {
       pixels = getPerfectCircleCoords(x, y, brushSize / 2, width, height)
     } else {
       pixels = getRectCenterCoords(x, y, brushSize, brushSize, width, height)

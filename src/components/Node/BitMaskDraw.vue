@@ -15,7 +15,6 @@ export const STEP_META = defineStep({
 import { computed, ref, toRef, useTemplateRef } from 'vue'
 import type { NodeId, WatcherTarget } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import {
   type SerializedImageData,
@@ -95,8 +94,6 @@ const height = computed(() => config.size.value)
 const cursorColor = toRef(config, 'showCursorColor')
 const gridColor = toRef(config, 'showGridColor')
 
-const { brushShape, brushSize } = useCanvasPaintStore()
-
 const mode = ref<'add' | 'remove'>('add')
 const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
 </script>
@@ -113,12 +110,10 @@ const color = computed(() => mode.value === 'add' ? '#fff' : '#000')
         :scale="store.imgScale"
         :width="width"
         :height="height"
-        :brush-shape="brushShape"
-        :brush-size="brushSize"
         :cursor-color="cursorColor"
         :grid-color="gridColor"
         :color="color"
-        :image-data-ref="maskImageData"
+        :target="maskImageData"
       />
     </template>
 
