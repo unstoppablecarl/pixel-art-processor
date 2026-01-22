@@ -177,7 +177,10 @@ export function setImageDataPixelColor(imageData: ImageData, x: number, y: numbe
 }
 
 export function setImageDataPixelsColor(imageData: ImageData, points: Point[], color: RGBA) {
-  points.forEach(({ x, y }) => setImageDataPixelColor(imageData, x, y, color))
+  for (let i = 0; i < points.length; i++) {
+    const { x, y } = points[i]
+    setImageDataPixelColor(imageData, x, y, color)
+  }
 }
 
 export function fillImageData(
