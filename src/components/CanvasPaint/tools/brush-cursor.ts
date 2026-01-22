@@ -1,25 +1,32 @@
-import { makePixelCanvas } from '../../../lib/util/misc.ts'
+import { makeReusablePixelCanvas } from '../../../lib/util/misc.ts'
 
 import type { EditorState } from '../editor-state.ts'
 import { BrushShape } from './brush.ts'
 
-// cursor cache can safely be re-used by multiple instances
-let _canvas: HTMLCanvasElement | undefined
-let _ctx: CanvasRenderingContext2D | undefined
+const pixelCanvas = makeReusablePixelCanvas()
+
+type BrushSettings = Pick<EditorState, 'scale' | 'cursorColor' | 'brushShape' | 'brushSize'>
 
 export function makeCursorCache(state: EditorState) {
-  if (!_canvas || !_ctx) {
-    const c = makePixelCanvas()
-    _canvas = c.canvas
-    _ctx = c.ctx
+
+  const { canvas, ctx } = pixelCanvas(1, 1)
+
+  let prev: BrushSettings | undefined
+
+  function changed(settings: BrushSettings): boolean {
+    if (!prev) return true
+    return (prev.scale !== settings.scale ||
+      prev.cursorColor !== settings.cursorColor ||
+      prev.brushShape !== settings.brushShape ||
+      prev.brushSize !== settings.brushSize)
   }
 
-  const canvas: HTMLCanvasElement = _canvas
-  const ctx: CanvasRenderingContext2D = _ctx
-
   function updateCache() {
-
     const { scale, cursorColor, brushShape, brushSize } = state
+
+    if (!changed({ scale, cursorColor, brushShape, brushSize })) {
+      return
+    }
 
     const size = brushSize * scale
     canvas.width = size + 1
@@ -72,6 +79,8 @@ export function makeCursorCache(state: EditorState) {
       // mimic original: pixel-aligned square
       ctx.strokeRect(0.5, 0.5, size - 1, size - 1)
     }
+
+    prev = { scale, cursorColor, brushShape, brushSize }
   }
 
   return {
