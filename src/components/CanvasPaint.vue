@@ -47,6 +47,16 @@ const {
 } = renderer
 
 const tools = makeToolManager(state, renderer)
+state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
+
+state.pixelOverlayDraw = (ctx) => {
+  props?.pixelOverlayDraw?.(ctx)
+  tools.currentToolPixelOverlayDraw(ctx)
+}
+state.screenOverlayDraw = (ctx) => {
+  props?.screenOverlayDraw?.(ctx)
+  tools.currentToolScreenOverlayDraw(ctx)
+}
 
 function syncPropsToEditorState() {
   state.width = props.width
@@ -60,18 +70,9 @@ function syncPropsToEditorState() {
   state.brushSize = store.brushSize
   state.tool = store.currentTool
 
-  state.emitSetPixels = (pixels: Point[]) => emit('setPixels', pixels)
-
   state.target = props.target
 
-  state.pixelOverlayDraw = (ctx) => {
-    props?.pixelOverlayDraw?.(ctx)
-    tools.currentToolPixelOverlayDraw(ctx)
-  }
-  state.screenOverlayDraw = (ctx) => {
-    props?.screenOverlayDraw?.(ctx)
-    tools.currentToolScreenOverlayDraw(ctx)
-  }
+  state.selectMoveBlendMode = store.selectMoveBlendMode
 }
 
 const canvasFromRef = (canvas: HTMLCanvasElement | null) => {
@@ -167,6 +168,14 @@ watch([
   () => {
     syncPropsToEditorState()
     cursor.updateCache()
+    queueRender()
+  },
+)
+
+watch(
+  () => store.selectMoveBlendMode,
+  () => {
+    syncPropsToEditorState()
     queueRender()
   },
 )

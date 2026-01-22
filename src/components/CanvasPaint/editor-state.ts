@@ -1,7 +1,7 @@
 import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
 import { type DrawLayer, Tool } from './_canvas-editor-types.ts'
 import { BrushShape } from './tools/brush.ts'
-import type { Selection } from './tools/select.ts'
+import { type Selection, SelectMoveBlendMode } from './tools/select.ts'
 
 export type EditorState = ReturnType<typeof makeEditorState>
 
@@ -40,6 +40,7 @@ export function makeEditorState() {
 
     selecting: false,
     selection: null as null | Selection,
+    selectMoveBlendMode: SelectMoveBlendMode.OVERWRITE as SelectMoveBlendMode,
 
     target: null as null | ImageDataRef,
   }

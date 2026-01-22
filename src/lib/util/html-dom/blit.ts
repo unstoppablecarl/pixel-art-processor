@@ -32,10 +32,10 @@ export function makeByteBlendAdapter(blend: BlendFn) {
   }
 }
 
-export const blendSourceOver: BlendFn = (src, dst) => {
+export const blendSourceAlphaOver = (alpha: number): BlendFn => (src, dst) => {
   if (src.a === 0) return dst
 
-  const outA = src.a + dst.a * (1 - src.a)
+  const outA = alpha * src.a + dst.a * (1 - src.a)
 
   return {
     r: (src.r * src.a + dst.r * dst.a * (1 - src.a)) / outA,
@@ -45,12 +45,25 @@ export const blendSourceOver: BlendFn = (src, dst) => {
   } as RGBAFloat
 }
 
+export const blendSourceOver: BlendFn = blendSourceAlphaOver(1)
+
+export const blendSetAlpha = (alpha: number): BlendFn => (src, dst) => {
+  console.log(src.a)
+  src.a = alpha
+
+  return src.a === 0 ? dst : src
+}
+
 export const blendIgnoreTransparent: BlendFn = (src, dst) => {
   console.log(src.a)
   return src.a === 0 ? dst : src
 }
 
 export const blendIgnoreSolid: BlendFn = (src, dst) => {
+  if (src.a === 1) {
+
+    console.log('solid')
+  }
   return src.a === 1 ? dst : src
 }
 

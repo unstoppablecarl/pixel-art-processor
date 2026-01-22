@@ -1,4 +1,10 @@
 import {
+  blendIgnoreTransparent,
+  blendImageDataIgnoreSolid,
+  blendImageDataIgnoreTransparent,
+  blendSourceAlphaOver,
+} from '../../../lib/util/html-dom/blit.ts'
+import {
   clearImageDataRect,
   extractImageData,
   putImageDataScaled,
@@ -82,14 +88,14 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
     if (target && sel.w && sel.h) {
       clearImageDataRect(target, sel.origX, sel.origY, sel.origW, sel.origH)
 
-      if (SelectMoveBlendMode.OVERWRITE) {
+      const mode = state.selectMoveBlendMode
+      if (mode === SelectMoveBlendMode.OVERWRITE) {
         writeImageData(target, sel.pixels, sel.x, sel.y)
+      } else if (mode === SelectMoveBlendMode.IGNORE_TRANSPARENT) {
+        blendImageDataIgnoreTransparent(target, sel.pixels!, sel.x, sel.y)
+      } else if (mode === SelectMoveBlendMode.IGNORE_SOLID) {
+        blendImageDataIgnoreSolid(target, sel.pixels!, sel.x, sel.y)
       }
-      // else if (SelectMoveBlendMode.IGNORE_TRANSPARENT) {
-        // blendImageDataIgnoreTransparent(target, sel.pixels!, sel.x, sel.y)
-      // } else if (SelectMoveBlendMode.IGNORE_SOLID) {
-        // blendImageDataIgnoreSolid(target, sel.pixels!, sel.x, sel.y)
-      // }
     }
 
     state.selecting = false
@@ -160,7 +166,18 @@ export function makeSelectTool(state: EditorState, renderer: Renderer): ToolHand
       if (!sel || !sel.pixels) return
 
       ctx.clearRect(sel.origX, sel.origY, sel.origW, sel.origH)
-      putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y)
+
+      const mode = state.selectMoveBlendMode
+
+      if (mode === SelectMoveBlendMode.OVERWRITE) {
+        ctx.clearRect(sel.x, sel.y, sel.w, sel.h)
+        putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y)
+      } else if (mode === SelectMoveBlendMode.IGNORE_TRANSPARENT) {
+        putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y, blendIgnoreTransparent)
+      } else if (mode === SelectMoveBlendMode.IGNORE_SOLID) {
+        putImageDataScaled(ctx, sel.w, sel.h, sel.pixels, sel.x, sel.y, blendSourceAlphaOver(0.5))
+      }
+
     },
     screenOverlayDraw(ctx: CanvasRenderingContext2D) {
       const sel = state.selection
