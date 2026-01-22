@@ -47,23 +47,11 @@ export const blendSourceAlphaOver = (alpha: number): BlendFn => (src, dst) => {
 
 export const blendSourceOver: BlendFn = blendSourceAlphaOver(1)
 
-export const blendSetAlpha = (alpha: number): BlendFn => (src, dst) => {
-  console.log(src.a)
-  src.a = alpha
-
-  return src.a === 0 ? dst : src
-}
-
 export const blendIgnoreTransparent: BlendFn = (src, dst) => {
-  console.log(src.a)
   return src.a === 0 ? dst : src
 }
 
 export const blendIgnoreSolid: BlendFn = (src, dst) => {
-  if (src.a === 1) {
-
-    console.log('solid')
-  }
   return src.a === 1 ? dst : src
 }
 
