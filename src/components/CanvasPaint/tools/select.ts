@@ -11,7 +11,7 @@ import {
   writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { makeCopyPasteKeys } from '../../../lib/util/html-dom/keyboard.ts'
-import type { ToolHandler } from '../_canvas-editor-types.ts'
+import { Tool, type ToolHandler } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
@@ -63,10 +63,11 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
   }
 
   function commit(state: EditorState, renderer: ToolRenderer) {
-    const sel = state.selection
+    const sel = state.selectionData
     if (!sel?.pixels) return
 
     const target = state.target?.get()
+    console.log('commit', target)
     if (target && sel.w && sel.h) {
       clearImageDataRect(target, sel.origX, sel.origY, sel.origW, sel.origH)
 
@@ -81,81 +82,101 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
     }
 
     state.selecting = false
-    state.selection = null
+    state.selectionData = null
     renderer.queueRender()
   }
 
   return {
     inputBindings: makeCopyPasteKeys(({ state }) => {
-      const sel = state.selection
+      const sel = state.selectionData
       if (!sel?.pixels) return
 
+      console.log('copied', sel.pixels)
       clipboard = sel.pixels
     }, () => {
       // @TODO paste
     }),
-    onMouseDown({ state, renderer }, x: number, y: number) {
-      if (!state.selection) {
-        // start new selection
-        state.selection = makeSelection(x, y)
-        state.selecting = true
+    onGlobalToolChanging({ state, renderer }, oldTool, newTool) {
+      if (oldTool === Tool.SELECT && state.selectionData) {
+        commit(state, renderer)
+      }
+    },
+    onClick({ state, renderer }, x: number, y: number) {
+      console.log('onClick')
+      if (clickedSelection(x, y, state.selectionData)) return
 
+      // clicked outside → commit
+      commit(state, renderer)
+    },
+    onDragStart({ state, renderer }, x, y) {
+      console.log('onDragStart')
+      const sel = state.selectionData
+
+      // start new selection
+      if (!sel) {
+        state.selectionData = makeSelection(x, y)
+        state.selecting = true
         return
       }
 
-      // check if clicking inside selection
-      const sel = state.selection
-      const clickedSelection = x >= sel.x
-        && x < sel.x + sel.w
-        && y >= sel.y
-        && y < sel.y + sel.h
-
-      if (clickedSelection) {
+      // clicked selection start moving it
+      if (clickedSelection(x, y, sel)) {
         state.selecting = false
         sel.dragging = true
         sel.offsetX = x - sel.x
         sel.offsetY = y - sel.y
       } else {
-        // clicked outside → start new selection
+        // clicked outside → commit old selection and start a new one
         commit(state, renderer)
-        state.selection = makeSelection(x, y)
+        state.selectionData = makeSelection(x, y)
         state.selecting = true
       }
     },
-    onMouseMove({ state, renderer }, x, y) {
-      if (!state.selection) return
+    onDragMove({ state, renderer }, x, y) {
+      console.log('onDragMove')
 
-      if (state.selection?.dragging) {
-        const sel = state.selection
+      if (!state.selectionData) return
+
+      if (state.selectionData.dragging) {
+        const sel = state.selectionData
         sel.x = x - sel.offsetX
         sel.y = y - sel.offsetY
       } else if (state.selecting) {
-        const sel = state.selection
+        const sel = state.selectionData
         sel.w = x - sel.x
         sel.h = y - sel.y
       }
 
       renderer.queueRender()
     },
-    onMouseUp({ state, renderer }) {
-      const sel = state.selection
+    onDragEnd({ state, renderer }) {
+      console.log('onDragEnd')
+
+      const sel = state.selectionData
       if (!sel) return
 
       if (state.selecting) {
-        mouseUpSelecting(state, sel)
+        setSelectionPixels(state, sel)
+        state.selecting = false
+
       } else if (sel.dragging) {
         sel.dragging = false
       }
       renderer.queueRender()
     },
-    onUnSelectTool({ state, renderer }) {
+    onDeselect({ state, renderer }) {
+      console.log('onDeselect')
+
       commit(state, renderer)
     },
     pixelOverlayDraw({ state }, ctx) {
-      const sel = state.selection
+      const sel = state.selectionData
       if (!sel || !sel.pixels) return
 
-      ctx.clearRect(sel.origX, sel.origY, sel.origW, sel.origH)
+      // Only clear the original area if the state.selectionData has actually moved
+      if (sel.x !== sel.origX || sel.y !== sel.origY) {
+        ctx.clearRect(sel.origX, sel.origY, sel.origW, sel.origH)
+      }
 
       const mode = toolContext.selectMoveBlendMode
       if (mode === SelectMoveBlendMode.OVERWRITE) {
@@ -168,7 +189,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
     },
     screenOverlayDraw({ state }, ctx: CanvasRenderingContext2D) {
-      const sel = state.selection
+      const sel = state.selectionData
       if (!sel) return
 
       ctx.strokeStyle = 'cyan'
@@ -184,7 +205,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
   }
 }
 
-function mouseUpSelecting(state: EditorState, sel: Selection) {
+function setSelectionPixels(state: EditorState, sel: Selection) {
   // normalize
   if (sel.w < 0) {
     sel.x += sel.w
@@ -204,5 +225,12 @@ function mouseUpSelecting(state: EditorState, sel: Selection) {
   if (targetImageData && sel.w && sel.h) {
     sel.pixels = extractImageData(targetImageData, sel.x, sel.y, sel.w, sel.h)
   }
-  state.selecting = false
+}
+
+const clickedSelection = (x: number, y: number, sel: Selection | null): boolean => {
+  if (!sel) return false
+  return x >= sel.x
+    && x < sel.x + sel.w
+    && y >= sel.y
+    && y < sel.y + sel.h
 }

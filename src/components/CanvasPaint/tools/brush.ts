@@ -11,6 +11,8 @@ export enum BrushShape {
 
 export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
+  let isDrawing = false
+
   function paint(state: EditorState, x: number, y: number) {
     let pixels: Point[] = []
     const { width, height } = state
@@ -30,37 +32,44 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
       '[': () => toolContext.decreaseBrushSize(),
       ']': () => toolContext.increaseBrushSize(),
     },
-    onMouseDown: ({ state }, x, y) => paint(state, x, y),
-    onMouseMove({ state }, x: number, y: number): void {
+    onMouseDown: ({ state }, x, y) => {
+      isDrawing = true
+      paint(state, x, y)
+    },
+    onDragStart({ state }, x, y) {
+      isDrawing = true
+      paint(state, x, y)
+    },
+    onDragMove({ state }, x, y) {
+      if (!isDrawing) return
       const { lastX, lastY } = state
 
-      state.cursorX = x
-      state.cursorY = y
+      // Interpolate between last position and current position
+      const points = interpolateLine(
+        Math.floor(lastX),
+        Math.floor(lastY),
+        Math.floor(x),
+        Math.floor(y),
+      )
 
-      if (state.isDrawing) {
-        // Interpolate between last position and current position
-        const points = interpolateLine(
-          Math.floor(lastX),
-          Math.floor(lastY),
-          Math.floor(x),
-          Math.floor(y),
-        )
-
-        for (const point of points) {
-          const ix = Math.floor(point.x)
-          const iy = Math.floor(point.y)
-          paint(state, ix, iy)
-        }
-
-        state.lastX = x
-        state.lastY = y
+      for (const point of points) {
+        const ix = Math.floor(point.x)
+        const iy = Math.floor(point.y)
+        paint(state, ix, iy)
       }
     },
+    onDragEnd() {
+      isDrawing = false
+    },
+    onMouseMove({ renderer }): void {
+      // always draw cursor
+      renderer.queueRender()
+    },
     screenOverlayDraw({ state, renderer }, ctx: CanvasRenderingContext2D) {
-      const { cursorX, cursorY, scale, mouseIsOver } = state
+      const { cursorX, cursorY, scale, isMouseOver } = state
       const { brushSize } = toolContext
 
-      if (!mouseIsOver) return
+      if (!isMouseOver) return
       ctx.imageSmoothingEnabled = false
 
       const snappedX = Math.floor(cursorX)
