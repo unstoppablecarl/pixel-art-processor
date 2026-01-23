@@ -10,6 +10,7 @@ import {
   putImageDataScaled,
   writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
+import { makeCopyPasteKeys } from '../../../lib/util/html-dom/keyboard.ts'
 import type { ToolHandler } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 
@@ -38,6 +39,8 @@ export type Selection = {
   origH: number
 }
 
+let clipboard: ImageData | undefined
+
 export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
   function makeSelection(x: number, y: number): Selection {
@@ -57,29 +60,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       offsetX: 0,
       offsetY: 0,
     }
-  }
-
-  function mouseUpSelecting(state: EditorState, sel: Selection) {
-    // normalize
-    if (sel.w < 0) {
-      sel.x += sel.w
-      sel.w = -sel.w
-    }
-    if (sel.h < 0) {
-      sel.y += sel.h
-      sel.h = -sel.h
-    }
-
-    sel.origX = sel.x
-    sel.origY = sel.y
-    sel.origW = sel.w
-    sel.origH = sel.h
-
-    const targetImageData = state.target?.get()
-    if (targetImageData && sel.w && sel.h) {
-      sel.pixels = extractImageData(targetImageData, sel.x, sel.y, sel.w, sel.h)
-    }
-    state.selecting = false
   }
 
   function commit(state: EditorState, renderer: ToolRenderer) {
@@ -106,6 +86,14 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
   }
 
   return {
+    inputBindings: makeCopyPasteKeys(({ state }) => {
+      const sel = state.selection
+      if (!sel?.pixels) return
+
+      clipboard = sel.pixels
+    }, () => {
+      // @TODO paste
+    }),
     onMouseDown({ state, renderer }, x: number, y: number) {
       if (!state.selection) {
         // start new selection
@@ -194,4 +182,27 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
     },
 
   }
+}
+
+function mouseUpSelecting(state: EditorState, sel: Selection) {
+  // normalize
+  if (sel.w < 0) {
+    sel.x += sel.w
+    sel.w = -sel.w
+  }
+  if (sel.h < 0) {
+    sel.y += sel.h
+    sel.h = -sel.h
+  }
+
+  sel.origX = sel.x
+  sel.origY = sel.y
+  sel.origW = sel.w
+  sel.origH = sel.h
+
+  const targetImageData = state.target?.get()
+  if (targetImageData && sel.w && sel.h) {
+    sel.pixels = extractImageData(targetImageData, sel.x, sel.y, sel.w, sel.h)
+  }
+  state.selecting = false
 }

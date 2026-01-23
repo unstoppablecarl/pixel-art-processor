@@ -1,4 +1,3 @@
-import type { InputBindings } from '../../lib/util/html-dom/keyboard.ts'
 import type { EditorState } from './EditorState.ts'
 import type { ToolRenderer } from './renderer.ts'
 
@@ -6,6 +5,8 @@ export type LocalTool = {
   state: EditorState,
   renderer: ToolRenderer
 }
+
+export type ToolInputBindings = Record<string, (local: LocalTool, event: KeyboardEvent) => void>
 
 type Shared = {
   onMouseMove: (local: LocalTool, x: number, y: number) => void,
@@ -18,7 +19,7 @@ export type ToolHandler = Partial<Shared> & {
   onUnSelectTool?: (local: LocalTool) => void,
   pixelOverlayDraw?: (local: LocalTool, ctx: CanvasRenderingContext2D) => void,
   screenOverlayDraw?: (local: LocalTool, ctx: CanvasRenderingContext2D) => void,
-  inputBindings?: InputBindings,
+  inputBindings?: ToolInputBindings,
 }
 
 export enum Tool {

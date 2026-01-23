@@ -1,24 +1,25 @@
+import type { LocalTool, ToolInputBindings } from '../../../components/CanvasPaint/_canvas-editor-types.ts'
 import { tinykeys } from './tinykey.ts'
 
 export type InputBindings = Record<string, (event: KeyboardEvent) => void>
 
-export function makeCopyPasteKeys(copy: () => void, paste: () => void): InputBindings {
+export function makeCopyPasteKeys(copy: (local: LocalTool) => void, paste: (local: LocalTool) => void): ToolInputBindings {
   return {
-    'Control+c': (e) => {
+    'Control+c': (local, e) => {
       e.preventDefault()
-      copy()
+      copy(local)
     },
-    'Meta+c': (e) => {
+    'Meta+c': (local, e) => {
       e.preventDefault()
-      copy()
+      copy(local)
     },
-    'Control+v': (e) => {
+    'Control+v': (local, e) => {
       e.preventDefault()
-      paste()
+      paste(local)
     },
-    'Meta+v': (e) => {
+    'Meta+v': (local, e) => {
       e.preventDefault()
-      paste()
+      paste(local)
     },
   }
 }

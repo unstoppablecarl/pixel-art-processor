@@ -1,7 +1,7 @@
 import { watchEffect } from 'vue'
 import { type CanvasPaintStore, useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
-import { bindInputKey } from '../../lib/util/html-dom/keyboard.ts'
-import { type LocalTool, Tool, type ToolHandler } from './_canvas-editor-types.ts'
+import { bindInputKey, type InputBindings } from '../../lib/util/html-dom/keyboard.ts'
+import { type LocalTool, Tool, type ToolHandler, type ToolInputBindings } from './_canvas-editor-types.ts'
 import { BrushShape, makeBrushTool } from './tools/brush.ts'
 import { makeSelectTool, SelectMoveBlendMode } from './tools/select.ts'
 
@@ -53,16 +53,12 @@ export function useGlobalToolManager() {
 export type GlobalToolManager = ReturnType<typeof makeGlobalToolManager>
 
 export function makeGlobalToolManager(store: CanvasPaintStore) {
-  let removeKeys = () => {}
+  let removeKeys = () => {
+  }
   const toolContext = makeGlobalToolContext(store)
   let currentTool: Tool
 
-  // he local tool manager instance that last interacted with the tool.
   let activeLocal: LocalTool | null = null
-
-  function setActiveLocal(local: LocalTool) {
-    activeLocal = local
-  }
 
   const tools: Record<Tool, ToolHandler> = {
     [Tool.BRUSH]: makeBrushTool(toolContext),
@@ -70,28 +66,31 @@ export function makeGlobalToolManager(store: CanvasPaintStore) {
   }
 
   function setTool(tool: Tool) {
-    // unselect old tool
     if (currentTool && activeLocal) {
       tools[currentTool]?.onUnSelectTool?.(activeLocal)
     }
-
-    // remove old shortcuts
     removeKeys()
-
     currentTool = tool
-
-    // select new tool
     if (activeLocal) {
       tools[currentTool]?.onSelectTool?.(activeLocal)
     }
 
-    // install new shortcuts
     const bindings = tools[currentTool]?.inputBindings
     if (bindings) {
-      removeKeys = bindInputKey(bindings)
+      removeKeys = installKeybindings(bindings)
     } else {
-      removeKeys = () => {}
+      removeKeys = () => {
+      }
     }
+  }
+
+  function installKeybindings(bindings: ToolInputBindings) {
+    const wrapped: InputBindings = {}
+    for (const key in bindings) {
+      wrapped[key] = (e) => bindings[key](activeLocal!, e)
+    }
+
+    return bindInputKey(wrapped)
   }
 
   watchEffect(() => setTool(store.currentTool))
@@ -106,7 +105,9 @@ export function makeGlobalToolManager(store: CanvasPaintStore) {
       return tools[currentTool]
     },
     setTool,
-    setActiveLocal,
-    get activeLocal() { return activeLocal }
+    setActiveLocal: (local: LocalTool) => activeLocal = local,
+    get activeLocal() {
+      return activeLocal
+    },
   }
 }
