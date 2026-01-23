@@ -15,7 +15,7 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
   function paint(state: EditorState, x: number, y: number) {
     let pixels: Point[] = []
-    const { width, height } = state
+    const { gridPixelWidth: width, gridPixelHeight: height } = state
     const { brushSize, brushShape } = toolContext
 
     if (brushShape === BrushShape.CIRCLE) {
@@ -46,8 +46,8 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
       // Interpolate between last position and current position
       const points = interpolateLine(
-        Math.floor(lastX),
-        Math.floor(lastY),
+        Math.floor(lastX!),
+        Math.floor(lastY!),
         Math.floor(x),
         Math.floor(y),
       )
@@ -61,11 +61,17 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
     onDragEnd() {
       isDrawing = false
     },
-    onMouseMove({ renderer }): void {
+    onMouseMove({ gridRenderer }, x ,y): void {
+      console.log('onMouseMove', x ,y)
       // always draw cursor
-      renderer.queueRender()
+      gridRenderer.queueRenderTiles()
     },
-    screenOverlayDraw({ state, renderer }, ctx: CanvasRenderingContext2D) {
+    screenOverlayDraw({ state, gridRenderer }, ctx: CanvasRenderingContext2D) {
+// console.log('screenOverlayDraw')
+      ctx.fillStyle = '#ff0000'
+      ctx.fillRect(state.lastX! * state.scale, state.lastY! * state.scale, 30, 30)
+
+      console.log('draw')
       const { cursorX, cursorY, scale, isMouseOver } = state
       const { brushSize } = toolContext
 
@@ -80,7 +86,7 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
       const screenY = snappedY * scale - cx * scale
 
       ctx.setTransform(1, 0, 0, 1, 0, 0)
-      ctx.drawImage(renderer.cursor.canvas, Math.floor(screenX), Math.floor(screenY))
+      ctx.drawImage(gridRenderer.cursor.canvas, Math.floor(screenX), Math.floor(screenY))
     },
   }
 }

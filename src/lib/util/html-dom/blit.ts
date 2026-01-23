@@ -58,8 +58,12 @@ export const blendIgnoreSolid: BlendFn = (src, dst) => {
 export function blendImageData(
   dst: ImageData,
   src: ImageData,
-  dx: number,
-  dy: number,
+  x: number,
+  y: number,
+  sx: number = 0,
+  sy: number = 0,
+  sw: number = src.width,
+  sh: number = src.height,
   blend: BlendFn,
 ) {
   const byteBlend = makeByteBlendAdapter(blend)
@@ -68,41 +72,55 @@ export function blendImageData(
   const srcData = src.data
   const dstW = dst.width
   const srcW = src.width
-  const srcH = src.height
 
-  for (let sy = 0; sy < srcH; sy++) {
-    for (let sx = 0; sx < srcW; sx++) {
-      const dstX = dx + sx
-      const dstY = dy + sy
+  // Clip to destination bounds
+  const maxW = Math.min(sw, dst.width - x)
+  const maxH = Math.min(sh, dst.height - y)
+  if (maxW <= 0 || maxH <= 0) return
 
-      if (dstX < 0 || dstY < 0 || dstX >= dst.width || dstY >= dst.height)
-        continue
+  for (let iy = 0; iy < maxH; iy++) {
+    const dstRow = (iy + y) * dstW
+    const srcRow = (iy + sy) * srcW
 
-      const si = (sy * srcW + sx) * 4
-      const di = (dstY * dstW + dstX) * 4
+    for (let ix = 0; ix < maxW; ix++) {
+      const di = (dstRow + (ix + x)) * 4
+      const si = (srcRow + (ix + sx)) * 4
 
       byteBlend(srcData, dstData, si, di)
     }
   }
 }
 
+
 export const blendImageDataSourceOver = (
   dst: ImageData,
   src: ImageData,
   dx: number,
   dy: number,
-) => blendImageData(dst, src, dx, dy, blendSourceOver)
+  sx: number = 0,
+  sy: number = 0,
+  sw: number = src.width,
+  sh: number = src.height,
+) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendSourceOver)
 
 export const blendImageDataIgnoreTransparent = (
   dst: ImageData,
   src: ImageData,
   dx: number,
   dy: number,
-) => blendImageData(dst, src, dx, dy, blendIgnoreTransparent)
+  sx: number = 0,
+  sy: number = 0,
+  sw: number = src.width,
+  sh: number = src.height,
+) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreTransparent)
 
 export const blendImageDataIgnoreSolid = (
   dst: ImageData,
   src: ImageData,
   dx: number,
   dy: number,
-) => blendImageData(dst, src, dx, dy, blendIgnoreSolid)
+  sx: number = 0,
+  sy: number = 0,
+  sw: number = src.width,
+  sh: number = src.height,
+) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreSolid)

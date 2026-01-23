@@ -118,3 +118,18 @@ export class Bounds implements BoundsLike {
     return this.copy().shrink(count)
   }
 }
+
+export type RectBounds = { x: number; y: number; w: number; h: number }
+
+export function inBounds(
+  px: number,
+  py: number,
+  rect: RectBounds,
+): boolean {
+  return (
+    px >= rect.x &&
+    py >= rect.y &&
+    px < rect.x + rect.w &&
+    py < rect.y + rect.h
+  )
+}

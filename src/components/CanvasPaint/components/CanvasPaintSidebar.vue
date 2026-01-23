@@ -4,7 +4,7 @@ import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import ToolButton from '../../UI/ToolButton.vue'
 import { Tool } from '../_canvas-editor-types.ts'
 import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
-import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
+// import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 
 const { currentTool } = storeToRefs(useCanvasPaintStore())
 </script>
@@ -19,17 +19,17 @@ const { currentTool } = storeToRefs(useCanvasPaintStore())
           :value="Tool.BRUSH"
           icon="ink_highlighter"
         />
-        <ToolButton
-          label="Select"
-          v-model="currentTool"
-          :value="Tool.SELECT"
-          icon="select"
-        />
+<!--        <ToolButton-->
+<!--          label="Select"-->
+<!--          v-model="currentTool"-->
+<!--          :value="Tool.SELECT"-->
+<!--          icon="select"-->
+<!--        />-->
       </div>
     </div>
 
     <BrushToolOptions v-if="currentTool === Tool.BRUSH" />
-    <SelectToolOptions v-if="currentTool === Tool.SELECT" />
+<!--    <SelectToolOptions v-if="currentTool === Tool.SELECT" />-->
 
   </div>
 </template>

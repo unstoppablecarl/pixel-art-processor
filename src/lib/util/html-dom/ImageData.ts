@@ -255,18 +255,28 @@ export function imageDataEqual(
   return true
 }
 
-export function writeImageData(target: ImageData, source: ImageData, x: number, y: number) {
+export function writeImageData(
+  target: ImageData,
+  source: ImageData,
+  x: number,
+  y: number,
+  sx: number = 0,
+  sy: number = 0,
+  sw: number = source.width,
+  sh: number = source.height,
+) {
   const dstData = target.data
   const srcData = source.data
-  const width = target.width
+  const dstW = target.width
+  const srcW = source.width
 
-  for (let iy = 0; iy < source.height; iy++) {
-    const dstRow = (iy + y) * width
-    const srcRow = iy * source.width
+  for (let iy = 0; iy < sh; iy++) {
+    const dstRow = (iy + y) * dstW
+    const srcRow = (iy + sy) * srcW
 
-    for (let ix = 0; ix < source.width; ix++) {
-      const di = (dstRow + ix + x) * 4
-      const si = (srcRow + ix) * 4
+    for (let ix = 0; ix < sw; ix++) {
+      const di = (dstRow + (ix + x)) * 4
+      const si = (srcRow + (ix + sx)) * 4
 
       dstData[di] = srcData[si]
       dstData[di + 1] = srcData[si + 1]

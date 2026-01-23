@@ -16,6 +16,7 @@ type SerializedData = {
   brushSize: number,
 
   selectMoveBlendMode: SelectMoveBlendMode,
+  tileMarginCopySize: number,
 }
 
 export type CanvasPaintStore = ReturnType<typeof useCanvasPaintStore>
@@ -34,6 +35,8 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
   const brushColor = computed(() => brushMode.value === BrushMode.ADD ? primaryColor.value : RGBA_ERASE)
   const brushBitMaskColor = computed(() => brushMode.value === BrushMode.ADD ? RGBA_WHITE : RGBA_ERASE)
 
+  const tileMarginCopySize = ref<number>(1)
+
   const mapper = makeStateMapper<SerializedData>(
     {
       currentTool,
@@ -42,6 +45,7 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
       brushMode,
       brushSize,
       selectMoveBlendMode,
+      tileMarginCopySize,
     },
     {
       currentTool: Tool.BRUSH,
@@ -50,6 +54,7 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
       brushMode: BrushMode.ADD,
       brushSize: 10,
       selectMoveBlendMode: SelectMoveBlendMode.IGNORE_TRANSPARENT,
+      tileMarginCopySize: 1,
     },
   )
 
@@ -83,6 +88,7 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
     brushColor,
     brushBitMaskColor,
     selectMoveBlendMode,
+    tileMarginCopySize,
   }
 }, {
   persist: true,
