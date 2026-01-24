@@ -30,7 +30,20 @@ export function makeLocalToolManager(
   },
 ) {
   const state = makeEditorState(tilesetImageRefs)
-  const gridRenderer = makeTileGridRenderer(state, global.toolContext, tilesetManager)
+  const gridRenderer = makeTileGridRenderer({
+    state,
+    tilesetManager,
+    toolContext: global.toolContext,
+    gridScreenOverlayDraw: (ctx) => {
+      global.currentToolHandler?.screenOverlayDraw?.(local, ctx)
+      ctx.fillStyle = '#00ff00'
+      ctx.fillRect(20, 20, 30, 30)
+    },
+    gridPixelOverlayDraw: (ctx) => {
+      tilesetManager.drawGridEdges(ctx)
+      global.currentToolHandler?.pixelOverlayDraw?.(local, ctx)
+    },
+  })
 
   tilesetToolState ??= makeTilesetToolState(tilesetManager)
   tilesetWriter ??= makeTilesetWriter({
@@ -49,6 +62,22 @@ export function makeLocalToolManager(
     tilesetWriter,
   }
 
+  function setMouseOverTile(gx: number, gy: number) {
+    const d = tilesetManager.gridPixelToTile(gx, gy)
+    if (!d) return
+
+    state.mouseOverTileId = d.tile.id
+    const { x, y } = state.gridPixelToTilePixel(gx, gy)
+    state.mouseOverTilePixelX = x
+    state.mouseOverTilePixelY = y
+  }
+
+  function clearMouseOverTile() {
+    state.mouseOverTileId = null
+    state.mouseOverTilePixelX = null
+    state.mouseOverTilePixelX = null
+  }
+
   return {
     state,
     gridRenderer,
@@ -57,8 +86,9 @@ export function makeLocalToolManager(
       global.tools[oldTool]?.onGlobalToolChanging?.(local, oldTool, newTool)
     },
 
-    onMouseDown(gx: number, gy: number) {
-      const { x, y } = state.tilePixelToGridPixel(gx, gy)
+    onMouseDown(x: number, y: number) {
+      setMouseOverTile(x, y)
+      // const { x, y } = state.tilePixelToGridPixel(gx, gy)
 
       global.setActiveLocal(local)
 
@@ -70,8 +100,14 @@ export function makeLocalToolManager(
       gridRenderer.queueRender()
     },
 
-    onMouseMove(gx: number, gy: number) {
-      const { x, y } = state.gridPixelToTilePixel(gx, gy)
+    onMouseMove(x: number, y: number) {
+      state.mouseOverTileId = null
+
+      setMouseOverTile(x, y)
+
+      console.log('onMouseMove', x, y)
+
+      // const { x, y } = state.gridPixelToTilePixel(gx, gy)
       state.cursorX = x
       state.cursorY = y
 
@@ -83,22 +119,21 @@ export function makeLocalToolManager(
           (Math.abs(dx) > state.dragThreshold || Math.abs(dy) > state.dragThreshold)) {
           state.isDragging = true
           global.tools[global.currentTool]?.onDragStart?.(local, state.mouseDownX, state.mouseDownY)
+        } else {
+          global.tools[global.currentTool]?.onDragMove?.(local, x, y)
         }
 
-        if (state.isDragging) {
-          global.tools[global.currentTool]?.onDragMove?.(local, x, y)
-        } else {
-          global.tools[global.currentTool]?.onMouseMove?.(local, x, y)
-        }
+      } else {
+        global.tools[global.currentTool]?.onMouseMove?.(local, x, y)
       }
-      global.tools[global.currentTool]?.onMouseMove?.(local, x, y)
 
       state.lastX = x
       state.lastY = y
     },
 
-    onMouseUp(gx: number, gy: number) {
-      const { x, y } = state.tilePixelToGridPixel(gx, gy)
+    onMouseUp(x: number, y: number) {
+      setMouseOverTile(x, y)
+      // const { x, y } = state.tilePixelToGridPixel(gx, gy)
 
       if (state.isDragging) {
         global.tools[global.currentTool]?.onDragEnd?.(local, x, y)
@@ -112,18 +147,10 @@ export function makeLocalToolManager(
     },
 
     onMouseLeave() {
+      clearMouseOverTile()
+      state.mouseOverTileId = null
       global.tools[global.currentTool]?.onMouseLeave?.(local)
       gridRenderer.queueRender()
-    },
-
-    currentToolPixelOverlayDraw(ctx: CanvasRenderingContext2D) {
-      // if (global.activeLocal !== local) return
-      global.currentToolHandler?.pixelOverlayDraw?.(local, ctx)
-    },
-
-    currentToolScreenOverlayDraw(ctx: CanvasRenderingContext2D) {
-      // if (global.activeLocal !== local) return
-      global.currentToolHandler?.screenOverlayDraw?.(local, ctx)
     },
   }
 }

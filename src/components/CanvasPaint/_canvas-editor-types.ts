@@ -56,7 +56,7 @@ export enum Tool {
   // SELECT = 'SELECT'
 }
 
-export type DrawLayer = (ctx: CanvasRenderingContext2D) => void
+export type DrawLayer = (ctx: CanvasRenderingContext2D, offX?: number, offY?: number) => void
 
 export enum BrushMode {
   ADD = 'ADD',

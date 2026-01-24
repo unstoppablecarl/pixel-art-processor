@@ -1,21 +1,32 @@
-import { putImageDataScaled, writeImageData } from '../../lib/util/html-dom/ImageData.ts'
+import { writeImageData } from '../../lib/util/html-dom/ImageData.ts'
 import { getCanvasPixelContext, type PixelCanvas } from '../../lib/util/misc.ts'
 import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import type { AxialEdgeWangTileManager } from '../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { type EditorState } from './EditorState.ts'
-import { type GlobalToolContext } from './GlobalToolManager.ts'
+import type { DrawLayer } from './_canvas-editor-types.ts'
+import type { EditorState } from './EditorState.ts'
+import type { GlobalToolContext } from './GlobalToolManager.ts'
+import { renderCanvasFrame } from './lib/canvas-frame.ts'
 import { makePixelGridCache } from './lib/PixelGridCache.ts'
-import { makeTileCanvasRenderer, type TileRenderer } from './TileRenderer.ts'
+import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
 import { makeCursorCache } from './tools/brush-cursor.ts'
 
 export type TileGridRenderer = ReturnType<typeof makeTileGridRenderer>
 
 export function makeTileGridRenderer(
-  state: EditorState,
-  toolContext: GlobalToolContext,
-  tilesetManager: AxialEdgeWangTileManager,
-) {
+  {
+    state,
+    toolContext,
+    tilesetManager,
+    gridPixelOverlayDraw,
+    gridScreenOverlayDraw,
+  }: {
+    state: EditorState,
+    toolContext: GlobalToolContext,
+    tilesetManager: AxialEdgeWangTileManager,
+    gridPixelOverlayDraw?: DrawLayer,
+    gridScreenOverlayDraw?: DrawLayer
+  }) {
   let needsRender = false
 
   let tileGridPixelCanvas: PixelCanvas | undefined
@@ -33,15 +44,23 @@ export function makeTileGridRenderer(
     queueRender()
   }
 
-  function registerTileCanvas(tileId: TileId, canvas: HTMLCanvasElement) {
-    tileRenderers[tileId] = makeTileCanvasRenderer(
+  function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
+    const imageDataRef = state.tilesetImageRefs[tileId]
+
+    tileRenderers[tileId] = makeTileRenderer({
       tileId,
       state,
-      state.tilesetImageRefs[tileId],
+      imageDataRef,
       gridCache,
-      canvas,
+      tileCanvas,
       tilesetManager,
-    )
+      tilePixelOverlayDraw: (ctx) => {
+
+      },
+      tileScreenOverlayDraw: (ctx) => {
+
+      },
+    })
     queueRenderTile(tileId)
   }
 
@@ -87,34 +106,24 @@ export function makeTileGridRenderer(
     queueRenderTile(tileId)
   }
 
-  function drawEdges(ctx: CanvasRenderingContext2D) {
-    const sketch = tilesetManager.tileGridEdgeColorSketch
-
-    ctx.globalAlpha = 0.5
-    ctx.drawImage(sketch.canvas, 0, 0)
-    ctx.globalAlpha = 1
-  }
-
   function renderFrame() {
-    if (!tileGridPixelCanvas) return
-    const { canvas, ctx } = tileGridPixelCanvas
 
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-    // pixel space
-    ctx.scale(state.scale, state.scale)
-
-    const targetImageData = tileGridImageData?.get()
-    if (targetImageData) {
-      putImageDataScaled(ctx, targetImageData.width, targetImageData.height, targetImageData)
+    const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
+      gridPixelOverlayDraw?.(ctx)
     }
-    drawEdges(ctx)
 
-    // screen space
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
+      gridCache.drawGrid(ctx)
+      gridScreenOverlayDraw?.(ctx)
+    }
 
-    gridCache.drawGrid(ctx)
+    renderCanvasFrame(
+      tileGridPixelCanvas,
+      state.scale,
+      tileGridImageData,
+      drawPixelLayer,
+      drawScreenLayer,
+    )
   }
 
   return {

@@ -1,4 +1,5 @@
 import type { Point } from '../../lib/node-data-types/BaseDataStructure.ts'
+import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { type DrawLayer, type Selection, type TilesetImageRefs } from './_canvas-editor-types.ts'
 
 export type EditorState = ReturnType<typeof makeEditorState>
@@ -50,8 +51,8 @@ export function makeEditorState(tilesetImageRefs: TilesetImageRefs) {
     gridColor: 'rgba(0, 0, 0, 0.2)',
     cursorColor: 'rgba(0, 255, 255, 1)',
 
-    pixelOverlayDraw: null as DrawLayer | null,
-    screenOverlayDraw: null as DrawLayer | null,
+    tilePixelOverlayDraw: null as DrawLayer | null,
+    tileScreenOverlayDraw: null as DrawLayer | null,
 
     emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
 
@@ -74,5 +75,10 @@ export function makeEditorState(tilesetImageRefs: TilesetImageRefs) {
         y: tileY * this.tileSize + pixelY,
       }
     },
+
+    mouseOverGrid: false,
+    mouseOverTileId: null as TileId | null,
+    mouseOverTilePixelX: null as null | number,
+    mouseOverTilePixelY: null as null | number,
   }
 }

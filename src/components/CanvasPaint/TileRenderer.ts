@@ -1,24 +1,38 @@
-import { putImageDataScaled } from '../../lib/util/html-dom/ImageData.ts'
 import { getCanvasPixelContext } from '../../lib/util/misc.ts'
-import { type ImageDataRef } from '../../lib/vue/vue-image-data.ts'
+import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
 import type { AxialEdgeWangTileManager } from '../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { type EditorState } from './EditorState.ts'
+import type { DrawLayer } from './_canvas-editor-types.ts'
+import type { EditorState } from './EditorState.ts'
+import { renderCanvasFrame } from './lib/canvas-frame.ts'
 import type { PixelGridCache } from './lib/PixelGridCache.ts'
 
-export type TileRenderer = ReturnType<typeof makeTileCanvasRenderer>
+export type TileRenderer = ReturnType<typeof makeTileRenderer>
 
-export function makeTileCanvasRenderer(
-  tileId: TileId,
-  state: EditorState,
-  imageDataRef: ImageDataRef,
-  gridCache: PixelGridCache,
-  tileCanvas: HTMLCanvasElement,
-  tilesetManager: AxialEdgeWangTileManager,
-) {
+export function makeTileRenderer(
+  {
+    tileId,
+    state,
+    imageDataRef,
+    gridCache,
+    tileCanvas,
+    tilesetManager,
+    tilePixelOverlayDraw,
+    tileScreenOverlayDraw,
+  }: {
+    tileId: TileId,
+    state: EditorState,
+    imageDataRef: ImageDataRef,
+    gridCache: PixelGridCache,
+    tileCanvas: HTMLCanvasElement,
+    tilesetManager: AxialEdgeWangTileManager,
+    tilePixelOverlayDraw?: DrawLayer,
+    tileScreenOverlayDraw?: DrawLayer
+  }) {
 
   let ctx = getCanvasPixelContext(tileCanvas)
 
+  const pixelCanvas = { canvas: tileCanvas, ctx }
   let needsRender = false
 
   function resize() {
@@ -38,52 +52,21 @@ export function makeTileCanvasRenderer(
     })
   }
 
-  function drawEdges(ctx: CanvasRenderingContext2D) {
-    const imageData = tilesetManager.cachedWangTileEdgeColorImageData.value[tileId]
-
-    ctx.globalAlpha = 0.5
-
-    putImageDataScaled(ctx, state.tileSize, state.tileSize, imageData)
-    // ctx.putImageData(imageData, 0, 0)
-    ctx.globalAlpha = 1
-  }
-
   function renderFrame() {
-    if (!tileCanvas || !ctx) return
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-    ctx.clearRect(0, 0, tileCanvas.width, tileCanvas.height)
-
-    ctx.scale(state.scale, state.scale)
-
-    const targetImageData = imageDataRef.get()
-    if (targetImageData) {
-      putImageDataScaled(ctx, targetImageData.width, targetImageData.height, targetImageData)
-    }
-
-    // const {} = tilesetManager.gridPixelToTile()
-    // const {} = state.tilePixelToGridPixel()
-
-    drawEdges(ctx)
-    state.pixelOverlayDraw?.(ctx)
-
-    ctx.setTransform(1, 0, 0, 1, 0, 0)
-
-    gridCache.drawGrid(ctx)
-
-    state?.screenOverlayDraw?.(ctx)
+    renderCanvasFrame(
+      pixelCanvas,
+      state.scale,
+      imageDataRef,
+      (ctx) => {
+        tilesetManager.drawTileEdges(ctx, tileId)
+        tilePixelOverlayDraw?.(ctx)
+      },
+      (ctx) => {
+        gridCache.drawGrid(ctx)
+        tileScreenOverlayDraw?.(ctx)
+      },
+    )
   }
-
-  // function renderFrame() {
-  //   const tileSize = state.tileSize
-  //   const { gridX, gridY } = tilesetManager.tilePixelToGridPixel(tileX, tileY)
-  //   ctx.drawImage(gridCanvas,
-  //     gridX * state.scale,
-  //     gridY * state.scale,
-  //     tileSize * state.scale,
-  //     tileSize * state.scale,
-  //   )
-  // }
 
   return {
     tileId,

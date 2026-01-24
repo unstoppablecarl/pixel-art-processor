@@ -1,6 +1,7 @@
 import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import { arrayIndexToColor } from '../util/color.ts'
+import { putImageDataScaled } from '../util/html-dom/ImageData.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import { makeWangTileEdgesPixelMap } from './wang-tile-vue-helpers.ts'
 import { AxialEdgeWangGrid, makeAxialEdgeWangGrid } from './WangGrid.ts'
@@ -66,7 +67,29 @@ export function makeAxialEdgeWangTileManager(
     if (!tileGrid.value) return
     const x = Math.floor(gridPixelX / tileSize.value)
     const y = Math.floor(gridPixelY / tileSize.value)
-    return tileGrid.value.get(x, y)
+    const tile = tileGrid.value.get(x, y)
+    if (!tile) return
+
+    return {
+      tileX: x,
+      tileY: y,
+      tile,
+    }
+  }
+
+  function drawGridEdges(ctx: CanvasRenderingContext2D) {
+    const sketch = tileGridEdgeColorSketch
+
+    ctx.globalAlpha = 0.5
+    ctx.drawImage(sketch.canvas, 0, 0)
+    ctx.globalAlpha = 1
+  }
+
+  function drawTileEdges(ctx:CanvasRenderingContext2D, tileId: TileId){
+    const imageData = cachedWangTileEdgeColorImageData.value[tileId]
+    ctx.globalAlpha = 0.5
+    putImageDataScaled(ctx, tileSize.value, tileSize.value, imageData)
+    ctx.globalAlpha = 1
   }
 
   return {
@@ -80,6 +103,8 @@ export function makeAxialEdgeWangTileManager(
     tileGridEdgeColorSketch,
     cachedWangTileEdgeColorPixelMaps,
     cachedWangTileEdgeColorImageData,
+    drawGridEdges,
+    drawTileEdges,
     gridPixelToTile,
     edgeColors,
   }

@@ -169,13 +169,6 @@ const localToolManger = makeLocalToolManager({
   },
 })
 
-localToolManger.state.pixelOverlayDraw = (ctx) => {
-  localToolManger.currentToolPixelOverlayDraw(ctx)
-}
-localToolManger.state.screenOverlayDraw = (ctx) => {
-  localToolManger.currentToolScreenOverlayDraw(ctx)
-}
-
 function sync() {
   localToolManger.state.tileSize = tileSize.value
   localToolManger.state.scale = store.imgScale

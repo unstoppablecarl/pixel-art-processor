@@ -26,7 +26,8 @@ const {
   handleMouseMove,
   handleMouseUp,
   handleMouseLeave,
-} = createMouseHandlers(localToolManager, viewCanvasRef, transformMouseCoords)
+} = createMouseHandlers(localToolManager, viewCanvasRef, ({x, y}) => {
+})
 
 onMounted(() => {
   tools.gridRenderer.registerTileCanvas(tileId, viewCanvasRef.value!)

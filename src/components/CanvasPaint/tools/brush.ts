@@ -10,7 +10,6 @@ export enum BrushShape {
 }
 
 export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
-
   let isDrawing = false
 
   function paint(state: EditorState, x: number, y: number) {
@@ -62,16 +61,19 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
       isDrawing = false
     },
     onMouseMove({ gridRenderer }, x ,y): void {
-      console.log('onMouseMove', x ,y)
+      // console.log('onMouseMove', x ,y)
       // always draw cursor
       gridRenderer.queueRenderTiles()
+      gridRenderer.queueRender()
     },
     screenOverlayDraw({ state, gridRenderer }, ctx: CanvasRenderingContext2D) {
-// console.log('screenOverlayDraw')
       ctx.fillStyle = '#ff0000'
-      ctx.fillRect(state.lastX! * state.scale, state.lastY! * state.scale, 30, 30)
+      ctx.fillRect(state.cursorX * state.scale, state.cursorY * state.scale, 30, 30)
 
-      console.log('draw')
+      console.log('tileId', state.mouseOverTileId)
+      console.log('tile', state.mouseOverTilePixelX, state.mouseOverTilePixelY)
+      console.log('grid', state.cursorX, state.cursorY)
+
       const { cursorX, cursorY, scale, isMouseOver } = state
       const { brushSize } = toolContext
 
