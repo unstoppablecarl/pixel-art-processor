@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef, watch } from 'vue'
-import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { createMouseHandlers } from '../lib/canvas-mouse.ts'
@@ -11,11 +10,9 @@ const store = useCanvasPaintStore()
 const {
   tileId,
   localToolManager,
-  transformMouseCoords,
 } = defineProps<{
   tileId: TileId,
   localToolManager: LocalToolManager,
-  transformMouseCoords?: (point: Point) => Point,
 }>()
 
 const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
@@ -26,8 +23,7 @@ const {
   handleMouseMove,
   handleMouseUp,
   handleMouseLeave,
-} = createMouseHandlers(localToolManager, viewCanvasRef, ({x, y}) => {
-})
+} = createMouseHandlers(localToolManager, viewCanvasRef)
 
 onMounted(() => {
   tools.gridRenderer.registerTileCanvas(tileId, viewCanvasRef.value!)

@@ -1,73 +1,59 @@
-import type { RectBounds } from '../../lib/util/data/Bounds.ts'
-import type { AxialEdgeWangTileManager } from '../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
-import type { WangTile } from '../../lib/wang-tiles/WangTileset.ts'
-import { type LocalToolContext, type TilesetImageRefs, Tool } from './_canvas-editor-types.ts'
+import type { ShallowRef } from 'vue'
+import { type LocalToolContext, Tool } from './_canvas-editor-types.ts'
+import type { TileGrid } from './data/TileGrid.ts'
+import type { TileSheet } from './data/TileSheet.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
 import { makeTileGridRenderer } from './TileGridRenderer.ts'
 import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
-import { makeTilesetWriter, type TilesetWriter } from './TIlesetWriter.ts'
+import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
 
 export type LocalToolManager = ReturnType<typeof makeLocalToolManager>
 
 export function makeLocalToolManager(
   {
-    bounds,
-    tilesetImageRefs,
-    tilesetManager,
-    tilesetWriter,
+    tileSheet,
+    tileGrid,
+    tileSheetWriter,
     tilesetToolState,
-    onSyncTile,
     global = useGlobalToolManager(),
   }: {
-    bounds?: RectBounds,
-    tilesetImageRefs: TilesetImageRefs,
-    tilesetManager: AxialEdgeWangTileManager,
-    tilesetWriter?: TilesetWriter,
+    tileSheet: ShallowRef<TileSheet>,
+    tileGrid: TileGrid,
+    tileSheetWriter?: TileSheetWriter,
     tilesetToolState?: TilesetToolState,
-    onSyncTile?: (tile: WangTile<number>, imageData: ImageData) => void,
     global?: GlobalToolManager
   },
 ) {
-  const state = makeEditorState(tilesetImageRefs)
+  const state = makeEditorState(tileSheet)
   const gridRenderer = makeTileGridRenderer({
     state,
-    tilesetManager,
+    tileGrid,
     toolContext: global.toolContext,
-    gridScreenOverlayDraw: (ctx) => {
-      global.currentToolHandler?.screenOverlayDraw?.(local, ctx)
-      ctx.fillStyle = '#00ff00'
-      ctx.fillRect(20, 20, 30, 30)
-    },
-    gridPixelOverlayDraw: (ctx) => {
-      tilesetManager.drawGridEdges(ctx)
-      global.currentToolHandler?.pixelOverlayDraw?.(local, ctx)
-    },
+    globalToolManager: global,
+    localToolContext: () => local,
   })
 
-  tilesetToolState ??= makeTilesetToolState(tilesetManager)
-  tilesetWriter ??= makeTilesetWriter({
+  tilesetToolState ??= makeTilesetToolState(tileGrid)
+  tileSheetWriter ??= makeTileSheetWriter({
     state,
-    tilesetImageRefs,
-    tilesetManager,
+    tileGrid,
     gridRenderer,
-    onSyncTile,
   })
 
   const local: LocalToolContext = {
     state,
     gridRenderer,
     tilesetToolState,
-    tilesetImageRefs,
-    tilesetWriter,
+    tileSheetWriter,
   }
 
   function setMouseOverTile(gx: number, gy: number) {
-    const d = tilesetManager.gridPixelToTile(gx, gy)
+    const d = tileGrid.gridPixelToTile(gx, gy)
     if (!d) return
 
     state.mouseOverTileId = d.tile.id
-    const { x, y } = state.gridPixelToTilePixel(gx, gy)
+    const { x, y } = tileGrid.gridPixelToTilePixel(gx, gy)
     state.mouseOverTilePixelX = x
     state.mouseOverTilePixelY = y
   }
@@ -75,20 +61,20 @@ export function makeLocalToolManager(
   function clearMouseOverTile() {
     state.mouseOverTileId = null
     state.mouseOverTilePixelX = null
-    state.mouseOverTilePixelX = null
+    state.mouseOverTilePixelY = null
   }
 
   return {
     state,
     gridRenderer,
     tilesetToolState,
+    tileGrid,
     onGlobalToolChanging(oldTool: Tool, newTool: Tool) {
       global.tools[oldTool]?.onGlobalToolChanging?.(local, oldTool, newTool)
     },
 
     onMouseDown(x: number, y: number) {
       setMouseOverTile(x, y)
-      // const { x, y } = state.tilePixelToGridPixel(gx, gy)
 
       global.setActiveLocal(local)
 
@@ -105,9 +91,6 @@ export function makeLocalToolManager(
 
       setMouseOverTile(x, y)
 
-      console.log('onMouseMove', x, y)
-
-      // const { x, y } = state.gridPixelToTilePixel(gx, gy)
       state.cursorX = x
       state.cursorY = y
 
@@ -133,7 +116,6 @@ export function makeLocalToolManager(
 
     onMouseUp(x: number, y: number) {
       setMouseOverTile(x, y)
-      // const { x, y } = state.tilePixelToGridPixel(gx, gy)
 
       if (state.isDragging) {
         global.tools[global.currentTool]?.onDragEnd?.(local, x, y)

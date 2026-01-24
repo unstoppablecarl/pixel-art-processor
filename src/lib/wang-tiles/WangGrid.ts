@@ -72,6 +72,19 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
     }
   }
 
+  mapWithTileId<R>(tileId: string, cb: (x: number, y: number, tile: WangTile<T>) => R): R[] {
+    const result = []
+    for (let y = 0; y < this.height; y++) {
+      for (let x = 0; x < this.width; x++) {
+        const tile = this.get(x, y)
+        if (tile?.id === tileId) {
+          result.push(cb(x, y, tile))
+        }
+      }
+    }
+    return result
+  }
+
   /** Check if placing tileId at (x, y) is locally valid */
   isPlacementValid(tileset: WangTileset<T>, x: number, y: number, tileId: TileId): boolean {
     const tile = tileset.byId.get(tileId)

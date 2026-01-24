@@ -1,12 +1,11 @@
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import type { PixelCanvas } from '../../../lib/util/misc.ts'
-import type { ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import type { DrawLayer } from '../_canvas-editor-types.ts'
 
 export function renderCanvasFrame(
   pixelCanvas: PixelCanvas | undefined,
   scale: number,
-  targetImageDataRef: ImageDataRef,
+  getImageData: () => ImageData | undefined | null,
   drawPixelLayer?: DrawLayer,
   drawScreenLayer?: DrawLayer,
 ) {
@@ -19,7 +18,7 @@ export function renderCanvasFrame(
   // pixel space
   ctx.scale(scale, scale)
 
-  const targetImageData = targetImageDataRef?.get()
+  const targetImageData = getImageData()
   if (targetImageData) {
     putImageDataScaled(ctx, targetImageData.width, targetImageData.height, targetImageData)
   }

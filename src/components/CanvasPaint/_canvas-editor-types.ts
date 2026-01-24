@@ -1,33 +1,16 @@
-import type { Point } from '../../lib/node-data-types/BaseDataStructure.ts'
-import type { RGBA } from '../../lib/util/html-dom/ImageData.ts'
 import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
-import type { TileId, WangTile } from '../../lib/wang-tiles/WangTileset.ts'
+import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { EditorState } from './EditorState.ts'
 import type { TileGridRenderer } from './TileGridRenderer.ts'
 import type { TilesetToolState } from './TilesetToolState.ts'
-import type { TilesetWriter } from './TIlesetWriter.ts'
-
-export type TilesetProjection = {
-  gridToTileset: (x: number, y: number) => Point,
-  tilesetToGrid: (x: number, y: number) => Point,
-}
-
-export type DuplicateEdgePixels = (
-  tilesetImageRefs: Record<TileId, ImageDataRef>,
-  tileId: TileId,
-  pixels: Point[],
-  color: RGBA,
-  borderThickness: number,
-) => WangTile<number>[] | undefined
+import type { TileSheetWriter } from './TileSheetWriter.ts'
 
 export type TilesetImageRefs = Record<TileId, ImageDataRef>
 export type LocalToolContext = {
   state: EditorState,
   gridRenderer: TileGridRenderer,
   tilesetToolState: TilesetToolState,
-  // projection: TilesetProjection,
-  tilesetImageRefs: TilesetImageRefs,
-  tilesetWriter: TilesetWriter,
+  tileSheetWriter: TileSheetWriter,
 }
 
 export type ToolInputBindings = Record<string, (local: LocalToolContext, event: KeyboardEvent) => void>

@@ -14,32 +14,30 @@ export const STEP_META = defineStep({
 </script>
 <script setup lang="ts">
 import {
-  computed,
-  markRaw, onMounted,
-  type Raw, type Reactive,
-  ref,
+  computed, onMounted,
+  type Reactive,
+  ref, shallowRef,
   useTemplateRef, watch, watchEffect,
 } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
-import {
-  type SerializedImageData, serializeImageData,
-} from '../../../lib/util/html-dom/ImageData.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
-import { imageDataRef, tilesetSyncedImageDataRef } from '../../../lib/vue/vue-image-data.ts'
-
-import { makeAxialEdgeWangTileManager } from '../../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
+import { useInterval } from '../../../lib/vue/component-interval.ts'
 import {
   createAxialEdgeWangTileset,
-  type TileId,
-  type WangTile,
 } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
 import TileCanvas from '../../CanvasPaint/components/TileCanvas.vue'
 import TileGridCanvas from '../../CanvasPaint/components/TileGridCanvas.vue'
+import { makeTileGrid } from '../../CanvasPaint/data/TileGrid.ts'
+import {
+  deserializeTileSheet,
+  makeTileSheet,
+  type SerializedTileSheet,
+} from '../../CanvasPaint/data/TileSheet.ts'
 import { makeLocalToolManager } from '../../CanvasPaint/LocalToolManager.ts'
 
 import NodeCard from '../../Card/NodeCard.vue'
@@ -61,10 +59,8 @@ const CONFIG_DEFAULTS = () => (
     ...DEFAULT_SHOW_CURSOR.CONFIG,
     activeTabIndex: 0,
     tileSize: 64,
-    wangTiles: markRaw({}) as Record<TileId, {
-      tile: WangTile<number>,
-      imageData: Raw<SerializedImageData> | null
-    }>,
+
+    tileSheet: null as null | SerializedTileSheet,
     verticalEdgeValueCount: 2,
     horizontalEdgeValueCount: 2,
     tileMarginCopySize: 3,
@@ -81,14 +77,29 @@ const tileset = computed(() => createAxialEdgeWangTileset(
   verticalEdgeValueCount.value,
   horizontalEdgeValueCount.value,
 ))
-const tilesetImageRefs = tilesetSyncedImageDataRef(tileset, tileSize)
+
+const tileGrid = makeTileGrid(
+  tileset,
+  tileSize,
+)
+
+let tileSheet = shallowRef(makeTileSheet({
+  tileset: tileset.value,
+  tileSize: tileSize.value,
+}))
+
+watch([tileset, tileSize], () => {
+  tileSheet.value = makeTileSheet({
+    tileset: tileset.value,
+    tileSize: tileSize.value,
+  })
+})
 
 const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
     return CONFIG_DEFAULTS()
   },
   reactiveConfig(defaults) {
-
     verticalEdgeValueCount.value = defaults.verticalEdgeValueCount
     horizontalEdgeValueCount.value = defaults.horizontalEdgeValueCount
     tileSize.value = defaults.tileSize
@@ -100,26 +111,9 @@ const handler = defineStepHandler<Config>(STEP_META, {
     }) as Reactive<Config>
   },
   deserializeConfig(config) {
-    config.wangTiles = Object.fromEntries(
-      Object.entries(config.wangTiles).map(([tileId, tile]) => {
-        const id = tileId as TileId
-
-        const imgDataRef = tilesetImageRefs?.[id]
-        let imageData: Raw<SerializedImageData> | null
-        if (imgDataRef) {
-          imageData = imgDataRef.deserializeConfig(tile.imageData)
-        } else {
-          const newRef = imageDataRef()
-          tilesetImageRefs[id] = newRef
-          imageData = newRef.deserializeConfig(tile.imageData)
-        }
-
-        return [id, {
-          tile: tile.tile,
-          imageData,
-        }]
-      }),
-    )
+    if (config.tileSheet) {
+      tileSheet.value = deserializeTileSheet(config.tileSheet)
+    }
 
     return config
   },
@@ -153,20 +147,9 @@ if (import.meta.hot && !import.meta.env.VITEST) {
 }
 // const color = computed(() => brushMode.value === BrushMode.ADD ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
-const tilesetManager = makeAxialEdgeWangTileManager(
-  tileset,
-  tileSize,
-)
-
 const localToolManger = makeLocalToolManager({
-  tilesetImageRefs,
-  tilesetManager,
-  onSyncTile(tile, imageData) {
-    config.wangTiles[tile.id] = {
-      tile: tileset.value.byId.get(tile.id)!,
-      imageData: serializeImageData(imageData),
-    }
-  },
+  tileGrid,
+  tileSheet,
 })
 
 function sync() {
@@ -174,10 +157,17 @@ function sync() {
   localToolManger.state.scale = store.imgScale
   localToolManger.gridRenderer.queueRender()
   localToolManger.gridRenderer.resize()
-  localToolManger.state.gridTilesWidth = tilesetManager.tileGrid.value.width
-  localToolManger.state.gridTilesHeight = tilesetManager.tileGrid.value.height
+  localToolManger.state.gridTilesWidth = tileGrid.tileGrid.value.width
+  localToolManger.state.gridTilesHeight = tileGrid.tileGrid.value.height
   localToolManger.gridRenderer.queueRenderTiles()
 }
+
+useInterval(() => {
+  if (tileSheet.value.isDirty()) {
+    config.tileSheet = tileSheet.value.serialize()
+    tileSheet.value.clearDirty()
+  }
+}, 1000)
 
 watchEffect(() => sync())
 onMounted(() => sync())

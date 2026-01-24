@@ -1,12 +1,13 @@
-import type { Point } from '../../lib/node-data-types/BaseDataStructure.ts'
+import type { ShallowRef } from 'vue'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { type DrawLayer, type Selection, type TilesetImageRefs } from './_canvas-editor-types.ts'
+import { type DrawLayer, type Selection } from './_canvas-editor-types.ts'
+import type { TileSheet } from './data/TileSheet.ts'
 
 export type EditorState = ReturnType<typeof makeEditorState>
 
 let id = 0
 
-export function makeEditorState(tilesetImageRefs: TilesetImageRefs) {
+export function makeEditorState(tileSheet: ShallowRef<TileSheet>) {
   return {
     id: id++,
 
@@ -59,22 +60,11 @@ export function makeEditorState(tilesetImageRefs: TilesetImageRefs) {
     selecting: false,
     selectionData: null as null | Selection,
 
-    tilesetImageRefs,
+    get tileSheet() {
+      return tileSheet.value
+    },
 
     tileMarginCopySize: 1,
-    gridPixelToTilePixel(gridPixelX: number, gridPixelY: number): Point {
-      return {
-        x: gridPixelX % this.tileSize,
-        y: gridPixelY % this.tileSize,
-      }
-    },
-
-    tilePixelToGridPixel(tileX: number, tileY: number, pixelX = 0, pixelY = 0): Point {
-      return {
-        x: tileX * this.tileSize + pixelX,
-        y: tileY * this.tileSize + pixelY,
-      }
-    },
 
     mouseOverGrid: false,
     mouseOverTileId: null as TileId | null,

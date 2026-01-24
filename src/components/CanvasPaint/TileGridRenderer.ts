@@ -1,11 +1,11 @@
-import { writeImageData } from '../../lib/util/html-dom/ImageData.ts'
+import { putImageDataScaled } from '../../lib/util/html-dom/ImageData.ts'
 import { getCanvasPixelContext, type PixelCanvas } from '../../lib/util/misc.ts'
 import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
-import type { AxialEdgeWangTileManager } from '../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import type { DrawLayer } from './_canvas-editor-types.ts'
+import type { LocalToolContext } from './_canvas-editor-types.ts'
+import type { TileGrid } from './data/TileGrid.ts'
 import type { EditorState } from './EditorState.ts'
-import type { GlobalToolContext } from './GlobalToolManager.ts'
+import type { GlobalToolContext, GlobalToolManager } from './GlobalToolManager.ts'
 import { renderCanvasFrame } from './lib/canvas-frame.ts'
 import { makePixelGridCache } from './lib/PixelGridCache.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
@@ -17,15 +17,16 @@ export function makeTileGridRenderer(
   {
     state,
     toolContext,
-    tilesetManager,
-    gridPixelOverlayDraw,
-    gridScreenOverlayDraw,
+    tileGrid,
+    globalToolManager,
+    localToolContext,
   }: {
     state: EditorState,
     toolContext: GlobalToolContext,
-    tilesetManager: AxialEdgeWangTileManager,
-    gridPixelOverlayDraw?: DrawLayer,
-    gridScreenOverlayDraw?: DrawLayer
+    tileGrid: TileGrid,
+    globalToolManager: GlobalToolManager,
+    localToolContext: () => LocalToolContext
+
   }) {
   let needsRender = false
 
@@ -45,22 +46,20 @@ export function makeTileGridRenderer(
   }
 
   function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
-    const imageDataRef = state.tilesetImageRefs[tileId]
 
     tileRenderers[tileId] = makeTileRenderer({
       tileId,
       state,
-      imageDataRef,
+      getTileImageData: () => state.tileSheet.extractTile(tileId),
       gridCache,
       tileCanvas,
-      tilesetManager,
+      tileGrid,
       tilePixelOverlayDraw: (ctx) => {
-
       },
       tileScreenOverlayDraw: (ctx) => {
-
       },
     })
+
     queueRenderTile(tileId)
   }
 
@@ -94,33 +93,38 @@ export function makeTileGridRenderer(
     tileRenderers[tileId]?.queueRender()
   }
 
-  function drawTileToGrid(tileId: TileId, imageData: ImageData) {
-    if (!tilesetManager.tileGrid.value) return
-    tilesetManager.tileGrid.value.eachWithTileId(tileId, (tileX, tileY, tile) => {
+  function drawAllTiles(ctx: CanvasRenderingContext2D) {
+
+    tileGrid.tileGrid.value.each((tileX, tileY, tile) => {
       if (!tile) return
-      const { x, y } = state.tilePixelToGridPixel(tileX, tileY, 0, 0)
+      const tileId = tile.id
+      const tileRenderer = tileRenderers[tileId]
+      if (!tileRenderer) return
 
-      writeImageData(tileGridImageData.get()!, imageData, x, y)
+      const { x, y } = tileGrid.tileCoordToGridPixel(tileX, tileY)
+
+      const tileImage = state.tileSheet.extractTile(tileId)
+      putImageDataScaled(ctx, tileImage.width, tileImage.height, tileImage, x, y)
     })
-
-    queueRenderTile(tileId)
   }
 
   function renderFrame() {
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
-      gridPixelOverlayDraw?.(ctx)
+      drawAllTiles(ctx)
+      tileGrid.drawGridEdges(ctx)
+      globalToolManager.currentToolHandler?.pixelOverlayDraw?.(localToolContext(), ctx)
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
       gridCache.drawGrid(ctx)
-      gridScreenOverlayDraw?.(ctx)
+      globalToolManager.currentToolHandler?.screenOverlayDraw?.(localToolContext(), ctx)
     }
 
     renderCanvasFrame(
       tileGridPixelCanvas,
       state.scale,
-      tileGridImageData,
+      () => tileGridImageData?.get(),
       drawPixelLayer,
       drawScreenLayer,
     )
@@ -131,7 +135,6 @@ export function makeTileGridRenderer(
     cursor: makeCursorCache(state, toolContext),
     registerTileCanvas,
     setTileGridCanvas,
-    drawTileToGrid,
     gridCache,
     resize,
     queueRender,

@@ -1,8 +1,7 @@
 import { getCanvasPixelContext } from '../../lib/util/misc.ts'
-import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
-import type { AxialEdgeWangTileManager } from '../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { DrawLayer } from './_canvas-editor-types.ts'
+import type { TileGrid } from './data/TileGrid.ts'
 import type { EditorState } from './EditorState.ts'
 import { renderCanvasFrame } from './lib/canvas-frame.ts'
 import type { PixelGridCache } from './lib/PixelGridCache.ts'
@@ -13,19 +12,19 @@ export function makeTileRenderer(
   {
     tileId,
     state,
-    imageDataRef,
+    getTileImageData,
     gridCache,
     tileCanvas,
-    tilesetManager,
+    tileGrid,
     tilePixelOverlayDraw,
     tileScreenOverlayDraw,
   }: {
     tileId: TileId,
     state: EditorState,
-    imageDataRef: ImageDataRef,
+    getTileImageData: () => ImageData,
     gridCache: PixelGridCache,
     tileCanvas: HTMLCanvasElement,
-    tilesetManager: AxialEdgeWangTileManager,
+    tileGrid: TileGrid,
     tilePixelOverlayDraw?: DrawLayer,
     tileScreenOverlayDraw?: DrawLayer
   }) {
@@ -56,9 +55,9 @@ export function makeTileRenderer(
     renderCanvasFrame(
       pixelCanvas,
       state.scale,
-      imageDataRef,
+      getTileImageData,
       (ctx) => {
-        tilesetManager.drawTileEdges(ctx, tileId)
+        tileGrid.drawTileEdges(ctx, tileId)
         tilePixelOverlayDraw?.(ctx)
       },
       (ctx) => {
@@ -70,6 +69,8 @@ export function makeTileRenderer(
 
   return {
     tileId,
+    canvas: pixelCanvas.canvas,
+    ctx,
     resize,
     queueRender,
   }

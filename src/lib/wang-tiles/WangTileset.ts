@@ -136,6 +136,12 @@ export class WangTileset<T> {
   }
 }
 
+export type SerializedAxialEdgeWangTileset<T> = {
+  readonly tiles: readonly WangTile<T>[],
+  readonly verticalEdgeValues: T[],
+  readonly horizontalEdgeValues: T[],
+}
+
 export class AxialEdgeWangTileset<T> extends WangTileset<T> {
   constructor(
     tiles: WangTile<T>[],
@@ -144,6 +150,22 @@ export class AxialEdgeWangTileset<T> extends WangTileset<T> {
   ) {
     super(tiles)
   }
+
+  serialize(): SerializedAxialEdgeWangTileset<T> {
+    return {
+      tiles: this.tiles,
+      verticalEdgeValues: this.verticalEdgeValues,
+      horizontalEdgeValues: this.horizontalEdgeValues,
+    }
+  }
+}
+
+export function deserializeAxialEdgeWangTileset<T>(serialized: SerializedAxialEdgeWangTileset<T>) {
+  return new AxialEdgeWangTileset(
+    serialized.tiles as WangTile<T>[],
+    serialized.verticalEdgeValues,
+    serialized.horizontalEdgeValues,
+  )
 }
 
 export function createAxialEdgeWangTileset(

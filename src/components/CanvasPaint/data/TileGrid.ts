@@ -1,15 +1,16 @@
 import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
-import { PixelMap } from '../node-data-types/PixelMap.ts'
-import { arrayIndexToColor } from '../util/color.ts'
-import { putImageDataScaled } from '../util/html-dom/ImageData.ts'
-import { Sketch } from '../util/html-dom/Sketch.ts'
-import { makeWangTileEdgesPixelMap } from './wang-tile-vue-helpers.ts'
-import { AxialEdgeWangGrid, makeAxialEdgeWangGrid } from './WangGrid.ts'
-import { AxialEdgeWangTileset, type TileId } from './WangTileset.ts'
+import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
+import type { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
+import { arrayIndexToColor } from '../../../lib/util/color.ts'
+import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
+import { Sketch } from '../../../lib/util/html-dom/Sketch.ts'
+import { makeWangTileEdgesPixelMap } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
+import { type AxialEdgeWangGrid, makeAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
+import type { AxialEdgeWangTileset, TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 
-export type AxialEdgeWangTileManager = ReturnType<typeof makeAxialEdgeWangTileManager>
+export type TileGrid = ReturnType<typeof makeTileGrid>
 
-export function makeAxialEdgeWangTileManager(
+export function makeTileGrid(
   tileset: ComputedRef<AxialEdgeWangTileset<number>>,
   tileSize: Ref<number>,
   tileGridFactory: (tileset: AxialEdgeWangTileset<number>) => AxialEdgeWangGrid<number> = makeAxialEdgeWangGrid,
@@ -77,6 +78,13 @@ export function makeAxialEdgeWangTileManager(
     }
   }
 
+  function gridPixelToTilePixel(gridPixelX: number, gridPixelY: number): Point {
+    return {
+      x: gridPixelX % tileSize.value,
+      y: gridPixelY % tileSize.value,
+    }
+  }
+
   function drawGridEdges(ctx: CanvasRenderingContext2D) {
     const sketch = tileGridEdgeColorSketch
 
@@ -108,6 +116,13 @@ export function makeAxialEdgeWangTileManager(
     })
   }
 
+  function tileCoordToGridPixel(tileX: number, tileY: number, pixelX = 0, pixelY = 0): Point {
+    return {
+      x: tileX * tileSize.value + pixelX,
+      y: tileY * tileSize.value + pixelY,
+    }
+  }
+
   return {
     tileSize,
     gridWidth,
@@ -122,8 +137,9 @@ export function makeAxialEdgeWangTileManager(
     drawGridEdges,
     drawTileEdges,
     gridPixelToTile,
+    gridPixelToTilePixel,
+    tileCoordToGridPixel,
     edgeColors,
     getTileInfo,
   }
 }
-
