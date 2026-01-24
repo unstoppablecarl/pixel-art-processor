@@ -68,15 +68,10 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
       gridRenderer.queueRenderTiles()
       gridRenderer.queueRender()
     },
-    screenOverlayDraw({ state, gridRenderer }, ctx: CanvasRenderingContext2D) {
-      console.log('tileId', state.mouseOverTileId)
-      console.log('tile', state.mouseOverTilePixelX, state.mouseOverTilePixelY)
-      console.log('grid', state.cursorX, state.cursorY)
-
-      const { cursorX, cursorY, scale, isMouseOver } = state
+    gridScreenOverlayDraw({ state, gridRenderer }, ctx: CanvasRenderingContext2D) {
+      const { cursorX, cursorY, scale } = state
       const { brushSize } = toolContext
 
-      // if (!isMouseOver) return
       ctx.imageSmoothingEnabled = false
 
       const snappedX = Math.floor(cursorX)
@@ -88,5 +83,27 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
       ctx.drawImage(gridRenderer.cursor.canvas, Math.floor(screenX), Math.floor(screenY))
     },
+    tileScreenOverlayDraw({ state, gridRenderer }, ctx, tileId) {
+      if (tileId !== state.mouseOverTileId) return
+
+      const x = state.mouseOverTilePixelX
+      const y = state.mouseOverTilePixelY
+      if (x == null || y == null) return
+
+      const { scale } = state
+      const { brushSize } = toolContext
+
+      ctx.imageSmoothingEnabled = false
+
+      const snappedX = Math.floor(x)
+      const snappedY = Math.floor(y)
+      const cx = Math.floor(brushSize / 2)
+
+      const screenX = snappedX * scale - cx * scale
+      const screenY = snappedY * scale - cx * scale
+
+      ctx.drawImage(gridRenderer.cursor.canvas, screenX, screenY)
+    },
+
   }
 }

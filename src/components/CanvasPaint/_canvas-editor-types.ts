@@ -28,8 +28,12 @@ export type ToolHandler = {
 
   onSelect?: (local: LocalToolContext) => void,
   onDeselect?: (local: LocalToolContext) => void,
-  pixelOverlayDraw?: (local: LocalToolContext, ctx: CanvasRenderingContext2D) => void,
-  screenOverlayDraw?: (local: LocalToolContext, ctx: CanvasRenderingContext2D) => void,
+  gridPixelOverlayDraw?: (local: LocalToolContext, ctx: CanvasRenderingContext2D) => void,
+  gridScreenOverlayDraw?: (local: LocalToolContext, ctx: CanvasRenderingContext2D) => void,
+
+  tilePixelOverlayDraw?: (local: LocalToolContext, ctx: CanvasRenderingContext2D, tileId: TileId) => void,
+  tileScreenOverlayDraw?: (local: LocalToolContext, ctx: CanvasRenderingContext2D, tileId: TileId) => void,
+
   inputBindings?: ToolInputBindings,
   onGlobalToolChanging?: (local: LocalToolContext, newTool: Tool, prevTool: Tool | null) => void,
 }

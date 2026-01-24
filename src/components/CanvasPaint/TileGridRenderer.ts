@@ -46,7 +46,7 @@ export function makeTileGridRenderer(
   }
 
   function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
-
+    console.log({ state })
     tileRenderers[tileId] = makeTileRenderer({
       tileId,
       state,
@@ -54,10 +54,8 @@ export function makeTileGridRenderer(
       gridCache,
       tileCanvas,
       tileGrid,
-      tilePixelOverlayDraw: (ctx) => {
-      },
-      tileScreenOverlayDraw: (ctx) => {
-      },
+      globalToolManager,
+      localToolContext,
     })
 
     queueRenderTile(tileId)
@@ -113,12 +111,12 @@ export function makeTileGridRenderer(
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       drawAllTiles(ctx)
       tileGrid.drawGridEdges(ctx)
-      globalToolManager.currentToolHandler?.pixelOverlayDraw?.(localToolContext(), ctx)
+      globalToolManager.currentToolHandler?.gridPixelOverlayDraw?.(localToolContext(), ctx)
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
       gridCache.drawGrid(ctx)
-      globalToolManager.currentToolHandler?.screenOverlayDraw?.(localToolContext(), ctx)
+      globalToolManager.currentToolHandler?.gridScreenOverlayDraw?.(localToolContext(), ctx)
     }
 
     renderCanvasFrame(
