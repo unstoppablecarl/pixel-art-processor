@@ -1,3 +1,4 @@
+import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import type { RectBounds } from '../util/data/Bounds.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
@@ -8,6 +9,7 @@ export type OverlappingTile<T> = {
   tileY: number,
   tileOverlap: RectBounds,
   gridOverlap: RectBounds,
+  tileRelativeOffset: Point,
 }
 
 export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
@@ -167,12 +169,27 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
           tile,
           tileX: tx,
           tileY: ty,
+
+          // True tile‑local offset of the selection x,y relative to this tile 0,0 pixel.
+          // can be negative.
+          tileRelativeOffset: {
+            x: overlapX - sourceX,
+            y: overlapY - sourceY,
+          },
+
+          // Tile‑local clipped rectangle.
+          // Intersection of selection rect and tile bounds
+          // in tile pixel coord space
           tileOverlap: {
             x: overlapX,
             y: overlapY,
             w: iw,
             h: ih,
           },
+
+          // Grid‑local clipped rectangle.
+          // Intersection of selection rect and tile bounds
+          // in tile grid pixel coord space
           gridOverlap: {
             x: sourceX,
             y: sourceY,
@@ -180,6 +197,7 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
             h: ih,
           },
         })
+
       }
     }
 

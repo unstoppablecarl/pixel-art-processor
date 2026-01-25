@@ -20,7 +20,7 @@ export function renderCanvasFrame(
 
   const targetImageData = getImageData()
   if (targetImageData) {
-    putImageDataScaled(ctx, targetImageData.width, targetImageData.height, targetImageData)
+    putImageDataScaled(ctx, targetImageData)
   }
 
   drawPixelLayer?.(ctx)

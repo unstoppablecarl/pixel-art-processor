@@ -58,7 +58,7 @@ export function makeTileGridEdgeColorRenderer(
   function drawTileEdges(ctx: CanvasRenderingContext2D, tileId: TileId) {
     const imageData = cachedWangTileEdgeColorImageData.value[tileId]
     ctx.globalAlpha = 0.5
-    putImageDataScaled(ctx, tileSize.value, tileSize.value, imageData)
+    putImageDataScaled(ctx, imageData)
     ctx.globalAlpha = 1
   }
 

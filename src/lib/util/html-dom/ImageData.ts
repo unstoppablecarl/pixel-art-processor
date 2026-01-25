@@ -291,13 +291,13 @@ const getTmpImageData = makeReusableImageData()
 
 export function putImageDataScaled(
   target: CanvasRenderingContext2D,
-  width: number,
-  height: number,
   imageData: ImageData,
   x = 0,
   y = 0,
   blend?: BlendFn,
 ) {
+
+  const { width, height } = imageData
 
   const { canvas, ctx } = pixelCanvas(width, height)
 

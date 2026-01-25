@@ -7,7 +7,7 @@ import {
 } from '../../lib/util/data/Grid.ts'
 import { blendImageDataIgnoreSolid, blendImageDataIgnoreTransparent } from '../../lib/util/html-dom/blit.ts'
 import {
-  clearImageDataRect,
+  clearImageDataRect, extractImageData,
   type RGBA,
   setImageDataPixelColor,
   setImageDataPixelsColor,
@@ -39,8 +39,8 @@ export function makeTileSheetWriter(
     gridRenderer.queueRenderGrid()
   })
 
-  function writeTilePixel(tileId: TileId, lx: number, ly: number, color: RGBA) {
-    const { x, y } = state.tileSheet.tileLocalToSheet(tileId, lx, ly)
+  function writeTilePixel(tileId: TileId, tx: number, ty: number, color: RGBA) {
+    const { x, y } = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
     setImageDataPixelColor(state.tileSheet.imageData, x, y, color)
     state.tileSheet.markDirty()
   }
@@ -59,27 +59,7 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    writeTilePixels(tilePixels: Point[], tileId: TileId, color: RGBA) {
-      tilePixels.forEach(({ x, y }) => {
-        writeTilePixel(tileId, x, y, color)
-      })
-
-      const affected = duplicateEdgePixels(
-        state.tileset,
-        state.tileSheet,
-        tileId,
-        tilePixels,
-        color,
-        state.tileMarginCopySize,
-      )
-
-      affected?.forEach(t => markDirty(t.id))
-      markDirty(tileId)
-      state.tileSheet.markDirty()
-    },
-
     writeGridPixels(gridPixels: Point[], color: RGBA) {
-
       const tileset = state.tileset
 
       gridPixels.forEach(({ x, y }) => {
@@ -89,14 +69,14 @@ export function makeTileSheetWriter(
         const { tile } = hit
         if (!tile) return
 
-        const { x: lx, y: ly } = state.tileGridManager.gridPixelToTilePixel(x, y)!
-        writeTilePixel(tile.id, lx, ly, color)
+        const { x: tx, y: ty } = state.tileGridManager.gridPixelToTilePixel(x, y)!
+        writeTilePixel(tile.id, tx, ty, color)
 
         const affected = duplicateEdgePixels(
           tileset,
           state.tileSheet,
           tile.id,
-          [{ x: lx, y: ly }],
+          [{ x: tx, y: ty }],
           color,
           state.tileMarginCopySize,
         )
@@ -107,7 +87,7 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    clearImageDataRect(gx: number, gy: number, w: number, h: number) {
+    clearGridRect(gx: number, gy: number, w: number, h: number) {
       const rect = { x: gx, y: gy, w, h }
       const overlapping = state.tileGridManager.getOverlappingTiles(rect)
 
@@ -120,7 +100,7 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    blendImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode): TileId[] {
+    blendGridImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode): TileId[] {
       const rect = { x: gx, y: gy, w: imageData.width, h: imageData.height }
       const overlapping = state.tileGridManager.getOverlappingTiles(rect)
 
@@ -143,6 +123,44 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
       return overlapping.map(d => d.tile.id)
     },
+
+    writeTilePixels(tilePixels: Point[], tileId: TileId, color: RGBA) {
+      tilePixels.forEach(({ x, y }) => {
+        writeTilePixel(tileId, x, y, color)
+      })
+
+      const affected = duplicateEdgePixels(
+        state.tileset,
+        state.tileSheet,
+        tileId,
+        tilePixels,
+        color,
+        state.tileMarginCopySize,
+      )
+
+      affected?.forEach(t => markDirty(t.id))
+      markDirty(tileId)
+      state.tileSheet.markDirty()
+    },
+
+    clearTileRect(tileId: TileId, tx: number, ty: number, w: number, h: number) {
+      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
+      clearImageDataRect(state.tileSheet.imageData, sheetPos.x, sheetPos.y, w, h)
+      markDirty(tileId)
+      state.tileSheet.markDirty()
+    },
+
+    writeTileImageData(tileId: TileId, tx: number, ty: number, imageData: ImageData) {
+      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
+      writeImageData(state.tileSheet.imageData, imageData, sheetPos.x, sheetPos.y)
+      markDirty(tileId)
+      state.tileSheet.markDirty()
+    },
+
+    extractTileRect(tileId: TileId, tx: number, ty: number, w: number, h: number): ImageData {
+      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
+      return extractImageData(state.tileSheet.imageData, sheetPos.x, sheetPos.y, w, h)
+    }
   }
 }
 

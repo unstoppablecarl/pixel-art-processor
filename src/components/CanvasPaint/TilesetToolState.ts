@@ -1,3 +1,4 @@
+import type { RectBounds } from '../../lib/util/data/Bounds.ts'
 import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
 import type { Selection } from './_canvas-editor-types.ts'
 
@@ -28,6 +29,23 @@ export function makeTilesetToolState() {
 
     selecting = true
     dragging = false
+  }
+
+  function selectionHasMoved() {
+    const sel = selection
+    if (!sel) return false
+    return sel.x !== sel.origX || sel.y !== sel.origY
+  }
+
+  function originalRect(): RectBounds {
+    const sel = selection
+    if (!sel) throw new Error('no selection')
+    return {
+      x: sel.origX,
+      y: sel.origY,
+      w: sel.origW,
+      h: sel.origH,
+    }
   }
 
   function updateSelection(x: number, y: number) {
@@ -104,7 +122,8 @@ export function makeTilesetToolState() {
     set dragging(val) {
       dragging = val
     },
-
+    originalRect,
+    selectionHasMoved,
     inSelection,
     startSelection,
     updateSelection,

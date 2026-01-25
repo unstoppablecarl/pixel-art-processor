@@ -40,8 +40,8 @@ export function makeTileRenderer(
       state.scale,
       getTileImageData,
       (ctx) => {
-        state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
         globalToolManager.currentToolHandler.tilePixelOverlayDraw?.(localToolContext(), ctx, tileId)
+        state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
       },
       (ctx) => {
         if (state.shouldDrawGrid) {
