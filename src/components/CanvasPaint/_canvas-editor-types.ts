@@ -53,7 +53,7 @@ export enum BrushMode {
   REMOVE = 'REMOVE'
 }
 
-export enum SelectMoveBlendMode {
+export enum BlendMode {
   OVERWRITE = 'OVERWRITE',
   IGNORE_TRANSPARENT = 'IGNORE_TRANSPARENT',
   IGNORE_SOLID = 'IGNORE_SOLID'

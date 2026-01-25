@@ -1,7 +1,7 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import { BrushMode, SelectMoveBlendMode, Tool } from '../../components/CanvasPaint/_canvas-editor-types.ts'
+import { BrushMode, BlendMode, Tool } from '../../components/CanvasPaint/_canvas-editor-types.ts'
 import { BrushShape } from '../../components/CanvasPaint/tools/brush.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
 import { makeStateMapper } from './_store-helpers.ts'
@@ -14,7 +14,7 @@ type SerializedData = {
   primaryColor: RGBA,
   brushSize: number,
 
-  selectMoveBlendMode: SelectMoveBlendMode,
+  selectMoveBlendMode: BlendMode,
   tileMarginCopySize: number,
 }
 
@@ -28,7 +28,7 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
   const brushMode = ref<BrushMode>(BrushMode.ADD)
   const brushSize = shallowRef<number>(10)
 
-  const selectMoveBlendMode = ref<SelectMoveBlendMode>(SelectMoveBlendMode.IGNORE_TRANSPARENT)
+  const selectMoveBlendMode = ref<BlendMode>(BlendMode.IGNORE_TRANSPARENT)
 
   const brushSizeDebounced = refDebounced(brushSize, 200)
   const brushColor = computed(() => brushMode.value === BrushMode.ADD ? primaryColor.value : RGBA_ERASE)
@@ -52,7 +52,7 @@ export const useCanvasPaintStore = defineStore('canvas-paint', () => {
       brushShape: BrushShape.CIRCLE,
       brushMode: BrushMode.ADD,
       brushSize: 10,
-      selectMoveBlendMode: SelectMoveBlendMode.IGNORE_TRANSPARENT,
+      selectMoveBlendMode: BlendMode.IGNORE_TRANSPARENT,
       tileMarginCopySize: 1,
     },
   )

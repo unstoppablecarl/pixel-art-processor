@@ -91,8 +91,18 @@ export function blendImageData(
   }
 }
 
+export type ImageDataBlendFn = (
+  dst: ImageData,
+  src: ImageData,
+  dx: number,
+  dy: number,
+  sx: number,
+  sy: number,
+  sw: number,
+  sh: number,
+) => void
 
-export const blendImageDataSourceOver = (
+export const blendImageDataSourceOver: ImageDataBlendFn = (
   dst: ImageData,
   src: ImageData,
   dx: number,
@@ -103,7 +113,7 @@ export const blendImageDataSourceOver = (
   sh: number = src.height,
 ) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendSourceOver)
 
-export const blendImageDataIgnoreTransparent = (
+export const blendImageDataIgnoreTransparent: ImageDataBlendFn = (
   dst: ImageData,
   src: ImageData,
   dx: number,
@@ -114,7 +124,7 @@ export const blendImageDataIgnoreTransparent = (
   sh: number = src.height,
 ) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreTransparent)
 
-export const blendImageDataIgnoreSolid = (
+export const blendImageDataIgnoreSolid: ImageDataBlendFn = (
   dst: ImageData,
   src: ImageData,
   dx: number,

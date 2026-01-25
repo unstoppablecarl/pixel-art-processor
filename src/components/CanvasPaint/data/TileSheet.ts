@@ -72,9 +72,9 @@ export function makeTileSheet(
     }
   }
 
-  function tileLocalToSheet(tileId: TileId, lx: number, ly: number) {
+  function tileLocalToSheet(tileId: TileId, tx: number, ty: number) {
     const rect = getTileRect(tileId)
-    return { x: rect.x + lx, y: rect.y + ly }
+    return { x: rect.x + tx, y: rect.y + ty }
   }
 
   function extractTile(tileId: TileId): ImageData {
