@@ -78,10 +78,10 @@ const tileset = computed(() => createAxialEdgeWangTileset(
   horizontalEdgeValueCount.value,
 ))
 
-const tileGrid = makeTileGrid(
+const tileGrid = shallowRef(makeTileGrid(
   tileset,
   tileSize,
-)
+))
 
 let tileSheet = shallowRef(makeTileSheet({
   tileset: tileset.value,
@@ -155,10 +155,10 @@ const localToolManger = makeLocalToolManager({
 function sync() {
   localToolManger.state.tileSize = tileSize.value
   localToolManger.state.scale = store.imgScale
-  localToolManger.gridRenderer.queueRender()
+  localToolManger.gridRenderer.queueRenderGrid()
   localToolManger.gridRenderer.resize()
-  localToolManger.state.gridTilesWidth = tileGrid.tileGrid.value.width
-  localToolManger.state.gridTilesHeight = tileGrid.tileGrid.value.height
+  localToolManger.state.gridTilesWidth = tileGrid.value.tileGrid.value.width
+  localToolManger.state.gridTilesHeight = tileGrid.value.tileGrid.value.height
   localToolManger.gridRenderer.queueRenderTiles()
 }
 

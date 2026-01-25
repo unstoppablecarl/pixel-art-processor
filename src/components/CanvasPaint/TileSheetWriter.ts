@@ -15,7 +15,6 @@ import {
 } from '../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
-import type { TileGrid } from './data/TileGrid.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { TileGridRenderer } from './TileGridRenderer.ts'
@@ -26,27 +25,24 @@ export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
 export function makeTileSheetWriter(
   {
     state,
-    tileGrid,
     gridRenderer,
   }: {
     state: EditorState
-    tileGrid: TileGrid
     gridRenderer: TileGridRenderer
   }) {
-
-  const { tileset } = tileGrid
 
   // Dirty batching: sync tiles to gridRenderer
   const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
     for (const tileId of dirtyTiles) {
       gridRenderer.queueRenderTile(tileId)
     }
-    gridRenderer.queueRender()
+    gridRenderer.queueRenderGrid()
   })
 
   function writeTilePixel(tileId: TileId, lx: number, ly: number, color: RGBA) {
     const { x, y } = state.tileSheet.tileLocalToSheet(tileId, lx, ly)
     setImageDataPixelColor(state.tileSheet.imageData, x, y, color)
+    state.tileSheet.markDirty()
   }
 
   // ------------------------------------------------------------
@@ -55,20 +51,24 @@ export function makeTileSheetWriter(
 
   return {
     clear() {
-      for (const tile of tileset.value.tiles) {
+      const tileset = state.tileGrid.tileset.value
+
+      for (const tile of tileset.tiles) {
         const rect = state.tileSheet.getTileRect(tile.id)
         clearImageDataRect(state.tileSheet.imageData, rect.x, rect.y, rect.w, rect.h)
         markDirty(tile.id)
       }
+      state.tileSheet.markDirty()
     },
 
     writeTilePixels(tilePixels: Point[], tileId: TileId, color: RGBA) {
       tilePixels.forEach(({ x, y }) => {
         writeTilePixel(tileId, x, y, color)
       })
+      const tileset = state.tileGrid.tileset.value
 
       const affected = duplicateEdgePixels(
-        tileset.value,
+        tileset,
         state.tileSheet,
         tileId,
         tilePixels,
@@ -78,21 +78,25 @@ export function makeTileSheetWriter(
 
       affected?.forEach(t => markDirty(t.id))
       markDirty(tileId)
+      state.tileSheet.markDirty()
     },
 
     writeGridPixels(gridPixels: Point[], color: RGBA) {
+
+      const tileset = state.tileGrid.tileset.value
+
       gridPixels.forEach(({ x, y }) => {
-        const hit = tileGrid.gridPixelToTile(x, y)
+        const hit = state.tileGrid.gridPixelToTile(x, y)
         if (!hit) return
 
         const { tile } = hit
         if (!tile) return
 
-        const { x: lx, y: ly } = tileGrid.gridPixelToTilePixel(x, y)!
+        const { x: lx, y: ly } = state.tileGrid.gridPixelToTilePixel(x, y)!
         writeTilePixel(tile.id, lx, ly, color)
 
         const affected = duplicateEdgePixels(
-          tileset.value,
+          tileset,
           state.tileSheet,
           tile.id,
           [{ x: lx, y: ly }],
@@ -103,10 +107,11 @@ export function makeTileSheetWriter(
         affected?.forEach(t => markDirty(t.id))
         markDirty(tile.id)
       })
+      state.tileSheet.markDirty()
     },
 
     clearImageDataRect(gx: number, gy: number, w: number, h: number) {
-      const overlapping = tileGrid.tileGrid.value.getOverlappingTiles(
+      const overlapping = state.tileGrid.tileGrid.value.getOverlappingTiles(
         { x: gx, y: gy, w, h },
         state.tileSheet.tileSize,
       )
@@ -117,10 +122,11 @@ export function makeTileSheetWriter(
         clearImageDataRect(state.tileSheet.imageData, sheetPos.x, sheetPos.y, tw, th)
         markDirty(tile.id)
       }
+      state.tileSheet.markDirty()
     },
 
     blendImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode) {
-      const overlapping = tileGrid.tileGrid.value.getOverlappingTiles(
+      const overlapping = state.tileGrid.tileGrid.value.getOverlappingTiles(
         { x: gx, y: gy, w: imageData.width, h: imageData.height },
         state.tileSheet.tileSize,
       )
@@ -141,13 +147,10 @@ export function makeTileSheetWriter(
 
         markDirty(tile.id)
       }
+      state.tileSheet.markDirty()
     },
   }
 }
-
-// ------------------------------------------------------------
-// Edge duplication rewritten for TileSheet
-// ------------------------------------------------------------
 
 function duplicateEdgePixels(
   tileset: WangTileset<number>,

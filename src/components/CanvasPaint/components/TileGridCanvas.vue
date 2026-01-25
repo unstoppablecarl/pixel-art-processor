@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
-import { createMouseHandlers } from '../lib/canvas-mouse.ts'
+import { CanvasType } from '../_canvas-editor-types.ts'
+import { createGridMouseHandlers } from '../lib/canvas-mouse.ts'
 import { type LocalToolManager } from '../LocalToolManager.ts'
 
 const {
@@ -16,12 +17,11 @@ const {
   handleMouseMove,
   handleMouseUp,
   handleMouseLeave,
-} = createMouseHandlers(localToolManager, viewCanvasRef)
+} = createGridMouseHandlers(localToolManager, viewCanvasRef)
 
 onMounted(() => {
   localToolManager.gridRenderer.setTileGridCanvas(viewCanvasRef.value!)
 })
-
 </script>
 <template>
   <canvas

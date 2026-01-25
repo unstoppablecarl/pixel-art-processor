@@ -30,3 +30,16 @@ export function renderCanvasFrame(
 
   drawScreenLayer?.(ctx)
 }
+
+export function makeRenderQueue(cb: () => void) {
+  let needsRender = false
+  return () => {
+    if (needsRender) return
+    needsRender = true
+
+    requestAnimationFrame(() => {
+      needsRender = false
+      cb()
+    })
+  }
+}

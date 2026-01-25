@@ -1,13 +1,12 @@
 import { ref } from 'vue'
 import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
 import type { ImageDataRef } from '../../lib/vue/vue-image-data.ts'
-import type { AxialEdgeWangTileManager } from '../../lib/wang-tiles/AxialEdgeWangTileManager.ts'
 import type { Selection } from './_canvas-editor-types.ts'
 
 export type TilesetToolState = ReturnType<typeof makeTilesetToolState>
 
 // called in the vue component that has CanvasPaint child component(s)
-export function makeTilesetToolState(tilesetManager: AxialEdgeWangTileManager) {
+export function makeTilesetToolState() {
   // Selection object is NOT reactive — this avoids Vue overhead
   let selection: Selection | null = null
 

@@ -1,5 +1,3 @@
-import { reactive, watch } from 'vue'
-import type CanvasPaint from '../../components/CanvasPaint.vue'
 import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
@@ -7,7 +5,7 @@ import type { Direction } from '../pipeline/_types.ts'
 import type { RGBA } from '../util/html-dom/ImageData.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
-import { type TileId, type WangTile } from './WangTileset.ts'
+import { type WangTile } from './WangTileset.ts'
 
 export function makeWangTileEdgeConfigDefaults() {
   return {
@@ -120,41 +118,4 @@ export type TileCanvasItem = {
   canvas: HTMLCanvasElement,
   ctx: CanvasRenderingContext2D,
   queueRender: () => void
-}
-
-export function useTileCanvases() {
-  const tilesetCanvases = reactive(new Map<string, TileCanvasItem>())
-
-  function setCanvasPaintRef(comp: typeof CanvasPaint | null, tileId: TileId) {
-    if (!comp) {
-      tilesetCanvases.delete(tileId)
-      return
-    }
-    if (tilesetCanvases.has(tileId)) return
-
-    const registered = set(comp, tileId)
-    if (!registered) {
-      const stopWatch = watch(() => comp?.viewCanvasRef, (canvas) => {
-        set(comp, canvas)
-        queueMicrotask(() => stopWatch())
-      })
-    }
-  }
-
-  function set(comp: typeof CanvasPaint | null, tileId: TileId) {
-    const canvas = comp?.viewCanvasRef
-
-    if (canvas) {
-      const ctx = canvas.getContext('2d')
-      if (!ctx) throw new Error('cannot get canvas context')
-      tilesetCanvases.set(tileId, { canvas, ctx, queueRender: comp.queueRender })
-      return true
-    }
-    return false
-  }
-
-  return {
-    tilesetCanvases,
-    setCanvasPaintRef,
-  }
 }

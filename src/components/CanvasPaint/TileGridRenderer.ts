@@ -3,10 +3,9 @@ import { getCanvasPixelContext, type PixelCanvas } from '../../lib/util/misc.ts'
 import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { LocalToolContext } from './_canvas-editor-types.ts'
-import type { TileGrid } from './data/TileGrid.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext, GlobalToolManager } from './GlobalToolManager.ts'
-import { renderCanvasFrame } from './lib/canvas-frame.ts'
+import { makeRenderQueue, renderCanvasFrame } from './lib/canvas-frame.ts'
 import { makePixelGridCache } from './lib/PixelGridCache.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
 import { makeCursorCache } from './tools/brush-cursor.ts'
@@ -17,18 +16,15 @@ export function makeTileGridRenderer(
   {
     state,
     toolContext,
-    tileGrid,
     globalToolManager,
     localToolContext,
   }: {
     state: EditorState,
     toolContext: GlobalToolContext,
-    tileGrid: TileGrid,
     globalToolManager: GlobalToolManager,
     localToolContext: () => LocalToolContext
 
   }) {
-  let needsRender = false
 
   let tileGridPixelCanvas: PixelCanvas | undefined
 
@@ -42,18 +38,16 @@ export function makeTileGridRenderer(
       ctx: getCanvasPixelContext(canvas),
     }
     resize()
-    queueRender()
+    queueRenderGrid()
   }
 
   function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
-    console.log({ state })
     tileRenderers[tileId] = makeTileRenderer({
       tileId,
       state,
       getTileImageData: () => state.tileSheet.extractTile(tileId),
       gridCache,
       tileCanvas,
-      tileGrid,
       globalToolManager,
       localToolContext,
     })
@@ -73,16 +67,6 @@ export function makeTileGridRenderer(
     }
   }
 
-  function queueRender() {
-    if (needsRender) return
-    needsRender = true
-
-    requestAnimationFrame(() => {
-      needsRender = false
-      renderFrame()
-    })
-  }
-
   function queueRenderTiles() {
     Object.values(tileRenderers).forEach(tileRenderer => tileRenderer.queueRender())
   }
@@ -93,24 +77,24 @@ export function makeTileGridRenderer(
 
   function drawAllTiles(ctx: CanvasRenderingContext2D) {
 
-    tileGrid.tileGrid.value.each((tileX, tileY, tile) => {
+    state.tileGrid.tileGrid.value.each((tileX, tileY, tile) => {
       if (!tile) return
       const tileId = tile.id
       const tileRenderer = tileRenderers[tileId]
       if (!tileRenderer) return
 
-      const { x, y } = tileGrid.tileCoordToGridPixel(tileX, tileY)
+      const { x, y } = state.tileGrid.tileCoordToGridPixel(tileX, tileY)
 
       const tileImage = state.tileSheet.extractTile(tileId)
       putImageDataScaled(ctx, tileImage.width, tileImage.height, tileImage, x, y)
     })
   }
 
-  function renderFrame() {
+  const queueRenderGrid = makeRenderQueue(() => {
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       drawAllTiles(ctx)
-      tileGrid.drawGridEdges(ctx)
+      state.tileGrid.drawGridEdges(ctx)
       globalToolManager.currentToolHandler?.gridPixelOverlayDraw?.(localToolContext(), ctx)
     }
 
@@ -126,7 +110,7 @@ export function makeTileGridRenderer(
       drawPixelLayer,
       drawScreenLayer,
     )
-  }
+  })
 
   return {
     state,
@@ -135,9 +119,13 @@ export function makeTileGridRenderer(
     setTileGridCanvas,
     gridCache,
     resize,
-    queueRender,
+    queueRenderGrid,
     queueRenderTile,
     queueRenderTiles,
+    queueRenderAll: () => {
+      queueRenderGrid()
+      queueRenderTiles()
+    },
     toolContext,
   }
 }

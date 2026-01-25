@@ -1,13 +1,14 @@
 import type { ShallowRef } from 'vue'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { type DrawLayer, type Selection } from './_canvas-editor-types.ts'
+import { type Selection } from './_canvas-editor-types.ts'
+import type { TileGrid } from './data/TileGrid.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 
 export type EditorState = ReturnType<typeof makeEditorState>
 
 let id = 0
 
-export function makeEditorState(tileSheet: ShallowRef<TileSheet>) {
+export function makeEditorState(tileSheet: ShallowRef<TileSheet>, tileGrid: ShallowRef<TileGrid>) {
   return {
     id: id++,
 
@@ -38,22 +39,32 @@ export function makeEditorState(tileSheet: ShallowRef<TileSheet>) {
 
     scale: 8,
 
-    cursorX: 0,
-    cursorY: 0,
+    // only when mouse over grid
+    mouseGridX: null as null | number,
+    mouseGridY: null as null | number,
 
-    isMouseOver: false,
-    isDragging: false,
-    dragThreshold: 2,
+    // only when mouse over tile
+    mouseTileId: null as TileId | null,
+    mouseTilePixelX: null as null | number,
+    mouseTilePixelY: null as null | number,
+
+    // simulated from mouse over grid or tile
+    hoverTileId: null as TileId | null,
+    hoverTilePixelX: null as number | null,
+    hoverTilePixelY: null as number | null,
+
     lastX: null as null | number,
     lastY: null as null | number,
+
     mouseDownX: null as null | number,
     mouseDownY: null as null | number,
 
+    isDragging: false,
+    dragThreshold: 2,
+    dragStartTileId: null as TileId | null,
+
     gridColor: 'rgba(0, 0, 0, 0.2)',
     cursorColor: 'rgba(0, 255, 255, 1)',
-
-    tilePixelOverlayDraw: null as DrawLayer | null,
-    tileScreenOverlayDraw: null as DrawLayer | null,
 
     emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
 
@@ -64,11 +75,10 @@ export function makeEditorState(tileSheet: ShallowRef<TileSheet>) {
       return tileSheet.value
     },
 
-    tileMarginCopySize: 1,
+    get tileGrid() {
+      return tileGrid.value
+    },
 
-    mouseOverGrid: false,
-    mouseOverTileId: null as TileId | null,
-    mouseOverTilePixelX: null as null | number,
-    mouseOverTilePixelY: null as null | number,
+    tileMarginCopySize: 1,
   }
 }

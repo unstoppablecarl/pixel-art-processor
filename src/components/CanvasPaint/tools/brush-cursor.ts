@@ -28,8 +28,6 @@ export function makeCursorCache(state: EditorState, toolContext: GlobalToolConte
       return
     }
 
-    console.log('update c')
-
     const size = brushSize * scale
     canvas.width = size + 1
     canvas.height = size + 1

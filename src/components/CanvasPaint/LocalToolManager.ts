@@ -1,5 +1,6 @@
 import type { ShallowRef } from 'vue'
-import { type LocalToolContext, Tool } from './_canvas-editor-types.ts'
+import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
+import { CanvasType, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
 import type { TileGrid } from './data/TileGrid.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import { makeEditorState } from './EditorState.ts'
@@ -19,25 +20,24 @@ export function makeLocalToolManager(
     global = useGlobalToolManager(),
   }: {
     tileSheet: ShallowRef<TileSheet>,
-    tileGrid: TileGrid,
+    tileGrid: ShallowRef<TileGrid>,
     tileSheetWriter?: TileSheetWriter,
     tilesetToolState?: TilesetToolState,
     global?: GlobalToolManager
   },
 ) {
-  const state = makeEditorState(tileSheet)
+
+  const state = makeEditorState(tileSheet, tileGrid)
   const gridRenderer = makeTileGridRenderer({
     state,
-    tileGrid,
     toolContext: global.toolContext,
     globalToolManager: global,
     localToolContext: () => local,
   })
 
-  tilesetToolState ??= makeTilesetToolState(tileGrid)
+  tilesetToolState ??= makeTilesetToolState()
   tileSheetWriter ??= makeTileSheetWriter({
     state,
-    tileGrid,
     gridRenderer,
   })
 
@@ -48,20 +48,39 @@ export function makeLocalToolManager(
     tileSheetWriter,
   }
 
-  function setMouseOverTile(gx: number, gy: number) {
-    const d = tileGrid.gridPixelToTile(gx, gy)
-    if (!d) return
+  function prepareMouseEventState(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {
+    if (canvasType === CanvasType.GRID) {
+      state.mouseGridX = x
+      state.mouseGridY = y
 
-    state.mouseOverTileId = d.tile.id
-    const { x, y } = tileGrid.gridPixelToTilePixel(gx, gy)
-    state.mouseOverTilePixelX = x
-    state.mouseOverTilePixelY = y
-  }
+      const d = tileGrid.value.gridPixelToTile(x, y)
+      if (d) {
+        const { x: tx, y: ty } = tileGrid.value.gridPixelToTilePixel(x, y)
+        state.hoverTileId = d.tile.id
+        state.hoverTilePixelX = tx
+        state.hoverTilePixelY = ty
+      } else {
+        state.mouseTileId = null
+        state.mouseTilePixelX = null
+        state.mouseTilePixelY = null
+      }
+      return
+    }
 
-  function clearMouseOverTile() {
-    state.mouseOverTileId = null
-    state.mouseOverTilePixelX = null
-    state.mouseOverTilePixelY = null
+    if (canvasType === CanvasType.TILE) {
+      state.mouseTileId = tileId!
+      state.mouseTilePixelX = x
+      state.mouseTilePixelY = y
+
+      state.mouseGridX = null
+      state.mouseGridY = null
+
+      state.hoverTileId = tileId!
+      state.hoverTilePixelX = x
+      state.hoverTilePixelY = y
+      return
+    }
+    throw new Error('invalid canvas type: ' + canvasType)
   }
 
   return {
@@ -73,8 +92,8 @@ export function makeLocalToolManager(
       global.tools[oldTool]?.onGlobalToolChanging?.(local, oldTool, newTool)
     },
 
-    onMouseDown(x: number, y: number) {
-      setMouseOverTile(x, y)
+    onMouseDown(x: number, y: number, canvasType: CanvasType, tileId?: TileId): void {
+      prepareMouseEventState(x, y, canvasType, tileId)
 
       global.setActiveLocal(local)
 
@@ -82,17 +101,11 @@ export function makeLocalToolManager(
       state.mouseDownY = y
       state.isDragging = false
 
-      global.tools[global.currentTool]?.onMouseDown?.(local, x, y)
-      gridRenderer.queueRender()
+      global.tools[global.currentTool]?.onMouseDown?.(local, x, y, canvasType, tileId)
+      gridRenderer.queueRenderGrid()
     },
-
-    onMouseMove(x: number, y: number) {
-      state.mouseOverTileId = null
-
-      setMouseOverTile(x, y)
-
-      state.cursorX = x
-      state.cursorY = y
+    onMouseMove(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {
+      prepareMouseEventState(x, y, canvasType, tileId)
 
       if (state.mouseDownX !== null && state.mouseDownY !== null) {
         const dx = x - state.mouseDownX
@@ -100,39 +113,57 @@ export function makeLocalToolManager(
 
         if (!state.isDragging &&
           (Math.abs(dx) > state.dragThreshold || Math.abs(dy) > state.dragThreshold)) {
+
           state.isDragging = true
-          global.tools[global.currentTool]?.onDragStart?.(local, state.mouseDownX, state.mouseDownY)
+          state.dragStartTileId = state.mouseTileId
+
+          global.tools[global.currentTool]?.onDragStart?.(
+            local,
+            state.mouseDownX,
+            state.mouseDownY,
+            canvasType,
+            tileId,
+          )
         } else {
-          global.tools[global.currentTool]?.onDragMove?.(local, x, y)
+          global.tools[global.currentTool]?.onDragMove?.(local, x, y, canvasType, tileId)
         }
 
       } else {
-        global.tools[global.currentTool]?.onMouseMove?.(local, x, y)
+        global.tools[global.currentTool]?.onMouseMove?.(local, x, y, canvasType, tileId)
       }
 
       state.lastX = x
       state.lastY = y
     },
 
-    onMouseUp(x: number, y: number) {
-      setMouseOverTile(x, y)
+    onMouseUp(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {
+      prepareMouseEventState(x, y, canvasType, tileId)
 
       if (state.isDragging) {
-        global.tools[global.currentTool]?.onDragEnd?.(local, x, y)
+        global.tools[global.currentTool]?.onDragEnd?.(local, x, y, canvasType, tileId)
+        state.dragStartTileId = null
       } else {
-        global.tools[global.currentTool]?.onClick?.(local, x, y)
+        global.tools[global.currentTool]?.onClick?.(local, x, y, canvasType, tileId)
       }
 
       state.mouseDownX = null
       state.mouseDownY = null
       state.isDragging = false
     },
+    onMouseLeave(canvasType: CanvasType, tileId?: TileId) {
+      state.mouseGridX = null
+      state.mouseGridY = null
 
-    onMouseLeave() {
-      clearMouseOverTile()
-      state.mouseOverTileId = null
-      global.tools[global.currentTool]?.onMouseLeave?.(local)
-      gridRenderer.queueRender()
+      state.mouseTileId = null
+      state.mouseTilePixelX = null
+      state.mouseTilePixelY = null
+
+      state.hoverTileId = null
+      state.hoverTilePixelX = null
+      state.hoverTilePixelY = null
+
+      global.tools[global.currentTool]?.onMouseLeave?.(local, canvasType, tileId)
+      gridRenderer.queueRenderGrid()
     },
   }
 }

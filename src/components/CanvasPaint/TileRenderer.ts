@@ -1,10 +1,9 @@
 import { getCanvasPixelContext } from '../../lib/util/misc.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { LocalToolContext } from './_canvas-editor-types.ts'
-import type { TileGrid } from './data/TileGrid.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolManager } from './GlobalToolManager.ts'
-import { renderCanvasFrame } from './lib/canvas-frame.ts'
+import { makeRenderQueue, renderCanvasFrame } from './lib/canvas-frame.ts'
 import type { PixelGridCache } from './lib/PixelGridCache.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
@@ -16,7 +15,6 @@ export function makeTileRenderer(
     getTileImageData,
     gridCache,
     tileCanvas,
-    tileGrid,
     globalToolManager,
     localToolContext,
   }: {
@@ -25,17 +23,14 @@ export function makeTileRenderer(
     getTileImageData: () => ImageData,
     gridCache: PixelGridCache,
     tileCanvas: HTMLCanvasElement,
-    tileGrid: TileGrid,
     globalToolManager: GlobalToolManager,
     localToolContext: () => LocalToolContext
-
 
   }) {
 
   let ctx = getCanvasPixelContext(tileCanvas)
 
   const pixelCanvas = { canvas: tileCanvas, ctx }
-  let needsRender = false
 
   function resize() {
     if (!tileCanvas) return
@@ -44,23 +39,13 @@ export function makeTileRenderer(
     ctx!.imageSmoothingEnabled = false
   }
 
-  function queueRender() {
-    if (needsRender) return
-    needsRender = true
-
-    requestAnimationFrame(() => {
-      needsRender = false
-      renderFrame()
-    })
-  }
-
-  function renderFrame() {
+  const queueRender = makeRenderQueue(() => {
     renderCanvasFrame(
       pixelCanvas,
       state.scale,
       getTileImageData,
       (ctx) => {
-        tileGrid.drawTileEdges(ctx, tileId)
+        state.tileGrid.drawTileEdges(ctx, tileId)
         globalToolManager.currentToolHandler.tilePixelOverlayDraw?.(localToolContext(), ctx, tileId)
       },
       (ctx) => {
@@ -68,7 +53,7 @@ export function makeTileRenderer(
         globalToolManager.currentToolHandler.tileScreenOverlayDraw?.(localToolContext(), ctx, tileId)
       },
     )
-  }
+  })
 
   return {
     tileId,
