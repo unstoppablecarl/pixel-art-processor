@@ -1,4 +1,4 @@
-import { makeReusablePixelCanvas } from '../../../lib/util/misc.ts'
+import { makeReusablePixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 
 import type { EditorState } from '../EditorState.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'

@@ -1,4 +1,4 @@
-import { getCanvasPixelContext } from '../../lib/util/misc.ts'
+import { makePixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { LocalToolContext } from './_canvas-editor-types.ts'
 import type { EditorState } from './EditorState.ts'
@@ -28,15 +28,10 @@ export function makeTileRenderer(
 
   }) {
 
-  let ctx = getCanvasPixelContext(tileCanvas)
-
-  const pixelCanvas = { canvas: tileCanvas, ctx }
+  const pixelCanvas = makePixelCanvas(tileCanvas)
 
   function resize() {
-    if (!tileCanvas) return
-    tileCanvas.width = state.scaledTileSize
-    tileCanvas.height = state.scaledTileSize
-    ctx!.imageSmoothingEnabled = false
+    pixelCanvas.resize(state.scaledTileSize, state.scaledTileSize)
   }
 
   const queueRender = makeRenderQueue(() => {
@@ -61,7 +56,6 @@ export function makeTileRenderer(
   return {
     tileId,
     canvas: pixelCanvas.canvas,
-    ctx,
     resize,
     queueRender,
   }

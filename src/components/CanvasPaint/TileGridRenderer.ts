@@ -1,5 +1,5 @@
 import { writeImageData } from '../../lib/util/html-dom/ImageData.ts'
-import { getCanvasPixelContext, type PixelCanvas } from '../../lib/util/misc.ts'
+import { makePixelCanvas, type PixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
 import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { LocalToolContext } from './_canvas-editor-types.ts'
@@ -32,10 +32,7 @@ export function makeTileGridRenderer(
   const gridCache = makePixelGridLineRenderer(state)
 
   function setTileGridCanvas(canvas: HTMLCanvasElement) {
-    tileGridPixelCanvas = {
-      canvas,
-      ctx: getCanvasPixelContext(canvas),
-    }
+    tileGridPixelCanvas = makePixelCanvas(canvas)
     resize()
     queueRenderGrid()
   }
@@ -56,8 +53,7 @@ export function makeTileGridRenderer(
 
   function resize() {
     if (!tileGridPixelCanvas) return
-    tileGridPixelCanvas.canvas.width = state.gridScreenWidth
-    tileGridPixelCanvas.canvas.height = state.gridScreenHeight
+    tileGridPixelCanvas.resize(state.gridScreenWidth, state.gridScreenHeight)
     gridCache.updateGridCache()
     tileGridImageDataRef.resize(state.gridScreenWidth, state.gridScreenHeight)
 

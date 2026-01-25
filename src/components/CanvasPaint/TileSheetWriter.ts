@@ -108,10 +108,8 @@ export function makeTileSheetWriter(
     },
 
     clearImageDataRect(gx: number, gy: number, w: number, h: number) {
-      const overlapping = state.tileGridManager.getOverlappingTiles(
-        { x: gx, y: gy, w, h },
-        state.tileSheet.tileSize,
-      )
+      const rect = { x: gx, y: gy, w, h }
+      const overlapping = state.tileGridManager.getOverlappingTiles(rect)
 
       for (const { tile, tileOverlap } of overlapping) {
         const { x, y, w: tw, h: th } = tileOverlap
@@ -123,10 +121,8 @@ export function makeTileSheetWriter(
     },
 
     blendImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode): TileId[] {
-      const overlapping = state.tileGridManager.getOverlappingTiles(
-        { x: gx, y: gy, w: imageData.width, h: imageData.height },
-        state.tileSheet.tileSize,
-      )
+      const rect = { x: gx, y: gy, w: imageData.width, h: imageData.height }
+      const overlapping = state.tileGridManager.getOverlappingTiles(rect)
 
       for (const { tile, tileOverlap, gridOverlap } of overlapping) {
         const { x, y } = tileOverlap
