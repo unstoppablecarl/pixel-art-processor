@@ -1,4 +1,3 @@
-import { ref } from 'vue'
 import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
 import type { Selection } from './_canvas-editor-types.ts'
 
@@ -7,8 +6,8 @@ export type TilesetToolState = ReturnType<typeof makeTilesetToolState>
 export function makeTilesetToolState() {
   let selection: Selection | null = null
 
-  const selecting = ref(false)
-  const dragging = ref(false)
+  let selecting = false
+  let dragging = false
 
   function startSelection(x: number, y: number) {
     selection = {
@@ -27,8 +26,8 @@ export function makeTilesetToolState() {
       offsetY: 0,
     }
 
-    selecting.value = true
-    dragging.value = false
+    selecting = true
+    dragging = false
   }
 
   function updateSelection(x: number, y: number) {
@@ -72,8 +71,8 @@ export function makeTilesetToolState() {
 
   function clearSelection() {
     selection = null
-    selecting.value = false
-    dragging.value = false
+    selecting = false
+    dragging = false
   }
 
   function inSelection(x: number, y: number) {
@@ -92,8 +91,20 @@ export function makeTilesetToolState() {
       return selection
     },
 
-    selecting,
-    dragging,
+    get selecting() {
+      return selecting
+    },
+    set selecting(val) {
+      selecting = val
+    },
+
+    get dragging() {
+      return dragging
+    },
+    set dragging(val) {
+      dragging = val
+    },
+
     inSelection,
     startSelection,
     updateSelection,

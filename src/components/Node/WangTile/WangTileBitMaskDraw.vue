@@ -33,10 +33,9 @@ import {
 import CanvasPaint from '../../CanvasPaint.vue'
 import TileCanvas from '../../CanvasPaint/components/TileCanvas.vue'
 import TileGridCanvas from '../../CanvasPaint/components/TileGridCanvas.vue'
-import { makeTileGrid } from '../../CanvasPaint/data/TileGrid.ts'
+import { makeTileGridManager } from '../../CanvasPaint/data/TileGridManager.ts'
 import {
   deserializeTileSheet,
-  makeTileSheet,
   type SerializedTileSheet,
 } from '../../CanvasPaint/data/TileSheet.ts'
 import { makeLocalToolManager } from '../../CanvasPaint/LocalToolManager.ts'
@@ -79,22 +78,10 @@ const tileset = computed(() => makeAxialEdgeWangTileset(
   horizontalEdgeValueCount.value,
 ))
 
-const tileGrid = shallowRef(makeTileGrid(
+const tileGridManager = shallowRef(makeTileGridManager(
   tileset,
   tileSize,
 ))
-
-let tileSheet = shallowRef(makeTileSheet({
-  tileset: tileset.value,
-  tileSize: tileSize.value,
-}))
-
-watch([tileset, tileSize], () => {
-  tileSheet.value = makeTileSheet({
-    tileset: tileset.value,
-    tileSize: tileSize.value,
-  })
-})
 
 const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
@@ -113,7 +100,7 @@ const handler = defineStepHandler<Config>(STEP_META, {
   },
   deserializeConfig(config) {
     if (config.tileSheet) {
-      tileSheet.value = deserializeTileSheet(config.tileSheet)
+      tileGridManager.value.tileSheet.value = deserializeTileSheet(config.tileSheet)
     }
 
     return config
@@ -146,18 +133,16 @@ const config = node.config
 if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
-// const color = computed(() => brushMode.value === BrushMode.ADD ? parseColor('#fff') : { r: 0, g: 0, b: 0, a: 0 })
 
 const localToolManger = makeLocalToolManager({
-  tileGrid,
-  tileSheet,
+  tileGridManager,
 })
 
 function sync() {
   localToolManger.state.tileSize = tileSize.value
   localToolManger.state.scale = store.imgScale
-  localToolManger.state.gridTilesWidth = tileGrid.value.tileGrid.value.width
-  localToolManger.state.gridTilesHeight = tileGrid.value.tileGrid.value.height
+  localToolManger.state.gridTilesWidth = tileGridManager.value.tileGrid.value.width
+  localToolManger.state.gridTilesHeight = tileGridManager.value.tileGrid.value.height
   localToolManger.gridRenderer.resize()
   localToolManger.gridRenderer.queueRenderAll()
 }
@@ -169,9 +154,11 @@ watch(() => canvasStore.brushSize, () => {
 })
 
 useInterval(() => {
-  if (tileSheet.value.isDirty()) {
-    config.tileSheet = tileSheet.value.serialize()
-    tileSheet.value.clearDirty()
+  const tileSheet = tileGridManager.value.tileSheet.value
+
+  if (tileSheet.isDirty()) {
+    config.tileSheet = tileSheet.serialize()
+    tileSheet.clearDirty()
   }
 }, 1000)
 

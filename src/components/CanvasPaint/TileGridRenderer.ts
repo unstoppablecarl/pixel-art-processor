@@ -6,7 +6,7 @@ import type { LocalToolContext } from './_canvas-editor-types.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext, GlobalToolManager } from './GlobalToolManager.ts'
 import { makeRenderQueue, renderCanvasFrame } from './lib/canvas-frame.ts'
-import { makePixelGridCache } from './lib/PixelGridCache.ts'
+import { makePixelGridLineRenderer } from './renderers/PixelGridLineRenderer.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
 import { makeCursorCache } from './tools/brush-cursor.ts'
 
@@ -23,14 +23,13 @@ export function makeTileGridRenderer(
     toolContext: GlobalToolContext,
     globalToolManager: GlobalToolManager,
     localToolContext: () => LocalToolContext
-
   }) {
 
   let tileGridPixelCanvas: PixelCanvas | undefined
 
   const tileGridImageDataRef = imageDataRef()
   const tileRenderers: Record<TileId, TileRenderer> = {}
-  const gridCache = makePixelGridCache(state)
+  const gridCache = makePixelGridLineRenderer(state)
 
   function setTileGridCanvas(canvas: HTMLCanvasElement) {
     tileGridPixelCanvas = {
@@ -95,11 +94,13 @@ export function makeTileGridRenderer(
     drawTileGrid()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       globalToolManager.currentToolHandler?.gridPixelOverlayDraw?.(localToolContext(), ctx)
-      state.tileGrid.drawGridEdges(ctx)
+      state.tileGrid.tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
-      gridCache.drawGrid(ctx)
+      if (state.shouldDrawGrid) {
+        gridCache.drawGrid(ctx)
+      }
       globalToolManager.currentToolHandler?.gridScreenOverlayDraw?.(localToolContext(), ctx)
     }
 

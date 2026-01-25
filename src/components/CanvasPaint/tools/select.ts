@@ -62,7 +62,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
 
       if (ts.inSelection(tx, ty)) {
-        ts.dragging.value = true
+        ts.dragging = true
         sel.offsetX = tx - sel.x
         sel.offsetY = ty - sel.y
         return
@@ -86,9 +86,9 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const sel = ts.selection
       if (!sel) return
 
-      if (ts.dragging.value) {
+      if (ts.dragging) {
         ts.moveSelection(x, y)
-      } else if (ts.selecting.value) {
+      } else if (ts.selecting) {
         ts.updateSelection(x, y)
       }
 
@@ -101,12 +101,12 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const sel = ts.selection
       if (!sel) return
 
-      if (ts.selecting.value) {
+      if (ts.selecting) {
         ts.extractSelectionPixels(gridRenderer.tileGridImageDataRef.get()!)
-        ts.selecting.value = false
+        ts.selecting = false
       }
 
-      ts.dragging.value = false
+      ts.dragging = false
       gridRenderer.queueRenderAll()
     },
     gridPixelOverlayDraw({ tilesetToolState }, ctx) {

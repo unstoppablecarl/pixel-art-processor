@@ -4,7 +4,7 @@ import type { LocalToolContext } from './_canvas-editor-types.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolManager } from './GlobalToolManager.ts'
 import { makeRenderQueue, renderCanvasFrame } from './lib/canvas-frame.ts'
-import type { PixelGridCache } from './lib/PixelGridCache.ts'
+import type { PixelGridLineRenderer } from './renderers/PixelGridLineRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
 
@@ -21,7 +21,7 @@ export function makeTileRenderer(
     tileId: TileId,
     state: EditorState,
     getTileImageData: () => ImageData,
-    gridCache: PixelGridCache,
+    gridCache: PixelGridLineRenderer,
     tileCanvas: HTMLCanvasElement,
     globalToolManager: GlobalToolManager,
     localToolContext: () => LocalToolContext
@@ -45,11 +45,14 @@ export function makeTileRenderer(
       state.scale,
       getTileImageData,
       (ctx) => {
-        state.tileGrid.drawTileEdges(ctx, tileId)
+        state.tileGrid.tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
         globalToolManager.currentToolHandler.tilePixelOverlayDraw?.(localToolContext(), ctx, tileId)
       },
       (ctx) => {
-        gridCache.drawGrid(ctx)
+        if (state.shouldDrawGrid) {
+          gridCache.drawGrid(ctx)
+        }
+
         globalToolManager.currentToolHandler.tileScreenOverlayDraw?.(localToolContext(), ctx, tileId)
       },
     )

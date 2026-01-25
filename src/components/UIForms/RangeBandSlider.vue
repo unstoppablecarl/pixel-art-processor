@@ -152,10 +152,6 @@ const getValueFromPosition = (percent: number): number => {
   return props.min + (percent / 100) * (props.max - props.min)
 }
 
-const getPositionFromValue = (value: number): number => {
-  return ((value - props.min) / (props.max - props.min)) * 100
-}
-
 const onThumbMousedown = (event: MouseEvent, isMin: boolean): void => {
   event.preventDefault()
   activeThumb.value = isMin ? minThumb.value : maxThumb.value

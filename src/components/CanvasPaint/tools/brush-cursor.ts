@@ -8,6 +8,7 @@ const pixelCanvas = makeReusablePixelCanvas()
 
 type BrushSettings = Pick<EditorState, 'scale' | 'cursorColor'> & Pick<GlobalToolContext, 'brushShape' | 'brushSize'>
 
+export type CursorCache = ReturnType<typeof makeCursorCache>
 export function makeCursorCache(state: EditorState, toolContext: GlobalToolContext) {
   const { canvas, ctx } = pixelCanvas(1, 1)
 

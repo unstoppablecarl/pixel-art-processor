@@ -1,6 +1,6 @@
 import type { EditorState } from '../EditorState.ts'
 
-export type PixelGridCache = ReturnType<typeof makePixelGridCache>
+export type PixelGridLineRenderer = ReturnType<typeof makePixelGridLineRenderer>
 
 export type GridCacheUpdate = {
   gridColor: string,
@@ -11,7 +11,7 @@ export type GridCacheUpdate = {
   scaledHeight: number,
 }
 
-export function makePixelGridCache(state: EditorState) {
+export function makePixelGridLineRenderer(state: EditorState) {
   const gridCache = document.createElement('canvas')
   const gridCacheCtx = gridCache.getContext('2d')!
 

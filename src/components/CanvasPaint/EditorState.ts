@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { type Selection } from './_canvas-editor-types.ts'
-import type { TileGrid } from './data/TileGrid.ts'
+import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 
 let id = 0
@@ -65,6 +65,8 @@ interface BaseEditorState {
 
   readonly scaledTileSize: number
 
+  readonly shouldDrawGrid: boolean
+
   scale: number
 
   // tile coords if over tile
@@ -90,12 +92,12 @@ interface BaseEditorState {
   selectionData: Selection | null
 
   readonly tileSheet: TileSheet
-  readonly tileGrid: TileGrid
+  readonly tileGrid: TileGridManager
 
   tileMarginCopySize: number
 }
 
-export function makeEditorState(tileSheet: ShallowRef<TileSheet>, tileGrid: ShallowRef<TileGrid>): EditorState {
+export function makeEditorState(tileGridManager: ShallowRef<TileGridManager>): EditorState {
   return {
     id: id++,
 
@@ -153,17 +155,21 @@ export function makeEditorState(tileSheet: ShallowRef<TileSheet>, tileGrid: Shal
     gridColor: 'rgba(0, 0, 0, 0.2)',
     cursorColor: 'rgba(0, 255, 255, 1)',
 
+    get shouldDrawGrid() {
+      return this.scale > 3
+    },
+
     emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
 
     selecting: false,
     selectionData: null as null | Selection,
 
     get tileSheet() {
-      return tileSheet.value
+      return tileGridManager.value.tileSheet.value
     },
 
     get tileGrid() {
-      return tileGrid.value
+      return tileGridManager.value
     },
 
     tileMarginCopySize: 1,

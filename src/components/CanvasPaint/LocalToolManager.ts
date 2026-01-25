@@ -1,8 +1,7 @@
 import type { ShallowRef } from 'vue'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { CanvasType, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
-import type { TileGrid } from './data/TileGrid.ts'
-import type { TileSheet } from './data/TileSheet.ts'
+import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
 import { makeTileGridRenderer } from './TileGridRenderer.ts'
@@ -13,21 +12,19 @@ export type LocalToolManager = ReturnType<typeof makeLocalToolManager>
 
 export function makeLocalToolManager(
   {
-    tileSheet,
-    tileGrid,
+    tileGridManager,
     tileSheetWriter,
     tilesetToolState,
     global = useGlobalToolManager(),
   }: {
-    tileSheet: ShallowRef<TileSheet>,
-    tileGrid: ShallowRef<TileGrid>,
+    tileGridManager: ShallowRef<TileGridManager>,
     tileSheetWriter?: TileSheetWriter,
     tilesetToolState?: TilesetToolState,
     global?: GlobalToolManager
   },
 ) {
 
-  const state = makeEditorState(tileSheet, tileGrid)
+  const state = makeEditorState(tileGridManager)
   const gridRenderer = makeTileGridRenderer({
     state,
     toolContext: global.toolContext,
@@ -53,9 +50,9 @@ export function makeLocalToolManager(
       state.mouseGridX = x
       state.mouseGridY = y
 
-      const d = tileGrid.value.gridPixelToTile(x, y)
+      const d = tileGridManager.value.gridPixelToTile(x, y)
       if (d) {
-        const { x: tx, y: ty } = tileGrid.value.gridPixelToTilePixel(x, y)
+        const { x: tx, y: ty } = tileGridManager.value.gridPixelToTilePixel(x, y)
         state.hoverTileId = d.tile.id
         state.hoverTilePixelX = tx
         state.hoverTilePixelY = ty
@@ -87,7 +84,7 @@ export function makeLocalToolManager(
     state,
     gridRenderer,
     tilesetToolState,
-    tileGrid,
+    tileGridManager,
     onGlobalToolChanging(oldTool: Tool, newTool: Tool) {
       global.tools[oldTool]?.onGlobalToolChanging?.(local, oldTool, newTool)
     },
