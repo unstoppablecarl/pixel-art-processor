@@ -132,8 +132,8 @@ export function makeLocalToolManager(
         global.tools[global.currentTool]?.onMouseMove?.(local, x, y, canvasType, tileId)
       }
 
-      state.lastX = x
-      state.lastY = y
+      state.mouseLastX = x
+      state.mouseLastY = y
     },
 
     onMouseUp(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {

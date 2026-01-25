@@ -4,11 +4,98 @@ import { type Selection } from './_canvas-editor-types.ts'
 import type { TileGrid } from './data/TileGrid.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 
-export type EditorState = ReturnType<typeof makeEditorState>
-
 let id = 0
 
-export function makeEditorState(tileSheet: ShallowRef<TileSheet>, tileGrid: ShallowRef<TileGrid>) {
+export type EditorState =
+  BaseEditorState &
+  HoverTileState &
+  MouseTileState &
+  MouseGridState
+
+// unified hover state
+type HoverTileState =
+  | {
+  hoverTileId: TileId
+  hoverTilePixelX: number
+  hoverTilePixelY: number
+}
+  | {
+  hoverTileId: null
+  hoverTilePixelX: null
+  hoverTilePixelY: null
+}
+
+// only when mouse over tile
+type MouseTileState =
+  | {
+  mouseTileId: TileId
+  mouseTilePixelX: number
+  mouseTilePixelY: number
+}
+  | {
+  mouseTileId: null
+  mouseTilePixelX: null
+  mouseTilePixelY: null
+}
+
+// only when mouse over grid
+type MouseGridState =
+  | {
+  mouseGridX: number
+  mouseGridY: number
+}
+  | {
+  mouseGridX: null
+  mouseGridY: null
+}
+
+interface BaseEditorState {
+  id: number
+
+  gridTilesWidth: number
+  gridTilesHeight: number
+
+  tileSize: number
+
+  readonly gridPixelWidth: number
+  readonly gridPixelHeight: number
+
+  readonly gridScreenWidth: number
+  readonly gridScreenHeight: number
+
+  readonly scaledTileSize: number
+
+  scale: number
+
+  // tile coords if over tile
+  // grid coords if over grid
+  mouseLastX: number | null
+  mouseLastY: number | null
+
+  // tile coords if over tile
+  // grid coords if over grid
+  mouseDownX: number | null
+  mouseDownY: number | null
+
+  isDragging: boolean
+  dragThreshold: number
+  dragStartTileId: TileId | null
+
+  gridColor: string
+  cursorColor: string
+
+  emitSetPixels: ((pixels: { x: number; y: number }[]) => void) | null
+
+  selecting: boolean
+  selectionData: Selection | null
+
+  readonly tileSheet: TileSheet
+  readonly tileGrid: TileGrid
+
+  tileMarginCopySize: number
+}
+
+export function makeEditorState(tileSheet: ShallowRef<TileSheet>, tileGrid: ShallowRef<TileGrid>): EditorState {
   return {
     id: id++,
 
@@ -40,28 +127,28 @@ export function makeEditorState(tileSheet: ShallowRef<TileSheet>, tileGrid: Shal
     scale: 8,
 
     // only when mouse over grid
-    mouseGridX: null as null | number,
-    mouseGridY: null as null | number,
+    mouseGridX: null,
+    mouseGridY: null,
 
     // only when mouse over tile
-    mouseTileId: null as TileId | null,
-    mouseTilePixelX: null as null | number,
-    mouseTilePixelY: null as null | number,
+    mouseTileId: null,
+    mouseTilePixelX: null,
+    mouseTilePixelY: null,
 
     // simulated from mouse over grid or tile
-    hoverTileId: null as TileId | null,
-    hoverTilePixelX: null as number | null,
-    hoverTilePixelY: null as number | null,
+    hoverTileId: null,
+    hoverTilePixelX: null,
+    hoverTilePixelY: null,
 
-    lastX: null as null | number,
-    lastY: null as null | number,
+    mouseLastX: null,
+    mouseLastY: null,
 
-    mouseDownX: null as null | number,
-    mouseDownY: null as null | number,
+    mouseDownX: null,
+    mouseDownY: null,
 
     isDragging: false,
     dragThreshold: 2,
-    dragStartTileId: null as TileId | null,
+    dragStartTileId: null,
 
     gridColor: 'rgba(0, 0, 0, 0.2)',
     cursorColor: 'rgba(0, 255, 255, 1)',

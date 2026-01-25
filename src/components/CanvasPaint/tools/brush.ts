@@ -70,13 +70,13 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
     },
     onDragMove({ state, tileSheetWriter, gridRenderer }, x, y, canvasType, tileId) {
       if (!isDrawing) return
-      const { lastX, lastY } = state
-      if (lastX == null || lastY == null) return
+      const { mouseLastX, mouseLastY } = state
+      if (mouseLastX == null || mouseLastY == null) return
 
       // Interpolate between last position and current position
       const points = interpolateLine(
-        Math.floor(lastX!),
-        Math.floor(lastY!),
+        Math.floor(mouseLastX!),
+        Math.floor(mouseLastY!),
         Math.floor(x),
         Math.floor(y),
       )
@@ -116,7 +116,7 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
     },
     gridScreenOverlayDraw({ state, gridRenderer }, ctx: CanvasRenderingContext2D) {
       if (state.hoverTileId === null) return
-      const { scale, tileGrid } = state
+      const { scale, tileGrid, tileSize, hoverTilePixelX, hoverTilePixelY } = state
       const { brushSize } = toolContext
 
       const cx = Math.floor(brushSize / 2)
@@ -124,10 +124,8 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
       const tileGridData = tileGrid.tileGrid.value
 
       tileGridData.eachWithTileId(state.hoverTileId, (x, y, v) => {
-
-        const screenX = x * state.tileSize * scale - cx * scale + state.hoverTilePixelX!
-        const screenY = y * state.tileSize * scale - cx * scale + state.hoverTilePixelY!
-
+        const screenX = (x * tileSize + hoverTilePixelX! - cx) * scale
+        const screenY = (y * tileSize + hoverTilePixelY! - cx) * scale
         ctx.drawImage(
           gridRenderer.cursor.canvas,
           Math.floor(screenX),
@@ -147,8 +145,8 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
       const cx = Math.floor(brushSize / 2)
 
-      const screenX = x * scale - cx * scale
-      const screenY = y * scale - cx * scale
+      const screenX = (x - cx) * scale
+      const screenY = (y - cx) * scale
 
       ctx.drawImage(
         gridRenderer.cursor.canvas,
