@@ -31,9 +31,14 @@ export function makeLocalToolManager(
     localToolContext: () => local,
   })
 
-  tilesetToolState ??= makeTilesetToolState()
   tileSheetWriter ??= makeTileSheetWriter({
     state,
+    gridRenderer,
+    globalToolContext: global.toolContext,
+  })
+
+  tilesetToolState ??= makeTilesetToolState({
+    tileSheetWriter,
     gridRenderer,
   })
 

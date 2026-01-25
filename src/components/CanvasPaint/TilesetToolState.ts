@@ -1,10 +1,22 @@
 import type { RectBounds } from '../../lib/util/data/Bounds.ts'
 import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
-import type { Selection } from './_canvas-editor-types.ts'
+import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
+import { BlendMode, type Selection } from './_canvas-editor-types.ts'
+import type { TileGridRenderer } from './TileGridRenderer.ts'
+import type { TileSheetWriter } from './TileSheetWriter.ts'
 
 export type TilesetToolState = ReturnType<typeof makeTilesetToolState>
 
-export function makeTilesetToolState() {
+export function makeTilesetToolState(
+  {
+    tileSheetWriter,
+    gridRenderer,
+  }:
+  {
+    tileSheetWriter: TileSheetWriter,
+    gridRenderer: TileGridRenderer,
+  },
+) {
   let selection: Selection | null = null
 
   let selecting = false
@@ -46,6 +58,13 @@ export function makeTilesetToolState() {
       w: sel.origW,
       h: sel.origH,
     }
+  }
+
+  function dragStart(x: number, y: number) {
+    if (!selection) throw new Error('no Selection')
+    dragging = true
+    selection.offsetX = x - selection.x
+    selection.offsetY = y - selection.y
   }
 
   function updateSelection(x: number, y: number) {
@@ -104,6 +123,30 @@ export function makeTilesetToolState() {
     )
   }
 
+  function commitGrid(mode: BlendMode) {
+    const sel = selection
+    if (!sel?.pixels) return
+    if (sel.w && sel.h) {
+      tileSheetWriter.clearGridRect(sel.origX, sel.origY, sel.origW, sel.origH)
+      const affectedTileIds = tileSheetWriter.blendGridImageData(sel.pixels, sel.x, sel.y, mode)
+      gridRenderer.queueRenderTiles(affectedTileIds)
+    }
+    clearSelection()
+    gridRenderer.queueRenderGrid()
+  }
+
+  function commitTile(tileId: TileId, mode: BlendMode) {
+    const sel = selection
+    if (!sel?.pixels) return
+    if (sel.w && sel.h) {
+      tileSheetWriter.clearTileRect(tileId, sel.origX, sel.origY, sel.origW, sel.origH)
+      tileSheetWriter.blendTileImageData(tileId, sel.pixels, sel.x, sel.y, mode)
+      gridRenderer.queueRenderTile(tileId)
+    }
+    clearSelection()
+    gridRenderer.queueRenderTile(tileId)
+  }
+
   return {
     get selection() {
       return selection
@@ -122,6 +165,9 @@ export function makeTilesetToolState() {
     set dragging(val) {
       dragging = val
     },
+    commitGrid,
+    commitTile,
+    dragStart,
     originalRect,
     selectionHasMoved,
     inSelection,
