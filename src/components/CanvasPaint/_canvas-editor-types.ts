@@ -43,7 +43,7 @@ export type ToolHandler = {
 
 export enum Tool {
   BRUSH = 'BRUSH',
-  // SELECT = 'SELECT'
+  SELECT = 'SELECT'
 }
 
 export type DrawLayer = (ctx: CanvasRenderingContext2D, offX?: number, offY?: number) => void
@@ -53,13 +53,18 @@ export enum BrushMode {
   REMOVE = 'REMOVE'
 }
 
+export enum SelectMoveBlendMode {
+  OVERWRITE = 'OVERWRITE',
+  IGNORE_TRANSPARENT = 'IGNORE_TRANSPARENT',
+  IGNORE_SOLID = 'IGNORE_SOLID'
+}
+
 export type Selection = {
   x: number
   y: number
   w: number
   h: number
   pixels: ImageData | null
-  dragging: boolean
   offsetX: number
   offsetY: number
 

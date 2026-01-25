@@ -98,6 +98,8 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
         capsule.set(new ImageData(newWidth, newHeight))
         return
       }
+      if (image.width === newWidth && image.height === newHeight) return
+
       const newImage = resizeImageData(image, newWidth, newHeight, offsetX, offsetY)
       capsule.set(newImage)
     },

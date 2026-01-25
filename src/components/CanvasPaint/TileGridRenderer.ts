@@ -1,4 +1,4 @@
-import { putImageDataScaled } from '../../lib/util/html-dom/ImageData.ts'
+import { writeImageData } from '../../lib/util/html-dom/ImageData.ts'
 import { getCanvasPixelContext, type PixelCanvas } from '../../lib/util/misc.ts'
 import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
@@ -28,7 +28,7 @@ export function makeTileGridRenderer(
 
   let tileGridPixelCanvas: PixelCanvas | undefined
 
-  const tileGridImageData = imageDataRef()
+  const tileGridImageDataRef = imageDataRef()
   const tileRenderers: Record<TileId, TileRenderer> = {}
   const gridCache = makePixelGridCache(state)
 
@@ -60,42 +60,42 @@ export function makeTileGridRenderer(
     tileGridPixelCanvas.canvas.width = state.gridScreenWidth
     tileGridPixelCanvas.canvas.height = state.gridScreenHeight
     gridCache.updateGridCache()
-    tileGridImageData.resize(state.gridScreenWidth, state.gridScreenHeight)
+    tileGridImageDataRef.resize(state.gridScreenWidth, state.gridScreenHeight)
 
     for (const tileRenderer of Object.values(tileRenderers)) {
       tileRenderer.resize()
     }
   }
 
-  function queueRenderTiles() {
-    Object.values(tileRenderers).forEach(tileRenderer => tileRenderer.queueRender())
+  function queueRenderTiles(tileIds?: TileId[]) {
+    Object.entries(tileRenderers).forEach(([tileId, tileRenderer]) => {
+      if (!tileIds || tileIds.includes(tileId as TileId)) {
+        tileRenderer.queueRender()
+      }
+    })
   }
 
   function queueRenderTile(tileId: TileId) {
     tileRenderers[tileId]?.queueRender()
   }
 
-  function drawAllTiles(ctx: CanvasRenderingContext2D) {
-
+  function drawTileGrid() {
+    tileGridImageDataRef.resize(state.gridScreenWidth, state.gridScreenHeight)
     state.tileGrid.tileGrid.value.each((tileX, tileY, tile) => {
       if (!tile) return
       const tileId = tile.id
-      const tileRenderer = tileRenderers[tileId]
-      if (!tileRenderer) return
-
       const { x, y } = state.tileGrid.tileCoordToGridPixel(tileX, tileY)
-
       const tileImage = state.tileSheet.extractTile(tileId)
-      putImageDataScaled(ctx, tileImage.width, tileImage.height, tileImage, x, y)
+      writeImageData(tileGridImageDataRef.get()!, tileImage, x, y, 0, 0, tileImage.width, tileImage.height)
     })
   }
 
   const queueRenderGrid = makeRenderQueue(() => {
 
+    drawTileGrid()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
-      drawAllTiles(ctx)
-      state.tileGrid.drawGridEdges(ctx)
       globalToolManager.currentToolHandler?.gridPixelOverlayDraw?.(localToolContext(), ctx)
+      state.tileGrid.drawGridEdges(ctx)
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
@@ -106,7 +106,7 @@ export function makeTileGridRenderer(
     renderCanvasFrame(
       tileGridPixelCanvas,
       state.scale,
-      () => tileGridImageData?.get(),
+      () => tileGridImageDataRef?.get(),
       drawPixelLayer,
       drawScreenLayer,
     )
@@ -114,6 +114,7 @@ export function makeTileGridRenderer(
 
   return {
     state,
+    tileGridImageDataRef,
     cursor: makeCursorCache(state, toolContext),
     registerTileCanvas,
     setTileGridCanvas,

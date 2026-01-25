@@ -1,9 +1,8 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import { BrushMode, Tool } from '../../components/CanvasPaint/_canvas-editor-types.ts'
+import { BrushMode, SelectMoveBlendMode, Tool } from '../../components/CanvasPaint/_canvas-editor-types.ts'
 import { BrushShape } from '../../components/CanvasPaint/tools/brush.ts'
-import { SelectMoveBlendMode } from '../../components/CanvasPaint/tools/select.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
 import { makeStateMapper } from './_store-helpers.ts'
 

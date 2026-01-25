@@ -15,10 +15,10 @@ import {
 } from '../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
+import { SelectMoveBlendMode } from './_canvas-editor-types.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { TileGridRenderer } from './TileGridRenderer.ts'
-import { SelectMoveBlendMode } from './tools/select.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
 
@@ -125,7 +125,7 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    blendImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode) {
+    blendImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode): TileId[] {
       const overlapping = state.tileGrid.tileGrid.value.getOverlappingTiles(
         { x: gx, y: gy, w: imageData.width, h: imageData.height },
         state.tileSheet.tileSize,
@@ -148,6 +148,7 @@ export function makeTileSheetWriter(
         markDirty(tile.id)
       }
       state.tileSheet.markDirty()
+      return overlapping.map(d => d.tile.id)
     },
   }
 }
