@@ -21,6 +21,7 @@ import {
 } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
+import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
@@ -155,12 +156,17 @@ const localToolManger = makeLocalToolManager({
 function sync() {
   localToolManger.state.tileSize = tileSize.value
   localToolManger.state.scale = store.imgScale
-  localToolManger.gridRenderer.queueRenderGrid()
-  localToolManger.gridRenderer.resize()
   localToolManger.state.gridTilesWidth = tileGrid.value.tileGrid.value.width
   localToolManger.state.gridTilesHeight = tileGrid.value.tileGrid.value.height
-  localToolManger.gridRenderer.queueRenderTiles()
+  localToolManger.gridRenderer.resize()
+  localToolManger.gridRenderer.queueRenderAll()
 }
+
+const canvasStore = useCanvasPaintStore()
+
+watch(() => canvasStore.brushSize, () => {
+  localToolManger.gridRenderer.queueRenderAll()
+})
 
 useInterval(() => {
   if (tileSheet.value.isDirty()) {
