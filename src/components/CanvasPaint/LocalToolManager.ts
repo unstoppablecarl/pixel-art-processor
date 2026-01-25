@@ -1,4 +1,3 @@
-import type { ShallowRef } from 'vue'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { CanvasType, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
@@ -17,7 +16,7 @@ export function makeLocalToolManager(
     tilesetToolState,
     global = useGlobalToolManager(),
   }: {
-    tileGridManager: ShallowRef<TileGridManager>,
+    tileGridManager: TileGridManager,
     tileSheetWriter?: TileSheetWriter,
     tilesetToolState?: TilesetToolState,
     global?: GlobalToolManager
@@ -50,9 +49,9 @@ export function makeLocalToolManager(
       state.mouseGridX = x
       state.mouseGridY = y
 
-      const d = tileGridManager.value.gridPixelToTile(x, y)
+      const d = tileGridManager.gridPixelToTile(x, y)
       if (d) {
-        const { x: tx, y: ty } = tileGridManager.value.gridPixelToTilePixel(x, y)
+        const { x: tx, y: ty } = tileGridManager.gridPixelToTilePixel(x, y)
         state.hoverTileId = d.tile.id
         state.hoverTilePixelX = tx
         state.hoverTilePixelY = ty

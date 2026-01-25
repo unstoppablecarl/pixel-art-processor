@@ -80,10 +80,10 @@ export function makeTileGridRenderer(
 
   function drawTileGrid() {
     tileGridImageDataRef.resize(state.gridScreenWidth, state.gridScreenHeight)
-    state.tileGrid.tileGrid.value.each((tileX, tileY, tile) => {
+    state.tileGrid.each((tileX, tileY, tile) => {
       if (!tile) return
       const tileId = tile.id
-      const { x, y } = state.tileGrid.tileCoordToGridPixel(tileX, tileY)
+      const { x, y } = state.tileGridManager.tileCoordToGridPixel(tileX, tileY)
       const tileImage = state.tileSheet.extractTile(tileId)
       writeImageData(tileGridImageDataRef.get()!, tileImage, x, y, 0, 0, tileImage.width, tileImage.height)
     })
@@ -94,7 +94,7 @@ export function makeTileGridRenderer(
     drawTileGrid()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       globalToolManager.currentToolHandler?.gridPixelOverlayDraw?.(localToolContext(), ctx)
-      state.tileGrid.tileGridEdgeColorRenderer.drawGridEdges(ctx)
+      state.tileGridManager.tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {

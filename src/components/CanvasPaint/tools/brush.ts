@@ -121,9 +121,8 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
 
       const cx = Math.floor(brushSize / 2)
 
-      const tileGridData = tileGrid.tileGrid.value
 
-      tileGridData.eachWithTileId(state.hoverTileId, (x, y, v) => {
+      tileGrid.eachWithTileId(state.hoverTileId, (x, y, v) => {
         const screenX = (x * tileSize + hoverTilePixelX! - cx) * scale
         const screenY = (y * tileSize + hoverTilePixelY! - cx) * scale
         ctx.drawImage(

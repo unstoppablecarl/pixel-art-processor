@@ -16,7 +16,7 @@ export const STEP_META = defineStep({
 import {
   computed, onMounted,
   type Reactive,
-  ref, shallowRef,
+  ref,
   useTemplateRef, watch, watchEffect,
 } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
@@ -78,10 +78,10 @@ const tileset = computed(() => makeAxialEdgeWangTileset(
   horizontalEdgeValueCount.value,
 ))
 
-const tileGridManager = shallowRef(makeTileGridManager(
+const tileGridManager = makeTileGridManager(
   tileset,
   tileSize,
-))
+)
 
 const handler = defineStepHandler<Config>(STEP_META, {
   config(): Config {
@@ -100,7 +100,7 @@ const handler = defineStepHandler<Config>(STEP_META, {
   },
   deserializeConfig(config) {
     if (config.tileSheet) {
-      tileGridManager.value.tileSheet.value = deserializeTileSheet(config.tileSheet)
+      tileGridManager.tileSheet.value = deserializeTileSheet(config.tileSheet)
     }
 
     return config
@@ -141,8 +141,8 @@ const localToolManger = makeLocalToolManager({
 function sync() {
   localToolManger.state.tileSize = tileSize.value
   localToolManger.state.scale = store.imgScale
-  localToolManger.state.gridTilesWidth = tileGridManager.value.tileGrid.value.width
-  localToolManger.state.gridTilesHeight = tileGridManager.value.tileGrid.value.height
+  localToolManger.state.gridTilesWidth = tileGridManager.tileGrid.value.width
+  localToolManger.state.gridTilesHeight = tileGridManager.tileGrid.value.height
   localToolManger.gridRenderer.resize()
   localToolManger.gridRenderer.queueRenderAll()
 }
@@ -154,7 +154,7 @@ watch(() => canvasStore.brushSize, () => {
 })
 
 useInterval(() => {
-  const tileSheet = tileGridManager.value.tileSheet.value
+  const tileSheet = tileGridManager.tileSheet.value
 
   if (tileSheet.isDirty()) {
     config.tileSheet = tileSheet.serialize()

@@ -51,9 +51,7 @@ export function makeTileSheetWriter(
 
   return {
     clear() {
-      const tileset = state.tileGrid.tileset.value
-
-      for (const tile of tileset.tiles) {
+      for (const tile of state.tileset.tiles) {
         const rect = state.tileSheet.getTileRect(tile.id)
         clearImageDataRect(state.tileSheet.imageData, rect.x, rect.y, rect.w, rect.h)
         markDirty(tile.id)
@@ -65,10 +63,9 @@ export function makeTileSheetWriter(
       tilePixels.forEach(({ x, y }) => {
         writeTilePixel(tileId, x, y, color)
       })
-      const tileset = state.tileGrid.tileset.value
 
       const affected = duplicateEdgePixels(
-        tileset,
+        state.tileset,
         state.tileSheet,
         tileId,
         tilePixels,
@@ -83,16 +80,16 @@ export function makeTileSheetWriter(
 
     writeGridPixels(gridPixels: Point[], color: RGBA) {
 
-      const tileset = state.tileGrid.tileset.value
+      const tileset = state.tileset
 
       gridPixels.forEach(({ x, y }) => {
-        const hit = state.tileGrid.gridPixelToTile(x, y)
+        const hit = state.tileGridManager.gridPixelToTile(x, y)
         if (!hit) return
 
         const { tile } = hit
         if (!tile) return
 
-        const { x: lx, y: ly } = state.tileGrid.gridPixelToTilePixel(x, y)!
+        const { x: lx, y: ly } = state.tileGridManager.gridPixelToTilePixel(x, y)!
         writeTilePixel(tile.id, lx, ly, color)
 
         const affected = duplicateEdgePixels(
@@ -111,7 +108,7 @@ export function makeTileSheetWriter(
     },
 
     clearImageDataRect(gx: number, gy: number, w: number, h: number) {
-      const overlapping = state.tileGrid.tileGrid.value.getOverlappingTiles(
+      const overlapping = state.tileGridManager.getOverlappingTiles(
         { x: gx, y: gy, w, h },
         state.tileSheet.tileSize,
       )
@@ -126,7 +123,7 @@ export function makeTileSheetWriter(
     },
 
     blendImageData(imageData: ImageData, gx: number, gy: number, blendMode: SelectMoveBlendMode): TileId[] {
-      const overlapping = state.tileGrid.tileGrid.value.getOverlappingTiles(
+      const overlapping = state.tileGridManager.getOverlappingTiles(
         { x: gx, y: gy, w: imageData.width, h: imageData.height },
         state.tileSheet.tileSize,
       )

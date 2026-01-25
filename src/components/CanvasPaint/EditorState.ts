@@ -1,5 +1,5 @@
-import type { ShallowRef } from 'vue'
-import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
+import type { AxialEdgeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
+import { AxialEdgeWangTileset, type TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { type Selection } from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileSheet } from './data/TileSheet.ts'
@@ -92,12 +92,14 @@ interface BaseEditorState {
   selectionData: Selection | null
 
   readonly tileSheet: TileSheet
-  readonly tileGrid: TileGridManager
+  readonly tileGrid: AxialEdgeWangGrid<number>
+  readonly tileGridManager: TileGridManager,
+  readonly tileset: AxialEdgeWangTileset<number>
 
   tileMarginCopySize: number
 }
 
-export function makeEditorState(tileGridManager: ShallowRef<TileGridManager>): EditorState {
+export function makeEditorState(tileGridManager: TileGridManager): EditorState {
   return {
     id: id++,
 
@@ -164,12 +166,20 @@ export function makeEditorState(tileGridManager: ShallowRef<TileGridManager>): E
     selecting: false,
     selectionData: null as null | Selection,
 
+    get tileset() {
+      return tileGridManager.tileset.value
+    },
+
     get tileSheet() {
-      return tileGridManager.value.tileSheet.value
+      return tileGridManager.tileSheet.value
     },
 
     get tileGrid() {
-      return tileGridManager.value
+      return tileGridManager.tileGrid.value
+    },
+
+    get tileGridManager() {
+      return tileGridManager
     },
 
     tileMarginCopySize: 1,

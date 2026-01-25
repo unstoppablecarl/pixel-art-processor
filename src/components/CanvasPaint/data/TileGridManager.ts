@@ -1,5 +1,6 @@
 import { computed, type ComputedRef, type Ref, shallowRef, watch } from 'vue'
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
+import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { type AxialEdgeWangGrid, makeAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import type { AxialEdgeWangTileset, TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { makeTileGridEdgeColorRenderer } from '../renderers/TileGridEdgeColorRenderer.ts'
@@ -79,6 +80,72 @@ export function makeTileGridManager(
     })
   })
 
+  function getOverlappingTiles(
+    rect: RectBounds,
+    tileSize: number,
+  ) {
+    const results: {
+      tile: any,
+      tileX: number,
+      tileY: number,
+      tileOverlap: RectBounds,
+      gridOverlap: RectBounds,
+    }[] = []
+
+    const startTileX = Math.floor(rect.x / tileSize)
+    const startTileY = Math.floor(rect.y / tileSize)
+    const endTileX = Math.floor((rect.x + rect.w - 1) / tileSize)
+    const endTileY = Math.floor((rect.y + rect.h - 1) / tileSize)
+
+    for (let ty = startTileY; ty <= endTileY; ty++) {
+      for (let tx = startTileX; tx <= endTileX; tx++) {
+        const tile = tileGrid.value.get(tx, ty)
+        if (!tile) continue
+
+        const tilePx = tx * tileSize
+        const tilePy = ty * tileSize
+
+        // Intersection in grid-pixel space
+        const ix = Math.max(rect.x, tilePx)
+        const iy = Math.max(rect.y, tilePy)
+        const ix2 = Math.min(rect.x + rect.w, tilePx + tileSize)
+        const iy2 = Math.min(rect.y + rect.h, tilePy + tileSize)
+
+        const iw = ix2 - ix
+        const ih = iy2 - iy
+        if (iw <= 0 || ih <= 0) continue
+
+        // Tile-local overlap
+        const overlapX = ix - tilePx
+        const overlapY = iy - tilePy
+
+        // Source-local overlap
+        const sourceX = ix - rect.x
+        const sourceY = iy - rect.y
+
+        results.push({
+          tile,
+          tileX: tx,
+          tileY: ty,
+          tileOverlap: {
+            x: overlapX,
+            y: overlapY,
+            w: iw,
+            h: ih,
+          },
+          gridOverlap: {
+            x: sourceX,
+            y: sourceY,
+            w: iw,
+            h: ih,
+          },
+        })
+      }
+    }
+
+    return results
+  }
+
   return {
     tileSize,
     gridWidth,
@@ -88,6 +155,7 @@ export function makeTileGridManager(
     tileset,
     tileGrid,
     tileGridEdgeColorRenderer,
+    getOverlappingTiles,
     gridPixelToTile,
     gridPixelToTilePixel,
     tileCoordToGridPixel,
