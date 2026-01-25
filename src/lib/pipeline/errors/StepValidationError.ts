@@ -2,7 +2,7 @@ export abstract class StepValidationError extends Error {
 
   abstract slug: string
 
-  constructor(
+  protected constructor(
     readonly title: string,
     readonly message: string,
   ) {

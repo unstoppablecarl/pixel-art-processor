@@ -1,6 +1,5 @@
 import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
-import type { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import { arrayIndexToColor } from '../../../lib/util/color.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import { Sketch } from '../../../lib/util/html-dom/Sketch.ts'
@@ -16,27 +15,19 @@ export function makeTileGrid(
   tileGridFactory: (tileset: AxialEdgeWangTileset<number>) => AxialEdgeWangGrid<number> = makeAxialEdgeWangGrid,
 ) {
 
+  const EDGE_COLOR_ALPHA = 0.5
+
   const edgeColors = computed(() => {
     const edgeValues = tileset.value.edgeValues()
-    return edgeValues.map((edgeValue) => arrayIndexToColor(edgeValue, edgeValues.length, 255 * 0.5))
-  })
-
-  const cachedWangTileEdgeColorPixelMaps = computed((): Record<TileId, PixelMap> => {
-    return Object.fromEntries(tileset.value.tiles.map((tile, index) => [
-        tile.id,
-        makeWangTileEdgesPixelMap(tileSize.value, tile, edgeColors.value),
-      ],
-    ))
+    return edgeValues.map((edgeValue) => arrayIndexToColor(edgeValue, edgeValues.length, 255 * EDGE_COLOR_ALPHA))
   })
 
   const cachedWangTileEdgeColorImageData = computed((): Record<TileId, ImageData> => {
-    return Object.fromEntries(
-      Object.entries(cachedWangTileEdgeColorPixelMaps.value).map(([tileId, item]) => [
-          tileId,
-          item.toImageData(),
-        ],
-      ),
-    )
+    return Object.fromEntries(tileset.value.tiles.map((tile, index) => [
+        tile.id,
+        makeWangTileEdgesPixelMap(tileSize.value, tile, edgeColors.value).toImageData(),
+      ],
+    ))
   })
 
   const tileGrid = computed(() => tileGridFactory(tileset.value))
@@ -56,11 +47,11 @@ export function makeTileGrid(
     if (!tileGrid.value) return
     tileGrid.value.each((tx, ty, tile) => {
       if (!tile) return
-      const pixelMap = cachedWangTileEdgeColorPixelMaps.value[tile.id]
+      const imageData = cachedWangTileEdgeColorImageData.value[tile.id]
       const x = tx * tileSize.value
       const y = ty * tileSize.value
 
-      tileGridEdgeColorSketch.putImageData(pixelMap.toImageData(), x, y)
+      tileGridEdgeColorSketch.putImageData(imageData, x, y)
     })
   })
 
@@ -132,7 +123,6 @@ export function makeTileGrid(
     tileset,
     tileGrid,
     tileGridEdgeColorSketch,
-    cachedWangTileEdgeColorPixelMaps,
     cachedWangTileEdgeColorImageData,
     drawGridEdges,
     drawTileEdges,

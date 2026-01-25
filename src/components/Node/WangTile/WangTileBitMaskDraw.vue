@@ -28,7 +28,7 @@ import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { useInterval } from '../../../lib/vue/component-interval.ts'
 import {
-  createAxialEdgeWangTileset,
+  makeAxialEdgeWangTileset,
 } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
 import TileCanvas from '../../CanvasPaint/components/TileCanvas.vue'
@@ -74,7 +74,7 @@ const tileSize = ref(defaults.tileSize)
 const verticalEdgeValueCount = ref(defaults.verticalEdgeValueCount)
 const horizontalEdgeValueCount = ref(defaults.horizontalEdgeValueCount)
 
-const tileset = computed(() => createAxialEdgeWangTileset(
+const tileset = computed(() => makeAxialEdgeWangTileset(
   verticalEdgeValueCount.value,
   horizontalEdgeValueCount.value,
 ))

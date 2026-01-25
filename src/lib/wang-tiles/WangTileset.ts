@@ -168,7 +168,7 @@ export function deserializeAxialEdgeWangTileset<T>(serialized: SerializedAxialEd
   )
 }
 
-export function createAxialEdgeWangTileset(
+export function makeAxialEdgeWangTileset(
   verticalEdgeValueCount: number,
   horizontalEdgeValueCount: number,
 ): AxialEdgeWangTileset<number> {
@@ -214,30 +214,3 @@ export const oppositeEdge: Record<Direction, Direction> = {
   E: 'W' as Direction,
   W: 'E' as Direction,
 } as const
-
-export function makeAxialEdgeWangTileset(horizontalCount: number = 2, verticalCount?: number) {
-  verticalCount ??= horizontalCount
-
-  const edges: TileWithEligibleEdges<number>[] = []
-  let index = 0
-
-  for (let i = 0; i < horizontalCount; i++) {
-    edges.push({
-      edgeValue: index,
-      eligibleForN: true,
-      eligibleForS: true,
-    })
-    index++
-  }
-
-  for (let i = 0; i < verticalCount; i++) {
-    edges.push({
-      edgeValue: index,
-      eligibleForW: true,
-      eligibleForE: true,
-    })
-    index++
-  }
-
-  return WangTileset.createFromLimitedEdges<number>(edges)
-}

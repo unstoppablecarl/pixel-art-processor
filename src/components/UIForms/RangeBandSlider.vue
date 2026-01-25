@@ -207,7 +207,6 @@ const onDrag = (event: MouseEvent | TouchEvent): void => {
     // Snap to step
     const rawValue = getValueFromPosition(percent)
     const snappedValue = Math.round(rawValue / props.step) * props.step
-    percent = getPositionFromValue(snappedValue)
 
     if (isMinThumb.value) {
       internalMinValue.value = snappedValue

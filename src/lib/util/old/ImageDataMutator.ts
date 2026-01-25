@@ -1,4 +1,4 @@
-import { resizeImageData, type RGBA } from './ImageData.ts'
+import { resizeImageData, type RGBA } from '../html-dom/ImageData.ts'
 
 export class ImageDataMutator {
   private canvas: HTMLCanvasElement

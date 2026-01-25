@@ -98,7 +98,6 @@ export const defaultColors: RGBA[] = [
   { r: 255, g: 255, b: 0, a: 255 / 2 },
 ]
 
-// arrayIndexToColor()
 export function makeWangTileEdgesPixelMap(size: number, tile: WangTile<number>, colors = defaultColors, padding = 1) {
   const pixelMap = new PixelMap(size, size)
   const nIndex = tile.edges.N
