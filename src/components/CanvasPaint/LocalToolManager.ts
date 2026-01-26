@@ -39,12 +39,13 @@ export function makeLocalToolManager(
   })
 
   tilesetToolState ??= makeTilesetToolState({
+    state,
     tileGridManager,
     tileSheetWriter,
     gridRenderer,
   })
 
-  const tileSheetRenderer = makeTileSheetRenderer({ state,tilesetToolState })
+  const tileSheetRenderer = makeTileSheetRenderer({ state, tilesetToolState })
 
   const local: LocalToolContext = {
     state,
@@ -70,9 +71,7 @@ export function makeLocalToolManager(
         state.mouseTilePixelY = null
       }
       return
-    }
-
-    if (canvasType === CanvasType.TILE) {
+    } else if (canvasType === CanvasType.TILE) {
       state.mouseTileId = tileId!
       state.mouseTilePixelX = x
       state.mouseTilePixelY = y
@@ -84,8 +83,9 @@ export function makeLocalToolManager(
       state.hoverTilePixelX = x
       state.hoverTilePixelY = y
       return
+    } else {
+      throw new Error('invalid canvas type: ' + canvasType)
     }
-    throw new Error('invalid canvas type: ' + canvasType)
   }
 
   return {

@@ -82,7 +82,7 @@ export function makeTileSheet(
   }
 
   function sheetToTileLocal(tileId: TileId, sheetX: number, sheetY: number) {
-    // Get the tile’s position in the tilesheet grid
+    // Get the tile’s position in the tile sheet grid
     const { tileX, tileY } = getTileCoords(tileId)
 
     const localX = sheetX - tileX * tileSize
@@ -183,9 +183,10 @@ export function makeTileSheet(
       y: sheetY,
       w,
       h,
-      // IMPORTANT: x1/y1 are TILE-LOCAL INPUT SPACE
-      srcX: x1 - bounds.x,
-      srcY: y1 - bounds.y,
+      // IMPORTANT: must be sheet local
+      srcX: sheetX - bounds.x,
+      srcY: sheetY - bounds.y,
+
     }]
   }
 

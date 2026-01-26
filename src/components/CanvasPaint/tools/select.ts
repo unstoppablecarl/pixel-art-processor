@@ -109,7 +109,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
     },
     onDragEnd({ state, tilesetToolState, gridRenderer }, _x, _y, canvasType, tileId) {
       const ts = tilesetToolState
-      console.log('onDragEnd', ts.selection)
+      // console.log('onDragEnd', ts.selection)
       if (ts.selecting) {
         ts.finalizeSelection()
       }
@@ -117,12 +117,13 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const sel = ts.selection
       if (!sel) return
 
-      if (canvasType === CanvasType.GRID) {
-        gridRenderer.queueRenderAll()
-      } else {
-        gridRenderer.queueRenderTile(tileId!)
-        gridRenderer.queueRenderGrid()
-      }
+      gridRenderer.queueRenderAll()
+      // if (canvasType === CanvasType.GRID) {
+      //   gridRenderer.queueRenderAll()
+      // } else {
+      //   gridRenderer.queueRenderTile(tileId!)
+      //   gridRenderer.queueRenderGrid()
+      // }
     },
     gridPixelOverlayDraw({ state, tilesetToolState }, ctx) {
       const sel = tilesetToolState.selection
@@ -150,8 +151,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
         for (const g of gridRects) {
           if (mode === BlendMode.OVERWRITE) {
-            ctx.fillStyle = '#ff0000'
-            ctx.fillRect(g.x, g.y, g.w, g.h)
+            ctx.clearRect(g.x, g.y, g.w, g.h)
           }
 
           putImageDataScaled(
@@ -169,24 +169,22 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
     },
     gridScreenOverlayDraw({ state, tilesetToolState }, ctx) {
-      const sel = tilesetToolState.selection
+      const ts = tilesetToolState
+      const sel = ts.selection
       if (!sel) return
 
-      const { scale, tileGridManager } = state
+      const { scale } = state
 
       ctx.strokeStyle = 'cyan'
       ctx.lineWidth = 1
 
-      for (const r of sel.currentRects) {
-        const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
-        for (const g of gridRects) {
-          const screenX = g.x * scale - 0.5
-          const screenY = g.y * scale - 0.5
-          const screenW = g.w * scale + 1
-          const screenH = g.h * scale + 1
-
-          ctx.strokeRect(screenX, screenY, screenW, screenH)
-        }
+      for (const g of ts.selectionGridSpaceMergedRects()) {
+        ctx.strokeRect(
+          g.x * scale - 0.5,
+          g.y * scale - 0.5,
+          g.w * scale + 1,
+          g.h * scale + 1,
+        )
       }
     },
     tilePixelOverlayDraw({ state, tilesetToolState }, ctx, tileId) {
@@ -216,8 +214,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
         const { srcX, srcY, w, h } = r
 
         if (mode === BlendMode.OVERWRITE) {
-          ctx.fillStyle = '#ff0000'
-          ctx.fillRect(localX, localY, w, h)
+          ctx.clearRect(localX, localY, w, h)
         }
 
         putImageDataScaled(

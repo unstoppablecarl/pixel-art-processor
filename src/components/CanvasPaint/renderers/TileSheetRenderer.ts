@@ -64,7 +64,7 @@ export function makeTileSheetRenderer(
         state.tileSheet.each((tileX, tileY, tile) => {
           const x = tileX * tileSize * scale
           const y = tileY * tileSize * scale
-          drawText(ctx, tile.index + '', x, y)
+          drawText(ctx, tile.index + ': ' + tile.id, x, y)
         })
       }
 

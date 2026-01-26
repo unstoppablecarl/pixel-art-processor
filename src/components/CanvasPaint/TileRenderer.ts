@@ -49,7 +49,7 @@ export function makeTileRenderer(
         }
         if (state.drawTileIndexes) {
           const tile = state.tileset.byId.get(tileId)!
-          drawText(ctx, tile.index + '')
+          drawText(ctx, tile.index + ': ' + tile.id)
         }
 
         globalToolManager.currentToolHandler.tileScreenOverlayDraw?.(localToolContext(), ctx, tileId)

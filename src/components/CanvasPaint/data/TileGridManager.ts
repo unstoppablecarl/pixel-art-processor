@@ -3,7 +3,7 @@ import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { type AxialEdgeWangGrid, makeAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import type { AxialEdgeWangTileset, TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { TileSheetRect, TileSheetSelection } from '../lib/TileSheetSelection.ts'
+import { type TileSheetRect, type TileSheetSelection } from '../lib/TileSheetSelection.ts'
 import { makeTileGridEdgeColorRenderer } from '../renderers/TileGridEdgeColorRenderer.ts'
 import { makeTileSheet } from './TileSheet.ts'
 
@@ -90,13 +90,13 @@ export function makeTileGridManager(
   }
 
   function projectTileSheetRectToGridRects(rect: TileSheetRect): RectBounds[] {
-    const { tileId, x: sheetX, y: sheetY, w, h } = rect
+    const { tileId, x, y, w, h } = rect
 
     // Convert sheet → tile-local
-    const { x: localX, y: localY } = tileSheet.value.sheetToTileLocal(tileId, sheetX, sheetY)
+    const { x: localX, y: localY } = tileSheet.value.sheetToTileLocal(tileId, x, y)
 
-   return tileGrid.value.mapWithTileId(tileId, (gx, gy) => {
-     return {
+    return tileGrid.value.mapWithTileId(tileId, (gx, gy) => {
+      return {
         x: gx * tileSize.value + localX,
         y: gy * tileSize.value + localY,
         w,
@@ -145,8 +145,7 @@ export function makeTileGridManager(
       if (w <= 0 || h <= 0) continue
 
       // Convert tile-local → tileSheet pixel coords
-      const { x: sheetX, y: sheetY } =
-        tileSheet.value.tileLocalToSheet(tile.id, x, y)
+      const { x: sheetX, y: sheetY } = tileSheet.value.tileLocalToSheet(tile.id, x, y)
 
       out.push({
         tileId: tile.id,

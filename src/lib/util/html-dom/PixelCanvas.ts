@@ -62,7 +62,7 @@ export function drawText(
   text: string,
   x: number = 0,
   y: number = 0,
-  fontSize = 20,
+  fontSize = 10,
   font = 'sans-serif',
   color = '#00ff00',
 ) {

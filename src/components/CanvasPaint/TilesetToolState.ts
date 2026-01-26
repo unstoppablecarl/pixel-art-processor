@@ -1,7 +1,14 @@
+import type { RectBounds } from '../../lib/util/data/Bounds.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode, CanvasType } from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
-import { makeTileSheetSelection, type TileSheetRect, type TileSheetSelection } from './lib/TileSheetSelection.ts'
+import type { EditorState } from './EditorState.ts'
+import {
+  makeTileSheetSelection,
+  mergeRectBounds,
+  type TileSheetRect,
+  type TileSheetSelection,
+} from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './TileGridRenderer.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
@@ -9,10 +16,12 @@ export type TilesetToolState = ReturnType<typeof makeTilesetToolState>
 
 export function makeTilesetToolState(
   {
+    state,
     tileSheetWriter,
     gridRenderer,
     tileGridManager,
   }: {
+    state: EditorState,
     tileSheetWriter: TileSheetWriter
     gridRenderer: TileGridRenderer
     tileGridManager: TileGridManager
@@ -56,28 +65,37 @@ export function makeTilesetToolState(
     const h = y2 - y1
     if (w <= 0 || h <= 0) return null
 
-    // ⭐ FIX: bounds must be selection-local in GRID mode
-    const bounds =
-      inputSpace === CanvasType.GRID
-        ? { x: 0, y: 0, w, h }
-        : { x: x1, y: y1, w, h }
-
+    let bounds: RectBounds
     let tileSheetRects: TileSheetRect[] = []
 
     if (inputSpace === CanvasType.TILE) {
+
+      const { tileX, tileY } = state.tileSheet.getTileCoords(inputTileId!)
+      const sheetOriginX = tileX * state.tileSize
+      const sheetOriginY = tileY * state.tileSize
+
+      bounds = {
+        x: sheetOriginX + x1,
+        y: sheetOriginY + y1,
+        w,
+        h,
+      }
+
       tileSheetRects =
-        tileGridManager.tileSheet.value.tileLocalRectToTileSheetRect(
+        state.tileSheet.tileLocalRectToTileSheetRect(
           inputTileId!,
           { x: x1, y: y1, w, h },
           bounds,
         )
-    }
+    } else if (inputSpace === CanvasType.GRID) {
+      bounds = { x: x1, y: y1, w, h }
 
-    if (inputSpace === CanvasType.GRID) {
       tileSheetRects = tileGridManager.gridRectToTileSheetRects(
-        { x: x1, y: y1, w, h },
+        bounds,
         bounds,
       )
+    } else {
+      throw new Error('invalid canvas type: ' + inputSpace)
     }
 
     if (tileSheetRects.length === 0) return null
@@ -86,7 +104,7 @@ export function makeTilesetToolState(
   }
 
   function startSelection(tx: number, ty: number, canvasType: CanvasType, tileId: TileId | null = null) {
-    console.log('START SELECTION', { x: tx, y: ty })
+    console.log('START SELECTION', { x: tx, y: ty, tileId })
     if (selection) clearRenderedSelection(selection)
 
     selecting = true
@@ -115,23 +133,12 @@ export function makeTilesetToolState(
   }
 
   function finalizeSelection() {
-    console.log('[TilesetToolState] finalizeSelection before', {
-      selecting,
-      dragStartX,
-      dragStartY,
-      dragCurrentX,
-      dragCurrentY,
-    })
 
     if (!selecting) return
     if (dragStartX == null || dragStartY == null) return
     if (dragCurrentX == null || dragCurrentY == null) return
 
     selection = makeSelectionFromInput()
-    console.log('[TilesetToolState] finalizeSelection after', {
-      selection: !!selection,
-      rects: selection?.currentRects,
-    })
 
     selecting = false
     dragging = false
@@ -144,7 +151,6 @@ export function makeTilesetToolState(
   }
 
   function dragStart(x: number, y: number) {
-    console.log('[TilesetToolState] dragStart', { x, y, hasSelection: !!selection })
     if (!selection) return
     dragging = true
     dragStartX = x
@@ -152,14 +158,6 @@ export function makeTilesetToolState(
   }
 
   function moveSelection(gx: number, gy: number) {
-    console.log('[TilesetToolState] moveSelection', {
-      gx,
-      gy,
-      dragging,
-      hasSelection: !!selection,
-      dragStartX,
-      dragStartY,
-    })
     if (!selection || !dragging) return
     if (dragStartX == null || dragStartY == null) return
     const dx = gx - dragStartX
@@ -169,7 +167,7 @@ export function makeTilesetToolState(
 
   function tileInSelection(tileId: TileId, tx: number, ty: number) {
     if (!selection) return false
-    return tileGridManager.tileSheet.value.tilePointInTileSheetSelection(tileId, tx, ty, selection)
+    return state.tileSheet.tilePointInTileSheetSelection(tileId, tx, ty, selection)
   }
 
   function gridInSelection(gx: number, gy: number) {
@@ -182,11 +180,11 @@ export function makeTilesetToolState(
 
     // Clear original pixels
     for (const r of selection.originalRects) {
-      tileGridManager.tileSheet.value.clearTileSheetRect(r)
+      state.tileSheet.clearTileSheetRect(r)
     }
 
     // Write moved pixels
-    const pixels = selection.toPixels(tileGridManager.tileSheet.value)
+    const pixels = selection.toPixels(state.tileSheet)
     for (const r of selection.currentRects) {
       tileSheetWriter.blendTileSheetRect(r, pixels, mode)
     }
@@ -200,7 +198,23 @@ export function makeTilesetToolState(
     dragging = false
   }
 
+  function selectionGridSpaceMergedRects(): RectBounds[] {
+    if (!selection) throw new Error('no selection')
+    const projected = []
+    for (const r of selection.currentRects) {
+      projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
+    }
+
+    return mergeRectBounds(projected)
+  }
+
   return {
+    get dragStartX() {
+      return dragStartX
+    },
+    get dragStartY() {
+      return dragStartY
+    },
     get selection() {
       return selection
     },
@@ -226,7 +240,7 @@ export function makeTilesetToolState(
 
     tileInSelection,
     gridInSelection,
-
+    selectionGridSpaceMergedRects,
     commit,
   }
 }
