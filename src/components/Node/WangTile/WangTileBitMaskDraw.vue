@@ -145,6 +145,7 @@ function sync() {
   localToolManger.state.gridTilesHeight = tileGridManager.tileGrid.value.height
   localToolManger.gridRenderer.resize()
   localToolManger.gridRenderer.queueRenderAll()
+  localToolManger.tileSheetRenderer.resize()
 }
 
 const canvasStore = useCanvasPaintStore()
@@ -153,9 +154,12 @@ watch(() => canvasStore.brushSize, () => {
   localToolManger.gridRenderer.queueRenderAll()
 })
 
-useInterval(() => {
-  const tileSheet = tileGridManager.tileSheet.value
+const tileSheetCanvas = useTemplateRef('tileSheetCanvas')
 
+useInterval(() => {
+  localToolManger.tileSheetRenderer.draw()
+
+  const tileSheet = tileGridManager.tileSheet.value
   if (tileSheet.isDirty()) {
     config.tileSheet = tileSheet.serialize()
     tileSheet.clearDirty()
@@ -163,7 +167,10 @@ useInterval(() => {
 }, 1000)
 
 watchEffect(() => sync())
-onMounted(() => sync())
+onMounted(() => {
+  sync()
+  localToolManger.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
+})
 </script>
 <template>
   <NodeCard
@@ -183,6 +190,11 @@ onMounted(() => sync())
       <TileGridCanvas
         :local-tool-manager="localToolManger"
       />
+      <div>
+        <canvas
+          ref="tileSheetCanvas"
+        ></canvas>
+      </div>
 
       <CardFooterSettingsTabs
         :node-id="nodeId"

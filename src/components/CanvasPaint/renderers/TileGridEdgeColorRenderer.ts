@@ -55,15 +55,21 @@ export function makeTileGridEdgeColorRenderer(
     ctx.globalAlpha = 1
   }
 
-  function drawTileEdges(ctx: CanvasRenderingContext2D, tileId: TileId) {
+  function drawTileEdges(
+    ctx: CanvasRenderingContext2D,
+    tileId: TileId,
+    x = 0,
+    y = 0,
+  ) {
     const imageData = cachedWangTileEdgeColorImageData.value[tileId]
     ctx.globalAlpha = 0.5
-    putImageDataScaled(ctx, imageData)
+    putImageDataScaled(ctx, imageData, x, y)
     ctx.globalAlpha = 1
   }
 
   return {
     drawGridEdges,
     drawTileEdges,
+    cachedWangTileEdgeColorImageData,
   }
 }

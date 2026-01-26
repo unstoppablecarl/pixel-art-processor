@@ -3,6 +3,7 @@ import { CanvasType, type LocalToolContext, Tool } from './_canvas-editor-types.
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
+import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
 import { makeTileGridRenderer } from './TileGridRenderer.ts'
 import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
 import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
@@ -38,9 +39,12 @@ export function makeLocalToolManager(
   })
 
   tilesetToolState ??= makeTilesetToolState({
+    tileGridManager,
     tileSheetWriter,
     gridRenderer,
   })
+
+  const tileSheetRenderer = makeTileSheetRenderer({ state })
 
   const local: LocalToolContext = {
     state,
@@ -87,6 +91,7 @@ export function makeLocalToolManager(
   return {
     state,
     gridRenderer,
+    tileSheetRenderer,
     tilesetToolState,
     tileGridManager,
     onGlobalToolChanging(oldTool: Tool, newTool: Tool) {
@@ -117,6 +122,8 @@ export function makeLocalToolManager(
 
           state.isDragging = true
           state.dragStartTileId = state.mouseTileId
+          state.mouseDragStartX = state.mouseDownX
+          state.mouseDragStartY = state.mouseDownY
 
           global.tools[global.currentTool]?.onDragStart?.(
             local,
@@ -143,6 +150,8 @@ export function makeLocalToolManager(
       if (state.isDragging) {
         global.tools[global.currentTool]?.onDragEnd?.(local, x, y, canvasType, tileId)
         state.dragStartTileId = null
+        state.mouseDragStartX = null
+        state.mouseDragStartY = null
       } else {
         global.tools[global.currentTool]?.onClick?.(local, x, y, canvasType, tileId)
       }

@@ -79,6 +79,9 @@ interface BaseEditorState {
   mouseDownX: number | null
   mouseDownY: number | null
 
+  mouseDragStartX: number | null
+  mouseDragStartY: number | null
+
   isDragging: boolean
   dragThreshold: number
   dragStartTileId: TileId | null
@@ -149,6 +152,9 @@ export function makeEditorState(tileGridManager: TileGridManager): EditorState {
 
     mouseDownX: null,
     mouseDownY: null,
+
+    mouseDragStartX: null,
+    mouseDragStartY: null,
 
     isDragging: false,
     dragThreshold: 2,

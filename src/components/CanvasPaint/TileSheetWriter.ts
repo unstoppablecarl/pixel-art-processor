@@ -24,6 +24,7 @@ import { BlendMode } from './_canvas-editor-types.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext } from './GlobalToolManager.ts'
+import type { TileSheetRect } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './TileGridRenderer.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
@@ -58,7 +59,24 @@ export function makeTileSheetWriter(
     [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
   }
 
-  function writeSheetImageData(
+  function blendTileSheetRect(
+    rect: TileSheetRect,
+    pixels: ImageData,
+    blendMode: BlendMode,
+  ) {
+    blendSheetImageData(
+      pixels,
+      blendMode,
+      rect.x,        // dest X in tilesheet
+      rect.y,        // dest Y in tilesheet
+      rect.srcX, // src X inside selection pixels
+      rect.srcY, // src Y inside selection pixels
+      rect.w,
+      rect.h,
+    )
+  }
+
+  function blendSheetImageData(
     imageData: ImageData,
     blendMode: BlendMode,
     x = 0,
@@ -73,6 +91,8 @@ export function makeTileSheetWriter(
   }
 
   return {
+    blendTileSheetRect,
+    blendSheetImageData,
     clear() {
       for (const tile of state.tileset.tiles) {
         const rect = state.tileSheet.getTileRect(tile.id)
@@ -133,7 +153,7 @@ export function makeTileSheetWriter(
 
         const sheetPos = state.tileSheet.tileLocalToSheet(tile.id, x, y)
 
-        writeSheetImageData(imageData, blendMode, sheetPos.x, sheetPos.y, sx, sy, w, h)
+        blendSheetImageData(imageData, blendMode, sheetPos.x, sheetPos.y, sx, sy, w, h)
 
         markDirty(tile.id)
       }
@@ -183,7 +203,7 @@ export function makeTileSheetWriter(
       const w = imageData.width
       const h = imageData.height
       const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
-      writeSheetImageData(imageData, blendMode, sheetPos.x, sheetPos.y, tx, ty, w, h)
+      blendSheetImageData(imageData, blendMode, sheetPos.x, sheetPos.y, tx, ty, w, h)
 
       markDirty(tileId)
 

@@ -1,6 +1,7 @@
 import { markRaw } from 'vue'
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import {
+  clearImageDataRect,
   deserializeImageData,
   extractImageData,
   resizeImageData,
@@ -13,7 +14,9 @@ import {
   deserializeAxialEdgeWangTileset,
   type SerializedAxialEdgeWangTileset,
   type TileId,
+  type WangTile,
 } from '../../../lib/wang-tiles/WangTileset.ts'
+import type { TileSheetRect, TileSheetSelection } from '../lib/TileSheetSelection.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -51,24 +54,25 @@ export function makeTileSheet(
   let img = imageData ?? new ImageData(width, height)
   let imgData = markRaw(img)
 
-  // Build TileId → index mapping
-  const tileIndexMap = new Map<TileId, number>()
-  tileset.tiles.forEach((tile, index) => {
-    tileIndexMap.set(tile.id, index)
-  })
+  function clearTileSheetRect(rect: RectBounds) {
+    clearImageDataRect(imgData, rect.x, rect.y, rect.w, rect.h)
+  }
 
   function getTileRect(tileId: TileId): RectBounds {
-    const index = tileIndexMap.get(tileId)
-    if (index === undefined) {
-      throw new Error(`Unknown tileId: ${tileId}`)
-    }
-    const tx = index % tilesPerRow
-    const ty = Math.floor(index / tilesPerRow)
+    const { tileX, tileY } = getTileCoords(tileId)
     return {
-      x: tx * tileSize,
-      y: ty * tileSize,
+      x: tileX * tileSize,
+      y: tileY * tileSize,
       w: tileSize,
       h: tileSize,
+    }
+  }
+
+  function getTileCoords(tileId: TileId) {
+    const index = tileset.byId.get(tileId)!.index
+    return {
+      tileX: index % tilesPerRow,
+      tileY: Math.floor(index / tilesPerRow),
     }
   }
 
@@ -77,9 +81,28 @@ export function makeTileSheet(
     return { x: rect.x + tx, y: rect.y + ty }
   }
 
-  function extractTile(tileId: TileId): ImageData {
-    const { x, y, w, h } = getTileRect(tileId)
-    return extractImageData(imgData, x, y, w, h)
+  function each(cb: (tileX: number, tileY: number, tile: WangTile<number>) => void) {
+    tileset.tiles.forEach((tile) => {
+      const { tileX, tileY } = getTileCoords(tile.id)
+      cb(tileX, tileY, tile)
+    })
+  }
+
+  function extractTile(
+    tileId: TileId,
+    x = 0,
+    y = 0,
+    w = tileSize,
+    h = tileSize,
+  ): ImageData {
+    const { x: tx, y: ty } = getTileRect(tileId)
+    return extractImageData(
+      imgData,
+      tx + x,
+      ty + y,
+      w,
+      h,
+    )
   }
 
   function writeTile(tileId: TileId, src: ImageData) {
@@ -120,8 +143,70 @@ export function makeTileSheet(
 
     // Phase 4: commit
     tileSize = newTileSize
-    imgData = imgData = markRaw(newSheet)
+    imgData = markRaw(newSheet)
     dirty = true
+  }
+
+  function tileLocalRectToTileSheetRect(tileId: TileId, rect: RectBounds, bounds: RectBounds): TileSheetRect[] {
+    const tile = tileset.byId.get(tileId)
+    if (!tile) return []
+
+    // Clip to tile bounds
+    const x1 = Math.max(0, rect.x)
+    const y1 = Math.max(0, rect.y)
+    const x2 = Math.min(tileSize, rect.x + rect.w)
+    const y2 = Math.min(tileSize, rect.y + rect.h)
+
+    const w = x2 - x1
+    const h = y2 - y1
+    if (w <= 0 || h <= 0) return []
+
+    const { tileX, tileY } = getTileCoords(tileId)
+
+    // Convert tile-local → tileSheet
+    const sheetX = tileX * tileSize + x1
+    const sheetY = tileY * tileSize + y1
+
+    return [{
+      tileId,
+      x: sheetX,
+      y: sheetY,
+      w,
+      h,
+      // IMPORTANT: x1/y1 are TILE-LOCAL INPUT SPACE
+      srcX: x1 - bounds.x,
+      srcY: y1 - bounds.y,
+    }]
+  }
+
+  function tilePointInTileSheetSelection(
+    tileId: TileId,
+    tx: number,
+    ty: number,
+    selection: TileSheetSelection,
+  ): boolean {
+    const tile = tileset.byId.get(tileId)
+    if (!tile) return false
+
+    const { tileX, tileY } = getTileCoords(tileId)
+
+    // Convert tile-local → tileSheet
+    const sheetX = tileX * tileSize + tx
+    const sheetY = tileY * tileSize + ty
+
+    // Check against selection rects
+    for (const r of selection.currentRects) {
+      if (
+        sheetX >= r.x &&
+        sheetX < r.x + r.w &&
+        sheetY >= r.y &&
+        sheetY < r.y + r.h
+      ) {
+        return true
+      }
+    }
+
+    return false
   }
 
   function serialize(): SerializedTileSheet {
@@ -135,6 +220,7 @@ export function makeTileSheet(
   }
 
   return {
+    tileset,
     get tileSize() {
       return tileSize
     },
@@ -148,6 +234,14 @@ export function makeTileSheet(
       return imgData
     },
 
+    get pixelWidth() {
+      return tilesPerRow * tileSize
+    },
+
+    get pixelHeight() {
+      return tilesPerCol * tileSize
+    },
+
     markDirty: () => dirty = true,
     isDirty: () => dirty,
     clearDirty: () => dirty = false,
@@ -156,6 +250,11 @@ export function makeTileSheet(
     extractTile,
     writeTile,
     resizeTileSize,
+    getTileCoords,
+    clearTileSheetRect,
+    tileLocalRectToTileSheetRect,
+    tilePointInTileSheetSelection,
+    each,
     serialize,
   }
 }

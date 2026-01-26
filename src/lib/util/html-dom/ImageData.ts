@@ -292,34 +292,47 @@ const getTmpImageData = makeReusableImageData()
 export function putImageDataScaled(
   target: CanvasRenderingContext2D,
   imageData: ImageData,
-  x = 0,
-  y = 0,
+  dx = 0,
+  dy = 0,
   blend?: BlendFn,
+  sx = 0,
+  sy = 0,
+  sw = imageData.width,
+  sh = imageData.height,
 ) {
+  let src: ImageData
 
-  const { width, height } = imageData
+  // FAST PATH: full image, no clipping
+  const fullWidth = sw === imageData.width
+  const fullHeight = sh === imageData.height
+  const atOrigin = sx === 0 && sy === 0
 
+  if (fullWidth && fullHeight && atOrigin) {
+    src = imageData
+  } else {
+    // Only extract when needed
+    src = extractImageData(imageData, sx, sy, sw, sh)
+  }
+
+  const { width, height } = src
   const { canvas, ctx } = pixelCanvas(width, height)
 
   if (!blend) {
-    // Fast path: no blending
-    ctx.putImageData(imageData, 0, 0)
+    ctx.putImageData(src, 0, 0)
   } else {
-    // Blended path
     const tmp = getTmpImageData(width, height)
     const dst = tmp.data
-    const src = imageData.data
-
+    const sdata = src.data
     const byteBlend = makeByteBlendAdapter(blend)
 
-    for (let i = 0; i < src.length; i += 4) {
-      byteBlend(src, dst, i, i)
+    for (let i = 0; i < sdata.length; i += 4) {
+      byteBlend(sdata, dst, i, i)
     }
 
     ctx.putImageData(tmp, 0, 0)
   }
 
-  target.drawImage(canvas, x, y)
+  target.drawImage(canvas, dx, dy)
 }
 
 export function extractImageData(

@@ -1,7 +1,7 @@
-import type { RectBounds } from '../../lib/util/data/Bounds.ts'
-import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode, type Selection } from './_canvas-editor-types.ts'
+import { BlendMode, CanvasType } from './_canvas-editor-types.ts'
+import type { TileGridManager } from './data/TileGridManager.ts'
+import { makeTileSheetSelection, type TileSheetRect, type TileSheetSelection } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './TileGridRenderer.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
@@ -11,140 +11,193 @@ export function makeTilesetToolState(
   {
     tileSheetWriter,
     gridRenderer,
-  }:
-  {
-    tileSheetWriter: TileSheetWriter,
-    gridRenderer: TileGridRenderer,
-  },
-) {
-  let selection: Selection | null = null
+    tileGridManager,
+  }: {
+    tileSheetWriter: TileSheetWriter
+    gridRenderer: TileGridRenderer
+    tileGridManager: TileGridManager
+  }) {
+  let selection: TileSheetSelection | null = null
 
   let selecting = false
   let dragging = false
 
-  function startSelection(x: number, y: number) {
-    selection = {
-      x,
-      y,
-      w: 0,
-      h: 0,
+  // grid/tile canvas coords
+  let dragStartX: number | null = null
+  let dragStartY: number | null = null
 
-      origX: x,
-      origY: y,
-      origW: 0,
-      origH: 0,
+  let dragCurrentX: number | null = null
+  let dragCurrentY: number | null = null
 
-      pixels: null,
-      offsetX: 0,
-      offsetY: 0,
+  let inputSpace: CanvasType | null = null
+  let inputTileId: TileId | null = null
+
+  function clearRenderedSelection(sel: TileSheetSelection) {
+    // Project all current rects to find affected tiles
+    const tileIds = new Set<TileId>()
+    for (const r of sel.currentRects) {
+      tileIds.add(r.tileId)
     }
-
-    selecting = true
-    dragging = false
-  }
-
-  function selectionHasMoved() {
-    const sel = selection
-    if (!sel) return false
-    return sel.x !== sel.origX || sel.y !== sel.origY
-  }
-
-  function originalRect(): RectBounds {
-    const sel = selection
-    if (!sel) throw new Error('no selection')
-    return {
-      x: sel.origX,
-      y: sel.origY,
-      w: sel.origW,
-      h: sel.origH,
-    }
-  }
-
-  function dragStart(x: number, y: number) {
-    if (!selection) throw new Error('no Selection')
-    dragging = true
-    selection.offsetX = x - selection.x
-    selection.offsetY = y - selection.y
-  }
-
-  function updateSelection(x: number, y: number) {
-    if (!selection) return
-    selection.w = x - selection.x
-    selection.h = y - selection.y
-  }
-
-  function moveSelection(x: number, y: number) {
-    if (!selection) return
-    selection.x = x - selection.offsetX
-    selection.y = y - selection.offsetY
-  }
-
-  function normalizeSelection(sel: Selection) {
-    if (sel.w < 0) {
-      sel.x += sel.w
-      sel.w = -sel.w
-    }
-    if (sel.h < 0) {
-      sel.y += sel.h
-      sel.h = -sel.h
-    }
-  }
-
-  function extractSelectionPixels(imageData: ImageData) {
-    if (!selection) return
-    const sel = selection
-
-    normalizeSelection(sel)
-
-    sel.origX = sel.x
-    sel.origY = sel.y
-    sel.origW = sel.w
-    sel.origH = sel.h
-
-    if (sel.w && sel.h) {
-      sel.pixels = extractImageData(imageData, sel.x, sel.y, sel.w, sel.h)
-    }
-  }
-
-  function clearSelection() {
-    selection = null
-    selecting = false
-    dragging = false
-  }
-
-  function inSelection(x: number, y: number) {
-    if (!selection) return false
-    const sel = selection
-    return (
-      x >= sel.x &&
-      x < sel.x + sel.w &&
-      y >= sel.y &&
-      y < sel.y + sel.h
-    )
-  }
-
-  function commitGrid(mode: BlendMode) {
-    const sel = selection
-    if (!sel?.pixels) return
-    if (sel.w && sel.h) {
-      tileSheetWriter.clearGridRect(sel.origX, sel.origY, sel.origW, sel.origH)
-      const affectedTileIds = tileSheetWriter.blendGridImageData(sel.pixels, sel.x, sel.y, mode)
-      gridRenderer.queueRenderTiles(affectedTileIds)
-    }
-    clearSelection()
+    gridRenderer.queueRenderTiles([...tileIds])
     gridRenderer.queueRenderGrid()
   }
 
-  function commitTile(tileId: TileId, mode: BlendMode) {
-    const sel = selection
-    if (!sel?.pixels) return
-    if (sel.w && sel.h) {
-      tileSheetWriter.clearTileRect(tileId, sel.origX, sel.origY, sel.origW, sel.origH)
-      tileSheetWriter.blendTileImageData(tileId, sel.pixels, sel.x, sel.y, mode)
-      gridRenderer.queueRenderTile(tileId)
+  function makeSelectionFromInput() {
+    if (!inputSpace) return null
+    if (dragStartX == null || dragStartY == null) return null
+    if (dragCurrentX == null || dragCurrentY == null) return null
+
+    const x1 = Math.min(dragStartX, dragCurrentX)
+    const y1 = Math.min(dragStartY, dragCurrentY)
+    const x2 = Math.max(dragStartX, dragCurrentX)
+    const y2 = Math.max(dragStartY, dragCurrentY)
+
+    const w = x2 - x1
+    const h = y2 - y1
+    if (w <= 0 || h <= 0) return null
+
+    // ⭐ FIX: bounds must be selection-local in GRID mode
+    const bounds =
+      inputSpace === CanvasType.GRID
+        ? { x: 0, y: 0, w, h }
+        : { x: x1, y: y1, w, h }
+
+    let tileSheetRects: TileSheetRect[] = []
+
+    if (inputSpace === CanvasType.TILE) {
+      tileSheetRects =
+        tileGridManager.tileSheet.value.tileLocalRectToTileSheetRect(
+          inputTileId!,
+          { x: x1, y: y1, w, h },
+          bounds,
+        )
     }
-    clearSelection()
-    gridRenderer.queueRenderTile(tileId)
+
+    if (inputSpace === CanvasType.GRID) {
+      tileSheetRects = tileGridManager.gridRectToTileSheetRects(
+        { x: x1, y: y1, w, h },
+        bounds,
+      )
+    }
+
+    if (tileSheetRects.length === 0) return null
+
+    return makeTileSheetSelection(tileSheetRects, bounds)
+  }
+
+  function startSelection(tx: number, ty: number, canvasType: CanvasType, tileId: TileId | null = null) {
+    console.log('START SELECTION', { x: tx, y: ty })
+    if (selection) clearRenderedSelection(selection)
+
+    selecting = true
+    dragging = false
+    inputSpace = canvasType
+    inputTileId = tileId
+
+    dragStartX = tx
+    dragStartY = ty
+    dragCurrentX = tx
+    dragCurrentY = ty
+  }
+
+  function tileStartSelection(tileId: TileId, tx: number, ty: number) {
+    startSelection(tx, ty, CanvasType.TILE, tileId)
+  }
+
+  function gridStartSelection(gx: number, gy: number) {
+    startSelection(gx, gy, CanvasType.GRID)
+  }
+
+  function updateSelection(x: number, y: number) {
+    if (!selecting) return
+    dragCurrentX = x
+    dragCurrentY = y
+  }
+
+  function finalizeSelection() {
+    console.log('[TilesetToolState] finalizeSelection before', {
+      selecting,
+      dragStartX,
+      dragStartY,
+      dragCurrentX,
+      dragCurrentY,
+    })
+
+    if (!selecting) return
+    if (dragStartX == null || dragStartY == null) return
+    if (dragCurrentX == null || dragCurrentY == null) return
+
+    selection = makeSelectionFromInput()
+    console.log('[TilesetToolState] finalizeSelection after', {
+      selection: !!selection,
+      rects: selection?.currentRects,
+    })
+
+    selecting = false
+    dragging = false
+
+    dragStartX = null
+    dragStartY = null
+    dragCurrentX = null
+    dragCurrentY = null
+    inputTileId = null
+  }
+
+  function dragStart(x: number, y: number) {
+    console.log('[TilesetToolState] dragStart', { x, y, hasSelection: !!selection })
+    if (!selection) return
+    dragging = true
+    dragStartX = x
+    dragStartY = y
+  }
+
+  function moveSelection(gx: number, gy: number) {
+    console.log('[TilesetToolState] moveSelection', {
+      gx,
+      gy,
+      dragging,
+      hasSelection: !!selection,
+      dragStartX,
+      dragStartY,
+    })
+    if (!selection || !dragging) return
+    if (dragStartX == null || dragStartY == null) return
+    const dx = gx - dragStartX
+    const dy = gy - dragStartY
+    selection.move(dx, dy)
+  }
+
+  function tileInSelection(tileId: TileId, tx: number, ty: number) {
+    if (!selection) return false
+    return tileGridManager.tileSheet.value.tilePointInTileSheetSelection(tileId, tx, ty, selection)
+  }
+
+  function gridInSelection(gx: number, gy: number) {
+    if (!selection) return false
+    return tileGridManager.gridPointInTileSheetSelection(gx, gy, selection)
+  }
+
+  function commit(mode: BlendMode) {
+    if (!selection) return
+
+    // Clear original pixels
+    for (const r of selection.originalRects) {
+      tileGridManager.tileSheet.value.clearTileSheetRect(r)
+    }
+
+    // Write moved pixels
+    const pixels = selection.toPixels(tileGridManager.tileSheet.value)
+    for (const r of selection.currentRects) {
+      tileSheetWriter.blendTileSheetRect(r, pixels, mode)
+    }
+
+    // Re-render affected tiles
+    const tileIds = new Set(selection.currentRects.map(r => r.tileId))
+    gridRenderer.queueRenderTiles([...tileIds])
+    gridRenderer.queueRenderGrid()
+
+    selection = null
+    dragging = false
   }
 
   return {
@@ -155,26 +208,25 @@ export function makeTilesetToolState(
     get selecting() {
       return selecting
     },
-    set selecting(val) {
-      selecting = val
-    },
-
     get dragging() {
       return dragging
     },
-    set dragging(val) {
-      dragging = val
+
+    selectionHasMoved() {
+      return selection?.hasMoved ?? false
     },
-    commitGrid,
-    commitTile,
-    dragStart,
-    originalRect,
-    selectionHasMoved,
-    inSelection,
-    startSelection,
+
+    tileStartSelection,
+    gridStartSelection,
     updateSelection,
+    finalizeSelection,
+
+    dragStart,
     moveSelection,
-    extractSelectionPixels,
-    clearSelection,
+
+    tileInSelection,
+    gridInSelection,
+
+    commit,
   }
 }
