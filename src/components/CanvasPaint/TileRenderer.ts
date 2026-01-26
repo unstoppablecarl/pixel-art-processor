@@ -1,4 +1,4 @@
-import { makePixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
+import { drawText, makePixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { LocalToolContext } from './_canvas-editor-types.ts'
 import type { EditorState } from './EditorState.ts'
@@ -46,6 +46,10 @@ export function makeTileRenderer(
       (ctx) => {
         if (state.shouldDrawGrid) {
           gridCache.drawGrid(ctx)
+        }
+        if (state.drawTileIndexes) {
+          const tile = state.tileset.byId.get(tileId)!
+          drawText(ctx, tile.index + '')
         }
 
         globalToolManager.currentToolHandler.tileScreenOverlayDraw?.(localToolContext(), ctx, tileId)

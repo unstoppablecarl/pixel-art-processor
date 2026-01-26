@@ -89,73 +89,20 @@ export function makeTileGridManager(
     return tileGrid.value.getOverlappingTiles(rect, tileSize.value)
   }
 
-  /**
-   * SelectionProjection
-   *
-   * Computes all coordinate-space projections needed to render a selection
-   * in both grid canvases and tile canvases.
-   *
-   * Input:
-   *   - selection rect in tilesheet pixel space
-   *   - tileGridManager for overlap computation
-   *
-   * Output:
-   *   For each overlapped tile:
-   *     - tileId
-   *     - tileX, tileY (grid tile coords)
-   *     - tileOverlap (tile-local clipped rect)
-   *     - gridOverlap (selection-local clipped rect)
-   *     - tileRelativeOffset (true tile-local offset, may be negative)
-   *     - gridPixel (grid pixel coords for grid canvas)
-   *     - tilePixel (tile-local coords for tile canvas)
-   */
-  function projectTileSheetRect(
-    // tileSheet space coords
-    rect: RectBounds,
-  ) {
-    const overlaps = getOverlappingTiles(rect)
+  function projectTileSheetRectToGridRects(rect: TileSheetRect): RectBounds[] {
+    const { tileId, x: sheetX, y: sheetY, w, h } = rect
 
-    const projections = []
+    // Convert sheet → tile-local
+    const { x: localX, y: localY } = tileSheet.value.sheetToTileLocal(tileId, sheetX, sheetY)
 
-    for (const o of overlaps) {
-      const { tile, tileX, tileY, tileOverlap, gridOverlap, tileRelativeOffset } = o
-
-      const tileRelativeRect = {
-        x: tileRelativeOffset.x,
-        y: tileRelativeOffset.y,
-        w: rect.w,
-        h: rect.h,
+   return tileGrid.value.mapWithTileId(tileId, (gx, gy) => {
+     return {
+        x: gx * tileSize.value + localX,
+        y: gy * tileSize.value + localY,
+        w,
+        h,
       }
-
-      const gridRects: RectBounds[] = []
-      tileGrid.value.eachWithTileId(tile.id, (gx, gy) => {
-        gridRects.push({
-          x: gx * tileSize.value + tileRelativeOffset.x,
-          y: gy * tileSize.value + tileRelativeOffset.y,
-          w: rect.w,
-          h: rect.h,
-        })
-      })
-
-      projections.push({
-        tile,
-        tileX,
-        tileY,
-
-        // SOURCE (clipped)
-        tileOverlap,        // tile-local clipped region
-        gridOverlap,        // selection-local clipped region
-
-        // OFFSET
-        tileRelativeOffset, // true tile-local offset (may be negative)
-
-        // DESTINATION (full footprint)
-        tileRelativeRect,
-        gridRects,
-      })
-    }
-
-    return projections
+    })
   }
 
   function gridPointInTileSheetSelection(
@@ -231,7 +178,7 @@ export function makeTileGridManager(
     tileCoordToGridPixel,
     gridPointInTileSheetSelection,
     gridRectToTileSheetRects,
-    projectTileSheetRect,
+    projectTileSheetRectToGridRects,
     getTileInfo,
     tileSheet,
   }

@@ -67,6 +67,8 @@ interface BaseEditorState {
 
   readonly shouldDrawGrid: boolean
 
+  drawTileIndexes: boolean
+
   scale: number
 
   // tile coords if over tile
@@ -130,6 +132,8 @@ export function makeEditorState(tileGridManager: TileGridManager): EditorState {
     get scaledTileSize() {
       return this.scale * this.tileSize
     },
+
+    drawTileIndexes: true,
 
     scale: 8,
 

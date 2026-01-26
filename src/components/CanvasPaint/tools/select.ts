@@ -133,50 +133,43 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const mode = toolContext.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
-      // Clear original if moved
+      // 1. Clear original selection footprint (if moved)
       if (sel.hasMoved) {
         for (const r of sel.originalRects) {
-          const proj = tileGridManager.projectTileSheetRect(r)
-          for (const p of proj) {
-            for (const g of p.gridRects) {
-              ctx.clearRect(g.x, g.y, g.w, g.h)
-            }
+          const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
+          for (const g of gridRects) {
+            ctx.clearRect(g.x, g.y, g.w, g.h)
           }
         }
       }
 
-      // Draw current rects
+      // 2. Draw current selection footprint
       for (const r of sel.currentRects) {
-        const proj = tileGridManager.projectTileSheetRect(r)
+        const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
+        const { srcX, srcY, w, h } = r
 
-        for (const p of proj) {
-          const { gridRects, gridOverlap } = p
-          const { x: sx, y: sy, w, h } = gridOverlap
-
-          for (const g of gridRects) {
-            if (mode === BlendMode.OVERWRITE) {
-              ctx.fillStyle = '#ff0000'
-              ctx.fillRect(g.x, g.y, g.w, g.h)
-            }
-
-            putImageDataScaled(
-              ctx,
-              composed,
-              g.x,
-              g.y,
-              blendMode,
-              sx,
-              sy,
-              w,
-              h,
-            )
+        for (const g of gridRects) {
+          if (mode === BlendMode.OVERWRITE) {
+            ctx.fillStyle = '#ff0000'
+            ctx.fillRect(g.x, g.y, g.w, g.h)
           }
+
+          putImageDataScaled(
+            ctx,
+            composed,
+            g.x,
+            g.y,
+            blendMode,
+            srcX,
+            srcY,
+            w,
+            h,
+          )
         }
       }
     },
     gridScreenOverlayDraw({ state, tilesetToolState }, ctx) {
       const sel = tilesetToolState.selection
-      console.log('gridScreenOverlayDraw selection', sel)
       if (!sel) return
 
       const { scale, tileGridManager } = state
@@ -184,21 +177,15 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       ctx.strokeStyle = 'cyan'
       ctx.lineWidth = 1
 
-      console.log('sel.currentRects', sel.currentRects)
-      // Draw the outline for each projected grid rect
       for (const r of sel.currentRects) {
-        const proj = tileGridManager.projectTileSheetRect(r)
+        const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
+        for (const g of gridRects) {
+          const screenX = g.x * scale - 0.5
+          const screenY = g.y * scale - 0.5
+          const screenW = g.w * scale + 1
+          const screenH = g.h * scale + 1
 
-        for (const p of proj) {
-          for (const g of p.gridRects) {
-            const screenX = g.x * scale - 0.5
-            const screenY = g.y * scale - 0.5
-            const screenW = g.w * scale + 1
-            const screenH = g.h * scale + 1
-
-            console.log({ screenX, screenY, screenW, screenH })
-            ctx.strokeRect(screenX, screenY, screenW, screenH)
-          }
+          ctx.strokeRect(screenX, screenY, screenW, screenH)
         }
       }
     },
@@ -206,51 +193,41 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const sel = tilesetToolState.selection
       if (!sel) return
 
-      const { tileGridManager, tileSheet } = state
+      const { tileSheet } = state
       const composed = sel.toPixels(tileSheet)
 
       const mode = toolContext.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
-      //
       // 1. Clear original selection footprint on this tile (if moved)
-      //
       if (sel.hasMoved) {
         for (const r of sel.originalRects) {
-          const proj = tileGridManager.projectTileSheetRect(r)
-          const hit = proj.find(p => p.tile.id === tileId)
-          if (hit) {
-            const { x, y, w, h } = hit.tileOverlap
-            ctx.clearRect(x, y, w, h)
-          }
+          if (r.tileId !== tileId) continue
+          const { x: localX, y: localY } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
+
+          ctx.clearRect(localX, localY, r.w, r.h)
         }
       }
 
-      //
       // 2. Draw current selection footprint on this tile
-      //
       for (const r of sel.currentRects) {
-        const proj = tileGridManager.projectTileSheetRect(r)
-        const hit = proj.find(p => p.tile.id === tileId)
-        if (!hit) continue
-
-        const { tileRelativeOffset, tileOverlap } = hit
-        const { x: dx, y: dy } = tileRelativeOffset
-        const { x: sx, y: sy, w, h } = tileOverlap
+        if (r.tileId !== tileId) continue
+        const { x: localX, y: localY } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
+        const { srcX, srcY, w, h } = r
 
         if (mode === BlendMode.OVERWRITE) {
           ctx.fillStyle = '#ff0000'
-          ctx.fillRect(dx, dy, w, h)
+          ctx.fillRect(localX, localY, w, h)
         }
 
         putImageDataScaled(
           ctx,
           composed,
-          dx,
-          dy,
+          localX,
+          localY,
           blendMode,
-          sx,
-          sy,
+          srcX,
+          srcY,
           w,
           h,
         )
@@ -260,26 +237,25 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const sel = tilesetToolState.selection
       if (!sel) return
 
-      const { tileGridManager, scale } = state
+      const { tileSheet, scale } = state
 
       ctx.strokeStyle = 'cyan'
       ctx.lineWidth = 1
 
       for (const r of sel.currentRects) {
-        const proj = tileGridManager.projectTileSheetRect(r)
-        const hit = proj.find(p => p.tile.id === tileId)
-        if (!hit) continue
+        if (r.tileId !== tileId) continue
 
-        const { tileRelativeOffset, tileOverlap } = hit
-        const { x, y } = tileRelativeOffset
-        const { w, h } = tileOverlap
+        const { x: localX, y: localY } =
+          tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
-        ctx.strokeRect(
-          x * scale - 0.5,
-          y * scale - 0.5,
-          w * scale + 1,
-          h * scale + 1,
-        )
+        const { w, h } = r
+
+        const screenX = localX * scale - 0.5
+        const screenY = localY * scale - 0.5
+        const screenW = w * scale + 1
+        const screenH = h * scale + 1
+
+        ctx.strokeRect(screenX, screenY, screenW, screenH)
       }
     },
   }

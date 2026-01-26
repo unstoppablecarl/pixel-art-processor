@@ -60,8 +60,8 @@ function pixelCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): 
 export function drawText(
   ctx: CanvasRenderingContext2D,
   text: string,
-  x: number,
-  y: number,
+  x: number = 0,
+  y: number = 0,
   fontSize = 20,
   font = 'sans-serif',
   color = '#00ff00',

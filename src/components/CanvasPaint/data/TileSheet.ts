@@ -81,6 +81,16 @@ export function makeTileSheet(
     return { x: rect.x + tx, y: rect.y + ty }
   }
 
+  function sheetToTileLocal(tileId: TileId, sheetX: number, sheetY: number) {
+    // Get the tile’s position in the tilesheet grid
+    const { tileX, tileY } = getTileCoords(tileId)
+
+    const localX = sheetX - tileX * tileSize
+    const localY = sheetY - tileY * tileSize
+
+    return { x: localX, y: localY }
+  }
+
   function each(cb: (tileX: number, tileY: number, tile: WangTile<number>) => void) {
     tileset.tiles.forEach((tile) => {
       const { tileX, tileY } = getTileCoords(tile.id)
@@ -247,6 +257,7 @@ export function makeTileSheet(
     clearDirty: () => dirty = false,
     getTileRect,
     tileLocalToSheet,
+    sheetToTileLocal,
     extractTile,
     writeTile,
     resizeTileSize,

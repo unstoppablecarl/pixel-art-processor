@@ -97,12 +97,13 @@ export function makeTileGridRenderer(
       if (state.shouldDrawGrid) {
         gridCache.drawGrid(ctx)
       }
-
-      state.tileGrid.each((tileX, tileY, tile) => {
-        const x = tileX * state.tileSize * state.scale
-        const y = tileY * state.tileSize * state.scale
-        drawText(ctx, tile.index + '', x, y)
-      })
+      if (state.drawTileIndexes) {
+        state.tileGrid.each((tileX, tileY, tile) => {
+          const x = tileX * state.tileSize * state.scale
+          const y = tileY * state.tileSize * state.scale
+          drawText(ctx, tile.index + '', x, y)
+        })
+      }
 
       globalToolManager.currentToolHandler?.gridScreenOverlayDraw?.(localToolContext(), ctx)
     }
