@@ -44,7 +44,7 @@ export function makeLocalToolManager(
     gridRenderer,
   })
 
-  const tileSheetRenderer = makeTileSheetRenderer({ state })
+  const tileSheetRenderer = makeTileSheetRenderer({ state,tilesetToolState })
 
   const local: LocalToolContext = {
     state,
