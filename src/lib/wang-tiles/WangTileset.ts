@@ -4,12 +4,14 @@ export type TileId = string & { readonly __tileId: unique symbol };
 
 export interface WangTile<T> {
   readonly id: TileId;
+  readonly index: number,
   readonly edges: DirectionSet<T>;
 }
 
 export function populateIndexedWangTile<T>(tile: WangTile<number>, values: T[]): WangTile<T> {
   return {
     id: tile.id,
+    index: tile.index,
     edges: {
       N: values[tile.edges.N],
       E: values[tile.edges.E],
@@ -35,6 +37,7 @@ export class WangTileset<T> {
             const id = `tile-${N}-${E}-${S}-${W}`
             tiles.push({
               id: id as TileId,
+              index: tiles.length,
               edges: {
                 N: colors[N],
                 E: colors[E],
@@ -74,6 +77,7 @@ export class WangTileset<T> {
             const id = `tile-${iN}-${iE}-${iS}-${iW}`
             tiles.push({
               id: id as TileId,
+              index: tiles.length,
               edges: {
                 N: iN,
                 E: iE,
@@ -190,6 +194,7 @@ export function makeAxialEdgeWangTileset(
 
           tiles.push({
             id,
+            index: tiles.length,
             edges: { N, E, S, W },
           })
         }
