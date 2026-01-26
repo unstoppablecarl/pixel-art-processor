@@ -1,5 +1,5 @@
 import { writeImageData } from '../../lib/util/html-dom/ImageData.ts'
-import { makePixelCanvas, type PixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
+import { drawText, makePixelCanvas, type PixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
 import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { LocalToolContext } from './_canvas-editor-types.ts'
@@ -97,6 +97,13 @@ export function makeTileGridRenderer(
       if (state.shouldDrawGrid) {
         gridCache.drawGrid(ctx)
       }
+
+      state.tileGrid.each((tileX, tileY, tile) => {
+        const x = tileX * state.tileSize * state.scale
+        const y = tileY * state.tileSize * state.scale
+        drawText(ctx, tile.index + '', x, y)
+      })
+
       globalToolManager.currentToolHandler?.gridScreenOverlayDraw?.(localToolContext(), ctx)
     }
 

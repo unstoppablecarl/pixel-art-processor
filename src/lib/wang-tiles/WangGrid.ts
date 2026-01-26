@@ -43,13 +43,16 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
     this.cells[this.index(x, y)] = tile
   }
 
-  each(cb: (x: number, y: number, v: WangTile<T> | null) => void): void {
+  each(cb: (x: number, y: number, v: WangTile<T>) => void): void {
     const width = this.width
     const height = this.height
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        cb(x, y, this.get(x, y))
+        const t = this.get(x, y)
+        if (t) {
+          cb(x, y, t)
+        }
       }
     }
   }

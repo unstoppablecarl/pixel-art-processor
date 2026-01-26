@@ -56,3 +56,24 @@ function pixelCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): 
     },
   }
 }
+
+export function drawText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  fontSize = 20,
+  font = 'sans-serif',
+  color = '#00ff00',
+) {
+  ctx.font = fontSize + 'px ' + font
+
+  ctx.strokeStyle = 'rgba(0,0,0,0.75)'
+  ctx.lineWidth = 5
+  ctx.fillStyle = color
+
+  x += fontSize * 0.5
+  y += fontSize * 1.5
+  ctx.strokeText(text, x, y)
+  ctx.fillText(text, x, y)
+}
