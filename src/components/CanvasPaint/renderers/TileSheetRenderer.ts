@@ -42,7 +42,7 @@ export function makeTileSheetRenderer(
 
       if (tilesetToolState.selection) {
         tilesetToolState.selection.currentRects.forEach((r) => {
-          const {x, y, w, h} = r
+          const { x, y, w, h } = r
           const screenX = x + 1
           const screenY = y + 1
           const screenW = w - 2
@@ -50,7 +50,6 @@ export function makeTileSheetRenderer(
 
           ctx.fillStyle = 'rgba(255, 0,0,0.5)'
           ctx.lineWidth = 1
-          console.log({ screenX, screenY, screenW, screenH })
 
           ctx.fillRect(screenX, screenY, screenW, screenH)
         })
@@ -78,7 +77,6 @@ export function makeTileSheetRenderer(
 
           ctx.strokeStyle = 'cyan'
           ctx.lineWidth = 1
-          console.log({ screenX, screenY, screenW, screenH })
 
           ctx.strokeRect(screenX, screenY, screenW, screenH)
         })
