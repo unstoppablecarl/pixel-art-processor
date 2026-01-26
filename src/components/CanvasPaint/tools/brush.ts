@@ -48,10 +48,10 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
   ) {
     if (canvasType === CanvasType.GRID) {
       const pixels = getGridBrushPixels(state, x, y)
-      tileSheetWriter.writeGridPixels(pixels, RGBA_WHITE)
+      tileSheetWriter.writeGridPixels(pixels, toolContext.brushColor)
     } else {
       const tilePixels = getTileBrushPixels(state, x, y)
-      tileSheetWriter.writeTilePixels(tilePixels, tileId, RGBA_WHITE)
+      tileSheetWriter.writeTilePixels(tilePixels, tileId, toolContext.brushColor)
     }
   }
 
@@ -89,7 +89,8 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
           getGridBrushPixels(state, ix, iy)
           pixels = pixels.concat(getGridBrushPixels(state, ix, iy))
         }
-        tileSheetWriter.writeGridPixels(pixels, RGBA_WHITE)
+
+        tileSheetWriter.writeGridPixels(pixels, toolContext.brushColor)
       }
 
       if (canvasType === CanvasType.TILE && tileId != null) {
@@ -120,7 +121,6 @@ export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
       const { brushSize } = toolContext
 
       const cx = Math.floor(brushSize / 2)
-
 
       tileGrid.eachWithTileId(state.hoverTileId, (x, y, v) => {
         const screenX = (x * tileSize + hoverTilePixelX! - cx) * scale

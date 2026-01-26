@@ -1,7 +1,7 @@
 import { watchEffect } from 'vue'
 import { type CanvasPaintStore, useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
 import { bindInputKey, type InputBindings } from '../../lib/util/html-dom/keyboard.ts'
-import { type LocalToolContext, BlendMode, Tool, type ToolHandler } from './_canvas-editor-types.ts'
+import { BlendMode, type LocalToolContext, Tool, type ToolHandler } from './_canvas-editor-types.ts'
 import { BrushShape, makeBrushTool } from './tools/brush.ts'
 import { makeSelectTool } from './tools/select.ts'
 
@@ -14,6 +14,12 @@ export function makeGlobalToolContext(store: CanvasPaintStore) {
     },
     get brushShape() {
       return store.brushShape
+    },
+    get brushMode() {
+      return store.brushMode
+    },
+    get brushColor() {
+      return store.brushColor
     },
     get selectMoveBlendMode() {
       return store.selectMoveBlendMode
