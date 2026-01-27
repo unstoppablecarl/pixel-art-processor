@@ -1,7 +1,9 @@
+import { ImageData } from '@napi-rs/canvas'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { setActivePinia } from 'pinia'
 import { afterEach, beforeEach } from 'vitest'
 import { setLogActive } from '../src/lib/util/logs.ts'
+import './vitest-setup-canvas.ts'
 
 enableAutoUnmount(afterEach)
 setLogActive(false)
