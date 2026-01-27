@@ -89,19 +89,17 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
       if (canvasType === CanvasType.GRID) {
         if (ts.dragging) {
-          ts.moveSelection(x, y)               // grid-pixel
+          ts.moveSelectionOnGrid(x, y)
         } else if (ts.selecting) {
-          ts.updateSelection(x, y)             // grid-pixel
+          ts.updateSelection(x, y)
         }
         gridRenderer.queueRenderAll()
       } else {
-        // x,y are TILE-LOCAL here
         const { x: px, y: py } = state.tileSheet.tileLocalToSheet(tileId!, x, y)
-
         if (ts.dragging) {
-          ts.moveSelection(px, py)             // moving selection: SHEET coords
+          ts.moveSelection(px, py)
         } else if (ts.selecting) {
-          ts.updateSelection(x, y)             // <-- TILE-LOCAL for selection
+          ts.updateSelection(x, y)
         }
         gridRenderer.queueRenderTile(tileId!)
         gridRenderer.queueRenderGrid()
@@ -134,59 +132,81 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const mode = toolContext.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
-      // 1. Clear original selection footprint (if moved)
+      if (!sel.gridBounds || !sel.initialGridBounds) return
+
+      const dx = sel.gridBounds.x - sel.initialGridBounds.x
+      const dy = sel.gridBounds.y - sel.initialGridBounds.y
+
+      // 1. Clear original footprint (GRID SPACE)
       if (sel.hasMoved) {
         for (const r of sel.originalRects) {
           const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
           for (const g of gridRects) {
-            ctx.clearRect(g.x, g.y, g.w, g.h)
+            ctx.clearRect(g.x + dx, g.y + dy, g.w, g.h)
           }
         }
       }
 
-      // 2. Draw current selection footprint
+      // 2. Draw moved selection pixels (GRID SPACE)
       for (const r of sel.currentRects) {
         const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
-        const { srcX, srcY, w, h } = r
 
         for (const g of gridRects) {
+          const drawX = g.x + dx
+          const drawY = g.y + dy
+
+          const sx = r.x - sel.tileSheetBounds.x
+          const sy = r.y - sel.tileSheetBounds.y
+
           if (mode === BlendMode.OVERWRITE) {
-            ctx.clearRect(g.x, g.y, g.w, g.h)
+            ctx.clearRect(drawX, drawY, g.w, g.h)
           }
 
           putImageDataScaled(
             ctx,
             composed,
-            g.x,
-            g.y,
+            drawX,
+            drawY,
             blendMode,
-            srcX,
-            srcY,
-            w,
-            h,
+            sx,
+            sy,
+            g.w,
+            g.h,
           )
         }
       }
-    },
+    }
+    ,
     gridScreenOverlayDraw({ state, tilesetToolState }, ctx) {
-      const ts = tilesetToolState
-      const sel = ts.selection
+      const sel = tilesetToolState.selection
       if (!sel) return
 
       const { scale } = state
+      if (!sel.gridBounds || !sel.initialGridBounds) return
 
       ctx.strokeStyle = 'cyan'
       ctx.lineWidth = 1
 
-      for (const g of ts.selectionGridSpaceMergedRects()) {
+      // GRID-SPACE delta
+      const dx = sel.gridBounds.x - sel.initialGridBounds.x
+      const dy = sel.gridBounds.y - sel.initialGridBounds.y
+
+      // Convert GRID → SCREEN for drawing
+      for (const g of tilesetToolState.selectionGridSpaceMergedRects()) {
+        const screenX = (g.x + dx) * scale
+        const screenY = (g.y + dy) * scale
+        const screenW = g.w * scale
+        const screenH = g.h * scale
+
         ctx.strokeRect(
-          g.x * scale - 0.5,
-          g.y * scale - 0.5,
-          g.w * scale + 1,
-          g.h * scale + 1,
+          screenX - 0.5,
+          screenY - 0.5,
+          screenW + 1,
+          screenH + 1,
         )
       }
-    },
+    }
+    ,
     tilePixelOverlayDraw({ state, tilesetToolState }, ctx, tileId) {
       const sel = tilesetToolState.selection
       if (!sel) return
