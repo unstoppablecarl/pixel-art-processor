@@ -94,6 +94,7 @@ export function makeLocalToolManager(
     tileSheetRenderer,
     tilesetToolState,
     tileGridManager,
+    tileSheetWriter,
     onGlobalToolChanging(oldTool: Tool, newTool: Tool) {
       global.tools[oldTool]?.onGlobalToolChanging?.(local, oldTool, newTool)
     },

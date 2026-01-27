@@ -133,9 +133,9 @@ export function makeTileGridManager(
 
       if (
         sheetX >= movedX &&
-        sheetX <  movedX + rect.w &&
+        sheetX < movedX + rect.w &&
         sheetY >= movedY &&
-        sheetY <  movedY + rect.h
+        sheetY < movedY + rect.h
       ) {
         return true
       }
@@ -143,7 +143,6 @@ export function makeTileGridManager(
 
     return false
   }
-
 
   function gridRectToTileSheetRects(rect: RectBounds): IncompleteTileSheetRec[] {
     const overlaps = getOverlappingTilesOnGrid(rect)
@@ -163,10 +162,18 @@ export function makeTileGridManager(
 
       out.push({
         tileId: tile.id,
+
+        // tileSheet local pixel coords
         x: sheetX,
         y: sheetY,
         w,
         h,
+
+        // tile local pixel coords
+        tileX: localX,
+        tileY: localY,
+
+        // grid-space coords
         gridX: o.gridOverlap.x,
         gridY: o.gridOverlap.y,
       })
@@ -175,7 +182,7 @@ export function makeTileGridManager(
     return out
   }
 
-  function applyBoundsOrigin(rects: RectBounds[], boundsOrigin: Point): TileSheetRect[] {
+  function applyBoundsOrigin(rects: IncompleteTileSheetRec[], boundsOrigin: Point): TileSheetRect[] {
     return rects.map(r => ({
       ...r,
       srcX: r.x - boundsOrigin.x,

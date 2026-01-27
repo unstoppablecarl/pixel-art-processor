@@ -32,7 +32,7 @@ export function makeTilesetToolState(
   let selecting = false
   let dragging = false
 
-  // grid/tile canvas coords
+  // raw input for selection creation (grid/tile canvas coords)
   let dragStartX: number | null = null
   let dragStartY: number | null = null
 
@@ -43,11 +43,14 @@ export function makeTilesetToolState(
   let inputTileId: TileId | null = null
 
   function clearRenderedSelection(sel: TileSheetSelection) {
-    // Project all current rects to find affected tiles
     const tileIds = new Set<TileId>()
     for (const r of sel.currentRects) {
       tileIds.add(r.tileId)
     }
+    console.log({
+      LOG_NAME: 'clearRenderedSelection',
+      tileIds: [...tileIds],
+    })
     gridRenderer.queueRenderTiles([...tileIds])
     gridRenderer.queueRenderGrid()
   }
@@ -69,8 +72,10 @@ export function makeTilesetToolState(
     let bounds: RectBounds
     let tileSheetRects: TileSheetRect[] = []
 
+    // ───────────────────────────────────────────────
+    // TILE CANVAS SELECTION
+    // ───────────────────────────────────────────────
     if (inputSpace === CanvasType.TILE) {
-      // TILE SPACE IS ALREADY TILE-SHEET SPACE
       const { x: sx, y: sy } =
         state.tileSheet.tileLocalToSheet(inputTileId!, x1, y1)
 
@@ -84,39 +89,58 @@ export function makeTilesetToolState(
 
       if (tileSheetRects.length === 0) return null
 
-      return makeTileSheetSelection(tileSheetRects, bounds, null)
+      // TILE selection → no grid bounds yet
+      return makeTileSheetSelection(
+        tileSheetRects,
+        bounds,
+      )
+    }
 
-    } else if (inputSpace === CanvasType.GRID) {
-
-      // 1. GRID-SPACE DRAG RECT
+    // ───────────────────────────────────────────────
+    // GRID CANVAS SELECTION
+    // ───────────────────────────────────────────────
+    if (inputSpace === CanvasType.GRID) {
       const gridRect = { x: x1, y: y1, w, h }
 
-      // 2. Convert to TILE-SHEET rects (NO bounds yet)
       const rects = tileGridManager.gridRectToTileSheetRects(gridRect)
       if (rects.length === 0) return null
 
       bounds = getRectsBounds(rects)
 
-      // 4. Apply bounds to compute srcX/srcY
-      tileSheetRects = tileGridManager.applyBoundsOrigin(rects, bounds)
+      const normalized = tileGridManager.applyBoundsOrigin(rects, bounds)
 
-      if (tileSheetRects.length === 0) return null
+      const tileSheetRects = normalized.map((r, i) => ({
+        ...r,
+        tileX: rects[i].tileX,
+        tileY: rects[i].tileY,
+        gridX: rects[i].gridX,
+        gridY: rects[i].gridY,
+      }))
 
-      const gridBounds = getRectsBounds(rects.map(r => ({
-        x: r.gridX!,
-        y: r.gridY!,
-        w: r.w,
-        h: r.h,
-      })))
+      // Project into grid space to compute gridBounds
+      const projected: RectBounds[] = []
+      for (const r of tileSheetRects) {
+        projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
+      }
 
-      return makeTileSheetSelection(tileSheetRects, bounds, gridBounds)
+      const gridBounds = getRectsBounds(projected)
 
-    } else {
-      throw new Error('invalid canvas type: ' + inputSpace)
+      return makeTileSheetSelection(
+        tileSheetRects,
+        bounds,
+        gridBounds,
+      )
     }
+
+    throw new Error('invalid canvas type: ' + inputSpace)
   }
 
-  function startSelection(x: number, y: number, canvasType: CanvasType, tileId: TileId | null = null) {
+  function startSelection(
+    x: number,
+    y: number,
+    canvasType: CanvasType,
+    tileId: TileId | null = null,
+  ) {
     if (selection) clearRenderedSelection(selection)
 
     selecting = true
@@ -147,18 +171,30 @@ export function makeTilesetToolState(
   }
 
   function finalizeSelection() {
-
     if (!selecting) return
     if (dragStartX == null || dragStartY == null) return
     if (dragCurrentX == null || dragCurrentY == null) return
 
+    console.log({
+      LOG_NAME: 'finalizeSelection.before',
+      dragStartX,
+      dragStartY,
+      dragCurrentX,
+      dragCurrentY,
+      inputSpace,
+    })
+
     selection = makeSelectionFromInput()
+
+    console.log({
+      LOG_NAME: 'finalizeSelection.after',
+      selection,
+    })
 
     clearState()
   }
 
   function clearState() {
-
     selecting = false
     dragging = false
 
@@ -168,87 +204,255 @@ export function makeTilesetToolState(
     dragCurrentY = null
     inputTileId = null
 
-    lastPx = null
-    lastPy = null
+    // clear drag-move state on the selection, but keep the selection itself
+    if (selection) {
+      selection.dragMoveStartGridX = null
+      selection.dragMoveStartGridY = null
+    }
   }
 
   function dragStart(x: number, y: number) {
     if (!selection) return
-    dragging = true
-    dragStartX = x
-    dragStartY = y
 
-    // reset relative drag origin
-    lastPx = x
-    lastPy = y
+    dragging = true
+
+    console.log({
+      LOG_NAME: 'dragStart',
+      x,
+      y,
+      selection,
+    })
+
+    if (selection.gridBounds) {
+      selection.dragMoveStartGridX = x - selection.gridBounds.x
+      selection.dragMoveStartGridY = y - selection.gridBounds.y
+    } else {
+      selection.dragMoveStartGridX = null
+      selection.dragMoveStartGridY = null
+    }
   }
 
-  let lastPx: number | null = null
-  let lastPy: number | null = null
-
-  function moveSelectionOnGrid(px: number, py: number) {
+  function moveSelectionOnGrid(x: number, y: number) {
     if (!selection || !dragging) return
 
-    if (lastPx == null || lastPy == null) {
-      lastPx = px
-      lastPy = py
-      return
+    const igb = selection.initialGridBounds!
+    // 1. Compute new top-left based on mouse offset
+    const newX = x - selection.dragMoveStartGridX!
+    const newY = y - selection.dragMoveStartGridY!
+
+    // 2. Compute delta relative to initial bounds
+    const dxGrid = newX - igb.x
+    const dyGrid = newY - igb.y
+
+    // 3. Update gridBounds
+    selection.gridBounds = {
+      x: igb.x + dxGrid,
+      y: igb.y + dyGrid,
+      w: igb.w,
+      h: igb.h,
     }
 
-    const dx = px - lastPx
-    const dy = py - lastPy
+    selection.offsetX = dxGrid
+    selection.offsetY = dyGrid
 
-    selection.gridBounds!.x += dx
-    selection.gridBounds!.y += dy
-
-    lastPx = px
-    lastPy = py
+    gridRenderer.queueRenderAll()
   }
 
   function tileInSelection(tileId: TileId, tx: number, ty: number) {
     if (!selection) return false
-    return state.tileSheet.tilePointInTileSheetSelection(tileId, tx, ty, selection)
+    const inside = state.tileSheet.tilePointInTileSheetSelection(tileId, tx, ty, selection)
+    console.log({
+      LOG_NAME: 'tileInSelection',
+      tileId,
+      tx,
+      ty,
+      inside,
+    })
+    return inside
   }
 
   function gridInSelection(gx: number, gy: number) {
     if (!selection) return false
-    return tileGridManager.gridPointInTileSheetSelection(gx, gy, selection)
+    const inside = tileGridManager.gridPointInTileSheetSelection(gx, gy, selection)
+    console.log({
+      LOG_NAME: 'gridInSelection',
+      gx,
+      gy,
+      inside,
+    })
+    return inside
   }
 
   function commit(mode: BlendMode) {
     if (!selection) return
 
-    // Clear original pixels
+    console.log('=== COMMIT START ===')
+    console.log({
+      LOG_NAME: 'selection',
+      originalRects: selection.originalRects,
+      currentRects: selection.currentRects,
+      tileSheetBounds: selection.tileSheetBounds,
+      initialGridBounds: selection.initialGridBounds,
+      gridBounds: selection.gridBounds,
+      hasMoved: selection.hasMoved,
+    })
+
+    const pixels = selection.toPixels(state.tileSheet)
+    console.log({
+      LOG_NAME: 'pixels size',
+      w: pixels.width,
+      h: pixels.height,
+    })
+
+    const gb = selection.gridBounds
+    const igb = selection.initialGridBounds
+
+    // TILE-ONLY PATH (no grid movement)
+    if (!gb || !igb) {
+      console.log({ LOG_NAME: 'commit path', path: 'TILE' })
+      for (const r of selection.currentRects) {
+        console.log({ LOG_NAME: 'TILE write rect', ...r })
+        tileSheetWriter.blendTileSheetRect(r, pixels, mode)
+      }
+      const tileIds = [...new Set(selection.currentRects.map(r => r.tileId))]
+      console.log({ LOG_NAME: 'TILE movedTileIds', tileIds })
+      gridRenderer.queueRenderTiles(tileIds)
+      gridRenderer.queueRenderGrid()
+      selection = null
+      dragging = false
+      console.log('=== COMMIT END (TILE) ===')
+      return
+    }
+
+    // GRID MOVEMENT PATH
+    const rawDx = gb.x - igb.x
+    const rawDy = gb.y - igb.y
+
+    const tileSize = state.tileSize
+    const gridDx = Math.round(rawDx / tileSize) * tileSize
+    const gridDy = Math.round(rawDy / tileSize) * tileSize
+
+    console.log({
+      LOG_NAME: 'grid movement',
+      rawDx,
+      rawDy,
+      tileSize,
+      gridDx,
+      gridDy,
+    })
+
+    const movedTileIds = new Set<TileId>()
+
+    console.log('clearing original rects:')
     for (const r of selection.originalRects) {
+      console.log({ LOG_NAME: 'clear rect', ...r })
       state.tileSheet.clearTileSheetRect(r)
     }
 
-    // Write moved pixels
-    const pixels = selection.toPixels(state.tileSheet)
-    for (const r of selection.currentRects) {
-      tileSheetWriter.blendTileSheetRect(r, pixels, mode)
+    console.log('writing moved rects:')
+    for (const orig of selection.originalRects) {
+      // project ORIGINAL rect into grid space
+      const projected = tileGridManager.projectTileSheetRectToGridRects(orig)
+      const baseGridRect = projected[0]
+
+      const origGX = baseGridRect.x
+      const origGY = baseGridRect.y
+
+      const newGX = origGX + gridDx
+      const newGY = origGY + gridDy
+
+      const hit = tileGridManager.gridPixelToTile(newGX, newGY)
+
+      let sheetPos = { x: NaN, y: NaN }
+      if (hit) {
+        sheetPos = state.tileSheet.tileLocalToSheet(
+          hit.tile.id,
+          orig.tileX,
+          orig.tileY,
+        )
+      }
+
+      console.log({
+        LOG_NAME: 'COMMIT_TRACE',
+        initialGridBounds: selection.initialGridBounds,
+        gridBounds: selection.gridBounds,
+        rawDx,
+        rawDy,
+        gridDx,
+        gridDy,
+        srcRect: orig,
+        projected,
+        origGX,
+        origGY,
+        newGX,
+        newGY,
+        hit,
+        tileId: hit?.tile.id ?? null,
+        tileX: orig.tileX,
+        tileY: orig.tileY,
+        sheetPos,
+      })
+
+      if (!hit) continue
+
+      const newTile = hit.tile
+
+      const writeRect: TileSheetRect = {
+        x: sheetPos.x,
+        y: sheetPos.y,
+        w: orig.w,
+        h: orig.h,
+        tileId: newTile.id,
+        srcX: orig.srcX,
+        srcY: orig.srcY,
+        gridX: newGX,
+        gridY: newGY,
+        tileX: orig.tileX,
+        tileY: orig.tileY,
+      }
+
+      console.log({
+        LOG_NAME: 'WRITE rect',
+        ...writeRect,
+      })
+
+      tileSheetWriter.blendTileSheetRect(writeRect, pixels, mode)
+      movedTileIds.add(newTile.id)
     }
 
-    // Re-render affected tiles
-    const tileIds = new Set(selection.currentRects.map(r => r.tileId))
-    gridRenderer.queueRenderTiles([...tileIds])
+    const movedIdsArr = [...movedTileIds]
+    console.log({
+      LOG_NAME: 'movedTileIds',
+      movedIdsArr,
+    })
+
+    gridRenderer.queueRenderTiles(movedIdsArr)
     gridRenderer.queueRenderGrid()
 
     selection = null
     dragging = false
 
-    lastPx = null
-    lastPy = null
+    console.log('=== COMMIT END (GRID) ===')
   }
 
   function selectionGridSpaceMergedRects(): RectBounds[] {
     if (!selection) throw new Error('no selection')
-    const projected = []
+    const projected: RectBounds[] = []
     for (const r of selection.currentRects) {
       projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
     }
 
-    return mergeRectBounds(projected)
+    const merged = mergeRectBounds(projected)
+    return merged
+  }
+
+  function clearSelection() {
+    console.log({
+      LOG_NAME: 'clearSelection',
+      selection,
+    })
+    clearState()
+    selection = null
   }
 
   return {
@@ -280,15 +484,17 @@ export function makeTilesetToolState(
 
     dragStart,
     moveSelectionOnGrid,
-    moveSelection: () => {
+    moveSelection: (x: number, y: number) => {
+      console.log({
+        LOG_NAME: 'moveSelection (TILE canvas, unused for now)',
+        x,
+        y,
+      })
     },
     tileInSelection,
     gridInSelection,
     selectionGridSpaceMergedRects,
     commit,
-    clearSelection() {
-      clearState()
-      selection = null
-    },
+    clearSelection,
   }
 }

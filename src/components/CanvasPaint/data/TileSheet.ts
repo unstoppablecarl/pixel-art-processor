@@ -78,6 +78,16 @@ export function makeTileSheet(
 
   function tileLocalToSheet(tileId: TileId, tx: number, ty: number) {
     const rect = getTileRect(tileId)
+
+    console.log( {
+      LOG_NAME: 'tileLocalToSheet',
+      tileId,
+      localX:tx,
+      localY: ty,
+      sheetX: rect.x + tx,
+      sheetY: rect.y + ty
+    })
+
     return { x: rect.x + tx, y: rect.y + ty }
   }
 
@@ -188,6 +198,8 @@ export function makeTileSheet(
       srcY: sheetY - bounds.y,
       gridX: null,
       gridY: null,
+      tileX: x1,
+      tileY: y1,
     }]
   }
 

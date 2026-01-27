@@ -16,6 +16,10 @@ export type TileSheetRect = {
   readonly srcX: number,
   readonly srcY: number,
 
+  // tile-local pixels
+  readonly tileX: number
+  readonly tileY: number
+
   // tile grid space pixel coords
   readonly gridX: number | null,
   readonly gridY: number | null,
@@ -26,25 +30,38 @@ export type TileSheetSelection = {
   readonly originalRects: TileSheetRect[],
   // absolute tileSheet rects after movement
   readonly currentRects: TileSheetRect[],
-  // drag offset from original position
-  readonly offsetX: number,
-  readonly offsetY: number,
 
+  // if this selection has been dragged changing its position
   readonly hasMoved: boolean,
 
   // tileSheet-space, fixed
   // bounding box of originalRects for the buffer
   readonly tileSheetBounds: RectBounds,
 
-  // WHERE it’s being dragged/placed (grid space)
-  readonly gridBounds: RectBounds | null,
-  readonly initialGridBounds: RectBounds | null,
+  // current moved selection bounds in tile grid pixel space
+  // only has a value when this selection was created in the tile grid
+  gridBounds: RectBounds | null,
+  // initial selection bounds
+  initialGridBounds: RectBounds | null,
+
+  // grid‑pixel position of the selection at the start of a *move* drag
+  dragMoveStartGridX: number | null,
+  dragMoveStartGridY: number | null,
+
+  // drag movement offset from original position
+  offsetX: number,
+  offsetY: number,
 
   move(dx: number, dy: number): void,
   toPixels(tileSheet: TileSheet): ImageData,
 }
 
-export function makeTileSheetSelection(rects: TileSheetRect[], tileSheetBounds: RectBounds, gridBounds: RectBounds | null): TileSheetSelection {
+export function makeTileSheetSelection(
+  rects: TileSheetRect[],
+  tileSheetBounds: RectBounds,
+  gridBounds: RectBounds | null = null,
+): TileSheetSelection {
+
   // Deep copies
   const originalRects = rects.map(r => ({ ...r }))
   const currentRects = rects.map(r => ({ ...r }))
@@ -57,7 +74,7 @@ export function makeTileSheetSelection(rects: TileSheetRect[], tileSheetBounds: 
     initialGridBounds = { ...gridBounds }
   }
 
-  return {
+  const selection: TileSheetSelection = {
     originalRects,
     currentRects,
     tileSheetBounds,
@@ -65,15 +82,24 @@ export function makeTileSheetSelection(rects: TileSheetRect[], tileSheetBounds: 
     initialGridBounds,
     gridBounds,
 
-    get offsetX() {
-      return offsetX
-    },
-    get offsetY() {
-      return offsetY
-    },
+    dragMoveStartGridX: null,
+    dragMoveStartGridY: null,
+
+    offsetX: 0,
+    offsetY: 0,
 
     get hasMoved() {
-      return offsetX !== 0 || offsetY !== 0
+      const movedInGrid =
+        this.gridBounds &&
+        this.initialGridBounds &&
+        (
+          this.gridBounds.x !== this.initialGridBounds.x ||
+          this.gridBounds.y !== this.initialGridBounds.y
+        )
+
+      const movedByOffset = this.offsetX !== 0 || this.offsetY !== 0
+
+      return movedInGrid || movedByOffset
     },
 
     move(dx: number, dy: number) {
@@ -102,19 +128,23 @@ export function makeTileSheetSelection(rects: TileSheetRect[], tileSheetBounds: 
         const dstY = r.y - tileSheetBounds.y
 
         writeImageData(out, src, dstX, dstY)
-        // console.log({
-        //   LOG_NAME: 'PIXELS',
-        //   rect: r,
-        //   localX: r.x - bounds.x,
-        //   localY: r.y - bounds.y,
-        //   tileId: r.tileId,
-        //   bounds,
-        // })
+
       }
 
       return out
     },
   }
+
+  // console.log({
+  //   LOG_NAME: 'makeTileSheetSelection.output',
+  //   originalRects,
+  //   currentRects,
+  //   tileSheetBounds,
+  //   initialGridBounds,
+  //   gridBounds,
+  // })
+
+  return selection
 }
 
 /**
