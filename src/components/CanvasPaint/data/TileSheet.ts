@@ -186,7 +186,8 @@ export function makeTileSheet(
       // IMPORTANT: must be sheet local
       srcX: sheetX - bounds.x,
       srcY: sheetY - bounds.y,
-
+      gridX: null,
+      gridY: null,
     }]
   }
 
@@ -267,6 +268,20 @@ export function makeTileSheet(
     tileLocalRectToTileSheetRect,
     tilePointInTileSheetSelection,
     each,
+    extractImageData(
+      x = 0,
+      y = 0,
+      w = tileSize,
+      h = tileSize,
+    ): ImageData {
+      return extractImageData(
+        imgData,
+        x,
+        y,
+        w,
+        h,
+      )
+    },
     serialize,
   }
 }

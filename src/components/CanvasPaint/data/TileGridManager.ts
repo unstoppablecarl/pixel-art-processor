@@ -9,6 +9,8 @@ import { makeTileSheet } from './TileSheet.ts'
 
 export type TileGridManager = ReturnType<typeof makeTileGridManager>
 
+export type IncompleteTileSheetRec = Omit<TileSheetRect, 'srcX' | 'srcY'>
+
 export function makeTileGridManager(
   tileset: ComputedRef<AxialEdgeWangTileset<number>>,
   tileSize: Ref<number>,
@@ -85,7 +87,7 @@ export function makeTileGridManager(
     tileSheet.value.resizeTileSize(tileSize.value)
   })
 
-  function getOverlappingTiles(rect: RectBounds) {
+  function getOverlappingTilesOnGrid(rect: RectBounds) {
     return tileGrid.value.getOverlappingTiles(rect, tileSize.value)
   }
 
@@ -104,7 +106,6 @@ export function makeTileGridManager(
       }
     })
   }
-
   function gridPointInTileSheetSelection(
     gx: number,
     gy: number,
@@ -117,14 +118,24 @@ export function makeTileGridManager(
     const { tile } = r
 
     const { x: localX, y: localY } = gridPixelToTilePixel(gx, gy)
-    const { x: sheetX, y: sheetY } = tileSheet.value.tileLocalToSheet(tile.id, localX, localY)
+    const { x: sheetX, y: sheetY } =
+      tileSheet.value.tileLocalToSheet(tile.id, localX, localY)
 
-    for (const r of selection.currentRects) {
+    // Apply grid movement delta
+    const dx = selection.gridBounds!.x - selection.initialGridBounds!.x
+    const dy = selection.gridBounds!.y - selection.initialGridBounds!.y
+
+    for (const rect of selection.currentRects) {
+
+      // Shift tileSheet rects by the grid movement
+      const movedX = rect.x + dx
+      const movedY = rect.y + dy
+
       if (
-        sheetX >= r.x &&
-        sheetX < r.x + r.w &&
-        sheetY >= r.y &&
-        sheetY < r.y + r.h
+        sheetX >= movedX &&
+        sheetX <  movedX + rect.w &&
+        sheetY >= movedY &&
+        sheetY <  movedY + rect.h
       ) {
         return true
       }
@@ -133,19 +144,22 @@ export function makeTileGridManager(
     return false
   }
 
-  function gridRectToTileSheetRects(rect: RectBounds, bounds: RectBounds): TileSheetRect[] {
-    const overlaps = getOverlappingTiles(rect)
-    const out: TileSheetRect[] = []
+
+  function gridRectToTileSheetRects(rect: RectBounds): IncompleteTileSheetRec[] {
+    const overlaps = getOverlappingTilesOnGrid(rect)
+    const out = []
 
     for (const o of overlaps) {
-
       const { tile, tileOverlap } = o
-      const { x, y, w, h } = tileOverlap
+      const { x: localX, y: localY, w, h } = tileOverlap
 
       if (w <= 0 || h <= 0) continue
 
-      // Convert tile-local → tileSheet pixel coords
-      const { x: sheetX, y: sheetY } = tileSheet.value.tileLocalToSheet(tile.id, x, y)
+      const { x: tileSheetX, y: tileSheetY } =
+        tileSheet.value.getTileRect(tile.id)
+
+      const sheetX = tileSheetX + localX
+      const sheetY = tileSheetY + localY
 
       out.push({
         tileId: tile.id,
@@ -153,14 +167,20 @@ export function makeTileGridManager(
         y: sheetY,
         w,
         h,
-
-        // IMPORTANT: tileOverlap.x/y are in GRID INPUT SPACE
-        srcX: x - bounds.x,
-        srcY: y - bounds.y,
+        gridX: o.gridOverlap.x,
+        gridY: o.gridOverlap.y,
       })
     }
 
     return out
+  }
+
+  function applyBoundsOrigin(rects: RectBounds[], boundsOrigin: Point): TileSheetRect[] {
+    return rects.map(r => ({
+      ...r,
+      srcX: r.x - boundsOrigin.x,
+      srcY: r.y - boundsOrigin.y,
+    })) as TileSheetRect[]
   }
 
   return {
@@ -171,13 +191,14 @@ export function makeTileGridManager(
     tileset,
     tileGrid,
     tileGridEdgeColorRenderer,
-    getOverlappingTiles,
+    getOverlappingTiles: getOverlappingTilesOnGrid,
     gridPixelToTile,
     gridPixelToTilePixel,
     tileCoordToGridPixel,
     gridPointInTileSheetSelection,
     gridRectToTileSheetRects,
     projectTileSheetRectToGridRects,
+    applyBoundsOrigin,
     getTileInfo,
     tileSheet,
   }

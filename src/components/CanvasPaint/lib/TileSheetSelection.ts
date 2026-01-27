@@ -1,4 +1,5 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
+import { getRectsBounds } from '../../../lib/util/data/Rect.ts'
 import { writeImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheet } from '../data/TileSheet.ts'
@@ -13,7 +14,11 @@ export type TileSheetRect = {
   // combines the TileSheetRects to form the selection in the shape displayed to the user
   // the coords are not in a specific space it just describes how the rects fit together to make a bigger rect
   readonly srcX: number,
-  readonly srcY: number
+  readonly srcY: number,
+
+  // tile grid space pixel coords
+  readonly gridX: number | null,
+  readonly gridY: number | null,
 }
 
 export type TileSheetSelection = {
@@ -25,16 +30,21 @@ export type TileSheetSelection = {
   readonly offsetX: number,
   readonly offsetY: number,
 
-  readonly width: number,
-  readonly height: number,
-
   readonly hasMoved: boolean,
+
+  // tileSheet-space, fixed
+  // bounding box of originalRects for the buffer
+  readonly tileSheetBounds: RectBounds,
+
+  // WHERE it’s being dragged/placed (grid space)
+  readonly gridBounds: RectBounds | null,
+  readonly initialGridBounds: RectBounds | null,
 
   move(dx: number, dy: number): void,
   toPixels(tileSheet: TileSheet): ImageData,
 }
 
-export function makeTileSheetSelection(rects: TileSheetRect[], bounds: RectBounds): TileSheetSelection {
+export function makeTileSheetSelection(rects: TileSheetRect[], tileSheetBounds: RectBounds, gridBounds: RectBounds | null): TileSheetSelection {
   // Deep copies
   const originalRects = rects.map(r => ({ ...r }))
   const currentRects = rects.map(r => ({ ...r }))
@@ -42,12 +52,18 @@ export function makeTileSheetSelection(rects: TileSheetRect[], bounds: RectBound
   let offsetX = 0
   let offsetY = 0
 
+  let initialGridBounds: null | RectBounds = null
+  if (gridBounds) {
+    initialGridBounds = { ...gridBounds }
+  }
+
   return {
     originalRects,
     currentRects,
+    tileSheetBounds,
 
-    width: bounds.w,
-    height: bounds.h,
+    initialGridBounds,
+    gridBounds,
 
     get offsetX() {
       return offsetX
@@ -70,10 +86,30 @@ export function makeTileSheetSelection(rects: TileSheetRect[], bounds: RectBound
       }
     },
     toPixels(tileSheet: TileSheet): ImageData {
-      const out = new ImageData(bounds.w, bounds.h)
+      const out = new ImageData(tileSheetBounds.w, tileSheetBounds.h)
+
       for (const r of currentRects) {
-        const src = tileSheet.extractTile(r.tileId, r.x, r.y, r.w, r.h)
-        writeImageData(out, src, r.srcX, r.srcY)
+        // Convert tile sheet-space rect → tile-local rect
+        const src = tileSheet.extractImageData(
+          r.x,
+          r.y,
+          r.w,
+          r.h,
+        )
+
+        // Destination inside composed buffer
+        const dstX = r.x - tileSheetBounds.x
+        const dstY = r.y - tileSheetBounds.y
+
+        writeImageData(out, src, dstX, dstY)
+        // console.log({
+        //   LOG_NAME: 'PIXELS',
+        //   rect: r,
+        //   localX: r.x - bounds.x,
+        //   localY: r.y - bounds.y,
+        //   tileId: r.tileId,
+        //   bounds,
+        // })
       }
 
       return out
@@ -104,7 +140,7 @@ function areAdjacent(a: RectBounds, b: RectBounds): boolean {
     ax2 > b.x &&
     (ay2 === b.y || by2 === a.y)
 
-  return vertical;
+  return vertical
 }
 
 /**
@@ -140,35 +176,11 @@ function findIslands(rects: RectBounds[]): RectBounds[][] {
 }
 
 /**
- * Merge an island of rects into a bounding box.
- */
-function mergeIsland(island: RectBounds[]): RectBounds {
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-
-  for (const r of island) {
-    if (r.x < minX) minX = r.x
-    if (r.y < minY) minY = r.y
-    if (r.x + r.w > maxX) maxX = r.x + r.w
-    if (r.y + r.h > maxY) maxY = r.y + r.h
-  }
-
-  return {
-    x: minX,
-    y: minY,
-    w: maxX - minX,
-    h: maxY - minY,
-  }
-}
-
-/**
  * Merge rects into adjacency-connected islands.
  * Returns one merged rect per island.
  */
 export function mergeRectBounds(rects: RectBounds[]): RectBounds[] {
   if (rects.length === 0) return []
   const islands = findIslands(rects)
-  return islands.map(mergeIsland)
+  return islands.map(getRectsBounds)
 }
