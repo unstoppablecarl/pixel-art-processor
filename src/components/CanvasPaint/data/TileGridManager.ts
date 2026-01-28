@@ -184,14 +184,6 @@ export function makeTileGridManager(
     return out
   }
 
-  function applyBoundsOrigin(rects: TileSheetRect[], boundsOrigin: Point): TileSheetRect[] {
-    return rects.map(r => ({
-      ...r,
-      srcX: r.x - boundsOrigin.x,
-      srcY: r.y - boundsOrigin.y,
-    })) as TileSheetRect[]
-  }
-
   return {
     gridWidth,
     gridHeight,
@@ -208,7 +200,6 @@ export function makeTileGridManager(
     gridRectToTileSheetRects,
     projectTileSheetRectToGridRects,
     gridPixelToTileSheetPixel,
-    applyBoundsOrigin,
     getTileInfo,
     tileSheet,
   }

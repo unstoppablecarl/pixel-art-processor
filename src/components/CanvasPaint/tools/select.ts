@@ -190,6 +190,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
             g.h,
           )
         }
+        debugDrawSelection(sel, composed)
       }
     }
     ,
@@ -266,7 +267,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
         if (mode === BlendMode.OVERWRITE) {
           ctx.clearRect(localX, localY, r.w, r.h)
         }
-        debugDrawSelection(sel, composed)
+        // debugDrawSelection(sel, composed)
         putImageDataScaled(
           ctx,
           composed,

@@ -1,6 +1,5 @@
 import type { Point } from '../../lib/node-data-types/BaseDataStructure.ts'
 import type { Direction } from '../../lib/pipeline/_types.ts'
-import type { RectBounds } from '../../lib/util/data/Bounds.ts'
 import {
   getPointsInEdgeMargins,
   mirrorTilePixelHorizontal,
@@ -25,7 +24,7 @@ import { BlendMode } from './_canvas-editor-types.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext } from './GlobalToolManager.ts'
-import type { TileSheetRect } from './lib/TileSheetSelection.ts'
+import type { TileSheetRect, TileSheetSelection } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
@@ -60,14 +59,14 @@ export function makeTileSheetWriter(
     [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
   }
 
-  function blendTileSheetRect(
+  function blendTileSheetRectFromGrid(
     rect: TileSheetRect,
     pixels: ImageData,
     blendMode: BlendMode,
-    tileSheetBounds: RectBounds,   // you already have this on the selection
+    selection: TileSheetSelection,
   ) {
-    const srcX = rect.x - tileSheetBounds.x
-    const srcY = rect.y - tileSheetBounds.y
+    const srcX = rect.x - selection.tileSheetBounds.x
+    const srcY = rect.y - selection.tileSheetBounds.y
 
     blendSheetImageData(
       pixels,
@@ -80,7 +79,6 @@ export function makeTileSheetWriter(
       rect.h,
     )
   }
-
 
   function blendSheetImageData(
     imageData: ImageData,
@@ -97,7 +95,7 @@ export function makeTileSheetWriter(
   }
 
   return {
-    blendTileSheetRect,
+    blendTileSheetRectFromGrid,
     blendSheetImageData,
     clear() {
       for (const tile of state.tileset.tiles) {

@@ -3,8 +3,8 @@ import { CanvasType, type LocalToolContext, Tool } from './_canvas-editor-types.
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
-import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
 import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
+import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
 import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
 import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
 
@@ -45,7 +45,11 @@ export function makeLocalToolManager(
     gridRenderer,
   })
 
-  const tileSheetRenderer = makeTileSheetRenderer({ state, tilesetToolState })
+  const tileSheetRenderer = makeTileSheetRenderer({
+    state,
+    tilesetToolState,
+    gridCache: gridRenderer.gridCache,
+  })
 
   const local: LocalToolContext = {
     state,

@@ -9,6 +9,11 @@ export type SelectionCommitResult = {
   bounds: RectBounds
 }
 
+export type NormalizedTileSheetRect = TileSheetRect & {
+  srcX: number
+  srcY: number
+}
+
 export type TileSheetRect = {
   x: number,
   y: number,
@@ -57,7 +62,7 @@ export type TileSheetSelection = {
 }
 
 export function makeTileSheetSelection(
-  rects: TileSheetRect[],
+  rects: NormalizedTileSheetRect[] |  TileSheetRect[],
   tileSheetBounds: RectBounds,
   gridBounds: RectBounds | null = null,
 ): TileSheetSelection {
@@ -144,6 +149,26 @@ export function makeTileSheetSelection(
   // })
 
   return selection
+}
+
+export function normalizeTileSheetRects(rects: TileSheetRect[]): {
+  normalizedRects: NormalizedTileSheetRect[],
+  tileSheetBounds: RectBounds,
+} {
+  // 1. Compute tileSheet bounding box (tileSheet pixel space)
+  const tileSheetBounds = getRectsBounds(rects)
+
+  // 2. Normalize rects so their x/y are relative to tileSheetBounds
+  const normalizedRects = rects.map(r => ({
+    ...r,
+    srcX: r.x - tileSheetBounds.x,
+    srcY: r.y - tileSheetBounds.y,
+  }))
+
+  return {
+    normalizedRects,
+    tileSheetBounds,
+  }
 }
 
 /**

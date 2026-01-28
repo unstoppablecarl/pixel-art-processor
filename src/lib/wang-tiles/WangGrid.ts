@@ -194,8 +194,8 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
           // Intersection of selection rect and tile bounds
           // in tile grid pixel coord space
           gridOverlap: {
-            x: sourceX,
-            y: sourceY,
+            x: ix,
+            y: iy,
             w: iw,
             h: ih,
           },

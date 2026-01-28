@@ -7,8 +7,8 @@ import type { EditorState } from './EditorState.ts'
 import {
   makeTileSheetSelection,
   mergeRectBounds,
+  normalizeTileSheetRects,
   type SelectionCommitResult,
-  type TileSheetRect,
   type TileSheetSelection,
 } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
@@ -62,9 +62,6 @@ export function makeTilesetToolState(
     const h = y2 - y1
     if (w <= 0 || h <= 0) return null
 
-    let bounds: RectBounds
-    let tileSheetRects: TileSheetRect[] = []
-
     // ───────────────────────────────────────────────
     // TILE CANVAS SELECTION
     // ───────────────────────────────────────────────
@@ -72,20 +69,20 @@ export function makeTilesetToolState(
       const { x: sx, y: sy } =
         state.tileSheet.tileLocalToSheet(inputTileId!, x1, y1)
 
-      bounds = { x: sx, y: sy, w, h }
+      const tileSheetBounds = { x: sx, y: sy, w, h }
 
-      tileSheetRects = state.tileSheet.tileLocalRectToTileSheetRect(
+      const tileSheetRects = state.tileSheet.tileLocalRectToTileSheetRect(
         inputTileId!,
         { x: x1, y: y1, w, h },
-        bounds,
+        tileSheetBounds,
       )
 
       if (tileSheetRects.length === 0) return null
 
-      // TILE selection → no grid bounds yet
       return makeTileSheetSelection(
         tileSheetRects,
-        bounds,
+        tileSheetBounds,
+        null,               // no gridBounds for tile canvas
       )
     }
 
@@ -93,34 +90,18 @@ export function makeTilesetToolState(
     // GRID CANVAS SELECTION
     // ───────────────────────────────────────────────
     if (inputSpace === CanvasType.GRID) {
-      const gridRect = { x: x1, y: y1, w, h }
+      // 1. The user's drag rectangle in GRID PIXEL SPACE
+      const gridBounds = { x: x1, y: y1, w, h }
 
-      const rects = tileGridManager.gridRectToTileSheetRects(gridRect)
+      // 2. Convert to tileSheet rects (tileSheet pixel space)
+      const rects = tileGridManager.gridRectToTileSheetRects(gridBounds)
       if (rects.length === 0) return null
 
-      bounds = getRectsBounds(rects)
-
-      const normalized = tileGridManager.applyBoundsOrigin(rects, bounds)
-
-      const tileSheetRects = normalized.map((r, i) => ({
-        ...r,
-        tileX: rects[i].tileX,
-        tileY: rects[i].tileY,
-        gridX: rects[i].gridX,
-        gridY: rects[i].gridY,
-      }))
-
-      // Project into grid space to compute gridBounds
-      const projected: RectBounds[] = []
-      for (const r of tileSheetRects) {
-        projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
-      }
-
-      const gridBounds = getRectsBounds(projected)
+      const { tileSheetBounds, normalizedRects } = normalizeTileSheetRects(rects)
 
       return makeTileSheetSelection(
-        tileSheetRects,
-        bounds,
+        normalizedRects,
+        tileSheetBounds,
         gridBounds,
       )
     }
@@ -195,6 +176,14 @@ export function makeTilesetToolState(
 
     dragging = true
 
+    console.log({
+      LOG_NAME: 'dragStart',
+      x,
+      y,
+      'selection.gridBounds.x': selection.gridBounds!.x,
+      'selection.gridBounds.y': selection.gridBounds!.y,
+    })
+
     if (selection.gridBounds) {
       selection.dragMoveStartGridX = x - selection.gridBounds.x
       selection.dragMoveStartGridY = y - selection.gridBounds.y
@@ -264,83 +253,40 @@ export function makeTilesetToolState(
   }
 
   function computeCommitRects(): SelectionCommitResult {
-    const { tileGridManager } = state
     if (!selection) throw new Error('no selection')
 
     const gb = selection.gridBounds
-    const igb = selection.initialGridBounds
 
-    // TILE-ONLY PATH
-    if (!gb || !igb) {
-
+    // If no movement, just return current rects
+    if (!gb) {
       const rects = selection.currentRects.map(r => ({ ...r }))
       const bounds = getRectsBounds(rects)
       return { rects, bounds }
     }
 
-    // GRID MOVEMENT PATH
-    const rawDx = gb.x - igb.x
-    const rawDy = gb.y - igb.y
+    console.log({
+      LOG_NAME: 'computeCommitRects',
+      selection,
+    })
 
-    const gridDx = rawDx
-    const gridDy = rawDy
-
-    const rects = []
-
-    for (const orig of selection.originalRects) {
-      // 1. tileSheet → grid
-      const projected = tileGridManager.projectTileSheetRectToGridRects(orig)
-      // first is always the rect mapped to the selection
-      const base = projected[0]
-
-      const origGX = base.x
-      const origGY = base.y
-
-      // 2. apply tile-snapped movement
-      const newGX = origGX + gridDx
-      const newGY = origGY + gridDy
-
-      const r = tileGridManager.gridPixelToTileSheetPixel(newGX, newGY)
-      if (!r) continue
-
-      const { x, y, tileId, tileLocalX: localX, tileLocalY: localY } = r
-      rects.push({
-        x,
-        y,
-        w: base.w,
-        h: base.h,
-        tileId: tileId,
-        gridX: newGX,
-        gridY: newGY,
-        tileX: localX,
-        tileY: localY,
-      })
-    }
-
+    // Re-split the moved selection across tiles
+    const rects = tileGridManager.gridRectToTileSheetRects(gb)
+    // Tight bounding box of the moved selection
     const bounds = getRectsBounds(rects)
+
+    console.log({
+      LOG_NAME: 'computeCommitRects result',
+      rects,
+      bounds,
+    })
     return { rects, bounds }
   }
 
-  function renderCommitPreview(ctx: CanvasRenderingContext2D) {
-    ctx.strokeStyle = 'lime'
-    ctx.lineWidth = 1
-
-    const { rects } = computeCommitRects()
-    for (const r of rects) {
-      ctx.strokeRect(
-        r.x * state.scale + 0.5,
-        r.y * state.scale + 0.5,
-        r.w * state.scale - 1,
-        r.h * state.scale - 1,
-      )
-    }
-  }
-
-  function executeCommit({ rects, bounds }: SelectionCommitResult, pixels: ImageData, mode: BlendMode) {
+  function executeCommit({ rects }: SelectionCommitResult, pixels: ImageData, mode: BlendMode) {
     const movedTileIds = new Set<TileId>()
 
     for (const r of rects) {
-      tileSheetWriter.blendTileSheetRect(r, pixels, mode, bounds)
+      tileSheetWriter.blendTileSheetRectFromGrid(r, pixels, mode, selection!)
       movedTileIds.add(r.tileId)
     }
 
@@ -424,7 +370,6 @@ export function makeTilesetToolState(
     commit,
     clearSelection,
     computeCommitRects,
-    renderCommitPreview,
     executeCommit,
   }
 }
