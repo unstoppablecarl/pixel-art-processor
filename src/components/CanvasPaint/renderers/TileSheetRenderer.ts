@@ -41,7 +41,7 @@ export function makeTileSheetRenderer(
       })
 
       if (tilesetToolState.selection) {
-        tilesetToolState.selection.currentRects.forEach((r) => {
+        tilesetToolState.selection.originalRects.forEach((r) => {
           const { x, y, w, h } = r
           const screenX = x + 1
           const screenY = y + 1
@@ -53,6 +53,22 @@ export function makeTileSheetRenderer(
 
           ctx.fillRect(screenX, screenY, screenW, screenH)
         })
+      }
+
+      if (tilesetToolState.selection) {
+        tilesetToolState.renderCommitPreview(ctx)
+        // tilesetToolState.selection.currentRects.forEach((r) => {
+        //   const { x, y, w, h } = r
+        //   const screenX = x + 1
+        //   const screenY = y + 1
+        //   const screenW = w - 2
+        //   const screenH = h - 2
+        //
+        //   ctx.fillStyle = 'rgba(0, 255,0,0.5)'
+        //   ctx.lineWidth = 1
+        //
+        //   ctx.fillRect(screenX, screenY, screenW, screenH)
+        // })
       }
     }
 
@@ -69,7 +85,7 @@ export function makeTileSheetRenderer(
       }
 
       if (tilesetToolState.selection) {
-        tilesetToolState.selection.currentRects.forEach((r) => {
+        tilesetToolState.selection.originalRects.forEach((r) => {
           let { x, y, w, h } = r
 
           const screenX = x * scale - 0.5
@@ -82,6 +98,33 @@ export function makeTileSheetRenderer(
 
           ctx.strokeRect(screenX, screenY, screenW, screenH)
         })
+
+        // tilesetToolState.selection.currentRects.forEach((r) => {
+        //   let { x, y, w, h } = r
+        //
+        //   const screenX = x * scale - 0.5
+        //   const screenY = y * scale - 0.5
+        //   const screenW = w * scale + 1
+        //   const screenH = h * scale + 1
+        //
+        //   ctx.strokeStyle = 'orange'
+        //   ctx.lineWidth = 1
+        //
+        //   ctx.strokeRect(screenX, screenY, screenW, screenH)
+        // })
+
+        ctx.strokeStyle = 'lime'
+        ctx.lineWidth = 1
+
+        const { rects } = tilesetToolState.computeCommitRects()
+        for (const r of rects) {
+          ctx.strokeRect(
+            r.x * scale + 0.5,
+            r.y * scale + 0.5,
+            r.w * scale - 1,
+            r.h * scale - 1,
+          )
+        }
       }
     }
     renderCanvasFrame(

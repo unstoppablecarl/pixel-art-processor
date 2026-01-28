@@ -60,8 +60,9 @@ export function makeLocalToolManager(
       state.mouseGridY = y
 
       const d = tileGridManager.gridPixelToTile(x, y)
-      if (d) {
-        const { x: tx, y: ty } = tileGridManager.gridPixelToTilePixel(x, y)
+      const r = tileGridManager.gridPixelToTilePixel(x, y)
+      if (d && r) {
+        const { x: tx, y: ty } = r
         state.hoverTileId = d.tile.id
         state.hoverTilePixelX = tx
         state.hoverTilePixelY = ty

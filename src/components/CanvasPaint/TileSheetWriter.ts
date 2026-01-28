@@ -1,5 +1,6 @@
 import type { Point } from '../../lib/node-data-types/BaseDataStructure.ts'
 import type { Direction } from '../../lib/pipeline/_types.ts'
+import type { RectBounds } from '../../lib/util/data/Bounds.ts'
 import {
   getPointsInEdgeMargins,
   mirrorTilePixelHorizontal,
@@ -63,18 +64,23 @@ export function makeTileSheetWriter(
     rect: TileSheetRect,
     pixels: ImageData,
     blendMode: BlendMode,
+    tileSheetBounds: RectBounds,   // you already have this on the selection
   ) {
+    const srcX = rect.x - tileSheetBounds.x
+    const srcY = rect.y - tileSheetBounds.y
+
     blendSheetImageData(
       pixels,
       blendMode,
-      rect.x,        // dest X in tilesheet
-      rect.y,        // dest Y in tilesheet
-      rect.srcX, // src X inside selection pixels
-      rect.srcY, // src Y inside selection pixels
+      rect.x,   // dest X in tilesheet
+      rect.y,   // dest Y in tilesheet
+      srcX,     // src X inside selection buffer
+      srcY,     // src Y inside selection buffer
       rect.w,
       rect.h,
     )
   }
+
 
   function blendSheetImageData(
     imageData: ImageData,

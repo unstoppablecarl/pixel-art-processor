@@ -4,17 +4,17 @@ import { writeImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheet } from '../data/TileSheet.ts'
 
+export type SelectionCommitResult = {
+  rects: TileSheetRect[],
+  bounds: RectBounds
+}
+
 export type TileSheetRect = {
   x: number,
   y: number,
   readonly w: number,
   readonly h: number,
   readonly tileId: TileId,
-
-  // combines the TileSheetRects to form the selection in the shape displayed to the user
-  // the coords are not in a specific space it just describes how the rects fit together to make a bigger rect
-  readonly srcX: number,
-  readonly srcY: number,
 
   // tile-local pixels
   readonly tileX: number
@@ -29,7 +29,7 @@ export type TileSheetSelection = {
   // absolute tileSheet rects at extraction time
   readonly originalRects: TileSheetRect[],
   // absolute tileSheet rects after movement
-  readonly currentRects: TileSheetRect[],
+  currentRects: TileSheetRect[],
 
   // if this selection has been dragged changing its position
   readonly hasMoved: boolean,
@@ -52,8 +52,8 @@ export type TileSheetSelection = {
   offsetX: number,
   offsetY: number,
 
-  move(dx: number, dy: number): void,
   toPixels(tileSheet: TileSheet): ImageData,
+  getOverlappingTileIds(): TileId[],
 }
 
 export function makeTileSheetSelection(
@@ -65,9 +65,6 @@ export function makeTileSheetSelection(
   // Deep copies
   const originalRects = rects.map(r => ({ ...r }))
   const currentRects = rects.map(r => ({ ...r }))
-
-  let offsetX = 0
-  let offsetY = 0
 
   let initialGridBounds: null | RectBounds = null
   if (gridBounds) {
@@ -101,16 +98,6 @@ export function makeTileSheetSelection(
 
       return movedInGrid || movedByOffset
     },
-
-    move(dx: number, dy: number) {
-      offsetX += dx
-      offsetY += dy
-
-      for (let i = 0; i < currentRects.length; i++) {
-        currentRects[i].x = originalRects[i].x + offsetX
-        currentRects[i].y = originalRects[i].y + offsetY
-      }
-    },
     toPixels(tileSheet: TileSheet): ImageData {
       const out = new ImageData(tileSheetBounds.w, tileSheetBounds.h)
 
@@ -132,6 +119,18 @@ export function makeTileSheetSelection(
       }
 
       return out
+    },
+
+    getOverlappingTileIds() {
+      const tileIds = new Set<TileId>()
+
+      for (const r of originalRects) {
+        tileIds.add(r.tileId)
+      }
+      for (const r of currentRects) {
+        tileIds.add(r.tileId)
+      }
+      return [...tileIds]
     },
   }
 
