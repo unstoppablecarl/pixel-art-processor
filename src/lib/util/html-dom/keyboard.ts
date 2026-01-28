@@ -3,7 +3,10 @@ import { tinykeys } from './tinykey.ts'
 
 export type InputBindings = Record<string, (event: KeyboardEvent) => void>
 
-export function makeCopyPasteKeys(copy: (local: LocalToolContext) => void, paste: (local: LocalToolContext) => void): ToolInputBindings {
+export function makeCopyPasteKeys<T>(
+  copy: (local: LocalToolContext<T>) => void,
+  paste: (local: LocalToolContext<T>) => void,
+): ToolInputBindings<T> {
   return {
     'Control+c': (local, e) => {
       e.preventDefault()

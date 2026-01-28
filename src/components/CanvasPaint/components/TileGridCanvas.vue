@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, useTemplateRef } from 'vue'
-import { DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID } from '../_canvas-editor-types.ts'
+import { onMounted, useTemplateRef } from 'vue'
+import { DATA_LOCAL_TOOL_ID } from '../_canvas-editor-types.ts'
 import { createGridMouseHandlers } from '../lib/canvas-mouse.ts'
 import { type LocalToolManager } from '../LocalToolManager.ts'
 

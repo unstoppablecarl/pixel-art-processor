@@ -1,19 +1,24 @@
 import { useDocumentClick } from '../../lib/util/vue-util.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import {
+  type BaseLocalToolContext,
   CanvasType,
-  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID,
+  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK,
+  DATA_LOCAL_TOOL_ID,
   type LocalToolContext,
+  type LocalToolContexts,
+  type LocalToolStates,
   Tool,
 } from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
+import { makeCurrentToolRenderer } from './renderers/CurrentToolRenderer.ts'
 import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
 import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
 import { makeTileSheetSelectionRenderer } from './renderers/TileSheetSelectionRenderer.ts'
-import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
-import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
+import { makeSelectionLocalToolState } from './SelectionLocalToolState.ts'
+import { makeTileSheetWriter } from './TileSheetWriter.ts'
 
 export type LocalToolManager = ReturnType<typeof useLocalToolManager>
 
@@ -21,14 +26,10 @@ export function useLocalToolManager(
   {
     id,
     tileGridManager,
-    tileSheetWriter,
-    tilesetToolState,
     global = useGlobalToolManager(),
   }: {
     id: string,
     tileGridManager: TileGridManager,
-    tileSheetWriter?: TileSheetWriter,
-    tilesetToolState?: TilesetToolState,
     global?: GlobalToolManager
   },
 ) {
@@ -37,41 +38,54 @@ export function useLocalToolManager(
   const gridRenderer = makeTileGridRenderer({
     state,
     toolContext: global.toolContext,
-    globalToolManager: global,
-    localToolContext: () => local,
   })
 
-  tileSheetWriter ??= makeTileSheetWriter({
+  const tileSheetWriter = makeTileSheetWriter({
     state,
     gridRenderer,
     globalToolContext: global.toolContext,
   })
 
-  tilesetToolState ??= makeTilesetToolState({
+  const localToolStates: LocalToolStates = {
+    [Tool.BRUSH]: {},
+    [Tool.SELECT]: makeSelectionLocalToolState({
+      state,
+      tileGridManager,
+      tileSheetWriter,
+      gridRenderer,
+    }),
+  }
+
+  const localBase: BaseLocalToolContext = {
     state,
-    tileGridManager,
-    tileSheetWriter,
     gridRenderer,
+    tileSheetWriter,
+  }
+
+  const localToolContexts = Object.fromEntries(
+    Object.entries(localToolStates).map(([key, val]) => {
+      return [key as Tool, { ...localBase, toolState: localToolStates[key as Tool] }]
+    }),
+  ) as LocalToolContexts
+
+  const currentToolRenderer = makeCurrentToolRenderer({
+    globalToolManager: global,
+    localToolContexts,
   })
+
+  gridRenderer.setCurrentToolRenderer(currentToolRenderer)
 
   const tileSheetRenderer = makeTileSheetRenderer({
     state,
-    tilesetToolState,
+    localToolStates,
     gridCache: gridRenderer.gridCache,
   })
 
   const tileSheetSelectionRenderer = makeTileSheetSelectionRenderer({
     state,
-    tilesetToolState,
+    localToolStates,
     gridCache: gridRenderer.gridCache,
   })
-
-  const local: LocalToolContext = {
-    state,
-    gridRenderer,
-    tilesetToolState,
-    tileSheetWriter,
-  }
 
   function prepareMouseEventState(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {
     if (canvasType === CanvasType.GRID) {
@@ -113,7 +127,7 @@ export function useLocalToolManager(
     if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
     if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
 
-    tilesetToolState.clearSelection()
+    localToolStates[Tool.SELECT].clearSelection()
   })
 
   return {
@@ -122,15 +136,16 @@ export function useLocalToolManager(
     gridRenderer,
     tileSheetRenderer,
     tileSheetSelectionRenderer,
-    tilesetToolState,
     tileGridManager,
     tileSheetWriter,
     onGlobalToolChanging(oldTool: Tool, newTool: Tool) {
+      const local = localToolContexts[newTool] as LocalToolContext<any>
       global.tools[oldTool]?.onGlobalToolChanging?.(local, oldTool, newTool)
     },
 
     onMouseDown(x: number, y: number, canvasType: CanvasType, tileId?: TileId): void {
       prepareMouseEventState(x, y, canvasType, tileId)
+      const local = localToolContexts[global.currentTool] as LocalToolContext<any>
 
       global.setActiveLocal(local)
 
@@ -143,6 +158,7 @@ export function useLocalToolManager(
     },
     onMouseMove(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {
       prepareMouseEventState(x, y, canvasType, tileId)
+      const local = localToolContexts[global.currentTool] as LocalToolContext<any>
 
       if (state.mouseDownX !== null && state.mouseDownY !== null) {
         const dx = x - state.mouseDownX
@@ -177,6 +193,7 @@ export function useLocalToolManager(
 
     onMouseUp(x: number, y: number, canvasType: CanvasType, tileId?: TileId) {
       prepareMouseEventState(x, y, canvasType, tileId)
+      const local = localToolContexts[global.currentTool] as LocalToolContext<any>
 
       if (state.isDragging) {
         global.tools[global.currentTool]?.onDragEnd?.(local, x, y, canvasType, tileId)
@@ -192,6 +209,8 @@ export function useLocalToolManager(
       state.isDragging = false
     },
     onMouseLeave(canvasType: CanvasType, tileId?: TileId) {
+      const local = localToolContexts[global.currentTool] as LocalToolContext<any>
+
       state.mouseGridX = null
       state.mouseGridY = null
 

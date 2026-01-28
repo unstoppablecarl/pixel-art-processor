@@ -1,9 +1,9 @@
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
+import { type LocalToolStates, Tool } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 import { renderCanvasFrame } from '../lib/canvas-frame.ts'
 import type { TileSheetRect } from '../lib/TileSheetSelection.ts'
-import type { TilesetToolState } from '../TilesetToolState.ts'
 import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 
 export type TileSheetRenderer = ReturnType<typeof makeTileSheetRenderer>
@@ -12,10 +12,10 @@ export function makeTileSheetRenderer(
   {
     state,
     gridCache,
-    tilesetToolState,
+    localToolStates,
   }: {
     state: EditorState,
-    tilesetToolState: TilesetToolState,
+    localToolStates: LocalToolStates,
     gridCache: PixelGridLineRenderer,
 
   }) {
@@ -37,6 +37,7 @@ export function makeTileSheetRenderer(
 
   function draw() {
 
+    const toolState = localToolStates[Tool.SELECT]
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       const { tileSize } = state
 
@@ -46,13 +47,13 @@ export function makeTileSheetRenderer(
         state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tile.id, x, y)
       })
 
-      if (tilesetToolState.selection) {
-        tilesetToolState.selection.originalRects.forEach((r) => {
+      if (toolState.selection) {
+        toolState.selection.originalRects.forEach((r) => {
           drawRect(ctx, r, 'rgba(255, 0, 0, 0.25)')
         })
 
-        const pixels = tilesetToolState.selection.pixels
-        tilesetToolState.selection.currentRects.forEach((r) => {
+        const pixels = toolState.selection.pixels
+        toolState.selection.currentRects.forEach((r) => {
           drawRect(ctx, r, 'rgba(0, 255, 0, 0.25)')
 
           const srcX = r.bufferX
@@ -75,12 +76,12 @@ export function makeTileSheetRenderer(
         })
       }
 
-      if (tilesetToolState.selection) {
-        tilesetToolState.selection.originalRects.forEach((r, i) => {
+      if (toolState.selection) {
+        toolState.selection.originalRects.forEach((r, i) => {
           drawRectOutline(ctx, r, scale, 'rgba(255, 0, 0, 0.75)', i)
         })
 
-        tilesetToolState.selection.currentRects.forEach((r, i) => {
+        toolState.selection.currentRects.forEach((r, i) => {
           drawRectOutline(ctx, r, scale, 'rgba(0, 255, 0, 0.75)', i)
         })
       }

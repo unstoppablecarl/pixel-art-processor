@@ -1,10 +1,10 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
+import { type LocalToolStates, Tool } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 import { renderCanvasFrame } from '../lib/canvas-frame.ts'
 import type { TileSheetRect } from '../lib/TileSheetSelection.ts'
-import type { TilesetToolState } from '../TilesetToolState.ts'
 import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 
 export type TileSheetSelectionRenderer = ReturnType<typeof makeTileSheetSelectionRenderer>
@@ -13,10 +13,10 @@ export function makeTileSheetSelectionRenderer(
   {
     state,
     gridCache,
-    tilesetToolState,
+    localToolStates,
   }: {
     state: EditorState,
-    tilesetToolState: TilesetToolState,
+    localToolStates: LocalToolStates,
     gridCache: PixelGridLineRenderer,
   }) {
 
@@ -28,23 +28,24 @@ export function makeTileSheetSelectionRenderer(
   }
 
   function resize() {
+    const toolState = localToolStates[Tool.SELECT]
     if (!tileGridPixelCanvas) return
-    if (tilesetToolState.selection) {
+    if (toolState.selection) {
       tileGridPixelCanvas.resize(
-        (tilesetToolState.selection!.pixels.width + 100) * state.scale,
-        (tilesetToolState.selection!.pixels.height + 100) * state.scale,
+        (toolState.selection!.pixels.width + 100) * state.scale,
+        (toolState.selection!.pixels.height + 100) * state.scale,
       )
     }
   }
 
   function draw() {
-
+    const toolState = localToolStates[Tool.SELECT]
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
 
-      if (tilesetToolState.selection) {
-        const pixels = tilesetToolState.selection.pixels
+      if (toolState.selection) {
+        const pixels = toolState.selection.pixels
 
-        tilesetToolState.selection.currentRects.forEach((r) => {
+        toolState.selection.currentRects.forEach((r) => {
           drawRect(ctx, r, 'rgba(0, 255, 0, 0.25)')
 
           putImageDataScaled(ctx, pixels, r.bufferX, r.bufferY, undefined, r.bufferX, r.bufferY, r.w, r.h)
@@ -57,10 +58,10 @@ export function makeTileSheetSelectionRenderer(
       const { scale } = state
       gridCache.drawGrid(ctx)
 
-      if (tilesetToolState.selection) {
+      if (toolState.selection) {
 
         ctx.translate(scale, scale)
-        tilesetToolState.selection.currentRects.forEach((r, i) => {
+        toolState.selection.currentRects.forEach((r, i) => {
           drawRectOutline(ctx, { x: r.bufferX, y: r.bufferY, w: r.w, h: r.h }, scale, 'rgba(0, 255, 0, 0.75)', i)
         })
         ctx.translate(0, 0)

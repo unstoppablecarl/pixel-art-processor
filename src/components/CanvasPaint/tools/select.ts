@@ -1,20 +1,25 @@
 import { type BlendFn, blendIgnoreTransparent, blendSourceAlphaOver } from '../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
-import type { ToolHandler } from '../_canvas-editor-types.ts'
+import type { LocalToolContext, ToolHandler } from '../_canvas-editor-types.ts'
 import { BlendMode, CanvasType, Tool } from '../_canvas-editor-types.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
+import type { SelectionLocalToolState } from '../SelectionLocalToolState.ts'
 
-export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
+export type SelectToolHandler<T = SelectionLocalToolState> = ToolHandler<T> & {
+  onModeChanged?: (local: LocalToolContext<T>, newMode: SelectionMode) => void,
+}
+
+export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandler {
 
   return {
-    onGlobalToolChanging({ tilesetToolState }, oldTool, _newTool) {
-      if (oldTool === Tool.SELECT && tilesetToolState.selection) {
+    onGlobalToolChanging({ toolState }, oldTool, _newTool) {
+      if (oldTool === Tool.SELECT && toolState.selection) {
         // optional: commit on tool change
       }
     },
 
-    // onDeselect({ gridRenderer, tilesetToolState, tileSheetWriter }) {
-    //   const ts = tilesetToolState
+    // onDeselect({ gridRenderer, toolState, tileSheetWriter }) {
+    //   const ts = toolState
     //   const sel = ts.selection
     //   if (!sel?.pixels) return
     //
@@ -28,9 +33,11 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
     //   gridRenderer.queueRenderTiles(affectedTileIds)
     //   gridRenderer.queueRenderGrid()
     // },
-
-    onClick({ state, tilesetToolState, gridRenderer, tileSheetWriter }, x, y, canvasType, tileId) {
-      const ts = tilesetToolState
+    onModeChanged({ toolState }) {
+      toolState.draw()
+    },
+    onClick({ state, toolState, gridRenderer, tileSheetWriter }, x, y, canvasType, tileId) {
+      const ts = toolState
       const sel = ts.selection
       if (!sel) return
 
@@ -62,8 +69,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
     },
 
-    onDragStart({ state, tilesetToolState, gridRenderer }, x, y, canvasType, tileId) {
-      const ts = tilesetToolState
+    onDragStart({ state, toolState, gridRenderer }, x, y, canvasType, tileId) {
+      const ts = toolState
       const sel = ts.selection
 
       if (canvasType === CanvasType.GRID) {
@@ -104,8 +111,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
     },
 
-    onDragMove({ state, tilesetToolState, gridRenderer }, x, y, canvasType, tileId) {
-      const ts = tilesetToolState
+    onDragMove({ state, toolState, gridRenderer }, x, y, canvasType, tileId) {
+      const ts = toolState
 
       if (canvasType === CanvasType.GRID) {
         if (ts.dragging) {
@@ -125,8 +132,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
         gridRenderer.queueRenderGrid()
       }
     },
-    onDragEnd({ state, tilesetToolState, gridRenderer }, _x, _y, canvasType, tileId) {
-      const ts = tilesetToolState
+    onDragEnd({ state, toolState, gridRenderer }, _x, _y, canvasType, tileId) {
+      const ts = toolState
 
       if (ts.selecting) {
         ts.finalizeSelection()
@@ -137,8 +144,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
       gridRenderer.queueRenderAll()
     },
-    gridPixelOverlayDraw({ state, tilesetToolState }, ctx) {
-      const sel = tilesetToolState.selection
+    gridPixelOverlayDraw({ state, toolState }, ctx) {
+      const sel = toolState.selection
       if (!sel) return
 
       const { tileGridManager } = state
@@ -168,6 +175,9 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
           const sx = r.bufferX
           const sy = r.bufferY
 
+          if (mode === BlendMode.OVERWRITE) {
+            ctx.clearRect(drawX, drawY, r.w, r.h)
+          }
           putImageDataScaled(
             ctx,
             sel.pixels,
@@ -183,8 +193,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
     }
     ,
-    gridScreenOverlayDraw({ state, tilesetToolState }, ctx) {
-      const sel = tilesetToolState.selection
+    gridScreenOverlayDraw({ state, toolState }, ctx) {
+      const sel = toolState.selection
       if (!sel) return
 
       const { scale } = state
@@ -194,7 +204,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       ctx.lineWidth = 1
 
       // Convert GRID → SCREEN for drawing
-      for (const g of tilesetToolState.selectionGridSpaceMergedRects()) {
+      for (const g of toolState.selectionGridSpaceMergedRects()) {
         const { x, y, w, h } = g
         ctx.strokeRect(
           x * scale - 0.5,
@@ -205,8 +215,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       }
     }
     ,
-    tilePixelOverlayDraw({ state, tilesetToolState }, ctx, tileId) {
-      const sel = tilesetToolState.selection
+    tilePixelOverlayDraw({ state, toolState }, ctx, tileId) {
+      const sel = toolState.selection
       if (!sel) return
 
       const { tileSheet } = state
@@ -228,7 +238,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
           ctx.clearRect(localX, localY, r.w, r.h)
         }
       }
-
 
       // 2. Draw current selection footprint on this tile
       for (const r of sel.currentRects) {
@@ -255,8 +264,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
         )
       }
     },
-    tileScreenOverlayDraw({ state, tilesetToolState }, ctx, tileId) {
-      const sel = tilesetToolState.selection
+    tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
+      const sel = toolState.selection
       if (!sel) return
 
       const { tileSheet, scale } = state

@@ -2,7 +2,7 @@ import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../lib/util/data/Grid.ts'
 import { RGBA_WHITE } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { CanvasType, type ToolHandler } from '../_canvas-editor-types.ts'
+import { CanvasType, type LocalToolContext, type ToolHandler } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
 
@@ -11,7 +11,11 @@ export enum BrushShape {
   SQUARE = 'SQUARE'
 }
 
-export function makeBrushTool(toolContext: GlobalToolContext): ToolHandler {
+export type BrushToolHandler<T = {}> = ToolHandler<T> & {
+  onModeChanged?: (local: LocalToolContext<T>, newMode: SelectionMode) => void,
+}
+
+export function makeBrushTool(toolContext: GlobalToolContext): BrushToolHandler {
   let isDrawing = false
 
   function getBrushPixels(

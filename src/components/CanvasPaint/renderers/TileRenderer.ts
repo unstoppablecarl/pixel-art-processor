@@ -1,9 +1,8 @@
 import { drawText, makePixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { LocalToolContext } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
-import type { GlobalToolManager } from '../GlobalToolManager.ts'
 import { makeRenderQueue, renderCanvasFrame } from '../lib/canvas-frame.ts'
+import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
@@ -15,16 +14,14 @@ export function makeTileRenderer(
     getTileImageData,
     gridCache,
     tileCanvas,
-    globalToolManager,
-    localToolContext,
+    currentToolRenderer,
   }: {
     tileId: TileId,
     state: EditorState,
     getTileImageData: () => ImageData,
     gridCache: PixelGridLineRenderer,
     tileCanvas: HTMLCanvasElement,
-    globalToolManager: GlobalToolManager,
-    localToolContext: () => LocalToolContext
+    currentToolRenderer: CurrentToolRenderer,
 
   }) {
 
@@ -40,7 +37,7 @@ export function makeTileRenderer(
       state.scale,
       getTileImageData,
       (ctx) => {
-        globalToolManager.currentToolHandler.tilePixelOverlayDraw?.(localToolContext(), ctx, tileId)
+        currentToolRenderer.tilePixelOverlayDraw(ctx, tileId)
         state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
       },
       (ctx) => {
@@ -51,8 +48,7 @@ export function makeTileRenderer(
           const tile = state.tileset.byId.get(tileId)!
           drawText(ctx, tile.index + ': ' + tile.id)
         }
-
-        globalToolManager.currentToolHandler.tileScreenOverlayDraw?.(localToolContext(), ctx, tileId)
+        currentToolRenderer.tileScreenOverlayDraw(ctx, tileId)
       },
     )
   })

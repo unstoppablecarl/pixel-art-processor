@@ -1,9 +1,9 @@
 import { watchEffect } from 'vue'
 import { type CanvasPaintStore, useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
 import { bindInputKey, type InputBindings } from '../../lib/util/html-dom/keyboard.ts'
-import { BlendMode, type LocalToolContext, Tool, type ToolHandler } from './_canvas-editor-types.ts'
-import { BrushShape, makeBrushTool } from './tools/brush.ts'
-import { makeSelectTool } from './tools/select.ts'
+import { BlendMode, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
+import { BrushShape, type BrushToolHandler, makeBrushTool } from './tools/brush.ts'
+import { makeSelectTool, type SelectToolHandler } from './tools/select.ts'
 
 export type GlobalToolContext = ReturnType<typeof makeGlobalToolContext>
 
@@ -59,11 +59,11 @@ export function makeGlobalToolManager(store: CanvasPaintStore) {
   let removeKeys = noop
   const toolContext = makeGlobalToolContext(store)
   let currentTool: Tool = store.currentTool
-  let activeLocal: LocalToolContext | null = null
+  let activeLocal: LocalToolContext<any> | null = null
 
-  const tools: Record<Tool, ToolHandler> = {
-    [Tool.BRUSH]: makeBrushTool(toolContext),
-    [Tool.SELECT]: makeSelectTool(toolContext),
+  const tools = {
+    [Tool.BRUSH]: makeBrushTool(toolContext) as BrushToolHandler,
+    [Tool.SELECT]: makeSelectTool(toolContext) as SelectToolHandler,
   }
 
   function setTool(tool: Tool) {
@@ -103,7 +103,7 @@ export function makeGlobalToolManager(store: CanvasPaintStore) {
       return tools[currentTool]
     },
     setTool,
-    setActiveLocal: (local: LocalToolContext) => {
+    setActiveLocal: (local: LocalToolContext<any>) => {
       activeLocal = local
     },
     get activeLocal() {

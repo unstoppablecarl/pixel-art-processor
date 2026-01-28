@@ -13,9 +13,9 @@ import {
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
-export type TilesetToolState = ReturnType<typeof makeTilesetToolState>
+export type SelectionLocalToolState = ReturnType<typeof makeSelectionLocalToolState>
 
-export function makeTilesetToolState(
+export function makeSelectionLocalToolState(
   {
     state,
     tileSheetWriter,
@@ -65,15 +65,13 @@ export function makeTilesetToolState(
     // TILE CANVAS SELECTION
     // ───────────────────────────────────────────────
     if (inputSpace === CanvasType.TILE) {
-      const { x: sx, y: sy } =
-        state.tileSheet.tileLocalToSheet(inputTileId!, x1, y1)
+      const { x: sx, y: sy } = state.tileSheet.tileLocalToSheet(inputTileId!, x1, y1)
 
       const tileSheetBounds = { x: sx, y: sy, w, h }
 
       const tileSheetRects = state.tileSheet.tileLocalRectToTileSheetRect(
         inputTileId!,
         { x: x1, y: y1, w, h },
-        tileSheetBounds,
       )
 
       if (tileSheetRects.length === 0) return null
@@ -322,6 +320,13 @@ export function makeTilesetToolState(
     gridRenderer.queueRenderGrid()
   }
 
+  function draw() {
+    const tileIds = selection?.getOverlappingTileIds() ?? []
+
+    gridRenderer.queueRenderTiles(tileIds)
+    gridRenderer.queueRenderGrid()
+  }
+
   return {
     get dragStartX() {
       return dragStartX
@@ -343,7 +348,7 @@ export function makeTilesetToolState(
     selectionHasMoved() {
       return selection?.hasMoved ?? false
     },
-
+    draw,
     tileStartSelection,
     gridStartSelection,
     updateSelection,

@@ -16,7 +16,7 @@ import {
   type TileId,
   type WangTile,
 } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { TileSheetRect, TileSheetSelection } from '../lib/TileSheetSelection.ts'
+import type { BaseTileSheetRect, TileSheetSelection } from '../lib/TileSheetSelection.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -158,7 +158,7 @@ export function makeTileSheet(
     dirty = true
   }
 
-  function tileLocalRectToTileSheetRect(tileId: TileId, rect: RectBounds, bounds: RectBounds): TileSheetRect[] {
+  function tileLocalRectToTileSheetRect(tileId: TileId, rect: RectBounds): BaseTileSheetRect[] {
     const tile = tileset.byId.get(tileId)
     if (!tile) return []
 
@@ -184,8 +184,6 @@ export function makeTileSheet(
       y: sheetY,
       w,
       h,
-      gridX: null,
-      gridY: null,
       tileX: x1,
       tileY: y1,
     }]
@@ -220,7 +218,6 @@ export function makeTileSheet(
 
     return false
   }
-
 
   function serialize(): SerializedTileSheet {
     return {

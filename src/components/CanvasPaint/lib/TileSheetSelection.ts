@@ -7,16 +7,19 @@ export type NormalizedTileSheetRect = TileSheetRect & {
   srcY: number
 }
 
-export type TileSheetRect = {
+export type BaseTileSheetRect = {
+  readonly tileId: TileId,
   x: number,
   y: number,
   readonly w: number,
   readonly h: number,
-  readonly tileId: TileId,
 
   // tile-local pixels
   readonly tileX: number
   readonly tileY: number
+}
+
+export type TileSheetRect = BaseTileSheetRect & {
 
   // tile grid space pixel coords
   readonly gridX: number | null,
@@ -60,7 +63,7 @@ export type TileSheetSelection = {
 
 export function makeTileSheetSelection(
   pixels: ImageData,
-  rects: NormalizedTileSheetRect[] | TileSheetRect[],
+  rects: NormalizedTileSheetRect[] | TileSheetRect[] | BaseTileSheetRect[],
   tileSheetBounds: RectBounds,
   gridBounds: RectBounds | null = null,
 ): TileSheetSelection {

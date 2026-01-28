@@ -2,13 +2,13 @@ import { writeImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import { imageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { LocalToolContext } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
-import type { GlobalToolContext, GlobalToolManager } from '../GlobalToolManager.ts'
+import type { GlobalToolContext } from '../GlobalToolManager.ts'
 import { makeRenderQueue, renderCanvasFrame } from '../lib/canvas-frame.ts'
+import { makeCursorCache } from '../tools/brush-cursor.ts'
+import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 import { makePixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
-import { makeCursorCache } from '../tools/brush-cursor.ts'
 
 export type TileGridRenderer = ReturnType<typeof makeTileGridRenderer>
 
@@ -16,15 +16,12 @@ export function makeTileGridRenderer(
   {
     state,
     toolContext,
-    globalToolManager,
-    localToolContext,
   }: {
     state: EditorState,
     toolContext: GlobalToolContext,
-    globalToolManager: GlobalToolManager,
-    localToolContext: () => LocalToolContext
   }) {
 
+  let currentToolRenderer: CurrentToolRenderer
   let tileGridPixelCanvas: PixelCanvas | undefined
 
   const tileGridImageDataRef = imageDataRef()
@@ -38,14 +35,14 @@ export function makeTileGridRenderer(
   }
 
   function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
+    if (!currentToolRenderer) throw new Error('currentToolRenderer not set')
     tileRenderers[tileId] = makeTileRenderer({
       tileId,
       state,
       getTileImageData: () => state.tileSheet.extractTile(tileId),
       gridCache,
       tileCanvas,
-      globalToolManager,
-      localToolContext,
+      currentToolRenderer,
     })
 
     queueRenderTile(tileId)
@@ -89,7 +86,7 @@ export function makeTileGridRenderer(
 
     drawTileGrid()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
-      globalToolManager.currentToolHandler?.gridPixelOverlayDraw?.(localToolContext(), ctx)
+      currentToolRenderer.gridPixelOverlayDraw(ctx)
       state.tileGridManager.tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 
@@ -105,7 +102,7 @@ export function makeTileGridRenderer(
         })
       }
 
-      globalToolManager.currentToolHandler?.gridScreenOverlayDraw?.(localToolContext(), ctx)
+      currentToolRenderer.gridScreenOverlayDraw(ctx)
     }
 
     renderCanvasFrame(
@@ -131,6 +128,9 @@ export function makeTileGridRenderer(
     queueRenderAll: () => {
       queueRenderGrid()
       queueRenderTiles()
+    },
+    setCurrentToolRenderer(val: CurrentToolRenderer) {
+      currentToolRenderer = val
     },
     toolContext,
   }
