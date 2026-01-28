@@ -168,21 +168,7 @@ export function makeTilesetToolState(
     if (dragStartX == null || dragStartY == null) return
     if (dragCurrentX == null || dragCurrentY == null) return
 
-    console.log({
-      LOG_NAME: 'finalizeSelection.before',
-      dragStartX,
-      dragStartY,
-      dragCurrentX,
-      dragCurrentY,
-      inputSpace,
-    })
-
     selection = makeSelectionFromInput()
-
-    console.log({
-      LOG_NAME: 'finalizeSelection.after',
-      selection,
-    })
 
     clearState()
   }
@@ -391,10 +377,6 @@ export function makeTilesetToolState(
   }
 
   function clearSelection() {
-    console.log({
-      LOG_NAME: 'clearSelection',
-      selection,
-    })
     clearState()
     selection = null
   }

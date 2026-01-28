@@ -3,7 +3,6 @@ import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import { getCanvasPixelContext } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import type { ToolHandler } from '../_canvas-editor-types.ts'
 import { BlendMode, CanvasType, Tool } from '../_canvas-editor-types.ts'
-import type { EditorState } from '../EditorState.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
 import type { TileSheetSelection } from '../lib/TileSheetSelection.ts'
 
@@ -69,15 +68,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const ts = tilesetToolState
       const sel = ts.selection
 
-      console.log({
-        LOG_NAME: 'onDragStart',
-        x,
-        y,
-        canvasType,
-        tileId,
-        hasSelection: !!sel,
-      })
-
       if (canvasType === CanvasType.GRID) {
         if (!sel) {
           console.log({ LOG_NAME: 'onDragStart.GRID.noSelection' })
@@ -119,16 +109,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
     onDragMove({ state, tilesetToolState, gridRenderer }, x, y, canvasType, tileId) {
       const ts = tilesetToolState
 
-      console.log({
-        LOG_NAME: 'onDragMove',
-        x,
-        y,
-        canvasType,
-        tileId,
-        selecting: ts.selecting,
-        dragging: ts.dragging,
-      })
-
       if (canvasType === CanvasType.GRID) {
         if (ts.dragging) {
           ts.moveSelectionOnGrid(x, y)
@@ -149,14 +129,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
     },
     onDragEnd({ state, tilesetToolState, gridRenderer }, _x, _y, canvasType, tileId) {
       const ts = tilesetToolState
-      console.log({
-        LOG_NAME: 'onDragEnd',
-        canvasType,
-        tileId,
-        selecting: ts.selecting,
-        dragging: ts.dragging,
-        selection: ts.selection,
-      })
 
       if (ts.selecting) {
         ts.finalizeSelection()
@@ -294,7 +266,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
         if (mode === BlendMode.OVERWRITE) {
           ctx.clearRect(localX, localY, r.w, r.h)
         }
-
+        debugDrawSelection(sel, composed)
         putImageDataScaled(
           ctx,
           composed,
@@ -367,14 +339,20 @@ function debugDrawSelection(sel: TileSheetSelection, composed: ImageData) {
     `buffer: ${composed.width}x${composed.height}`,
   ].join('<br/>')
 
-  ctx.strokeStyle = 'yellow'
   if (sel.gridBounds !== null) {
-    text2.innerHTML = sel.currentRects.map((r) => {
+    sel.currentRects.forEach((r) => {
       const rx = r.x - sel.gridBounds!.x
       const ry = r.y - sel.gridBounds!.y
+      ctx.strokeStyle = 'yellow'
       ctx.strokeRect(rx, ry, r.w, r.h)
-      return `r.x=${r.x}, r.y=${r.y}`
-    }).join('<br/>')
+    })
+
+    // text2.innerHTML = sel.currentRects.map((r) => {
+    //   const rx = r.x - sel.gridBounds!.x
+    //   const ry = r.y - sel.gridBounds!.y
+    //   ctx.strokeRect(rx, ry, r.w, r.h)
+    //   return `r.x=${r.x}, r.y=${r.y}`
+    // }).join('<br/>')
   }
 
   // text3.innerHTML = Object.entries(sel).map(([key, val]) => {
