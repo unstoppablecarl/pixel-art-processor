@@ -5,6 +5,8 @@ import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileset } fr
 
 export type OverlappingTile<T> = {
   tile: WangTile<T>,
+  sourceX: number,
+  sourceY: number,
   tileX: number,
   tileY: number,
   tileOverlap: RectBounds,
@@ -170,8 +172,14 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
 
         results.push({
           tile,
+
+          // tile coords within the grid (not pixel coords)
           tileX: tx,
           tileY: ty,
+
+          // this overlapping rect's origin relative to the input rect origin
+          sourceX,
+          sourceY,
 
           // True tile‑local offset of the selection x,y relative to this tile 0,0 pixel.
           // can be negative.

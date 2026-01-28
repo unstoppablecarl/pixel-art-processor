@@ -1,3 +1,4 @@
+import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import type { EditorState } from '../EditorState.ts'
@@ -6,9 +7,9 @@ import type { TileSheetRect } from '../lib/TileSheetSelection.ts'
 import type { TilesetToolState } from '../TilesetToolState.ts'
 import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 
-export type TileSheetRenderer = ReturnType<typeof makeTileSheetRenderer>
+export type TileSheetSelectionRenderer = ReturnType<typeof makeTileSheetSelectionRenderer>
 
-export function makeTileSheetRenderer(
+export function makeTileSheetSelectionRenderer(
   {
     state,
     gridCache,
@@ -17,7 +18,6 @@ export function makeTileSheetRenderer(
     state: EditorState,
     tilesetToolState: TilesetToolState,
     gridCache: PixelGridLineRenderer,
-
   }) {
 
   let tileGridPixelCanvas: PixelCanvas | undefined
@@ -29,66 +29,47 @@ export function makeTileSheetRenderer(
 
   function resize() {
     if (!tileGridPixelCanvas) return
-    tileGridPixelCanvas.resize(
-      state.tileSheet.pixelWidth * state.scale,
-      state.tileSheet.pixelHeight * state.scale,
-    )
+    if (tilesetToolState.selection) {
+      tileGridPixelCanvas.resize(
+        (tilesetToolState.selection!.pixels.width + 100) * state.scale,
+        (tilesetToolState.selection!.pixels.height + 100) * state.scale,
+      )
+    }
   }
 
   function draw() {
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
-      const { tileSize } = state
-
-      state.tileSheet.each((tileX, tileY, tile) => {
-        const x = tileX * tileSize
-        const y = tileY * tileSize
-        state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tile.id, x, y)
-      })
 
       if (tilesetToolState.selection) {
-        tilesetToolState.selection.originalRects.forEach((r) => {
-          drawRect(ctx, r, 'rgba(255, 0, 0, 0.25)')
-        })
-
         const pixels = tilesetToolState.selection.pixels
+
         tilesetToolState.selection.currentRects.forEach((r) => {
           drawRect(ctx, r, 'rgba(0, 255, 0, 0.25)')
 
-          const srcX = r.bufferX
-          const srcY = r.bufferY
-
-          putImageDataScaled(ctx, pixels, r.x, r.y, undefined, srcX, srcY, r.w, r.h)
+          putImageDataScaled(ctx, pixels, r.bufferX, r.bufferY, undefined, r.bufferX, r.bufferY, r.w, r.h)
         })
       }
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
 
-      const { scale, tileSize } = state
+      const { scale } = state
       gridCache.drawGrid(ctx)
-      if (state.drawTileIndexes) {
-        state.tileSheet.each((tileX, tileY, tile) => {
-          const x = tileX * tileSize * scale
-          const y = tileY * tileSize * scale
-          drawText(ctx, tile.index + ': ' + tile.id, x, y)
-        })
-      }
 
       if (tilesetToolState.selection) {
-        tilesetToolState.selection.originalRects.forEach((r, i) => {
-          drawRectOutline(ctx, r, scale, 'rgba(255, 0, 0, 0.75)', i)
-        })
 
+        ctx.translate(scale, scale)
         tilesetToolState.selection.currentRects.forEach((r, i) => {
-          drawRectOutline(ctx, r, scale, 'rgba(0, 255, 0, 0.75)', i)
+          drawRectOutline(ctx, { x: r.bufferX, y: r.bufferY, w: r.w, h: r.h }, scale, 'rgba(0, 255, 0, 0.75)', i)
         })
+        ctx.translate(0, 0)
       }
     }
     renderCanvasFrame(
       tileGridPixelCanvas,
       state.scale,
-      () => state.tileSheet.imageData,
+      () => null,
       drawPixelLayer,
       drawScreenLayer,
     )
@@ -109,7 +90,7 @@ function drawRect(ctx: CanvasRenderingContext2D, r: TileSheetRect, color: string
   ctx.fillRect(x, y, w, h)
 }
 
-function drawRectOutline(ctx: CanvasRenderingContext2D, r: TileSheetRect, scale: number, color: string, i: number) {
+function drawRectOutline(ctx: CanvasRenderingContext2D, r: RectBounds, scale: number, color: string, i: number) {
   let { x, y, w, h } = r
 
   const screenX = x * scale - 1.5

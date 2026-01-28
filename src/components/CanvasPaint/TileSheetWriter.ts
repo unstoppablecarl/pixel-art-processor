@@ -134,6 +134,17 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
+    clearRect(x: number, y: number, w: number, h: number) {
+      const rect = { x, y, w, h }
+      const overlapping = state.tileGridManager.getOverlappingTiles(rect)
+      clearImageDataRect(state.tileSheet.imageData, x, y, w, h)
+
+      for (const { tile } of overlapping) {
+        markDirty(tile.id)
+      }
+      state.tileSheet.markDirty()
+    },
+
     clearGridRect(gx: number, gy: number, w: number, h: number) {
       const rect = { x: gx, y: gy, w, h }
       const overlapping = state.tileGridManager.getOverlappingTiles(rect)

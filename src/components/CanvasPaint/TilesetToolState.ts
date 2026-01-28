@@ -1,5 +1,5 @@
 import type { RectBounds } from '../../lib/util/data/Bounds.ts'
-import { getRectsBounds } from '../../lib/util/data/Rect.ts'
+import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode, CanvasType } from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
@@ -8,7 +8,6 @@ import {
   makeTileSheetSelection,
   mergeRectBounds,
   normalizeTileSheetRects,
-  type SelectionCommitResult,
   type TileSheetSelection,
 } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
@@ -78,11 +77,16 @@ export function makeTilesetToolState(
       )
 
       if (tileSheetRects.length === 0) return null
+      if (tileSheetRects.length !== 1) throw new Error('invalid tile selection')
+
+      const pixels = tileSheetWriter.extractTileRect(inputTileId!, x1, y1, w, h)
 
       return makeTileSheetSelection(
+        pixels,
         tileSheetRects,
         tileSheetBounds,
-        null,               // no gridBounds for tile canvas
+        // no gridBounds for tile canvas
+        null,
       )
     }
 
@@ -99,7 +103,16 @@ export function makeTilesetToolState(
 
       const { tileSheetBounds, normalizedRects } = normalizeTileSheetRects(rects)
 
+      const pixels = extractImageData(
+        gridRenderer.tileGridImageDataRef.get()!,
+        gridBounds.x,
+        gridBounds.y,
+        gridBounds.w,
+        gridBounds.h,
+      )
+
       return makeTileSheetSelection(
+        pixels,
         normalizedRects,
         tileSheetBounds,
         gridBounds,
@@ -252,41 +265,29 @@ export function makeTilesetToolState(
     return inside
   }
 
-  function computeCommitRects(): SelectionCommitResult {
-    if (!selection) throw new Error('no selection')
+  function commit(mode: BlendMode) {
+    if (!selection) return
 
-    const gb = selection.gridBounds
-
-    // If no movement, just return current rects
-    if (!gb) {
-      const rects = selection.currentRects.map(r => ({ ...r }))
-      const bounds = getRectsBounds(rects)
-      return { rects, bounds }
-    }
-
-    console.log({
-      LOG_NAME: 'computeCommitRects',
-      selection,
-    })
-
-    // Re-split the moved selection across tiles
-    const rects = tileGridManager.gridRectToTileSheetRects(gb)
-    // Tight bounding box of the moved selection
-    const bounds = getRectsBounds(rects)
-
-    console.log({
-      LOG_NAME: 'computeCommitRects result',
-      rects,
-      bounds,
-    })
-    return { rects, bounds }
-  }
-
-  function executeCommit({ rects }: SelectionCommitResult, pixels: ImageData, mode: BlendMode) {
+    const pixels = selection.pixels
     const movedTileIds = new Set<TileId>()
 
-    for (const r of rects) {
-      tileSheetWriter.blendTileSheetRectFromGrid(r, pixels, mode, selection!)
+    for (const r of selection.originalRects) {
+      tileSheetWriter.clearRect(r.x, r.y, r.w, r.h)
+    }
+
+    for (const r of selection.currentRects) {
+
+      tileSheetWriter.blendSheetImageData(
+        pixels,
+        mode,
+        r.x,      // dest tilesheet X
+        r.y,      // dest tilesheet Y
+        r.bufferX,     // src X inside selection buffer
+        r.bufferY,     // src Y inside selection buffer
+        r.w,
+        r.h,
+      )
+
       movedTileIds.add(r.tileId)
     }
 
@@ -297,16 +298,6 @@ export function makeTilesetToolState(
 
     gridRenderer.queueRenderTiles([...movedTileIds])
     gridRenderer.queueRenderGrid()
-  }
-
-  function commit(mode: BlendMode) {
-    if (!selection) return
-
-    const pixels = selection.toPixels(state.tileSheet)
-
-    const commitRects = computeCommitRects()
-
-    executeCommit(commitRects, pixels, mode)
 
     selection = null
     dragging = false
@@ -369,7 +360,5 @@ export function makeTilesetToolState(
     selectionGridSpaceMergedRects,
     commit,
     clearSelection,
-    computeCommitRects,
-    executeCommit,
   }
 }

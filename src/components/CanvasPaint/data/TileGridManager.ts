@@ -47,7 +47,7 @@ export function makeTileGridManager(
       ...tileSheet.value.tileLocalToSheet(tileId, x, y),
       tileLocalX: x,
       tileLocalY: y,
-      tileId: r.tileId
+      tileId: r.tileId,
     }
   }
 
@@ -178,6 +178,10 @@ export function makeTileGridManager(
         // grid-space coords
         gridX: o.gridOverlap.x,
         gridY: o.gridOverlap.y,
+
+        // buffer space coords
+        bufferX: o.sourceX,
+        bufferY: o.sourceY,
       })
     }
 

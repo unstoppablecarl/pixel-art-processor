@@ -5,6 +5,7 @@ import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
 import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
 import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
+import { makeTileSheetSelectionRenderer } from './renderers/TileSheetSelectionRenderer.ts'
 import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
 import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
 
@@ -46,6 +47,12 @@ export function makeLocalToolManager(
   })
 
   const tileSheetRenderer = makeTileSheetRenderer({
+    state,
+    tilesetToolState,
+    gridCache: gridRenderer.gridCache,
+  })
+
+  const tileSheetSelectionRenderer = makeTileSheetSelectionRenderer({
     state,
     tilesetToolState,
     gridCache: gridRenderer.gridCache,
@@ -97,6 +104,7 @@ export function makeLocalToolManager(
     state,
     gridRenderer,
     tileSheetRenderer,
+    tileSheetSelectionRenderer,
     tilesetToolState,
     tileGridManager,
     tileSheetWriter,

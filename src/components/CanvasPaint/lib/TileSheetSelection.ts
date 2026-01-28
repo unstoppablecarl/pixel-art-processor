@@ -1,13 +1,6 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { getRectsBounds } from '../../../lib/util/data/Rect.ts'
-import { writeImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { TileSheet } from '../data/TileSheet.ts'
-
-export type SelectionCommitResult = {
-  rects: TileSheetRect[],
-  bounds: RectBounds
-}
 
 export type NormalizedTileSheetRect = TileSheetRect & {
   srcX: number
@@ -28,9 +21,14 @@ export type TileSheetRect = {
   // tile grid space pixel coords
   readonly gridX: number | null,
   readonly gridY: number | null,
+
+  // buffer space coord
+  bufferX: number,
+  bufferY: number,
 }
 
 export type TileSheetSelection = {
+  pixels: ImageData,
   // absolute tileSheet rects at extraction time
   readonly originalRects: TileSheetRect[],
   // absolute tileSheet rects after movement
@@ -57,12 +55,12 @@ export type TileSheetSelection = {
   offsetX: number,
   offsetY: number,
 
-  toPixels(tileSheet: TileSheet): ImageData,
   getOverlappingTileIds(): TileId[],
 }
 
 export function makeTileSheetSelection(
-  rects: NormalizedTileSheetRect[] |  TileSheetRect[],
+  pixels: ImageData,
+  rects: NormalizedTileSheetRect[] | TileSheetRect[],
   tileSheetBounds: RectBounds,
   gridBounds: RectBounds | null = null,
 ): TileSheetSelection {
@@ -77,6 +75,7 @@ export function makeTileSheetSelection(
   }
 
   const selection: TileSheetSelection = {
+    pixels,
     originalRects,
     currentRects,
     tileSheetBounds,
@@ -103,29 +102,6 @@ export function makeTileSheetSelection(
 
       return movedInGrid || movedByOffset
     },
-    toPixels(tileSheet: TileSheet): ImageData {
-      const out = new ImageData(tileSheetBounds.w, tileSheetBounds.h)
-
-      for (const r of currentRects) {
-        // Convert tile sheet-space rect → tile-local rect
-        const src = tileSheet.extractImageData(
-          r.x,
-          r.y,
-          r.w,
-          r.h,
-        )
-
-        // Destination inside composed buffer
-        const dstX = r.x - tileSheetBounds.x
-        const dstY = r.y - tileSheetBounds.y
-
-        writeImageData(out, src, dstX, dstY)
-
-      }
-
-      return out
-    },
-
     getOverlappingTileIds() {
       const tileIds = new Set<TileId>()
 
@@ -138,16 +114,6 @@ export function makeTileSheetSelection(
       return [...tileIds]
     },
   }
-
-  // console.log({
-  //   LOG_NAME: 'makeTileSheetSelection.output',
-  //   originalRects,
-  //   currentRects,
-  //   tileSheetBounds,
-  //   initialGridBounds,
-  //   gridBounds,
-  // })
-
   return selection
 }
 

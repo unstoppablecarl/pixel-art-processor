@@ -158,6 +158,8 @@ const tileSheetCanvas = useTemplateRef('tileSheetCanvas')
 
 useInterval(() => {
   localToolManger.tileSheetRenderer.draw()
+  localToolManger.tileSheetSelectionRenderer.resize()
+  localToolManger.tileSheetSelectionRenderer.draw()
 
   const tileSheet = tileGridManager.tileSheet.value
   if (tileSheet.isDirty()) {
@@ -170,6 +172,8 @@ watchEffect(() => sync())
 onMounted(() => {
   sync()
   localToolManger.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
+  localToolManger.tileSheetSelectionRenderer.setTileSheetCanvas(document.getElementById('debug-canvas')! as HTMLCanvasElement)
+
 })
 </script>
 <template>

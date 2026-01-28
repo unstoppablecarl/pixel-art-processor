@@ -4,7 +4,7 @@ import { getCanvasPixelContext } from '../../../lib/util/html-dom/PixelCanvas.ts
 import type { ToolHandler } from '../_canvas-editor-types.ts'
 import { BlendMode, CanvasType, Tool } from '../_canvas-editor-types.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
-import type { TileSheetSelection } from '../lib/TileSheetSelection.ts'
+import { mergeRectBounds, type TileSheetSelection } from '../lib/TileSheetSelection.ts'
 
 export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
@@ -143,54 +143,45 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       const sel = tilesetToolState.selection
       if (!sel) return
 
-      const { tileGridManager, tileSheet } = state
-      const composed = sel.toPixels(tileSheet)
+      const { tileGridManager } = state
       const mode = toolContext.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
       if (!sel.gridBounds || !sel.initialGridBounds) return
 
-      const dx = sel.gridBounds.x - sel.initialGridBounds.x
-      const dy = sel.gridBounds.y - sel.initialGridBounds.y
-
       // 1. Clear original footprint (GRID SPACE)
       if (sel.hasMoved) {
-        for (const r of sel.originalRects) {
+        for (const r of sel.currentRects) {
           const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
           for (const g of gridRects) {
-            ctx.clearRect(g.x + dx, g.y + dy, g.w, g.h)
+            ctx.clearRect(g.x, g.y, g.w, g.h)
           }
         }
       }
 
       // 2. Draw moved selection pixels (GRID SPACE)
-      for (const r of sel.originalRects) {
+      for (const r of sel.currentRects) {
         const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
 
         for (const g of gridRects) {
-          const drawX = g.x + dx
-          const drawY = g.y + dy
+          const drawX = g.x
+          const drawY = g.y
 
-          const sx = r.x - sel.tileSheetBounds.x
-          const sy = r.y - sel.tileSheetBounds.y
-
-          if (mode === BlendMode.OVERWRITE) {
-            ctx.clearRect(drawX, drawY, g.w, g.h)
-          }
+          const sx = r.bufferX
+          const sy = r.bufferY
 
           putImageDataScaled(
             ctx,
-            composed,
+            sel.pixels,
             drawX,
             drawY,
             blendMode,
             sx,
             sy,
-            g.w,
-            g.h,
+            r.w,
+            r.h,
           )
         }
-        debugDrawSelection(sel, composed)
       }
     }
     ,
@@ -231,20 +222,20 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       if (!sel) return
 
       const { tileSheet } = state
-      const composed = sel.toPixels(tileSheet)
+      const composed = sel.pixels
 
       const mode = toolContext.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
-      //
       // 1. Clear original selection footprint on this tile (if moved)
-      //
       if (sel.hasMoved) {
         for (const r of sel.originalRects) {
           if (r.tileId !== tileId) continue
 
           const { x: localX, y: localY } =
             tileSheet.sheetToTileLocal(tileId, r.x, r.y)
+
+          putImageDataScaled(ctx, composed, localX, localY, blendMode)
 
           ctx.clearRect(localX, localY, r.w, r.h)
         }
@@ -340,13 +331,22 @@ function debugDrawSelection(sel: TileSheetSelection, composed: ImageData) {
     `buffer: ${composed.width}x${composed.height}`,
   ].join('<br/>')
 
+  const igb = sel.initialGridBounds!
+
+  sel.currentRects.forEach((r) => {
+    // const rx = r.x - sel.gridBounds!.x
+    // const ry = r.y - sel.gridBounds!.y
+
+    const srcX = r.gridX! - igb.x
+    const srcY = r.gridY! - igb.y
+
+    ctx.strokeStyle = 'yellow'
+    ctx.strokeRect(srcX, srcY, r.w, r.h)
+
+    // ctx.strokeRect(r.x, r.y, r.w, r.h)
+  })
+
   if (sel.gridBounds !== null) {
-    sel.currentRects.forEach((r) => {
-      const rx = r.x - sel.gridBounds!.x
-      const ry = r.y - sel.gridBounds!.y
-      ctx.strokeStyle = 'yellow'
-      ctx.strokeRect(rx, ry, r.w, r.h)
-    })
 
     // text2.innerHTML = sel.currentRects.map((r) => {
     //   const rx = r.x - sel.gridBounds!.x
