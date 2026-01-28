@@ -26,7 +26,7 @@ import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext } from './GlobalToolManager.ts'
 import type { TileSheetRect } from './lib/TileSheetSelection.ts'
-import type { TileGridRenderer } from './TileGridRenderer.ts'
+import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
 

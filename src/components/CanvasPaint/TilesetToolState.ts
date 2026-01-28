@@ -11,7 +11,7 @@ import {
   type TileSheetRect,
   type TileSheetSelection,
 } from './lib/TileSheetSelection.ts'
-import type { TileGridRenderer } from './TileGridRenderer.ts'
+import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
 export type TilesetToolState = ReturnType<typeof makeTilesetToolState>

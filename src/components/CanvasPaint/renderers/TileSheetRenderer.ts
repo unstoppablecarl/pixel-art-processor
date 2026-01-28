@@ -43,20 +43,14 @@ export function makeTileSheetRenderer(
       if (tilesetToolState.selection) {
         tilesetToolState.selection.originalRects.forEach((r) => {
           const { x, y, w, h } = r
-          const screenX = x + 1
-          const screenY = y + 1
-          const screenW = w - 2
-          const screenH = h - 2
-
+          ctx.globalAlpha = 1
           ctx.fillStyle = 'rgba(255, 0,0,0.5)'
-          ctx.lineWidth = 1
-
-          ctx.fillRect(screenX, screenY, screenW, screenH)
+          ctx.fillRect(x, y, w, h)
         })
       }
 
       if (tilesetToolState.selection) {
-        tilesetToolState.renderCommitPreview(ctx)
+        // tilesetToolState.renderCommitPreview(ctx)
         // tilesetToolState.selection.currentRects.forEach((r) => {
         //   const { x, y, w, h } = r
         //   const screenX = x + 1
@@ -85,46 +79,38 @@ export function makeTileSheetRenderer(
       }
 
       if (tilesetToolState.selection) {
-        tilesetToolState.selection.originalRects.forEach((r) => {
+        tilesetToolState.selection.originalRects.forEach((r, i) => {
           let { x, y, w, h } = r
 
-          const screenX = x * scale - 0.5
-          const screenY = y * scale - 0.5
-          const screenW = w * scale + 1
-          const screenH = h * scale + 1
+          const screenX = x * scale - 1
+          const screenY = y * scale - 1
+          const screenW = w * scale + 2
+          const screenH = h * scale + 2
 
-          ctx.strokeStyle = 'cyan'
+          // const color = 'rgba(255, 0, 0 , 1)'
+          const color = '#ff0000'
+          ctx.globalAlpha = 1
+          ctx.strokeStyle = color
           ctx.lineWidth = 1
-
-          ctx.strokeRect(screenX, screenY, screenW, screenH)
+          ctx.strokeRect(screenX - 0.5, screenY - 0.5, screenW + 2, screenH + 2)
+          drawText(ctx, i + '', screenX + 5, screenY + 5, undefined, undefined, color)
         })
 
-        // tilesetToolState.selection.currentRects.forEach((r) => {
-        //   let { x, y, w, h } = r
+        // const { rects } = tilesetToolState.computeCommitRects()
+        // rects.forEach((r, i) => {
         //
-        //   const screenX = x * scale - 0.5
-        //   const screenY = y * scale - 0.5
-        //   const screenW = w * scale + 1
-        //   const screenH = h * scale + 1
-        //
-        //   ctx.strokeStyle = 'orange'
+        //   ctx.strokeStyle = 'lime'
         //   ctx.lineWidth = 1
         //
-        //   ctx.strokeRect(screenX, screenY, screenW, screenH)
+        //   ctx.strokeRect(
+        //     r.x * scale + 0.5,
+        //     r.y * scale + 0.5,
+        //     r.w * scale - 1,
+        //     r.h * scale - 1,
+        //   )
+        //
+        //   drawText(ctx, i + '', screenX, screenY, undefined, undefined, 'lime')
         // })
-
-        ctx.strokeStyle = 'lime'
-        ctx.lineWidth = 1
-
-        const { rects } = tilesetToolState.computeCommitRects()
-        for (const r of rects) {
-          ctx.strokeRect(
-            r.x * scale + 0.5,
-            r.y * scale + 0.5,
-            r.w * scale - 1,
-            r.h * scale - 1,
-          )
-        }
       }
     }
     renderCanvasFrame(

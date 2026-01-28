@@ -1,6 +1,6 @@
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { EditorState } from './EditorState.ts'
-import type { TileGridRenderer } from './TileGridRenderer.ts'
+import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TilesetToolState } from './TilesetToolState.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 

@@ -1,10 +1,10 @@
-import { drawText, makePixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
-import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import type { LocalToolContext } from './_canvas-editor-types.ts'
-import type { EditorState } from './EditorState.ts'
-import type { GlobalToolManager } from './GlobalToolManager.ts'
-import { makeRenderQueue, renderCanvasFrame } from './lib/canvas-frame.ts'
-import type { PixelGridLineRenderer } from './renderers/PixelGridLineRenderer.ts'
+import { drawText, makePixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
+import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
+import type { LocalToolContext } from '../_canvas-editor-types.ts'
+import type { EditorState } from '../EditorState.ts'
+import type { GlobalToolManager } from '../GlobalToolManager.ts'
+import { makeRenderQueue, renderCanvasFrame } from '../lib/canvas-frame.ts'
+import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
 

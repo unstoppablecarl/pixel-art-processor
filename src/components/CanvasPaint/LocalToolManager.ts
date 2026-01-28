@@ -4,7 +4,7 @@ import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
 import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
-import { makeTileGridRenderer } from './TileGridRenderer.ts'
+import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
 import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
 import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
 
