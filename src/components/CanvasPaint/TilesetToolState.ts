@@ -306,7 +306,7 @@ export function makeTilesetToolState(
   function selectionGridSpaceMergedRects(): RectBounds[] {
     if (!selection) throw new Error('no selection')
     const projected: RectBounds[] = []
-    for (const r of selection.originalRects) {
+    for (const r of selection.currentRects) {
       projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
     }
 

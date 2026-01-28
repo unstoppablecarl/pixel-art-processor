@@ -1,10 +1,8 @@
 import { type BlendFn, blendIgnoreTransparent, blendSourceAlphaOver } from '../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
-import { getCanvasPixelContext } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import type { ToolHandler } from '../_canvas-editor-types.ts'
 import { BlendMode, CanvasType, Tool } from '../_canvas-editor-types.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
-import { mergeRectBounds, type TileSheetSelection } from '../lib/TileSheetSelection.ts'
 
 export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
@@ -195,26 +193,16 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
       ctx.strokeStyle = 'cyan'
       ctx.lineWidth = 1
 
-      // GRID-SPACE delta
-      const dx = sel.gridBounds.x - sel.initialGridBounds.x
-      const dy = sel.gridBounds.y - sel.initialGridBounds.y
-
       // Convert GRID → SCREEN for drawing
       for (const g of tilesetToolState.selectionGridSpaceMergedRects()) {
-        const screenX = (g.x + dx) * scale
-        const screenY = (g.y + dy) * scale
-        const screenW = g.w * scale
-        const screenH = g.h * scale
-
+        const { x, y, w, h } = g
         ctx.strokeRect(
-          screenX - 0.5,
-          screenY - 0.5,
-          screenW + 1,
-          screenH + 1,
+          x * scale - 0.5,
+          y * scale - 0.5,
+          w * scale + 1,
+          h * scale + 1,
         )
       }
-
-      // drawCommitBounds(ctx, state, sel)
     }
     ,
     tilePixelOverlayDraw({ state, tilesetToolState }, ctx, tileId) {
@@ -304,59 +292,4 @@ const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn | undefined> = {
   [BlendMode.OVERWRITE]: undefined,
   [BlendMode.IGNORE_TRANSPARENT]: blendIgnoreTransparent,
   [BlendMode.IGNORE_SOLID]: blendSourceAlphaOver(0.5),
-}
-
-function debugDrawSelection(sel: TileSheetSelection, composed: ImageData) {
-  const debugCanvas = document.getElementById('debug-canvas') as HTMLCanvasElement
-  const text1 = document.getElementById('text1') as HTMLElement
-  const text2 = document.getElementById('text2') as HTMLElement
-  // const text3 = document.getElementById('text3') as HTMLElement
-
-  debugCanvas.width = 512
-  debugCanvas.height = 512
-  const ctx = getCanvasPixelContext(debugCanvas)
-
-  ctx.clearRect(0, 0, debugCanvas.width, debugCanvas.height)
-
-  // Draw the composed buffer at (0,0)
-  ctx.putImageData(composed, 0, 0)
-
-  // Draw bounds box
-  ctx.strokeStyle = 'red'
-  ctx.lineWidth = 1
-  ctx.strokeRect(0, 0, composed.width, composed.height)
-
-  text1.innerHTML = [
-    `tileSheet bounds: x=${sel.tileSheetBounds.x}, y=${sel.tileSheetBounds.y}`,
-    `buffer: ${composed.width}x${composed.height}`,
-  ].join('<br/>')
-
-  const igb = sel.initialGridBounds!
-
-  sel.currentRects.forEach((r) => {
-    // const rx = r.x - sel.gridBounds!.x
-    // const ry = r.y - sel.gridBounds!.y
-
-    const srcX = r.gridX! - igb.x
-    const srcY = r.gridY! - igb.y
-
-    ctx.strokeStyle = 'yellow'
-    ctx.strokeRect(srcX, srcY, r.w, r.h)
-
-    // ctx.strokeRect(r.x, r.y, r.w, r.h)
-  })
-
-  if (sel.gridBounds !== null) {
-
-    // text2.innerHTML = sel.currentRects.map((r) => {
-    //   const rx = r.x - sel.gridBounds!.x
-    //   const ry = r.y - sel.gridBounds!.y
-    //   ctx.strokeRect(rx, ry, r.w, r.h)
-    //   return `r.x=${r.x}, r.y=${r.y}`
-    // }).join('<br/>')
-  }
-
-  // text3.innerHTML = Object.entries(sel).map(([key, val]) => {
-  //   return `${key}: ${val}`
-  // }).join('<br/>')
 }
