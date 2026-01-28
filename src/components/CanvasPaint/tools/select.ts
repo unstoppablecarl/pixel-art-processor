@@ -149,7 +149,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
 
       // 1. Clear original footprint (GRID SPACE)
       if (sel.hasMoved) {
-        for (const r of sel.currentRects) {
+        for (const r of sel.originalRects) {
           const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
           for (const g of gridRects) {
             ctx.clearRect(g.x, g.y, g.w, g.h)
@@ -220,41 +220,36 @@ export function makeSelectTool(toolContext: GlobalToolContext): ToolHandler {
         for (const r of sel.originalRects) {
           if (r.tileId !== tileId) continue
 
-          const { x: localX, y: localY } =
-            tileSheet.sheetToTileLocal(tileId, r.x, r.y)
-
-          putImageDataScaled(ctx, composed, localX, localY, blendMode)
+          const {
+            x: localX,
+            y: localY,
+          } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
           ctx.clearRect(localX, localY, r.w, r.h)
         }
       }
 
-      //
+
       // 2. Draw current selection footprint on this tile
-      //
       for (const r of sel.currentRects) {
         if (r.tileId !== tileId) continue
 
-        // tile-local position where this rect should be drawn
-        const { x: localX, y: localY } =
-          tileSheet.sheetToTileLocal(tileId, r.x, r.y)
-
-        // buffer-local offset inside the composed ImageData
-        const dstX = r.x - sel.tileSheetBounds.x
-        const dstY = r.y - sel.tileSheetBounds.y
+        const {
+          x: localX,
+          y: localY,
+        } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
         if (mode === BlendMode.OVERWRITE) {
           ctx.clearRect(localX, localY, r.w, r.h)
         }
-        // debugDrawSelection(sel, composed)
         putImageDataScaled(
           ctx,
           composed,
           localX,
           localY,
           blendMode,
-          dstX,
-          dstY,
+          r.bufferX,
+          r.bufferY,
           r.w,
           r.h,
         )
