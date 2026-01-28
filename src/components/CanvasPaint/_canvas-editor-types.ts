@@ -73,3 +73,7 @@ export type Selection = {
   origW: number
   origH: number
 }
+
+export const DATA_LOCAL_TOOL_ID = 'data-local-tool-id' as const
+
+export const DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK = 'data-exclude-select-cancel-click' as const

@@ -5,6 +5,7 @@ import {
   isReadonly,
   isRef,
   markRaw,
+  onUnmounted,
   type Raw,
   reactive,
   type Ref,
@@ -118,5 +119,24 @@ export function reactiveFromRefs<
   type Result = Omit<C, K> & { [P in K]: R[P] extends Ref<infer U> ? U : never }
 
   return reactive(obj) as Result
+}
+
+export function useDocumentClick(onClick: (target: HTMLElement, event: MouseEvent) => void) {
+  const handleClick = (event: MouseEvent) => {
+    const target = event.target as HTMLElement
+    return onClick(target, event)
+  }
+
+  document.addEventListener('mouseup', handleClick)
+
+  let removed = false
+  const remove = () => {
+    if (removed) return
+    document.removeEventListener('mouseup', handleClick)
+    removed = true
+  }
+
+  onUnmounted(() => remove())
+  return remove
 }
 

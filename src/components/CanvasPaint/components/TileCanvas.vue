@@ -2,6 +2,7 @@
 import { onMounted, useTemplateRef, watch } from 'vue'
 import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
+import { DATA_LOCAL_TOOL_ID } from '../_canvas-editor-types.ts'
 import { createTileMouseHandlers } from '../lib/canvas-mouse.ts'
 import { type LocalToolManager } from '../LocalToolManager.ts'
 
@@ -33,11 +34,13 @@ watch(() => store.brushSize, () => {
   localToolManager.gridRenderer.cursor.updateCache()
 }, { immediate: true })
 
+const dataAttr = DATA_LOCAL_TOOL_ID
 </script>
 <template>
   <canvas
     ref="viewCanvasRef"
     class="draw-canvas-tile"
+    v-bind:[dataAttr]="localToolManager.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
     @mouseup="handleMouseUp"

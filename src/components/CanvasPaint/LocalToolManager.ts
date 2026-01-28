@@ -1,5 +1,11 @@
+import { useDocumentClick } from '../../lib/util/vue-util.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { CanvasType, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
+import {
+  CanvasType,
+  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID,
+  type LocalToolContext,
+  Tool,
+} from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'
@@ -9,15 +15,17 @@ import { makeTileSheetSelectionRenderer } from './renderers/TileSheetSelectionRe
 import { makeTilesetToolState, type TilesetToolState } from './TilesetToolState.ts'
 import { makeTileSheetWriter, type TileSheetWriter } from './TileSheetWriter.ts'
 
-export type LocalToolManager = ReturnType<typeof makeLocalToolManager>
+export type LocalToolManager = ReturnType<typeof useLocalToolManager>
 
-export function makeLocalToolManager(
+export function useLocalToolManager(
   {
+    id,
     tileGridManager,
     tileSheetWriter,
     tilesetToolState,
     global = useGlobalToolManager(),
   }: {
+    id: string,
     tileGridManager: TileGridManager,
     tileSheetWriter?: TileSheetWriter,
     tilesetToolState?: TilesetToolState,
@@ -100,7 +108,16 @@ export function makeLocalToolManager(
     }
   }
 
+  useDocumentClick((t) => {
+    if (global.currentTool !== Tool.SELECT) return
+    if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
+    if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
+
+    tilesetToolState.clearSelection()
+  })
+
   return {
+    id,
     state,
     gridRenderer,
     tileSheetRenderer,

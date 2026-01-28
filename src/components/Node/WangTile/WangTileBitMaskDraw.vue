@@ -38,7 +38,7 @@ import {
   deserializeTileSheet,
   type SerializedTileSheet,
 } from '../../CanvasPaint/data/TileSheet.ts'
-import { makeLocalToolManager } from '../../CanvasPaint/LocalToolManager.ts'
+import { useLocalToolManager } from '../../CanvasPaint/LocalToolManager.ts'
 
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
@@ -134,7 +134,8 @@ if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
 
-const localToolManger = makeLocalToolManager({
+const localToolManger = useLocalToolManager({
+  id: node.id,
   tileGridManager,
 })
 

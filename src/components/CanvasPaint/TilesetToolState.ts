@@ -314,8 +314,12 @@ export function makeTilesetToolState(
   }
 
   function clearSelection() {
+    const tileIds = selection?.getOverlappingTileIds() ?? []
     clearState()
     selection = null
+
+    gridRenderer.queueRenderTiles(tileIds)
+    gridRenderer.queueRenderGrid()
   }
 
   return {
