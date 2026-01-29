@@ -94,7 +94,7 @@ export function makeTileGridRenderer(
       if (state.shouldDrawGrid) {
         gridCache.drawGrid(ctx)
       }
-      if (state.drawTileIndexes) {
+      if (state.drawTileIds) {
         state.tileGrid.each((tileX, tileY, tile) => {
           const x = tileX * state.tileSize * state.scale
           const y = tileY * state.tileSize * state.scale

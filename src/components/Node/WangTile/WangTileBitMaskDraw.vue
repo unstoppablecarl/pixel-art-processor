@@ -43,6 +43,7 @@ import { useLocalToolManager } from '../../CanvasPaint/LocalToolManager.ts'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
+import CheckBoxInput from '../../UIForms/CheckBoxInput.vue'
 import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
@@ -163,6 +164,8 @@ watchEffect(() => {
     localToolManger.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
   }
 })
+
+const uiStore = useUIStore()
 </script>
 <template>
   <NodeCard
@@ -265,6 +268,14 @@ watchEffect(() => {
 
           <div class="section">
             <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
+          </div>
+          <div class="section">
+
+            <CheckBoxInput
+              :id="`${nodeId}-show-tile-ids`"
+              label="Show Tile IDs"
+              v-model="uiStore.showTileIds"
+            />
           </div>
         </template>
 

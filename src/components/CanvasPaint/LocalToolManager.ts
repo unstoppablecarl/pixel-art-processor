@@ -145,6 +145,7 @@ export function useLocalToolManager(
     state.scale = uiStore.imgScale
     state.gridTilesWidth = tileGridManager.tileGrid.value.width
     state.gridTilesHeight = tileGridManager.tileGrid.value.height
+    state.drawTileIds = uiStore.showTileIds
     gridRenderer.resize()
     gridRenderer.queueRenderAll()
     tileSheetRenderer.resize()

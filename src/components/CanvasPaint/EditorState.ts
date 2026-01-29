@@ -67,7 +67,7 @@ interface BaseEditorState {
 
   readonly shouldDrawGrid: boolean
 
-  drawTileIndexes: boolean
+  drawTileIds: boolean
 
   scale: number
 
@@ -133,7 +133,7 @@ export function makeEditorState(tileGridManager: TileGridManager): EditorState {
       return this.scale * this.tileSize
     },
 
-    drawTileIndexes: true,
+    drawTileIds: true,
 
     scale: 8,
 

@@ -43,7 +43,7 @@ export function makeTileRenderer(
         if (state.shouldDrawGrid) {
           gridCache.drawGrid(ctx)
         }
-        if (state.drawTileIndexes) {
+        if (state.drawTileIds) {
           const tile = state.tileset.byId.get(tileId)!
           drawText(ctx, tile.index + ': ' + tile.id)
         }
