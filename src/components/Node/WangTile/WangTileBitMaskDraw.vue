@@ -17,11 +17,10 @@ import {
   computed, onMounted,
   type Reactive,
   ref,
-  useTemplateRef, watch, watchEffect,
+  useTemplateRef, watchEffect,
 } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
@@ -48,7 +47,6 @@ import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 nodeUsesSidebar()
-const uiStore = useUIStore()
 
 const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
@@ -141,22 +139,6 @@ const localToolManger = useLocalToolManager({
   tileGridManager,
 })
 
-function sync() {
-  localToolManger.state.tileSize = tileSize.value
-  localToolManger.state.scale = uiStore.imgScale
-  localToolManger.state.gridTilesWidth = tileGridManager.tileGrid.value.width
-  localToolManger.state.gridTilesHeight = tileGridManager.tileGrid.value.height
-  localToolManger.gridRenderer.resize()
-  localToolManger.gridRenderer.queueRenderAll()
-  localToolManger.tileSheetRenderer.resize()
-}
-
-const canvasStore = useCanvasPaintStore()
-
-watch(() => canvasStore.brushSize, () => {
-  localToolManger.gridRenderer.queueRenderAll()
-})
-
 const tileSheetCanvas = useTemplateRef('tileSheetCanvas')
 
 useInterval(() => {
@@ -171,12 +153,9 @@ useInterval(() => {
   }
 }, 1000)
 
-watchEffect(() => sync())
-
 const debugSidebar = useDebugSidebar()
 
 onMounted(() => {
-  sync()
   localToolManger.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
 })
 watchEffect(() => {

@@ -194,6 +194,7 @@ export function makeTileGridManager(
     canvasHeight,
     tileset,
     tileGrid,
+    tileSize,
     tileGridEdgeColorRenderer,
     getOverlappingTiles: getOverlappingTilesOnGrid,
     gridPixelToTile,

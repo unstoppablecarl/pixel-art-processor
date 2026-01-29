@@ -1,3 +1,6 @@
+import { watch, watchEffect } from 'vue'
+import { useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
+import { useUIStore } from '../../lib/store/ui-store.ts'
 import { useDocumentClick } from '../../lib/util/vue-util.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import {
@@ -128,6 +131,23 @@ export function useLocalToolManager(
     if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
 
     localToolStates[Tool.SELECT].clearSelection()
+  })
+
+  const uiStore = useUIStore()
+  const canvasStore = useCanvasPaintStore()
+
+  watch(() => canvasStore.brushSize, () => {
+    gridRenderer.queueRenderAll()
+  })
+
+  watchEffect(() => {
+    state.tileSize = tileGridManager.tileSize.value
+    state.scale = uiStore.imgScale
+    state.gridTilesWidth = tileGridManager.tileGrid.value.width
+    state.gridTilesHeight = tileGridManager.tileGrid.value.height
+    gridRenderer.resize()
+    gridRenderer.queueRenderAll()
+    tileSheetRenderer.resize()
   })
 
   return {
