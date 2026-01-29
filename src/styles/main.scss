@@ -47,7 +47,7 @@ body {
   transition: left var(--sidebar-transition-time) ease-in-out;
   z-index: 10;
 
-  &.sidebar-visible {
+  &.tool-sidebar-visible {
     left: var(--canvas-paint-sidebar-width);
   }
 }

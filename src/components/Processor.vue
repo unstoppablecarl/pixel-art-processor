@@ -47,7 +47,7 @@ const { visible } = useSidebar()
 
   <div :class="{
     'overflow': true,
-    'sidebar-visible' : visible
+    'tool-sidebar-visible' : visible
   }">
     <CanvasPaintSidebar />
     <div class="processor-container pb-3">

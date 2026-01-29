@@ -53,7 +53,7 @@ const { currentTool } = storeToRefs(useCanvasPaintStore())
   }
 }
 
-.sidebar-visible .canvas-paint-sidebar {
+.tool-sidebar-visible .canvas-paint-sidebar {
   transform: translateX(0%);
 }
 </style>
