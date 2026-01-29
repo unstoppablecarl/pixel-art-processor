@@ -27,6 +27,7 @@ import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { useInterval } from '../../../lib/vue/component-interval.ts'
+import { useDebugSidebar } from '../../../lib/vue/debug-sidebar.ts'
 import {
   makeAxialEdgeWangTileset,
 } from '../../../lib/wang-tiles/WangTileset.ts'
@@ -171,11 +172,17 @@ useInterval(() => {
 }, 1000)
 
 watchEffect(() => sync())
+
+const debugSidebar = useDebugSidebar()
+
 onMounted(() => {
   sync()
   localToolManger.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
-  localToolManger.tileSheetSelectionRenderer.setTileSheetCanvas(document.getElementById('debug-canvas')! as HTMLCanvasElement)
-
+})
+watchEffect(() => {
+  if (debugSidebar.canvas.value) {
+    localToolManger.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
+  }
 })
 </script>
 <template>
@@ -264,7 +271,6 @@ onMounted(() => {
               :max="50"
               :step="1"
             />
-
 
             <button
               role="button"
