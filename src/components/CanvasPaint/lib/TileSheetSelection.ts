@@ -2,11 +2,6 @@ import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { getRectsBounds } from '../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 
-export type NormalizedTileSheetRect = TileSheetRect & {
-  srcX: number
-  srcY: number
-}
-
 export type BaseTileSheetRect = {
   readonly tileId: TileId,
   x: number,
@@ -19,7 +14,7 @@ export type BaseTileSheetRect = {
   readonly tileY: number
 }
 
-export type TileSheetRect = BaseTileSheetRect & {
+export type SelectionTileSheetRect = BaseTileSheetRect & {
 
   // tile grid space pixel coords
   readonly gridX: number | null,
@@ -30,12 +25,17 @@ export type TileSheetRect = BaseTileSheetRect & {
   bufferY: number,
 }
 
+export type NormalizedTileSheetRect = SelectionTileSheetRect & {
+  srcX: number
+  srcY: number
+}
+
 export type TileSheetSelection = {
   pixels: ImageData,
   // absolute tileSheet rects at extraction time
-  readonly originalRects: TileSheetRect[],
+  readonly originalRects: SelectionTileSheetRect[],
   // absolute tileSheet rects after movement
-  currentRects: TileSheetRect[],
+  currentRects: SelectionTileSheetRect[],
 
   // if this selection has been dragged changing its position
   readonly hasMoved: boolean,
@@ -63,7 +63,7 @@ export type TileSheetSelection = {
 
 export function makeTileSheetSelection(
   pixels: ImageData,
-  rects: NormalizedTileSheetRect[] | TileSheetRect[] | BaseTileSheetRect[],
+  rects: SelectionTileSheetRect[],
   tileSheetBounds: RectBounds,
   gridBounds: RectBounds | null = null,
 ): TileSheetSelection {
@@ -77,7 +77,7 @@ export function makeTileSheetSelection(
     initialGridBounds = { ...gridBounds }
   }
 
-  const selection: TileSheetSelection = {
+  return {
     pixels,
     originalRects,
     currentRects,
@@ -117,10 +117,9 @@ export function makeTileSheetSelection(
       return [...tileIds]
     },
   }
-  return selection
 }
 
-export function normalizeTileSheetRects(rects: TileSheetRect[]): {
+export function normalizeTileSheetRects(rects: SelectionTileSheetRect[]): {
   normalizedRects: NormalizedTileSheetRect[],
   tileSheetBounds: RectBounds,
 } {

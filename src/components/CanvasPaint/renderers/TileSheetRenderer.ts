@@ -3,7 +3,7 @@ import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/h
 import { type LocalToolStates, Tool } from '../_canvas-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 import { renderCanvasFrame } from '../lib/canvas-frame.ts'
-import type { TileSheetRect } from '../lib/TileSheetSelection.ts'
+import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
 import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 
 export type TileSheetRenderer = ReturnType<typeof makeTileSheetRenderer>
@@ -103,14 +103,14 @@ export function makeTileSheetRenderer(
   }
 }
 
-function drawRect(ctx: CanvasRenderingContext2D, r: TileSheetRect, color: string) {
+function drawRect(ctx: CanvasRenderingContext2D, r: SelectionTileSheetRect, color: string) {
   const { x, y, w, h } = r
   ctx.globalAlpha = 1
   ctx.fillStyle = color
   ctx.fillRect(x, y, w, h)
 }
 
-function drawRectOutline(ctx: CanvasRenderingContext2D, r: TileSheetRect, scale: number, color: string, i: number) {
+function drawRectOutline(ctx: CanvasRenderingContext2D, r: SelectionTileSheetRect, scale: number, color: string, i: number) {
   let { x, y, w, h } = r
 
   const screenX = x * scale - 1.5

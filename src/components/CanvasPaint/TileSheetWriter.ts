@@ -24,7 +24,7 @@ import { BlendMode } from './_canvas-editor-types.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext } from './GlobalToolManager.ts'
-import type { TileSheetRect, TileSheetSelection } from './lib/TileSheetSelection.ts'
+import type { SelectionTileSheetRect, TileSheetSelection } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
@@ -60,7 +60,7 @@ export function makeTileSheetWriter(
   }
 
   function blendTileSheetRectFromGrid(
-    rect: TileSheetRect,
+    rect: SelectionTileSheetRect,
     pixels: ImageData,
     blendMode: BlendMode,
     selection: TileSheetSelection,
