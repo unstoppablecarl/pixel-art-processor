@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { useCanvasPaintStore } from '../../../../lib/store/canvas-paint-store.ts'
+import { useCanvasPaintToolStore } from '../../../../lib/store/canvas-paint-tool-store.ts'
 import ToolButton from '../../../UI/ToolButton.vue'
 import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK } from '../../_canvas-editor-types.ts'
 
 const dataAttr = DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK
-const { selectMoveBlendMode } = storeToRefs(useCanvasPaintStore())
+const { selectMoveBlendMode } = storeToRefs(useCanvasPaintToolStore())
 </script>
 <template>
   <div class="section">

@@ -1,5 +1,5 @@
 import { watch, watchEffect } from 'vue'
-import { useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
+import { useCanvasPaintToolStore } from '../../lib/store/canvas-paint-tool-store.ts'
 import { useUIStore } from '../../lib/store/ui-store.ts'
 import { useDocumentClick } from '../../lib/util/vue-util.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
@@ -134,7 +134,7 @@ export function useLocalToolManager(
   })
 
   const uiStore = useUIStore()
-  const canvasStore = useCanvasPaintStore()
+  const canvasStore = useCanvasPaintToolStore()
 
   watch(() => canvasStore.brushSize, () => {
     gridRenderer.queueRenderAll()

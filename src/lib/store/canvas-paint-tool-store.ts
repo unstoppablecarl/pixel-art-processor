@@ -18,8 +18,8 @@ type SerializedData = {
   tileMarginCopySize: number,
 }
 
-export type CanvasPaintStore = ReturnType<typeof useCanvasPaintStore>
-export const useCanvasPaintStore = defineStore('canvas-paint', () => {
+export type CanvasPaintToolStore = ReturnType<typeof useCanvasPaintToolStore>
+export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
   const currentTool = ref<Tool>(Tool.BRUSH)
 
   const primaryColor = shallowRef<RGBA>(RGBA_WHITE)

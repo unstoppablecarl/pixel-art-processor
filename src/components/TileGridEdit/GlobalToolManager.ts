@@ -1,5 +1,5 @@
 import { watchEffect } from 'vue'
-import { type CanvasPaintStore, useCanvasPaintStore } from '../../lib/store/canvas-paint-store.ts'
+import { type CanvasPaintToolStore, useCanvasPaintToolStore } from '../../lib/store/canvas-paint-tool-store.ts'
 import { bindInputKey, type InputBindings } from '../../lib/util/html-dom/keyboard.ts'
 import { BlendMode, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
 import { BrushShape, type BrushToolHandler, makeBrushTool } from './tools/brush.ts'
@@ -7,7 +7,7 @@ import { makeSelectTool, type SelectToolHandler } from './tools/select.ts'
 
 export type GlobalToolContext = ReturnType<typeof makeGlobalToolContext>
 
-export function makeGlobalToolContext(store: CanvasPaintStore) {
+export function makeGlobalToolContext(store: CanvasPaintToolStore) {
   return {
     get brushSize() {
       return store.brushSize
@@ -46,7 +46,7 @@ let GLOBAL_TOOL_MANAGER: GlobalToolManager | undefined
 
 export function useGlobalToolManager() {
   if (!GLOBAL_TOOL_MANAGER) {
-    GLOBAL_TOOL_MANAGER = makeGlobalToolManager(useCanvasPaintStore())
+    GLOBAL_TOOL_MANAGER = makeGlobalToolManager(useCanvasPaintToolStore())
   }
   return GLOBAL_TOOL_MANAGER
 }
@@ -55,7 +55,7 @@ const noop = () => {
 }
 export type GlobalToolManager = ReturnType<typeof makeGlobalToolManager>
 
-export function makeGlobalToolManager(store: CanvasPaintStore) {
+export function makeGlobalToolManager(store: CanvasPaintToolStore) {
   let removeKeys = noop
   const toolContext = makeGlobalToolContext(store)
   let currentTool: Tool = store.currentTool
