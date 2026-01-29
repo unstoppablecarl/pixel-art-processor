@@ -406,27 +406,12 @@ export function makeSelectionLocalToolState(
 
   function tilePointInSelection(tileId: TileId, tx: number, ty: number) {
     if (!selection) return false
-    const inside = state.tileSheet.tilePointInTileSheetSelection(tileId, tx, ty, selection)
-    console.log({
-      LOG_NAME: 'tileInSelection',
-      tileId,
-      tx,
-      ty,
-      inside,
-    })
-    return inside
+    return state.tileSheet.tilePointInTileSheetSelection(tileId, tx, ty, selection)
   }
 
   function gridPointInSelection(gx: number, gy: number) {
     if (!selection) return false
-    const inside = tileGridManager.gridPointInTileSheetSelection(gx, gy, selection)
-    console.log({
-      LOG_NAME: 'gridInSelection',
-      gx,
-      gy,
-      inside,
-    })
-    return inside
+    return tileGridManager.gridPointInTileSheetSelection(gx, gy, selection)
   }
 
   function commit(mode: BlendMode) {

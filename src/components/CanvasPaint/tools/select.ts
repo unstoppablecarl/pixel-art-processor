@@ -44,26 +44,17 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
 
       if (canvasType === CanvasType.GRID) {
         if (!ts.gridPointInSelection(x, y)) {
-          console.log({ LOG_NAME: 'onClick.GRID.outsideSelection' })
 
           if (ts.selectionHasMoved()) {
-            console.log({ LOG_NAME: 'onClick.GRID.selectionHasMoved' })
             ts.commit(toolContext.selectMoveBlendMode)
           } else {
-            console.log({ LOG_NAME: 'onClick.GRID.selectionNotMoved' })
             ts.clearSelection()
             gridRenderer.queueRenderGrid()
           }
-        } else {
-          console.log({ LOG_NAME: 'onClick.GRID.insideSelection' })
         }
       } else {
-        console.log({ LOG_NAME: 'onClick.TILE' })
         if (!ts.tilePointInSelection(tileId!, x, y)) {
-          console.log({ LOG_NAME: 'onClick.TILE.outsideSelection' })
           ts.commit(toolContext.selectMoveBlendMode)
-        } else {
-          console.log({ LOG_NAME: 'onClick.TILE.insideSelection' })
         }
         gridRenderer.queueRenderGrid()
       }
@@ -74,30 +65,24 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
 
       if (canvasType === CanvasType.GRID) {
         if (!sel) {
-          console.log({ LOG_NAME: 'onDragStart.GRID.noSelection' })
           ts.gridStartSelection(x, y)
           return
         }
 
         if (ts.gridPointInSelection(x, y)) {
-          console.log({ LOG_NAME: 'onDragStart.GRID.dragExistingSelection' })
           ts.gridDragStart(x, y)
           return
         }
 
-        console.log({ LOG_NAME: 'onDragStart.GRID.newSelection' })
         ts.gridStartSelection(x, y)
         gridRenderer.queueRenderAll()
       } else {
         if (!tileId) throw new Error('tileId required')
-        console.log({ LOG_NAME: 'onDragStart.TILE' })
         if (!sel) {
-          console.log({ LOG_NAME: 'onDragStart.TILE.noSelection' })
           ts.tileStartSelection(tileId, x, y)
           return
         }
         if (ts.tilePointInSelection(tileId, x, y)) {
-          console.log('dragstart tile')
           ts.tileDragStart(x, y, tileId)
           return
         }
