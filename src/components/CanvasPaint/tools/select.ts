@@ -43,7 +43,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
       if (!sel) return
 
       if (canvasType === CanvasType.GRID) {
-        if (!ts.gridInSelection(x, y)) {
+        if (!ts.gridPointInSelection(x, y)) {
           console.log({ LOG_NAME: 'onClick.GRID.outsideSelection' })
 
           if (ts.selectionHasMoved()) {
@@ -59,8 +59,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         }
       } else {
         console.log({ LOG_NAME: 'onClick.TILE' })
-        const { x: px, y: py } = state.tileSheet.tileLocalToSheet(tileId!, x, y)
-        if (!ts.tileInSelection(tileId!, px, py)) {
+        if (!ts.tilePointInSelection(tileId!, x, y)) {
           console.log({ LOG_NAME: 'onClick.TILE.outsideSelection' })
           ts.commit(toolContext.selectMoveBlendMode)
         } else {
@@ -80,9 +79,9 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
           return
         }
 
-        if (ts.gridInSelection(x, y)) {
+        if (ts.gridPointInSelection(x, y)) {
           console.log({ LOG_NAME: 'onDragStart.GRID.dragExistingSelection' })
-          ts.dragStart(x, y)
+          ts.gridDragStart(x, y)
           return
         }
 
@@ -90,21 +89,21 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         ts.gridStartSelection(x, y)
         gridRenderer.queueRenderAll()
       } else {
+        if(!tileId) throw new Error('tileId required')
         console.log({ LOG_NAME: 'onDragStart.TILE' })
         if (!sel) {
           console.log({ LOG_NAME: 'onDragStart.TILE.noSelection' })
-          ts.tileStartSelection(tileId!, x, y)
+          ts.tileStartSelection(tileId, x, y)
           return
         }
-        const { x: px, y: py } = state.tileSheet.tileLocalToSheet(tileId!, x, y)
-
-        if (ts.tileInSelection(tileId!, px, py)) {
-          ts.dragStart(px, py)
+        if (ts.tilePointInSelection(tileId, x, y)) {
+          console.log('dragstart tile')
+          ts.tileDragStart(x, y, tileId)
           return
         }
 
-        ts.tileStartSelection(tileId!, x, y)
-        gridRenderer.queueRenderTile(tileId!)
+        ts.tileStartSelection(tileId, x, y)
+        gridRenderer.queueRenderTile(tileId)
         gridRenderer.queueRenderGrid()
       }
     },
@@ -119,13 +118,13 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         }
         gridRenderer.queueRenderAll()
       } else {
-        const { x: px, y: py } = state.tileSheet.tileLocalToSheet(tileId!, x, y)
+        if (!tileId) throw new Error('tileId required')
         if (ts.dragging) {
-          ts.moveSelection(px, py)
+          ts.moveSelectionOnTile(x, y, tileId)
         } else if (ts.selecting) {
           ts.updateSelection(x, y)
         }
-        gridRenderer.queueRenderTile(tileId!)
+        gridRenderer.queueRenderTile(tileId)
         gridRenderer.queueRenderGrid()
       }
     },

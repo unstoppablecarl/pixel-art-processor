@@ -182,26 +182,17 @@ export function makeSelectionLocalToolState(
     }
   }
 
-  function dragStart(x: number, y: number) {
+  function gridDragStart(x: number, y: number) {
     if (!selection) return
 
     dragging = true
 
-    console.log({
-      LOG_NAME: 'dragStart',
-      x,
-      y,
-      'selection.gridBounds.x': selection.gridBounds!.x,
-      'selection.gridBounds.y': selection.gridBounds!.y,
-    })
+    selection.dragMoveStartGridX = x - selection.gridBounds!.x
+    selection.dragMoveStartGridY = y - selection.gridBounds!.y
+  }
 
-    if (selection.gridBounds) {
-      selection.dragMoveStartGridX = x - selection.gridBounds.x
-      selection.dragMoveStartGridY = y - selection.gridBounds.y
-    } else {
-      selection.dragMoveStartGridX = null
-      selection.dragMoveStartGridY = null
-    }
+  function tileDragStart(x: number, y: number, tileId: TileId) {
+    // @TODO
   }
 
   function dragEnd() {
@@ -236,6 +227,10 @@ export function makeSelectionLocalToolState(
     selection.currentRects = tileGridManager.gridRectToTileSheetRects(movedGridRect)
 
     gridRenderer.queueRenderAll()
+  }
+
+  function moveSelectionOnTile(x: number, y: number, tileId: TileId) {
+    // @TODO
   }
 
   function tilePointInSelection(tileId: TileId, tx: number, ty: number) {
@@ -366,18 +361,13 @@ export function makeSelectionLocalToolState(
     updateSelection,
     finalizeSelection,
 
-    dragStart,
+    gridDragStart,
+    tileDragStart,
     dragEnd,
     moveSelectionOnGrid,
-    moveSelection: (x: number, y: number) => {
-      console.log({
-        LOG_NAME: 'moveSelection (TILE canvas, unused for now)',
-        x,
-        y,
-      })
-    },
-    tileInSelection: tilePointInSelection,
-    gridInSelection: gridPointInSelection,
+    moveSelectionOnTile,
+    tilePointInSelection,
+    gridPointInSelection,
     selectionGridSpaceMergedRects,
     commit,
     clearSelection,
