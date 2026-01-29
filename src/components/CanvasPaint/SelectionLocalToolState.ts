@@ -127,7 +127,7 @@ export function makeSelectionLocalToolState(
     tileId: TileId | null = null,
   ) {
     if (selection) clearRenderedSelection(selection)
-
+    selection = null
     selecting = true
     dragging = false
     inputSpace = canvasType
@@ -328,11 +328,19 @@ export function makeSelectionLocalToolState(
   }
 
   return {
-    get dragStartX() {
-      return dragStartX
+    get inputTileId() {
+      return inputTileId
     },
-    get dragStartY() {
-      return dragStartY
+
+    get currentDraggedRect(): RectBounds | undefined {
+      if (dragCurrentX !== null && dragCurrentY !== null && dragStartX !== null && dragStartY !== null) {
+        return {
+          x: dragStartX,
+          y: dragStartY,
+          w: dragCurrentX - dragStartX,
+          h: dragCurrentY - dragStartY,
+        }
+      }
     },
     get selection() {
       return selection

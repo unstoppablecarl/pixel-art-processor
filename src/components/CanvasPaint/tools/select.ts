@@ -1,3 +1,4 @@
+import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { type BlendFn, blendIgnoreTransparent, blendSourceAlphaOver } from '../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import type { LocalToolContext, ToolHandler } from '../_canvas-editor-types.ts'
@@ -68,7 +69,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         gridRenderer.queueRenderGrid()
       }
     },
-
     onDragStart({ state, toolState, gridRenderer }, x, y, canvasType, tileId) {
       const ts = toolState
       const sel = ts.selection
@@ -99,18 +99,15 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         const { x: px, y: py } = state.tileSheet.tileLocalToSheet(tileId!, x, y)
 
         if (ts.tileInSelection(tileId!, px, py)) {
-          console.log({ LOG_NAME: 'onDragStart.TILE.dragExistingSelection' })
           ts.dragStart(px, py)
           return
         }
 
-        console.log({ LOG_NAME: 'onDragStart.TILE.newSelection' })
         ts.tileStartSelection(tileId!, x, y)
         gridRenderer.queueRenderTile(tileId!)
         gridRenderer.queueRenderGrid()
       }
     },
-
     onDragMove({ state, toolState, gridRenderer }, x, y, canvasType, tileId) {
       const ts = toolState
 
@@ -191,30 +188,22 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
           )
         }
       }
-    }
-    ,
+    },
     gridScreenOverlayDraw({ state, toolState }, ctx) {
       const sel = toolState.selection
-      if (!sel) return
-
       const { scale } = state
-      if (!sel.gridBounds || !sel.initialGridBounds) return
-
-      ctx.strokeStyle = 'cyan'
-      ctx.lineWidth = 1
-
-      // Convert GRID → SCREEN for drawing
-      for (const g of toolState.selectionGridSpaceMergedRects()) {
-        const { x, y, w, h } = g
-        ctx.strokeRect(
-          x * scale - 0.5,
-          y * scale - 0.5,
-          w * scale + 1,
-          h * scale + 1,
-        )
+      if (sel) {
+        if (!sel.gridBounds || !sel.initialGridBounds) return
+        // Convert GRID → SCREEN for drawing
+        for (const g of toolState.selectionGridSpaceMergedRects()) {
+          drawSelectOutline(ctx, scale, g)
+        }
+      } else {
+        const r = toolState.currentDraggedRect
+        if (!r) return
+        drawSelectOutline(ctx, scale, r)
       }
-    }
-    ,
+    },
     tilePixelOverlayDraw({ state, toolState }, ctx, tileId) {
       const sel = toolState.selection
       if (!sel) return
@@ -266,27 +255,24 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
     },
     tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
       const sel = toolState.selection
-      if (!sel) return
-
       const { tileSheet, scale } = state
+      if (sel) {
+        console.log('selection')
+        for (const r of sel.currentRects) {
+          if (r.tileId !== tileId) continue
 
-      ctx.strokeStyle = 'cyan'
-      ctx.lineWidth = 1
+          const { x, y } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
+          const { w, h } = r
 
-      for (const r of sel.currentRects) {
-        if (r.tileId !== tileId) continue
+          drawSelectOutline(ctx, scale, { x, y, w, h })
+        }
 
-        const { x: localX, y: localY } =
-          tileSheet.sheetToTileLocal(tileId, r.x, r.y)
-
-        const { w, h } = r
-
-        const screenX = localX * scale - 0.5
-        const screenY = localY * scale - 0.5
-        const screenW = w * scale + 1
-        const screenH = h * scale + 1
-
-        ctx.strokeRect(screenX, screenY, screenW, screenH)
+      } else {
+        if (toolState.inputTileId === tileId) {
+          const r = toolState.currentDraggedRect
+          if (!r) return
+          drawSelectOutline(ctx, scale, r)
+        }
       }
     },
   }
@@ -296,4 +282,16 @@ const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn | undefined> = {
   [BlendMode.OVERWRITE]: undefined,
   [BlendMode.IGNORE_TRANSPARENT]: blendIgnoreTransparent,
   [BlendMode.IGNORE_SOLID]: blendSourceAlphaOver(0.5),
+}
+
+function drawSelectOutline(ctx: CanvasRenderingContext2D, scale: number, rect: RectBounds) {
+  const { x, y, w, h } = rect
+  ctx.strokeStyle = 'cyan'
+  ctx.lineWidth = 1
+  ctx.strokeRect(
+    x * scale - 0.5,
+    y * scale - 0.5,
+    w * scale + 1,
+    h * scale + 1,
+  )
 }

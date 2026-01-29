@@ -22,7 +22,6 @@ export function makeTileRenderer(
     gridCache: PixelGridLineRenderer,
     tileCanvas: HTMLCanvasElement,
     currentToolRenderer: CurrentToolRenderer,
-
   }) {
 
   const pixelCanvas = makePixelCanvas(tileCanvas)
