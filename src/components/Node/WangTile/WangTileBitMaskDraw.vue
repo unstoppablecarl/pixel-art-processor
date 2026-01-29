@@ -31,14 +31,14 @@ import {
   makeAxialEdgeWangTileset,
 } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
-import TileCanvas from '../../TileGridEdit/components/TileCanvas.vue'
-import TileGridCanvas from '../../TileGridEdit/components/TileGridCanvas.vue'
-import { makeTileGridManager } from '../../TileGridEdit/data/TileGridManager.ts'
+import TileCanvas from '../../CanvasEditor/TileGridEdit/components/TileCanvas.vue'
+import TileGridCanvas from '../../CanvasEditor/TileGridEdit/components/TileGridCanvas.vue'
+import { makeTileGridManager } from '../../CanvasEditor/TileGridEdit/data/TileGridManager.ts'
 import {
   deserializeTileSheet,
   type SerializedTileSheet,
-} from '../../TileGridEdit/data/TileSheet.ts'
-import { useLocalToolManager } from '../../TileGridEdit/LocalToolManager.ts'
+} from '../../CanvasEditor/TileGridEdit/data/TileSheet.ts'
+import { useLocalToolManager } from '../../CanvasEditor/TileGridEdit/LocalToolManager.ts'
 
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'

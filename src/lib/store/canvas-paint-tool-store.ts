@@ -1,8 +1,8 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import { BlendMode, BrushMode, Tool } from '../../components/CanvasPaint/_canvas-paint-types.ts'
-import { BrushShape } from '../../components/TileGridEdit/tools/brush.ts'
+import { BlendMode, BrushMode, Tool } from '../../components/CanvasEditor/_canvas-editor-types.ts'
+import { BrushShape } from '../../components/CanvasEditor/TileGridEdit/tools/brush.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
 import { makeStateMapper } from './_store-helpers.ts'
 
@@ -92,3 +92,42 @@ export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
 }, {
   persist: true,
 })
+
+
+export type GlobalToolContext = ReturnType<typeof useGlobalToolContext>
+
+export function useGlobalToolContext(store: CanvasPaintToolStore = useCanvasPaintToolStore()) {
+
+  return {
+    get brushSize() {
+      return store.brushSize
+    },
+    get brushShape() {
+      return store.brushShape
+    },
+    get brushMode() {
+      return store.brushMode
+    },
+    get brushColor() {
+      return store.brushColor
+    },
+    get selectMoveBlendMode() {
+      return store.selectMoveBlendMode
+    },
+    decreaseBrushSize() {
+      store.brushSize--
+    },
+    increaseBrushSize() {
+      store.brushSize++
+    },
+    setBrushSize(n: number) {
+      store.brushSize = n
+    },
+    setBrushShape(s: BrushShape) {
+      store.brushShape = s
+    },
+    setSelectMoveBlendMode(m: BlendMode) {
+      store.selectMoveBlendMode = m
+    },
+  }
+}
