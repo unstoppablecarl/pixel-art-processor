@@ -9,6 +9,7 @@ import {
   makeTileSelection,
   mergeRectBounds,
   normalizeTileSheetRects,
+  type SelectionTileSheetRect,
   type TileSheetSelection,
 } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
@@ -43,8 +44,9 @@ export function makeSelectionLocalToolState(
   let inputSpace: CanvasType | null = null
   let inputTileId: TileId | null = null
 
+  // drag move selection anchors
   let dragStartGridBounds: RectBounds | null
-  let dragStartTileLocalBounds: RectBounds | null
+  let dragStartSheetRects: SelectionTileSheetRect[] | null = null
 
   function clearRenderedSelection(sel: TileSheetSelection) {
     gridRenderer.queueRenderTiles(sel.getOverlappingTileIds())
@@ -202,6 +204,8 @@ export function makeSelectionLocalToolState(
     dragCurrentX = null
     dragCurrentY = null
     inputTileId = null
+    dragStartSheetRects = null
+    dragStartGridBounds = null
 
     // clear drag-move state on the selection, but keep the selection itself
     if (selection) {
@@ -223,38 +227,76 @@ export function makeSelectionLocalToolState(
     mouseGridY: number,
   ) {
     if (!selection) return
-    if (selection.origin === CanvasType.TILE) {
-      promoteTileSelectionToGridOrigin()
-    }
-    if (!selection || !selection.gridBounds) return
+
+    dragging = true
 
     selection.dragMoveStartGridX = mouseGridX
     selection.dragMoveStartGridY = mouseGridY
 
-    dragStartGridBounds = { ...selection.gridBounds }
-    dragging = true
+    dragStartGridBounds = selection.gridBounds
+      ? { ...selection.gridBounds }
+      : null
+
+    // Anchor sheet rects for both origins
+    dragStartSheetRects = selection.currentRects.map(r => ({ ...r }))
+
+    // For TILE-origin, also compute sheet-space mouse anchor
+    if (selection.origin === CanvasType.TILE) {
+      const r = tileGridManager.gridPixelToTileSheetPixel(mouseGridX, mouseGridY)
+      if (r) {
+        selection.dragMoveStartSheetX = r.x
+        selection.dragMoveStartSheetY = r.y
+      }
+    }
   }
 
-  function moveSelectionOnGrid(
-    mouseGridX: number,
-    mouseGridY: number,
-  ) {
+  function moveSelectionOnGrid(mouseGridX: number, mouseGridY: number) {
     if (!selection) return
-    if (!selection.gridBounds || !dragStartGridBounds) return
-    if (selection.dragMoveStartGridX == null || selection.dragMoveStartGridY == null) return
 
-    const dx = mouseGridX - selection.dragMoveStartGridX
-    const dy = mouseGridY - selection.dragMoveStartGridY
+    // GRID-ORIGIN → grid-pixel movement
+    if (selection.origin === CanvasType.GRID) {
+      if (
+        selection.dragMoveStartGridX == null ||
+        selection.dragMoveStartGridY == null ||
+        !dragStartGridBounds
+      ) return
 
-    const newGridBounds: RectBounds = {
-      x: dragStartGridBounds.x + dx,
-      y: dragStartGridBounds.y + dy,
-      w: dragStartGridBounds.w,
-      h: dragStartGridBounds.h,
+      const dx = mouseGridX - selection.dragMoveStartGridX
+      const dy = mouseGridY - selection.dragMoveStartGridY
+
+      const newGridBounds: RectBounds = {
+        x: dragStartGridBounds.x + dx,
+        y: dragStartGridBounds.y + dy,
+        w: dragStartGridBounds.w,
+        h: dragStartGridBounds.h,
+      }
+
+      selection.gridBounds = newGridBounds
+      selection.currentRects = state.tileGridManager.gridRectToTileSheetRects(newGridBounds)
+      return
     }
 
-    selection.gridBounds = newGridBounds
-    selection.currentRects = tileGridManager.gridRectToTileSheetRects(newGridBounds)
+    // TILE-ORIGIN dragged on grid canvas → sheet-space movement
+    if (selection.origin === CanvasType.TILE) {
+      if (
+        selection.dragMoveStartSheetX == null ||
+        selection.dragMoveStartSheetY == null ||
+        !dragStartSheetRects
+      ) return
+
+      const r = state.tileGridManager.gridPixelToTileSheetPixel(mouseGridX, mouseGridY)
+      if (!r) return
+
+      const { x: sheetX, y: sheetY } = r
+      const dx = sheetX - selection.dragMoveStartSheetX
+      const dy = sheetY - selection.dragMoveStartSheetY
+
+      selection.currentRects = dragStartSheetRects.map(r => ({
+        ...r,
+        x: r.x + dx,
+        y: r.y + dy,
+      }))
+    }
   }
 
   function tileDragStart(
@@ -263,15 +305,23 @@ export function makeSelectionLocalToolState(
     tileId: TileId,
   ) {
     if (!selection) return
+
+    // Convert mouse → tilesheet space for stable anchoring
+    const { x: sheetX, y: sheetY } = state.tileSheet.tileLocalToSheet(
+      tileId,
+      mouseLocalX,
+      mouseLocalY,
+    )
+
+    selection.dragMoveStartSheetX = sheetX
+    selection.dragMoveStartSheetY = sheetY
+
+    // Snapshot rects in sheet-space
+    dragStartSheetRects = selection.currentRects.map(r => ({ ...r }))
+
+    // For grid-origin dragging on tile canvas, we also store tile-local
     selection.dragMoveStartTileLocalX = mouseLocalX
     selection.dragMoveStartTileLocalY = mouseLocalY
-
-    if (selection.origin === CanvasType.TILE && selection.initialTileLocalBounds) {
-      dragStartTileLocalBounds = { ...selection.initialTileLocalBounds }
-    } else if (selection.origin === CanvasType.GRID && selection.gridBounds) {
-      // for GRID-origin, we still use tile-local delta but apply it to gridBounds
-      dragStartGridBounds = { ...selection.gridBounds }
-    }
 
     dragging = true
   }
@@ -283,52 +333,39 @@ export function makeSelectionLocalToolState(
   ) {
     if (!selection) return
 
-    // ───────── TILE-ORIGIN ─────────
+    // TILE-ORIGIN → sheet-space movement
     if (selection.origin === CanvasType.TILE) {
-      if (!selection.initialTileLocalBounds || selection.initialTileId == null) return
-      if (selection.dragMoveStartTileLocalX == null || selection.dragMoveStartTileLocalY == null) return
-      if (!dragStartTileLocalBounds) return
+      if (
+        selection.dragMoveStartSheetX == null ||
+        selection.dragMoveStartSheetY == null ||
+        !dragStartSheetRects
+      ) return
 
-      const dx = mouseLocalX - selection.dragMoveStartTileLocalX
-      const dy = mouseLocalY - selection.dragMoveStartTileLocalY
+      const { x: sheetX, y: sheetY } = state.tileSheet.tileLocalToSheet(
+        tileId,
+        mouseLocalX,
+        mouseLocalY,
+      )
 
-      // 1. Compute unclipped bounds
-      let newLocalBounds: RectBounds = {
-        x: dragStartTileLocalBounds.x + dx,
-        y: dragStartTileLocalBounds.y + dy,
-        w: dragStartTileLocalBounds.w,
-        h: dragStartTileLocalBounds.h,
-      }
+      const dx = sheetX - selection.dragMoveStartSheetX
+      const dy = sheetY - selection.dragMoveStartSheetY
 
-      // 2. Clip to tile bounds
-      const tileW = state.tileSize
-      const tileH = state.tileSize
-
-      if (newLocalBounds.x < 0) newLocalBounds.x = 0
-      if (newLocalBounds.y < 0) newLocalBounds.y = 0
-      if (newLocalBounds.x + newLocalBounds.w > tileW)
-        newLocalBounds.x = tileW - newLocalBounds.w
-      if (newLocalBounds.y + newLocalBounds.h > tileH)
-        newLocalBounds.y = tileH - newLocalBounds.h
-
-      // 3. Compute delta from original tile-local origin
-      const deltaX = newLocalBounds.x - selection.initialTileLocalBounds.x
-      const deltaY = newLocalBounds.y - selection.initialTileLocalBounds.y
-
-      // 4. Translate original rects (preserves buffer offsets)
-      selection.currentRects = selection.originalRects.map(r => ({
+      selection.currentRects = dragStartSheetRects.map(r => ({
         ...r,
-        x: r.x + deltaX,
-        y: r.y + deltaY,
+        x: r.x + dx,
+        y: r.y + dy,
       }))
 
       return
     }
 
-    // ───────── GRID-ORIGIN (Case 2a) ─────────
+    // GRID-ORIGIN → tile-local delta → grid bounds → tilesheet rects
     if (selection.origin === CanvasType.GRID) {
-      if (!selection.initialGridBounds || !dragStartGridBounds) return
-      if (selection.dragMoveStartTileLocalX == null || selection.dragMoveStartTileLocalY == null) return
+      if (
+        selection.dragMoveStartTileLocalX == null ||
+        selection.dragMoveStartTileLocalY == null ||
+        !dragStartGridBounds
+      ) return
 
       const dx = mouseLocalX - selection.dragMoveStartTileLocalX
       const dy = mouseLocalY - selection.dragMoveStartTileLocalY
@@ -341,7 +378,7 @@ export function makeSelectionLocalToolState(
       }
 
       selection.gridBounds = newGridBounds
-      selection.currentRects = tileGridManager.gridRectToTileSheetRects(newGridBounds)
+      selection.currentRects = state.tileGridManager.gridRectToTileSheetRects(newGridBounds)
     }
   }
 

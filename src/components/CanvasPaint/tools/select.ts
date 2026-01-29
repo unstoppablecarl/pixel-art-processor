@@ -148,8 +148,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
       const mode = toolContext.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
-      if (!sel.gridBounds || !sel.initialGridBounds) return
-
       // 1. Clear original footprint (GRID SPACE)
       if (sel.hasMoved) {
         for (const r of sel.originalRects) {
@@ -168,9 +166,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
           const drawX = g.x
           const drawY = g.y
 
-          const sx = r.bufferX
-          const sy = r.bufferY
-
           if (mode === BlendMode.OVERWRITE) {
             ctx.clearRect(drawX, drawY, r.w, r.h)
           }
@@ -180,8 +175,8 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
             drawX,
             drawY,
             blendMode,
-            sx,
-            sy,
+            r.bufferX,
+            r.bufferY,
             r.w,
             r.h,
           )

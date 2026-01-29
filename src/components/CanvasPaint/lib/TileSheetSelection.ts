@@ -33,44 +33,62 @@ export type NormalizedTileSheetRect = SelectionTileSheetRect & {
 
 export type TileSheetSelection = {
   pixels: ImageData,
-  // absolute tileSheet rects at extraction time
+
+  // tileSheet-space rects at extraction time
+  // These define the exact pixels copied into `pixels`.
   readonly originalRects: SelectionTileSheetRect[],
-  // absolute tileSheet rects after movement
+
+  // tilesheet-space rects after movement.
+  // These are the authoritative positions used for overlay + commit.
   currentRects: SelectionTileSheetRect[],
 
-  // tileSheet-space, fixed
-  // bounding box of originalRects for the buffer
+  // Tilesheet‑space bounding box of `originalRects`.
+  // Defines the coordinate space of the selection buffer `pixels`.
   readonly tileSheetBounds: RectBounds,
 
-  // current moved selection bounds in tile grid pixel space
-  // only has a value when this selection was created in the tile grid
+  // Current moved selection bounds in GRID‑PIXEL space.
+  // Only populated for GRID‑origin selections.
   gridBounds: RectBounds | null,
-  // initial selection bounds
+
+  // Initial grid‑pixel bounds at creation time (GRID‑origin only).
   readonly initialGridBounds: RectBounds | null,
 
-  // type of canvas this selection was created in
-  // or currently is within (selecting in single tile then moving in grid changes origin)
+  // Which canvas the selection was created in (TILE or GRID).
+  // This determines which drag anchor model is used.
   origin: CanvasType,
 
-  // grid‑pixel position of the selection at the start of a *move* drag
-  // in a grid canvas
+  // GRID‑pixel mouse position at the start of a drag on the GRID canvas.
+  // Used only when dragging a GRID‑origin selection on the grid.
   dragMoveStartGridX: number | null,
   dragMoveStartGridY: number | null,
 
-  // tile‑pixel position of the selection at the start of a *move* drag
-  // in a single tile canvas
+  // TILE‑local mouse position at the start of a drag on the TILE canvas.
+  // Used only when dragging a GRID‑origin selection on the tile canvas.
   dragMoveStartTileLocalX: number | null,
   dragMoveStartTileLocalY: number | null,
 
-  // used if selected in a single tile canvas
+  // Tilesheet‑space mouse position at the start of a drag.
+  // Used for TILE‑origin selections (on either canvas),
+  // and also for GRID‑origin selections dragged on the grid canvas.
+  dragMoveStartSheetX: number | null,
+  dragMoveStartSheetY: number | null,
+
+  // Snapshot of `currentRects` at drag start (tilesheet‑space).
+  // Used with dragMoveStartSheetX/Y to compute sheet‑space deltas.
+  dragStartSheetRects: SelectionTileSheetRect[] | null,
+
+  // The tile the selection was originally taken from (TILE‑origin only).
   initialTileId: TileId | null
+  // TILE‑local bounds of the selection at creation time (TILE‑origin only).
   initialTileLocalBounds: RectBounds | null
 
+  // All tileIds touched by original or current rects.
   getOverlappingTileIds(): TileId[],
 
   // if this selection has been dragged changing its position
   get hasMoved(): boolean,
 }
+
 type InternalGridOptions = {
   pixels: ImageData,
   rects: SelectionTileSheetRect[],
@@ -166,6 +184,11 @@ function _makeSelection(
 
     dragMoveStartTileLocalX: null,
     dragMoveStartTileLocalY: null,
+
+    dragMoveStartSheetX: null,
+    dragMoveStartSheetY: null,
+
+    dragStartSheetRects: null,
 
     initialTileId,
     initialTileLocalBounds,
