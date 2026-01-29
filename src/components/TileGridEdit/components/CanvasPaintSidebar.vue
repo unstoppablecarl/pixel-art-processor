@@ -10,7 +10,6 @@ const { currentTool } = storeToRefs(useCanvasPaintStore())
 </script>
 <template>
   <div class="canvas-paint-sidebar shadow-sm">
-
     <div class="section">
       <div class="btn-group w-100" role="group">
         <ToolButton
