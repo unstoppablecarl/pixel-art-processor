@@ -332,6 +332,10 @@ export function makeSelectionLocalToolState(
       return inputTileId
     },
 
+    get isTileSelection() {
+      return inputSpace === CanvasType.TILE
+    },
+
     get currentDraggedRect(): RectBounds | undefined {
       if (dragCurrentX !== null && dragCurrentY !== null && dragStartX !== null && dragStartY !== null) {
         return {

@@ -240,14 +240,26 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         if (mode === BlendMode.OVERWRITE) {
           ctx.clearRect(localX, localY, r.w, r.h)
         }
+
+        let bufferX: number
+        let bufferY: number
+
+        if (toolState.isTileSelection) {
+          bufferX = r.x - sel.tileSheetBounds.x
+          bufferY = r.y - sel.tileSheetBounds.y
+        } else {
+          bufferX = r.bufferX
+          bufferY = r.bufferY
+        }
+
         putImageDataScaled(
           ctx,
           composed,
           localX,
           localY,
           blendMode,
-          r.bufferX,
-          r.bufferY,
+          bufferX,
+          bufferY,
           r.w,
           r.h,
         )
