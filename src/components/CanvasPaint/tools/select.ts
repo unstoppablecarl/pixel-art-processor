@@ -89,7 +89,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         ts.gridStartSelection(x, y)
         gridRenderer.queueRenderAll()
       } else {
-        if(!tileId) throw new Error('tileId required')
+        if (!tileId) throw new Error('tileId required')
         console.log({ LOG_NAME: 'onDragStart.TILE' })
         if (!sel) {
           console.log({ LOG_NAME: 'onDragStart.TILE.noSelection' })
@@ -192,7 +192,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
       const sel = toolState.selection
       const { scale } = state
       if (sel) {
-        if (!sel.gridBounds || !sel.initialGridBounds) return
         // Convert GRID → SCREEN for drawing
         for (const g of toolState.selectionGridSpaceMergedRects()) {
           drawSelectOutline(ctx, scale, g)
@@ -240,25 +239,14 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
           ctx.clearRect(localX, localY, r.w, r.h)
         }
 
-        let bufferX: number
-        let bufferY: number
-
-        if (toolState.isTileSelection) {
-          bufferX = r.x - sel.tileSheetBounds.x
-          bufferY = r.y - sel.tileSheetBounds.y
-        } else {
-          bufferX = r.bufferX
-          bufferY = r.bufferY
-        }
-
         putImageDataScaled(
           ctx,
           composed,
           localX,
           localY,
           blendMode,
-          bufferX,
-          bufferY,
+          r.bufferX,
+          r.bufferY,
           r.w,
           r.h,
         )

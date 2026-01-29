@@ -129,7 +129,6 @@ function _makeSelection(
   const originalRects = rects.map(r => ({ ...r }))
   const currentRects = rects.map(r => ({ ...r }))
 
-
   const initialGridBounds =
     origin === CanvasType.GRID
       ? { ...opts.gridBounds }

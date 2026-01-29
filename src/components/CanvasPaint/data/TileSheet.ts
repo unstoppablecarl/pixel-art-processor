@@ -158,9 +158,9 @@ export function makeTileSheet(
     dirty = true
   }
 
-  function tileLocalRectToTileSheetRect(tileId: TileId, rect: RectBounds): SelectionTileSheetRect[] {
+  function tileLocalRectToTileSheetRect(tileId: TileId, rect: RectBounds): SelectionTileSheetRect {
     const tile = tileset.byId.get(tileId)
-    if (!tile) return []
+    if (!tile) throw new Error('tileId not found: ' + tileId)
 
     // Clip to tile bounds
     const x1 = Math.max(0, rect.x)
@@ -170,7 +170,7 @@ export function makeTileSheet(
 
     const w = x2 - x1
     const h = y2 - y1
-    if (w <= 0 || h <= 0) return []
+    if (w <= 0 || h <= 0) throw new Error('selection bounds has zero size')
 
     const { tileX, tileY } = getTileCoords(tileId)
 
@@ -180,7 +180,7 @@ export function makeTileSheet(
     const bufferX = sheetX - rect.x
     const bufferY = sheetY - rect.y
 
-    return [{
+    return {
       tileId,
       x: sheetX,
       y: sheetY,
@@ -192,7 +192,7 @@ export function makeTileSheet(
       bufferY,
       gridX: null,
       gridY: null,
-    }]
+    }
   }
 
   function tilePointInTileSheetSelection(
