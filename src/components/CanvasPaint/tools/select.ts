@@ -268,7 +268,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
       const sel = toolState.selection
       const { tileSheet, scale } = state
       if (sel) {
-        console.log('selection')
         for (const r of sel.currentRects) {
           if (r.tileId !== tileId) continue
 

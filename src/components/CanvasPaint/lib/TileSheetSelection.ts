@@ -1,6 +1,7 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { getRectsBounds } from '../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
+import { CanvasType } from '../_canvas-editor-types.ts'
 
 export type BaseTileSheetRect = {
   readonly tileId: TileId,
@@ -37,9 +38,6 @@ export type TileSheetSelection = {
   // absolute tileSheet rects after movement
   currentRects: SelectionTileSheetRect[],
 
-  // if this selection has been dragged changing its position
-  readonly hasMoved: boolean,
-
   // tileSheet-space, fixed
   // bounding box of originalRects for the buffer
   readonly tileSheetBounds: RectBounds,
@@ -48,73 +46,154 @@ export type TileSheetSelection = {
   // only has a value when this selection was created in the tile grid
   gridBounds: RectBounds | null,
   // initial selection bounds
-  initialGridBounds: RectBounds | null,
+  readonly initialGridBounds: RectBounds | null,
+
+  // type of canvas this selection was created in
+  // or currently is within (selecting in single tile then moving in grid changes origin)
+  origin: CanvasType,
 
   // grid‑pixel position of the selection at the start of a *move* drag
+  // in a grid canvas
   dragMoveStartGridX: number | null,
   dragMoveStartGridY: number | null,
 
-  // drag movement offset from original position
-  offsetX: number,
-  offsetY: number,
+  // tile‑pixel position of the selection at the start of a *move* drag
+  // in a single tile canvas
+  dragMoveStartTileLocalX: number | null,
+  dragMoveStartTileLocalY: number | null,
+
+  // used if selected in a single tile canvas
+  initialTileId: TileId | null
+  initialTileLocalBounds: RectBounds | null
 
   getOverlappingTileIds(): TileId[],
-}
 
-export function makeTileSheetSelection(
+  // if this selection has been dragged changing its position
+  get hasMoved(): boolean,
+}
+type InternalGridOptions = {
   pixels: ImageData,
   rects: SelectionTileSheetRect[],
   tileSheetBounds: RectBounds,
-  gridBounds: RectBounds | null = null,
-): TileSheetSelection {
+  origin: CanvasType.GRID,
+  gridBounds: RectBounds,
+}
 
-  // Deep copies
+type InternalTileOptions = {
+  pixels: ImageData,
+  rects: SelectionTileSheetRect[],
+  tileSheetBounds: RectBounds,
+  origin: CanvasType.TILE,
+  tileId: TileId,
+  tileLocalBounds: RectBounds,
+}
+
+export function makeGridSelection(
+  pixels: ImageData,
+  rects: NormalizedTileSheetRect[],
+  tileSheetBounds: RectBounds,
+  gridBounds: RectBounds,
+): TileSheetSelection {
+  return _makeSelection({
+    pixels,
+    rects,
+    tileSheetBounds,
+    origin: CanvasType.GRID,
+    gridBounds,
+  })
+}
+
+export function makeTileSelection(
+  pixels: ImageData,
+  rects: SelectionTileSheetRect[],
+  tileSheetBounds: RectBounds,
+  tileId: TileId,
+  tileLocalBounds: RectBounds,
+): TileSheetSelection {
+  return _makeSelection({
+    pixels,
+    rects,
+    tileSheetBounds,
+    origin: CanvasType.TILE,
+    tileId,
+    tileLocalBounds,
+  })
+}
+
+function _makeSelection(
+  opts: InternalGridOptions | InternalTileOptions,
+) {
+
+  const { pixels, rects, tileSheetBounds, origin } = opts
+
   const originalRects = rects.map(r => ({ ...r }))
   const currentRects = rects.map(r => ({ ...r }))
 
-  let initialGridBounds: null | RectBounds = null
-  if (gridBounds) {
-    initialGridBounds = { ...gridBounds }
-  }
+
+  const initialGridBounds =
+    origin === CanvasType.GRID
+      ? { ...opts.gridBounds }
+      : null
+
+  const gridBounds =
+    origin === CanvasType.GRID
+      ? { ...opts.gridBounds }
+      : null
+
+  const initialTileId =
+    origin === CanvasType.TILE
+      ? opts.tileId
+      : null
+
+  const initialTileLocalBounds =
+    origin === CanvasType.TILE
+      ? { ...opts.tileLocalBounds }
+      : null
 
   return {
     pixels,
     originalRects,
     currentRects,
+
     tileSheetBounds,
 
     initialGridBounds,
     gridBounds,
 
+    origin,
+
     dragMoveStartGridX: null,
     dragMoveStartGridY: null,
 
-    offsetX: 0,
-    offsetY: 0,
+    dragMoveStartTileLocalX: null,
+    dragMoveStartTileLocalY: null,
+
+    initialTileId,
+    initialTileLocalBounds,
 
     get hasMoved() {
-      const movedInGrid =
-        this.gridBounds &&
-        this.initialGridBounds &&
-        (
+      if (this.origin === CanvasType.GRID) {
+        if (!this.initialGridBounds || !this.gridBounds) return false
+        return (
           this.gridBounds.x !== this.initialGridBounds.x ||
           this.gridBounds.y !== this.initialGridBounds.y
         )
+      }
 
-      const movedByOffset = this.offsetX !== 0 || this.offsetY !== 0
-
-      return movedInGrid || movedByOffset
+      // TILE-origin: compare rect translations
+      for (let i = 0; i < this.originalRects.length; i++) {
+        const o = this.originalRects[i]
+        const c = this.currentRects[i]
+        if (o.x !== c.x || o.y !== c.y) return true
+      }
+      return false
     },
-    getOverlappingTileIds() {
-      const tileIds = new Set<TileId>()
 
-      for (const r of originalRects) {
-        tileIds.add(r.tileId)
-      }
-      for (const r of currentRects) {
-        tileIds.add(r.tileId)
-      }
-      return [...tileIds]
+    getOverlappingTileIds() {
+      const ids = new Set<TileId>()
+      for (const r of originalRects) ids.add(r.tileId)
+      for (const r of currentRects) ids.add(r.tileId)
+      return [...ids]
     },
   }
 }
