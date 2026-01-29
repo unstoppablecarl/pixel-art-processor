@@ -22,7 +22,7 @@ import {
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { useCanvasPaintStore } from '../../../lib/store/canvas-paint-store.ts'
-import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
+import { useUIStore } from '../../../lib/store/ui-store.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
@@ -47,7 +47,8 @@ import NumberInput from '../../UIForms/NumberInput.vue'
 import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 nodeUsesSidebar()
-const store = usePipelineStore()
+const uiStore = useUIStore()
+
 const canvasPaintRef = useTemplateRef<typeof CanvasPaint>('canvasPaintRef')
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
@@ -141,7 +142,7 @@ const localToolManger = useLocalToolManager({
 
 function sync() {
   localToolManger.state.tileSize = tileSize.value
-  localToolManger.state.scale = store.imgScale
+  localToolManger.state.scale = uiStore.imgScale
   localToolManger.state.gridTilesWidth = tileGridManager.tileGrid.value.width
   localToolManger.state.gridTilesHeight = tileGridManager.tileGrid.value.height
   localToolManger.gridRenderer.resize()

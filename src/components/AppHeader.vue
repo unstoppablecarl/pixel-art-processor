@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
+import { useUIStore } from '../lib/store/ui-store.ts'
 
 const store = usePipelineStore()
-
+const uiStore = useUIStore()
 </script>
 <template>
   <nav class="navbar navbar-expand fixed-top shadow border-bottom app-header">
@@ -26,7 +27,7 @@ const store = usePipelineStore()
             class="form-label form-label-sm mb-0 text-nowrap"
             style="width: 50px;"
           >
-            Scale: {{ store.imgScale }}
+            Scale: {{ uiStore.imgScale }}
           </label>
           <input type="range"
                  class="form-range form-range-sm"
@@ -35,7 +36,7 @@ const store = usePipelineStore()
                  max="20"
                  step="1"
                  style="width: 150px;"
-                 v-model.number="store.imgScale"
+                 v-model.number="uiStore.imgScale"
           >
         </div>
       </form>

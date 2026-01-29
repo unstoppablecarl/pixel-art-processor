@@ -26,7 +26,6 @@ type SerializedState = {
   nodes: AnyNodeSerialized[],
   idIncrement: number,
   globalSeed: number,
-  imgScale: number,
 }
 
 export type PipelineStore = ReturnType<typeof usePipelineStore>
@@ -38,13 +37,11 @@ export const usePipelineStore = defineStore('pipeline', () => {
     const nodes = reactive<Record<string, AnyNode>>({})
     const idIncrement = ref(0)
     const globalSeed = ref(3)
-    const imgScale = ref(4)
 
     function $reset() {
       Object.keys(nodes).forEach(key => delete nodes[key])
       idIncrement.value = 0
       globalSeed.value = 3
-      imgScale.value = 4
     }
 
     function $serializeState(): SerializedState {
@@ -52,7 +49,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
         nodes: Object.values(nodes).map(n => n.serialize() as AnyNodeSerialized),
         idIncrement: idIncrement.value,
         globalSeed: globalSeed.value,
-        imgScale: imgScale.value,
       }
     }
 
@@ -60,7 +56,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       data.nodes.forEach(node => loadNode(node))
       idIncrement.value = data.idIncrement ?? 0
       globalSeed.value = data.globalSeed
-      imgScale.value = data.imgScale
     }
 
     watch(globalSeed, () => {
@@ -551,7 +546,6 @@ export const usePipelineStore = defineStore('pipeline', () => {
       nodes,
       idIncrement,
       globalSeed,
-      imgScale,
 
       $reset,
       $serializeState,

@@ -2,10 +2,13 @@
 import { computed } from 'vue'
 import { getValidationErrorComponent } from '../lib/pipeline/errors/errors.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
+import { useUIStore } from '../lib/store/ui-store.ts'
 import { imageDataToUrlImage } from '../lib/util/html-dom/ImageData.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'
 
 const store = usePipelineStore()
+const uiStore = useUIStore()
+
 const {
   imageData,
   label = '',
@@ -20,8 +23,8 @@ const size = computed(() => {
   const height = (imageData?.height ?? placeholderHeight) || rootSize.height || 64
 
   return {
-    width: width * store.imgScale,
-    height: height * store.imgScale,
+    width: width * uiStore.imgScale,
+    height: height * uiStore.imgScale,
   }
 })
 

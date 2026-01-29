@@ -3,6 +3,7 @@ import { computed, onMounted, watch } from 'vue'
 import type { NodeId } from '../lib/pipeline/_types.ts'
 import { isFork } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
+import { useUIStore } from '../lib/store/ui-store.ts'
 import { useSidebar } from '../lib/vue/useSidebar.ts'
 import AppHeader from './AppHeader.vue'
 import CanvasPaintSidebar from './CanvasPaint/components/CanvasPaintSidebar.vue'
@@ -11,6 +12,7 @@ import PipelineBranch from './Processor/PipelineBranch.vue'
 import WangTileGridPatternPreview from './Processor/WangTileGridPatternPreview.vue'
 
 const store = usePipelineStore()
+const uiStore = useUIStore()
 
 const rootNodeIds = computed((): NodeId[] => {
   const root = store.rootNode()
@@ -32,8 +34,8 @@ const rootNodeIds = computed((): NodeId[] => {
 
 const rootSteps = computed(() => rootNodeIds.value.map(id => store.get(id)))
 
-watch(() => store.imgScale, () => {
-  document.documentElement.style.setProperty('--node-img-scale', '' + store.imgScale)
+watch(() => uiStore.imgScale, () => {
+  document.documentElement.style.setProperty('--node-img-scale', '' + uiStore.imgScale)
 }, { immediate: true })
 
 onMounted(() => {
