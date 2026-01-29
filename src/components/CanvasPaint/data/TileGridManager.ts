@@ -26,7 +26,6 @@ export function makeTileGridManager(
   const canvasHeight = computed(() => tileSize.value * gridHeight.value)
 
   function gridPixelToTile(gridPixelX: number, gridPixelY: number) {
-    if (!tileGrid.value) return
     const x = Math.floor(gridPixelX / tileSize.value)
     const y = Math.floor(gridPixelY / tileSize.value)
     const tile = tileGrid.value.get(x, y)
