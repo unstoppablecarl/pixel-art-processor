@@ -1,4 +1,5 @@
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
+import { Tool } from '../CanvasPaint/_canvas-paint-types.ts'
 import type { EditorState } from './EditorState.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { SelectionLocalToolState } from './SelectionLocalToolState.ts'
@@ -50,40 +51,3 @@ export type LocalToolStates = {
 }
 
 export type LocalToolContexts = { [K in Tool]: LocalToolContext<LocalToolStates[K]> }
-
-export enum Tool {
-  BRUSH = 'BRUSH',
-  SELECT = 'SELECT'
-}
-
-export type DrawLayer = (ctx: CanvasRenderingContext2D, offX?: number, offY?: number) => void
-
-export enum BrushMode {
-  ADD = 'ADD',
-  REMOVE = 'REMOVE'
-}
-
-export enum BlendMode {
-  OVERWRITE = 'OVERWRITE',
-  IGNORE_TRANSPARENT = 'IGNORE_TRANSPARENT',
-  IGNORE_SOLID = 'IGNORE_SOLID'
-}
-
-export type Selection = {
-  x: number
-  y: number
-  w: number
-  h: number
-  pixels: ImageData | null
-  offsetX: number
-  offsetY: number
-
-  origX: number
-  origY: number
-  origW: number
-  origH: number
-}
-
-export const DATA_LOCAL_TOOL_ID = 'data-local-tool-id' as const
-
-export const DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK = 'data-exclude-select-cancel-click' as const

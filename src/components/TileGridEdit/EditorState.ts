@@ -1,6 +1,5 @@
 import type { AxialEdgeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { type Selection } from './_canvas-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 
@@ -91,11 +90,6 @@ interface BaseEditorState {
   gridColor: string
   cursorColor: string
 
-  emitSetPixels: ((pixels: { x: number; y: number }[]) => void) | null
-
-  selecting: boolean
-  selectionData: Selection | null
-
   readonly tileSheet: TileSheet
   readonly tileGrid: AxialEdgeWangGrid<number>
   readonly tileGridManager: TileGridManager,
@@ -170,11 +164,6 @@ export function makeEditorState(tileGridManager: TileGridManager): EditorState {
     get shouldDrawGrid() {
       return this.scale > 3
     },
-
-    emitSetPixels: null as ((pixels: { x: number; y: number }[]) => void) | null,
-
-    selecting: false,
-    selectionData: null as null | Selection,
 
     get tileset() {
       return tileGridManager.tileset.value

@@ -2,7 +2,7 @@
 import { onMounted, useTemplateRef, watch } from 'vue'
 import { useCanvasPaintToolStore } from '../../../lib/store/canvas-paint-tool-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { DATA_LOCAL_TOOL_ID } from '../_canvas-editor-types.ts'
+import { DATA_LOCAL_TOOL_ID } from '../../CanvasPaint/_canvas-paint-types.ts'
 import { createTileMouseHandlers } from '../lib/canvas-mouse.ts'
 import { type LocalToolManager } from '../LocalToolManager.ts'
 

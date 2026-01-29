@@ -3,16 +3,15 @@ import { useCanvasPaintToolStore } from '../../lib/store/canvas-paint-tool-store
 import { useUIStore } from '../../lib/store/ui-store.ts'
 import { useDocumentClick } from '../../lib/util/vue-util.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
+import { DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID, Tool } from '../CanvasPaint/_canvas-paint-types.ts'
 import {
   type BaseLocalToolContext,
   CanvasType,
-  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK,
-  DATA_LOCAL_TOOL_ID,
   type LocalToolContext,
   type LocalToolContexts,
   type LocalToolStates,
-  Tool,
-} from './_canvas-editor-types.ts'
+
+} from './_tile-grid-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeEditorState } from './EditorState.ts'
 import { type GlobalToolManager, useGlobalToolManager } from './GlobalToolManager.ts'

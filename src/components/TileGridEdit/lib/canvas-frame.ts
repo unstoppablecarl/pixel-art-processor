@@ -1,6 +1,6 @@
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import type { PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
-import type { DrawLayer } from '../_canvas-editor-types.ts'
+import type { DrawLayer } from '../../CanvasPaint/_canvas-paint-types.ts'
 
 export function renderCanvasFrame(
   pixelCanvas: PixelCanvas | undefined,

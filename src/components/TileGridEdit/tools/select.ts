@@ -1,8 +1,9 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { type BlendFn, blendIgnoreTransparent, blendSourceAlphaOver } from '../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
-import type { LocalToolContext, ToolHandler } from '../_canvas-editor-types.ts'
-import { BlendMode, CanvasType, Tool } from '../_canvas-editor-types.ts'
+import { BlendMode, Tool } from '../../CanvasPaint/_canvas-paint-types.ts'
+import type { LocalToolContext, ToolHandler } from '../_tile-grid-editor-types.ts'
+import { CanvasType } from '../_tile-grid-editor-types.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
 import type { SelectionLocalToolState } from '../SelectionLocalToolState.ts'
 

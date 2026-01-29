@@ -1,5 +1,5 @@
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { LocalToolContext, LocalToolContexts } from '../_canvas-editor-types.ts'
+import type { LocalToolContext, LocalToolContexts } from '../_tile-grid-editor-types.ts'
 import type { GlobalToolManager } from '../GlobalToolManager.ts'
 
 export type CurrentToolRenderer = ReturnType<typeof makeCurrentToolRenderer>

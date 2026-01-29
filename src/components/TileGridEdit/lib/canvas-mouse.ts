@@ -1,7 +1,7 @@
 import type { ShallowRef } from 'vue'
 import type { Position } from '../../../lib/pipeline/_types.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { CanvasType } from '../_canvas-editor-types.ts'
+import { CanvasType } from '../_tile-grid-editor-types.ts'
 import type { LocalToolManager } from '../LocalToolManager.ts'
 
 export function createTileMouseHandlers(

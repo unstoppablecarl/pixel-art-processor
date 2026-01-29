@@ -20,7 +20,7 @@ import {
 } from '../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from './_canvas-editor-types.ts'
+import { BlendMode } from '../CanvasPaint/_canvas-paint-types.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { EditorState } from './EditorState.ts'
 import type { GlobalToolContext } from './GlobalToolManager.ts'

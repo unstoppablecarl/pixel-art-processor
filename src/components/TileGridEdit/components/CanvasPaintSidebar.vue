@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useCanvasPaintToolStore } from '../../../lib/store/canvas-paint-tool-store.ts'
+import { Tool } from '../../CanvasPaint/_canvas-paint-types.ts'
 import ToolButton from '../../UI/ToolButton.vue'
-import { Tool } from '../_canvas-editor-types.ts'
 import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
 import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 

@@ -1,7 +1,8 @@
 import { watchEffect } from 'vue'
 import { type CanvasPaintToolStore, useCanvasPaintToolStore } from '../../lib/store/canvas-paint-tool-store.ts'
 import { bindInputKey, type InputBindings } from '../../lib/util/html-dom/keyboard.ts'
-import { BlendMode, type LocalToolContext, Tool } from './_canvas-editor-types.ts'
+import { BlendMode, Tool } from '../CanvasPaint/_canvas-paint-types.ts'
+import { type LocalToolContext } from './_tile-grid-editor-types.ts'
 import { BrushShape, type BrushToolHandler, makeBrushTool } from './tools/brush.ts'
 import { makeSelectTool, type SelectToolHandler } from './tools/select.ts'
 

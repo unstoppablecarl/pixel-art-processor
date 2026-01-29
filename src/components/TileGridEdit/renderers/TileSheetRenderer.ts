@@ -1,6 +1,7 @@
 import { putImageDataScaled } from '../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
-import { type LocalToolStates, Tool } from '../_canvas-editor-types.ts'
+import { Tool } from '../../CanvasPaint/_canvas-paint-types.ts'
+import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 import { renderCanvasFrame } from '../lib/canvas-frame.ts'
 import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'

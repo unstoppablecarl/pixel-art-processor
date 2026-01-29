@@ -2,7 +2,7 @@ import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../lib/util/data/Grid.ts'
 import { RGBA_WHITE } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { CanvasType, type LocalToolContext, type ToolHandler } from '../_canvas-editor-types.ts'
+import { CanvasType, type LocalToolContext, type ToolHandler } from '../_tile-grid-editor-types.ts'
 import type { EditorState } from '../EditorState.ts'
 import type { GlobalToolContext } from '../GlobalToolManager.ts'
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
-import { DATA_LOCAL_TOOL_ID } from '../_canvas-editor-types.ts'
+import { DATA_LOCAL_TOOL_ID } from '../../CanvasPaint/_canvas-paint-types.ts'
 import { createGridMouseHandlers } from '../lib/canvas-mouse.ts'
 import { type LocalToolManager } from '../LocalToolManager.ts'
 

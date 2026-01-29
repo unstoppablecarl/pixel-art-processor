@@ -1,7 +1,7 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { getRectsBounds } from '../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { CanvasType } from '../_canvas-editor-types.ts'
+import { CanvasType } from '../_tile-grid-editor-types.ts'
 
 export type BaseTileSheetRect = {
   readonly tileId: TileId,

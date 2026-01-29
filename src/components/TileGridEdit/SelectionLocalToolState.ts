@@ -1,7 +1,8 @@
 import type { RectBounds } from '../../lib/util/data/Bounds.ts'
 import { extractImageData } from '../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode, CanvasType } from './_canvas-editor-types.ts'
+import { BlendMode } from '../CanvasPaint/_canvas-paint-types.ts'
+import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { EditorState } from './EditorState.ts'
 import {

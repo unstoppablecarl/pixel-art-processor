@@ -1,4 +1,4 @@
-import type { LocalToolContext, ToolInputBindings } from '../../../components/TileGridEdit/_canvas-editor-types.ts'
+import type { LocalToolContext, ToolInputBindings } from '../../../components/TileGridEdit/_tile-grid-editor-types.ts'
 import { tinykeys } from './tinykey.ts'
 
 export type InputBindings = Record<string, (event: KeyboardEvent) => void>
