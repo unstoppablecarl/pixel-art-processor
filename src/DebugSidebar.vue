@@ -7,8 +7,9 @@ const store = useUIStore()
 const debug = useDebugSidebar()
 const canvasRef = useTemplateRef('canvasRef')
 
+const data = debug.data
+
 onMounted(() => {
-  console.log("debug sidebar mounted canvas.value",canvasRef.value)
   debug.setCanvas(canvasRef.value!)
 })
 </script>
@@ -26,11 +27,9 @@ onMounted(() => {
     </button>
     <div class="sidebar-content">
       <div><small>Debug Sidebar</small></div>
-      <template>
-        <div v-for="(item, key) in debug.data.value">
-          <strong>{{ key }}:</strong> {{ item }}
-        </div>
-      </template>
+      <div v-for="(item, key) in data">
+        <strong>{{ key }}:</strong> {{ item }}
+      </div>
       <canvas
         ref="canvasRef"
         id="debug-canvas"
