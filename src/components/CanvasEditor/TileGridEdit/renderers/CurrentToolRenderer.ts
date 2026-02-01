@@ -6,30 +6,30 @@ export type CurrentToolRenderer = ReturnType<typeof makeCurrentToolRenderer>
 
 export function makeCurrentToolRenderer(
   {
-    globalToolManager,
+    toolset,
     localToolContexts,
   }: {
-    globalToolManager: TileGridToolset,
+    toolset: TileGridToolset,
     localToolContexts: LocalToolContexts
   }) {
 
   return {
     gridPixelOverlayDraw(ctx: CanvasRenderingContext2D) {
-      const localTool = localToolContexts[globalToolManager.currentTool] as LocalToolContext<any>
-      globalToolManager.currentToolHandler.gridPixelOverlayDraw?.(localTool, ctx)
+      const localTool = localToolContexts[toolset.currentTool] as LocalToolContext<any>
+      toolset.currentToolHandler.gridPixelOverlayDraw?.(localTool, ctx)
     },
     gridScreenOverlayDraw(ctx: CanvasRenderingContext2D) {
-      const localTool = localToolContexts[globalToolManager.currentTool] as LocalToolContext<any>
-      globalToolManager.currentToolHandler.gridScreenOverlayDraw?.(localTool, ctx)
+      const localTool = localToolContexts[toolset.currentTool] as LocalToolContext<any>
+      toolset.currentToolHandler.gridScreenOverlayDraw?.(localTool, ctx)
     },
 
     tilePixelOverlayDraw(ctx: CanvasRenderingContext2D, tileId: TileId) {
-      const localTool = localToolContexts[globalToolManager.currentTool] as LocalToolContext<any>
-      globalToolManager.currentToolHandler.tilePixelOverlayDraw?.(localTool, ctx, tileId)
+      const localTool = localToolContexts[toolset.currentTool] as LocalToolContext<any>
+      toolset.currentToolHandler.tilePixelOverlayDraw?.(localTool, ctx, tileId)
     },
     tileScreenOverlayDraw(ctx: CanvasRenderingContext2D, tileId: TileId) {
-      const localTool = localToolContexts[globalToolManager.currentTool] as LocalToolContext<any>
-      globalToolManager.currentToolHandler.tileScreenOverlayDraw?.(localTool, ctx, tileId)
+      const localTool = localToolContexts[toolset.currentTool] as LocalToolContext<any>
+      toolset.currentToolHandler.tileScreenOverlayDraw?.(localTool, ctx, tileId)
     },
 
   }

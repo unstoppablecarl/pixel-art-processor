@@ -740,7 +740,10 @@ export type InitializedNode<
   | InitializedForkNode<C, SC, RC, Extract<M, AnyForkMeta<any, any>>>
   | InitializedBranchNode<C, SC, RC, Extract<M, AnyBranchMeta<any, any>>>
 
-export type AnyInitializedNode = InitializedNode<any, any, any>
+export type AnyInitializedNode =
+  | InitializedStepNode<any, any, any, any>
+  | InitializedForkNode<any, any, any, any>
+  | InitializedBranchNode<any, any, any, any>
 
 export type AnyNodeSerialized = AnyStepNodeSerialized | AnyForkNodeSerialized | AnyBranchNodeSerialized
 

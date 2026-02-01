@@ -1,10 +1,9 @@
 import type { AxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { BaseEditorState } from '../_canvas-editor-types.ts'
+import type { BaseEditorState } from '../_core-editor-types.ts'
+import { type BaseEditorSettings, makeBaseEditorState } from '../BaseEditorState.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileSheet } from './data/TileSheet.ts'
-
-let id = 0
 
 export type TileGridEditorState =
   BaseEditorState &
@@ -51,7 +50,6 @@ type MouseGridState =
 }
 
 interface BaseTileGridEditorState {
-  id: number
 
   gridTilesWidth: number
   gridTilesHeight: number
@@ -90,7 +88,6 @@ interface BaseTileGridEditorState {
   dragStartTileId: TileId | null
 
   gridColor: string
-  cursorColor: string
 
   readonly tileSheet: TileSheet
   readonly tileGrid: AxialEdgeWangGrid<number>
@@ -100,10 +97,16 @@ interface BaseTileGridEditorState {
   tileMarginCopySize: number
 }
 
-export function makeTileGridEditorState(tileGridManager: TileGridManager): TileGridEditorState {
-  return {
-    id: id++,
+export function makeTileGridEditorState(
+  settings: BaseEditorSettings & {
+    tileGridManager: TileGridManager
+  },
+): TileGridEditorState {
 
+  const tileGridManager = settings.tileGridManager
+
+  return {
+    ...makeBaseEditorState(settings),
     gridTilesWidth: 1,
     gridTilesHeight: 1,
 
@@ -131,8 +134,6 @@ export function makeTileGridEditorState(tileGridManager: TileGridManager): TileG
 
     drawTileIds: true,
 
-    scale: 8,
-
     // only when mouse over grid
     mouseGridX: null,
     mouseGridY: null,
@@ -147,21 +148,10 @@ export function makeTileGridEditorState(tileGridManager: TileGridManager): TileG
     hoverTilePixelX: null,
     hoverTilePixelY: null,
 
-    mouseLastX: null,
-    mouseLastY: null,
-
-    mouseDownX: null,
-    mouseDownY: null,
-
     mouseDragStartX: null,
     mouseDragStartY: null,
 
-    isDragging: false,
-    dragThreshold: 2,
     dragStartTileId: null,
-
-    gridColor: 'rgba(0, 0, 0, 0.2)',
-    cursorColor: 'rgba(0, 255, 255, 1)',
 
     get shouldDrawGrid() {
       return this.scale > 3

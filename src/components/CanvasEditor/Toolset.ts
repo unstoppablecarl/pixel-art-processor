@@ -1,44 +1,37 @@
 import { watchEffect } from 'vue'
-import { type CanvasPaintToolStore, useGlobalToolContext } from '../../lib/store/canvas-paint-tool-store.ts'
-import { bindInputKey, type InputBindings } from '../../lib/util/html-dom/keyboard.ts'
-import type { LocalToolContext, ToolHandler } from './TileGridEdit/_tile-grid-editor-types.ts'
-import { Tool, type ToolRegistry } from './_canvas-editor-types.ts'
+import { type CanvasEditToolStore, type GlobalToolContext } from '../../lib/store/canvas-edit-tool-store.ts'
+import { type BaseToolHandler, Tool, type ToolRegistry } from './_core-editor-types.ts'
 
-const noop = () => {
+export type Toolset<
+  TTools extends ToolRegistry<BaseToolHandler<any, any>>
+> = {
+  tools: TTools
+  toolContext: GlobalToolContext
+  readonly currentTool: Tool
+  readonly currentToolHandler: TTools[Tool]
+  setTool: (tool: Tool) => void
+  setActiveLocal: (local: any) => void
+  readonly activeLocal: any
 }
-export type Toolset = ReturnType<typeof makeToolset>
 
-type ToolHandlers = ToolRegistry<ToolHandler<any>>
-
-export function makeToolset<T extends ToolHandlers>(store: CanvasPaintToolStore, tools: T) {
-  let removeKeys = noop
-  const toolContext = useGlobalToolContext(store)
+export function makeToolset<
+  TTools extends ToolRegistry<BaseToolHandler<any, any>>
+>(
+  store: CanvasEditToolStore,
+  tools: TTools,
+  toolContext: GlobalToolContext,
+): Toolset<TTools> {
   let currentTool: Tool = store.currentTool
-  let activeLocal: LocalToolContext<any> | null = null
+  let activeLocal: any = null
 
   function setTool(tool: Tool) {
     if (activeLocal) {
       tools[currentTool]?.onDeselect?.(activeLocal)
     }
-    removeKeys()
-
     currentTool = tool
     if (activeLocal) {
       tools[currentTool]?.onSelect?.(activeLocal)
     }
-    removeKeys = installKeybindings()
-  }
-
-  function installKeybindings() {
-    const bindings = tools[currentTool]?.inputBindings
-    if (!bindings) return noop
-
-    const wrapped: InputBindings = {}
-    for (const key in bindings) {
-      wrapped[key] = (e) => bindings[key](activeLocal!, e)
-    }
-
-    return bindInputKey(wrapped)
   }
 
   watchEffect(() => setTool(store.currentTool))
@@ -53,11 +46,19 @@ export function makeToolset<T extends ToolHandlers>(store: CanvasPaintToolStore,
       return tools[currentTool]
     },
     setTool,
-    setActiveLocal: (local: LocalToolContext<any>) => {
+    setActiveLocal: (local: any) => {
       activeLocal = local
     },
     get activeLocal() {
       return activeLocal
     },
   }
+}
+
+export function makeLocalToolContexts<B, S extends ToolRegistry<any>>(baseLocalToolContext: B, localToolStates: S) {
+  return Object.fromEntries(
+    Object.entries(localToolStates).map(([key, val]) => {
+      return [key as Tool, { ...baseLocalToolContext, toolState: localToolStates[key as Tool] }]
+    }),
+  )
 }

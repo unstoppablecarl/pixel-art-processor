@@ -1,17 +1,20 @@
-import type { GlobalToolContext } from '../../../../lib/store/canvas-paint-tool-store.ts'
-import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
-import { type BlendFn, blendIgnoreTransparent, blendSourceAlphaOver } from '../../../../lib/util/html-dom/blit.ts'
+import type { GlobalToolContext } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
-import { BlendMode, Tool } from '../../_canvas-editor-types.ts'
-import type { LocalToolContext, ToolHandler } from '../_tile-grid-editor-types.ts'
+import { type BaseSelectToolHandler, BlendMode, Tool } from '../../_core-editor-types.ts'
+import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/selection-helpers.ts'
+import type {
+  TileGridEditorToolHandlerArgs,
+  TileGridEditorToolHandlerRender,
+  LocalToolContext,
+} from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
-import type { SelectionLocalToolState } from '../SelectionLocalToolState.ts'
+import type { TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
 
-export type SelectToolHandler<T = SelectionLocalToolState> = ToolHandler<T> & {
-  onModeChanged?: (local: LocalToolContext<T>, newMode: SelectionMode) => void,
-}
+export type TileGridSelectToolHandler<L = LocalToolContext<TileGridSelectionToolState>> =
+  BaseSelectToolHandler<L, TileGridEditorToolHandlerArgs>
+  & TileGridEditorToolHandlerRender<L>
 
-export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandler {
+export function makeSelectTool(toolContext: GlobalToolContext): TileGridSelectToolHandler {
 
   return {
     onGlobalToolChanging({ toolState }, oldTool, _newTool) {
@@ -19,22 +22,6 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
         // optional: commit on tool change
       }
     },
-
-    // onDeselect({ gridRenderer, toolState, tileSheetWriter }) {
-    //   const ts = toolState
-    //   const sel = ts.selection
-    //   if (!sel?.pixels) return
-    //
-    //   const affectedTileIds = tileSheetWriter.blendGridImageData(
-    //     sel.pixels,
-    //     sel.x!,
-    //     sel.y!,
-    //     toolContext.selectMoveBlendMode,
-    //   )
-    //
-    //   gridRenderer.queueRenderTiles(affectedTileIds)
-    //   gridRenderer.queueRenderGrid()
-    // },
     onModeChanged({ toolState }) {
       toolState.draw()
     },
@@ -255,22 +242,4 @@ export function makeSelectTool(toolContext: GlobalToolContext): SelectToolHandle
       }
     },
   }
-}
-
-const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn | undefined> = {
-  [BlendMode.OVERWRITE]: undefined,
-  [BlendMode.IGNORE_TRANSPARENT]: blendIgnoreTransparent,
-  [BlendMode.IGNORE_SOLID]: blendSourceAlphaOver(0.5),
-}
-
-function drawSelectOutline(ctx: CanvasRenderingContext2D, scale: number, rect: RectBounds) {
-  const { x, y, w, h } = rect
-  ctx.strokeStyle = 'cyan'
-  ctx.lineWidth = 1
-  ctx.strokeRect(
-    x * scale - 0.5,
-    y * scale - 0.5,
-    w * scale + 1,
-    h * scale + 1,
-  )
 }

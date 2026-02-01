@@ -1,11 +1,11 @@
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
-import { Tool } from '../../_canvas-editor-types.ts'
+import { Tool } from '../../_core-editor-types.ts'
 import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { renderCanvasFrame } from '../lib/canvas-frame.ts'
+import { renderCanvasFrame } from '../../_support/canvas-frame.ts'
 import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
-import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
+import type { PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
 
 export type TileSheetRenderer = ReturnType<typeof makeTileSheetRenderer>
 
@@ -68,7 +68,7 @@ export function makeTileSheetRenderer(
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
 
       const { scale, tileSize } = state
-      gridCache.drawGrid(ctx)
+      gridCache.draw(ctx)
       if (state.drawTileIds) {
         state.tileSheet.each((tileX, tileY, tile) => {
           const x = tileX * tileSize * scale

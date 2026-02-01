@@ -1,0 +1,104 @@
+import type { Ref } from 'vue'
+
+export enum Tool {
+  BRUSH = 'BRUSH',
+  SELECT = 'SELECT'
+}
+
+export type DrawLayer = (ctx: CanvasRenderingContext2D, offX?: number, offY?: number) => void
+
+export enum BrushShape {
+  CIRCLE = 'CIRCLE',
+  SQUARE = 'SQUARE'
+}
+
+export enum BrushMode {
+  ADD = 'ADD',
+  REMOVE = 'REMOVE'
+}
+
+export enum BlendMode {
+  OVERWRITE = 'OVERWRITE',
+  IGNORE_TRANSPARENT = 'IGNORE_TRANSPARENT',
+  IGNORE_SOLID = 'IGNORE_SOLID'
+}
+
+export const DATA_LOCAL_TOOL_ID = 'data-local-tool-id' as const
+export const DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK = 'data-exclude-select-cancel-click' as const
+
+export type ToolRegistry<T> = {
+  [K in keyof typeof Tool]: T
+}
+
+export interface BaseEditorState {
+  scale: number,
+
+  gridColor: string,
+
+  mouseX: number | null,
+  mouseY: number | null,
+
+  mouseLastX: number | null,
+  mouseLastY: number | null,
+
+  mouseDownX: number | null,
+  mouseDownY: number | null,
+
+  mouseDragStartX: number | null,
+  mouseDragStartY: number | null,
+  isDragging: boolean,
+  dragThreshold: number,
+
+  get shouldDrawGrid(): boolean
+}
+
+export type BaseToolMouseHandlers = {
+  handleMouseMove?: (e: MouseEvent) => void,
+  handleMouseDown?: (e: MouseEvent) => void,
+  handleMouseUp?: (e: MouseEvent) => void,
+  handleMouseLeave?: (e: MouseEvent) => void,
+  handleMouseEnter?: (e: MouseEvent) => void,
+}
+
+export type BaseToolManager<TArgs extends any[] = []> = {
+  id: string,
+  onMouseMove: (x: number, y: number, ...args: TArgs) => void,
+  onMouseDown: (x: number, y: number, ...args: TArgs) => void,
+  onMouseUp: (x: number, y: number, ...args: TArgs) => void,
+  onMouseLeave: (...args: TArgs) => void,
+  onGlobalToolChanging: (newTool: Tool, prevTool: Tool | null) => void,
+}
+
+export type BaseToolHandler<L, TArgs extends any[] = []> = {
+  onMouseMove?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onMouseDown?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onMouseUp?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onMouseLeave?: (local: L, ...args: TArgs) => void,
+
+  onDragStart?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onDragMove?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onDragEnd?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onClick?: (local: L, x: number, y: number, ...args: TArgs) => void,
+
+  onSelect?: (local: L) => void,
+  onDeselect?: (local: L) => void,
+
+  onGlobalToolChanging?: (local: L, newTool: Tool, prevTool: Tool | null) => void,
+}
+
+export type BaseBrushToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
+  onModeChanged?: (local: L, newMode: BrushMode) => void,
+}
+
+export type BaseSelectToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
+  onModeChanged?: (local: L, newMode: SelectionMode) => void,
+}
+
+export const defineToolManager = <TArgs extends any[]>() =>
+  <T extends BaseToolManager<TArgs>>(toolset: T) => toolset;
+
+export type BaseToolManagerSettings = {
+  id: string,
+  scale?: Ref<number>,
+  gridColor: Ref<string>,
+}

@@ -1,8 +1,9 @@
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseToolHandler, Tool } from '../_canvas-editor-types.ts'
+import { Tool } from '../_core-editor-types.ts'
+import type { BrushToolState } from '../_support/BrushToolState.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
-import type { SelectionLocalToolState } from './SelectionLocalToolState.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
+import type { TileGridSelectionToolState } from './TileGridSelectionToolState.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
 export enum CanvasType {
@@ -22,17 +23,19 @@ export type LocalToolContext<T> = BaseLocalToolContext & {
 
 export type ToolInputBindings<T> = Record<string, (local: LocalToolContext<T>, event: KeyboardEvent) => void>
 
-export type ToolHandler<T> = BaseToolHandler<T> & {
-  gridPixelOverlayDraw?: (local: LocalToolContext<T>, ctx: CanvasRenderingContext2D) => void,
-  gridScreenOverlayDraw?: (local: LocalToolContext<T>, ctx: CanvasRenderingContext2D) => void,
+export type TileGridEditorToolHandlerArgs = [canvasType: CanvasType, tileId?: TileId]
 
-  tilePixelOverlayDraw?: (local: LocalToolContext<T>, ctx: CanvasRenderingContext2D, tileId: TileId) => void,
-  tileScreenOverlayDraw?: (local: LocalToolContext<T>, ctx: CanvasRenderingContext2D, tileId: TileId) => void,
+export type TileGridEditorToolHandlerRender<L> = {
+  gridPixelOverlayDraw?: (local: L, ctx: CanvasRenderingContext2D) => void,
+  gridScreenOverlayDraw?: (local: L, ctx: CanvasRenderingContext2D) => void,
+
+  tilePixelOverlayDraw?: (local: L, ctx: CanvasRenderingContext2D, tileId: TileId) => void,
+  tileScreenOverlayDraw?: (local: L, ctx: CanvasRenderingContext2D, tileId: TileId) => void,
 }
 
 export type LocalToolStates = {
-  [Tool.BRUSH]: {},
-  [Tool.SELECT]: SelectionLocalToolState
+  [Tool.BRUSH]: BrushToolState,
+  [Tool.SELECT]: TileGridSelectionToolState
 }
 
 export type LocalToolContexts = { [K in Tool]: LocalToolContext<LocalToolStates[K]> }

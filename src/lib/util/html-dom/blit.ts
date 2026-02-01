@@ -45,6 +45,10 @@ export const blendSourceAlphaOver = (alpha: number): BlendFn => (src, dst) => {
   } as RGBAFloat
 }
 
+export const blendOverwrite: BlendFn = (src, dst) => {
+  return { r: src.r, g: src.g, b: src.b, a: src.a } as RGBAFloat
+}
+
 export const blendSourceOver: BlendFn = blendSourceAlphaOver(1)
 
 export const blendIgnoreTransparent: BlendFn = (src, dst) => {

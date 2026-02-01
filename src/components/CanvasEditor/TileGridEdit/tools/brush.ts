@@ -1,22 +1,26 @@
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { GlobalToolContext } from '../../../../lib/store/canvas-paint-tool-store.ts'
+import type { GlobalToolContext } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import { RGBA_WHITE } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { CanvasType, type LocalToolContext, type ToolHandler } from '../_tile-grid-editor-types.ts'
+import { type BaseBrushToolHandler, BrushShape } from '../../_core-editor-types.ts'
+import { useBrushCursor } from '../../_support/BrushCursor.ts'
+import type { BrushToolState } from '../../_support/BrushToolState.ts'
+import {
+  CanvasType,
+  type LocalToolContext,
+  type TileGridEditorToolHandlerArgs,
+  type TileGridEditorToolHandlerRender,
+} from '../_tile-grid-editor-types.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 
-export enum BrushShape {
-  CIRCLE = 'CIRCLE',
-  SQUARE = 'SQUARE'
-}
+export type TileGridBrushToolHandler<L = LocalToolContext<BrushToolState>> =
+  BaseBrushToolHandler<L, TileGridEditorToolHandlerArgs>
+  & TileGridEditorToolHandlerRender<L>
 
-export type BrushToolHandler<LocalToolState = {}> = ToolHandler<LocalToolState> & {
-  onModeChanged?: (local: LocalToolContext<LocalToolState>, newMode: SelectionMode) => void,
-}
-
-export function makeBrushTool(toolContext: GlobalToolContext): BrushToolHandler {
+export function makeBrushTool(toolContext: GlobalToolContext): TileGridBrushToolHandler {
   let isDrawing = false
+  const cursor = useBrushCursor()
 
   function getBrushPixels(
     x: number,
@@ -60,10 +64,6 @@ export function makeBrushTool(toolContext: GlobalToolContext): BrushToolHandler 
   }
 
   return {
-    inputBindings: {
-      '[': () => toolContext.decreaseBrushSize(),
-      ']': () => toolContext.increaseBrushSize(),
-    },
     onMouseDown: ({ state, tileSheetWriter }, x, y, canvasType, tileId) => {
       isDrawing = true
       writeBrushAt(state, tileSheetWriter, canvasType, x, y, tileId)
@@ -119,24 +119,18 @@ export function makeBrushTool(toolContext: GlobalToolContext): BrushToolHandler 
     onMouseLeave({ gridRenderer }, canvasType, tileId) {
       gridRenderer.queueRenderAll()
     },
-    gridScreenOverlayDraw({ state, gridRenderer }, ctx: CanvasRenderingContext2D) {
+    gridScreenOverlayDraw({ state, toolState }, ctx: CanvasRenderingContext2D) {
       if (state.hoverTileId === null) return
       const { scale, tileGrid, tileSize, hoverTilePixelX, hoverTilePixelY } = state
-      const { brushSize } = toolContext
-
-      const cx = Math.floor(brushSize / 2)
 
       tileGrid.eachWithTileId(state.hoverTileId, (x, y, v) => {
-        const screenX = (x * tileSize + hoverTilePixelX! - cx) * scale
-        const screenY = (y * tileSize + hoverTilePixelY! - cx) * scale
-        ctx.drawImage(
-          gridRenderer.cursor.canvas,
-          Math.floor(screenX),
-          Math.floor(screenY),
-        )
+        const screenX = (x * tileSize + hoverTilePixelX!) * scale
+        const screenY = (y * tileSize + hoverTilePixelY!) * scale
+
+        cursor.draw(ctx, screenX, screenY)
       })
     },
-    tileScreenOverlayDraw({ state, gridRenderer }, ctx, tileId) {
+    tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
       if (tileId !== state.hoverTileId) return
 
       const x = state.hoverTilePixelX
@@ -144,18 +138,8 @@ export function makeBrushTool(toolContext: GlobalToolContext): BrushToolHandler 
       if (x == null || y == null) return
 
       const { scale } = state
-      const { brushSize } = toolContext
 
-      const cx = Math.floor(brushSize / 2)
-
-      const screenX = (x - cx) * scale
-      const screenY = (y - cx) * scale
-
-      ctx.drawImage(
-        gridRenderer.cursor.canvas,
-        Math.floor(screenX),
-        Math.floor(screenY),
-      )
+      cursor.draw(ctx, x, y, scale)
     },
   }
 }

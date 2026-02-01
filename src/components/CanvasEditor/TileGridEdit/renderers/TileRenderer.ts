@@ -1,9 +1,9 @@
 import { drawText, makePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../lib/canvas-frame.ts'
+import { makeRenderQueue, renderCanvasFrame } from '../../_support/canvas-frame.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
-import type { PixelGridLineRenderer } from './PixelGridLineRenderer.ts'
+import type { PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
 
@@ -41,7 +41,7 @@ export function makeTileRenderer(
       },
       (ctx) => {
         if (state.shouldDrawGrid) {
-          gridCache.drawGrid(ctx)
+          gridCache.draw(ctx)
         }
         if (state.drawTileIds) {
           const tile = state.tileset.byId.get(tileId)!

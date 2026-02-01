@@ -1,8 +1,25 @@
-import type { BaseEditorState } from './_canvas-editor-types.ts'
+import { ref, type Ref } from 'vue'
+import type { BaseEditorState } from './_core-editor-types.ts'
 
-export function makeBaseEditorState(): BaseEditorState {
+export type BaseEditorSettings = {
+  gridColor?: Ref<string>,
+  scale?: Ref<number>
+}
+
+export function makeBaseEditorState(
+  {
+    scale = ref(1),
+    gridColor = ref('rgba(0, 0, 0, 0.2)'),
+  }: BaseEditorSettings,
+): BaseEditorState {
+
   return {
-    scale: 4,
+    get scale() {
+      return scale.value
+    },
+
+    mouseX: null,
+    mouseY: null,
 
     mouseLastX: null,
     mouseLastY: null,
@@ -16,8 +33,10 @@ export function makeBaseEditorState(): BaseEditorState {
     isDragging: false,
     dragThreshold: 2,
 
-    gridColor: 'rgba(0, 0, 0, 0.2)',
-    cursorColor: 'rgba(0, 255, 255, 1)',
+    // @TODO remove these and sync manually this wont work
+    get gridColor() {
+      return gridColor.value
+    },
 
     get shouldDrawGrid() {
       return this.scale > 3

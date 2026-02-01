@@ -1,16 +1,11 @@
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { Direction } from '../../../lib/pipeline/_types.ts'
-import type { GlobalToolContext } from '../../../lib/store/canvas-paint-tool-store.ts'
+import type { GlobalToolContext } from '../../../lib/store/canvas-edit-tool-store.ts'
 import {
   getPointsInEdgeMargins,
   mirrorTilePixelHorizontal,
   mirrorTilePixelVertical,
 } from '../../../lib/util/data/Grid.ts'
-import {
-  blendImageDataIgnoreSolid,
-  blendImageDataIgnoreTransparent,
-  type ImageDataBlendFn,
-} from '../../../lib/util/html-dom/blit.ts'
 import {
   clearImageDataRect,
   extractImageData,
@@ -21,11 +16,12 @@ import {
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from '../_canvas-editor-types.ts'
+import { BlendMode } from '../_core-editor-types.ts'
+import { selectMoveBlendModeToWriter } from '../_support/selection-helpers.ts'
 import type { TileSheet } from './data/TileSheet.ts'
-import type { TileGridEditorState } from './TileGridEditorState.ts'
 import type { SelectionTileSheetRect, TileSheetSelection } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
+import type { TileGridEditorState } from './TileGridEditorState.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
 
@@ -51,12 +47,6 @@ export function makeTileSheetWriter(
     const { x, y } = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
     setImageDataPixelColor(state.tileSheet.imageData, x, y, color)
     state.tileSheet.markDirty()
-  }
-
-  const selectMoveBlendModeToWriter: Record<BlendMode, ImageDataBlendFn> = {
-    [BlendMode.OVERWRITE]: writeImageData,
-    [BlendMode.IGNORE_TRANSPARENT]: blendImageDataIgnoreTransparent,
-    [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
   }
 
   function blendTileSheetRectFromGrid(

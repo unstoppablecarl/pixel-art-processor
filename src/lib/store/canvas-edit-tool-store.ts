@@ -1,8 +1,7 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
-import { BlendMode, BrushMode, Tool } from '../../components/CanvasEditor/_canvas-editor-types.ts'
-import { BrushShape } from '../../components/CanvasEditor/TileGridEdit/tools/brush.ts'
+import { BlendMode, BrushMode, BrushShape, Tool } from '../../components/CanvasEditor/_core-editor-types.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
 import { makeStateMapper } from './_store-helpers.ts'
 
@@ -13,13 +12,13 @@ type SerializedData = {
   brushMode: BrushMode,
   primaryColor: RGBA,
   brushSize: number,
-
+  cursorColor: string,
   selectMoveBlendMode: BlendMode,
   tileMarginCopySize: number,
 }
 
-export type CanvasPaintToolStore = ReturnType<typeof useCanvasPaintToolStore>
-export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
+export type CanvasEditToolStore = ReturnType<typeof useCanvasEditToolStore>
+export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const currentTool = ref<Tool>(Tool.BRUSH)
 
   const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
@@ -35,6 +34,7 @@ export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
   const brushBitMaskColor = computed(() => brushMode.value === BrushMode.ADD ? RGBA_WHITE : RGBA_ERASE)
 
   const tileMarginCopySize = ref<number>(1)
+  const cursorColor = ref('cyan')
 
   const mapper = makeStateMapper<SerializedData>(
     {
@@ -43,6 +43,7 @@ export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
       brushShape,
       brushMode,
       brushSize,
+      cursorColor,
       selectMoveBlendMode,
       tileMarginCopySize,
     },
@@ -51,6 +52,7 @@ export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
       primaryColor: RGBA_WHITE,
       brushShape: BrushShape.CIRCLE,
       brushMode: BrushMode.ADD,
+      cursorColor: 'cyan',
       brushSize: 10,
       selectMoveBlendMode: BlendMode.IGNORE_TRANSPARENT,
       tileMarginCopySize: 1,
@@ -79,6 +81,7 @@ export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
     currentTool,
     primaryColor,
 
+    cursorColor,
     brushShape,
     brushMode,
     brushSize,
@@ -93,10 +96,9 @@ export const useCanvasPaintToolStore = defineStore('canvas-paint', () => {
   persist: true,
 })
 
-
 export type GlobalToolContext = ReturnType<typeof useGlobalToolContext>
 
-export function useGlobalToolContext(store: CanvasPaintToolStore = useCanvasPaintToolStore()) {
+export function useGlobalToolContext(store: CanvasEditToolStore = useCanvasEditToolStore()) {
 
   return {
     get brushSize() {

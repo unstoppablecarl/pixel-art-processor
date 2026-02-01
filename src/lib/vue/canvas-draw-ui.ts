@@ -14,14 +14,6 @@ export const DEFAULT_SHOW_GRID = create({
   },
 })
 
-export const DEFAULT_SHOW_CURSOR = create({
-  label: 'Cursor',
-  CONFIG: {
-    showCursor: true,
-    showCursorColor: 'rgba(0, 255, 255, 1)',
-  },
-})
-
 export function canvasDrawCheckboxColors<T extends Record<string, unknown>>(
   config: T,
 ): CheckboxColorListItem[] {

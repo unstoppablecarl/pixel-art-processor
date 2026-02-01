@@ -95,3 +95,8 @@ body {
 .vr {
   opacity: 0;
 }
+
+.canvas-pixel-draw {
+  image-rendering: pixelated;
+  cursor: crosshair;
+}

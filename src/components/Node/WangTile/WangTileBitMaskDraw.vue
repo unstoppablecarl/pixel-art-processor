@@ -16,7 +16,7 @@ export const STEP_META = defineStep({
 import {
   computed, onMounted,
   type Reactive,
-  ref,
+  ref, toRef,
   useTemplateRef, watchEffect,
 } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
@@ -24,7 +24,7 @@ import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHan
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
-import { canvasDrawCheckboxColors, DEFAULT_SHOW_CURSOR, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
+import { canvasDrawCheckboxColors, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { useInterval } from '../../../lib/vue/component-interval.ts'
 import { useDebugSidebar } from '../../../lib/vue/debug-sidebar.ts'
 import {
@@ -38,8 +38,7 @@ import {
   deserializeTileSheet,
   type SerializedTileSheet,
 } from '../../CanvasEditor/TileGridEdit/data/TileSheet.ts'
-import { useLocalToolManager } from '../../CanvasEditor/TileGridEdit/LocalToolManager.ts'
-
+import { useTileGridController } from '../../CanvasEditor/TileGridEdit/TileGridController.ts'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
@@ -57,7 +56,6 @@ type Config = ReturnType<typeof CONFIG_DEFAULTS>
 const CONFIG_DEFAULTS = () => (
   {
     ...DEFAULT_SHOW_GRID.CONFIG,
-    ...DEFAULT_SHOW_CURSOR.CONFIG,
     activeTabIndex: 0,
     tileSize: 64,
 
@@ -118,13 +116,13 @@ const handler = defineStepHandler<Config>(STEP_META, {
   async run() {
     // const imageData = maskImageData.get()
     // if (imageData === null) return
-    //
+
     // const bitMask = BitMask.fromImageData(imageData)
-    //
-    // return {
-    //   preview: imageData,
-    //   output: bitMask,
-    // }
+
+    return {
+      // preview: imageData,
+      // output: bitMask,
+    }
   },
 })
 
@@ -135,9 +133,10 @@ if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
 
-const localToolManger = useLocalToolManager({
+const localToolManger = useTileGridController({
   id: node.id,
   tileGridManager,
+  gridColor:  toRef(config, 'showGridColor'),
 })
 
 const tileSheetCanvas = useTemplateRef('tileSheetCanvas')

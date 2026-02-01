@@ -1,33 +1,33 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
-import { DATA_LOCAL_TOOL_ID } from '../../_canvas-editor-types.ts'
-import { createGridMouseHandlers } from '../lib/canvas-mouse.ts'
-import { type LocalToolManager } from '../LocalToolManager.ts'
+import { DATA_LOCAL_TOOL_ID } from '../../_core-editor-types.ts'
+import { createGridMouseHandlers } from '../lib/tile-grid-mouse-handler.ts'
+import { type TileGridController } from '../TileGridController.ts'
 
 const {
   localToolManager,
 } = defineProps<{
-  localToolManager: LocalToolManager,
+  localToolManager: TileGridController,
 }>()
 
-const viewCanvasRef = useTemplateRef<HTMLCanvasElement | null>('viewCanvasRef')
+const canvasRef = useTemplateRef<HTMLCanvasElement | null>('canvasRef')
 
 const {
   handleMouseDown,
   handleMouseMove,
   handleMouseUp,
   handleMouseLeave,
-} = createGridMouseHandlers(localToolManager, viewCanvasRef)
+} = createGridMouseHandlers(localToolManager, canvasRef)
 
 onMounted(() => {
-  localToolManager.gridRenderer.setTileGridCanvas(viewCanvasRef.value!)
+  localToolManager.gridRenderer.setTileGridCanvas(canvasRef.value!)
 })
 const dataAttr = DATA_LOCAL_TOOL_ID
 </script>
 <template>
   <canvas
-    ref="viewCanvasRef"
-    class="draw-canvas"
+    ref="canvasRef"
+    class="canvas-pixel-draw"
     v-bind:[dataAttr]="localToolManager.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
@@ -36,8 +36,4 @@ const dataAttr = DATA_LOCAL_TOOL_ID
   ></canvas>
 </template>
 <style lang="scss">
-.draw-canvas {
-  image-rendering: pixelated;
-  cursor: crosshair;
-}
 </style>

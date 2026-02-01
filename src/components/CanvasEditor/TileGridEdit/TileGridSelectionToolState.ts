@@ -1,7 +1,7 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from '../_canvas-editor-types.ts'
+import { BlendMode } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
@@ -16,9 +16,9 @@ import {
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
-export type SelectionLocalToolState = ReturnType<typeof makeSelectionLocalToolState>
+export type TileGridSelectionToolState = ReturnType<typeof makeTileGridSelectionToolState>
 
-export function makeSelectionLocalToolState(
+export function makeTileGridSelectionToolState(
   {
     state,
     tileSheetWriter,

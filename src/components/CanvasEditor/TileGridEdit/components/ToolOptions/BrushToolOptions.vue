@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { useCanvasPaintToolStore } from '../../../../../lib/store/canvas-paint-tool-store.ts'
+import { useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
 import { usePipelineStore } from '../../../../../lib/store/pipeline-store.ts'
-import { BrushMode } from '../../../_canvas-editor-types.ts'
+import { BrushMode, BrushShape } from '../../../_core-editor-types.ts'
 import ToolButton from '../../../../UI/ToolButton.vue'
 
-import { BrushShape } from '../../tools/brush.ts'
-
-const { brushShape, brushMode, brushSize } = storeToRefs(useCanvasPaintToolStore())
+const { brushShape, brushMode, brushSize } = storeToRefs(useCanvasEditToolStore())
 const store = usePipelineStore()
 </script>
 <template>

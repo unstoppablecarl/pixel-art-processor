@@ -1,13 +1,11 @@
-import type { GlobalToolContext } from '../../../../lib/store/canvas-paint-tool-store.ts'
 import { writeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { imageDataRef } from '../../../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
+import { makeRenderQueue, renderCanvasFrame } from '../../_support/canvas-frame.ts'
+import { type PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../lib/canvas-frame.ts'
-import { makeCursorCache } from '../tools/brush-cursor.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
-import { makePixelGridLineRenderer } from './PixelGridLineRenderer.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
 
 export type TileGridRenderer = ReturnType<typeof makeTileGridRenderer>
@@ -15,10 +13,10 @@ export type TileGridRenderer = ReturnType<typeof makeTileGridRenderer>
 export function makeTileGridRenderer(
   {
     state,
-    toolContext,
+    gridCache
   }: {
     state: TileGridEditorState,
-    toolContext: GlobalToolContext,
+    gridCache: PixelGridLineRenderer,
   }) {
 
   let currentToolRenderer: CurrentToolRenderer
@@ -26,7 +24,6 @@ export function makeTileGridRenderer(
 
   const tileGridImageDataRef = imageDataRef()
   const tileRenderers: Record<TileId, TileRenderer> = {}
-  const gridCache = makePixelGridLineRenderer(state)
 
   function setTileGridCanvas(canvas: HTMLCanvasElement) {
     tileGridPixelCanvas = makePixelCanvas(canvas)
@@ -51,7 +48,6 @@ export function makeTileGridRenderer(
   function resize() {
     if (!tileGridPixelCanvas) return
     tileGridPixelCanvas.resize(state.gridScreenWidth, state.gridScreenHeight)
-    gridCache.updateGridCache()
     tileGridImageDataRef.resize(state.gridScreenWidth, state.gridScreenHeight)
 
     for (const tileRenderer of Object.values(tileRenderers)) {
@@ -92,7 +88,7 @@ export function makeTileGridRenderer(
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
       if (state.shouldDrawGrid) {
-        gridCache.drawGrid(ctx)
+        gridCache!.draw(ctx)
       }
       if (state.drawTileIds) {
         state.tileGrid.each((tileX, tileY, tile) => {
@@ -117,7 +113,6 @@ export function makeTileGridRenderer(
   return {
     state,
     tileGridImageDataRef,
-    cursor: makeCursorCache(state, toolContext),
     registerTileCanvas,
     setTileGridCanvas,
     gridCache,
@@ -132,6 +127,5 @@ export function makeTileGridRenderer(
     setCurrentToolRenderer(val: CurrentToolRenderer) {
       currentToolRenderer = val
     },
-    toolContext,
   }
 }

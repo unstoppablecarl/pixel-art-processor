@@ -1,31 +1,31 @@
 import {
-  type CanvasPaintToolStore,
-  useCanvasPaintToolStore,
+  type CanvasEditToolStore,
+  useCanvasEditToolStore,
   useGlobalToolContext,
-} from '../../../lib/store/canvas-paint-tool-store.ts'
-import { Tool } from '../_canvas-editor-types.ts'
+} from '../../../lib/store/canvas-edit-tool-store.ts'
+import { Tool } from '../_core-editor-types.ts'
 import { makeToolset } from '../Toolset.ts'
-import { type BrushToolHandler, makeBrushTool } from './tools/brush.ts'
-import { makeSelectTool, type SelectToolHandler } from './tools/select.ts'
+import { makeBrushTool, type TileGridBrushToolHandler } from './tools/brush.ts'
+import { makeSelectTool, type TileGridSelectToolHandler } from './tools/select.ts'
 
 let TOOLSET: TileGridToolset | undefined
 
 export function useTileGridToolset() {
   if (!TOOLSET) {
-    TOOLSET = makeTileGridToolset(useCanvasPaintToolStore())
+    TOOLSET = makeTileGridToolset(useCanvasEditToolStore())
   }
   return TOOLSET
 }
 
 export type TileGridToolset = ReturnType<typeof makeTileGridToolset>
 
-export function makeTileGridToolset(store: CanvasPaintToolStore) {
+export function makeTileGridToolset(store: CanvasEditToolStore) {
   const toolContext = useGlobalToolContext(store)
 
   const tools = {
-    [Tool.BRUSH]: makeBrushTool(toolContext) as BrushToolHandler,
-    [Tool.SELECT]: makeSelectTool(toolContext) as SelectToolHandler,
-  }
+    [Tool.BRUSH]: makeBrushTool(toolContext) as TileGridBrushToolHandler,
+    [Tool.SELECT]: makeSelectTool(toolContext) as TileGridSelectToolHandler,
+  } as const
 
-  return makeToolset(store, tools)
+  return makeToolset(store, tools, toolContext)
 }
