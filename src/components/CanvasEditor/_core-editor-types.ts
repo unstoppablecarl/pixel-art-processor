@@ -1,5 +1,8 @@
 import type { Ref, ShallowRef } from 'vue'
 
+export const BRUSH_HOVER_CSS_CLASS = 'brush'
+export const SELECT_HOVER_CSS_CLASS = 'select'
+
 export enum Tool {
   BRUSH = 'BRUSH',
   SELECT = 'SELECT'
@@ -31,6 +34,7 @@ export type ToolRegistry<T> = {
 }
 
 export interface BaseEditorState {
+  id: string,
   scale: number,
 
   mouseX: number | null,
@@ -54,12 +58,14 @@ export type ToolInputHandlers = {
   handleMouseDown: (e: MouseEvent) => void,
   handleMouseMove: (e: MouseEvent) => void,
   handleMouseLeave: () => void,
+  handleMouseEnter: () => void,
 }
 
 export type BaseToolManager<TArgs extends any[] = []> = {
   id: string,
   getInputHandlers: (canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, ...args: TArgs) => ToolInputHandlers,
   onGlobalToolChanging: (newTool: Tool, prevTool: Tool | null) => void,
+  currentCursorCssClass: Ref<string | null>,
 }
 
 export type InputTarget = {
@@ -67,7 +73,10 @@ export type InputTarget = {
   onMouseDown(x: number, y: number): void
   onMouseMove(x: number, y: number): void
   onMouseUp(x: number, y: number): void
-  onMouseLeave(): void
+  onMouseLeave?(): void,
+  onMouseEnter?(): void,
+  onHoverStart?(): void
+  onHoverEnd?(): void
 }
 
 export type BaseToolHandler<L, TArgs extends any[] = []> = {
@@ -85,6 +94,7 @@ export type BaseToolHandler<L, TArgs extends any[] = []> = {
   onDeselect?: (local: L) => void,
 
   onGlobalToolChanging?: (local: L, newTool: Tool, prevTool: Tool | null) => void,
+  cursorCssClass?: ((local: L) => string | null) | string,
 }
 
 export type BaseBrushToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {

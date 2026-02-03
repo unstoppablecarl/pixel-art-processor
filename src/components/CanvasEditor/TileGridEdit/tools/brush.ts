@@ -3,7 +3,7 @@ import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import { RGBA_WHITE } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseBrushToolHandler, BrushShape } from '../../_core-editor-types.ts'
+import { type BaseBrushToolHandler, BRUSH_HOVER_CSS_CLASS, BrushShape } from '../../_core-editor-types.ts'
 import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
 import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
 import {
@@ -63,6 +63,7 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
   }
 
   return {
+    cursorCssClass: BRUSH_HOVER_CSS_CLASS,
     onMouseDown: ({ state, tileSheetWriter }, x, y, canvasType, tileId) => {
       isDrawing = true
       writeBrushAt(state, tileSheetWriter, canvasType, x, y, tileId)

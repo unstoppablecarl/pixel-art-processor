@@ -1,7 +1,7 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { blendOverwrite } from '../../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseSelectToolHandler, Tool } from '../../_core-editor-types.ts'
+import { type BaseSelectToolHandler, SELECT_HOVER_CSS_CLASS, Tool } from '../../_core-editor-types.ts'
 import { drawSelectOutline } from '../../_support/tools/selection-helpers.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
 import type { CanvasPaintSelectionToolState } from '../CanvasPaintSelectionToolState.ts'
@@ -13,6 +13,7 @@ export type CanvasPaintSelectToolHandler<L = LocalToolContext<CanvasPaintSelecti
 export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPaintSelectToolHandler {
 
   return {
+    cursorCssClass: SELECT_HOVER_CSS_CLASS,
     onGlobalToolChanging({ toolState }, _newTool, oldTool) {
       if (oldTool === Tool.SELECT && toolState.selection) {
         // optional: commit on tool change

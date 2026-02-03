@@ -2,18 +2,21 @@ import { ref, type Ref } from 'vue'
 import type { BaseEditorState } from './_core-editor-types.ts'
 
 export type BaseEditorSettings = {
+  id: string,
   gridDraw?: Ref<boolean>,
   scale?: Ref<number>
 }
 
 export function makeBaseEditorState(
   {
+    id,
     scale = ref(1),
     gridDraw = ref(true),
   }: BaseEditorSettings,
 ): BaseEditorState {
 
   return {
+    id,
     get scale() {
       return scale.value
     },

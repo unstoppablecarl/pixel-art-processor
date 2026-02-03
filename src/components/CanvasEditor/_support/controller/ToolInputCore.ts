@@ -1,5 +1,5 @@
 // makeToolInputCore.ts
-import type { Tool } from '../_core-editor-types.ts'
+import type { Tool } from '../../_core-editor-types.ts'
 
 type ToolMap = Record<Tool, any>
 type LocalToolContexts = Record<Tool, any>

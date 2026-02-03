@@ -1,6 +1,6 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
-import { type BaseBrushToolHandler } from '../../_core-editor-types.ts'
+import { type BaseBrushToolHandler, BRUSH_HOVER_CSS_CLASS } from '../../_core-editor-types.ts'
 import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
 import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
@@ -15,6 +15,7 @@ export function makeBrushTool(store: CanvasEditToolStore): CanvasPaintBrushToolH
   const cursor = useBrushCursor()
 
   return {
+    cursorCssClass: BRUSH_HOVER_CSS_CLASS,
     onMouseDown: ({ state, toolState, canvasRenderer }, x, y) => {
       isDrawing = true
       toolState.writeBrushPixels(state.imageDataRef.get()!, x, y, state.width, state.height)

@@ -1,4 +1,4 @@
-import { type Ref, toRef, watch, watchEffect } from 'vue'
+import { ref, type Ref, toRef, watch, watchEffect } from 'vue'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import { useDocumentClick } from '../../../lib/util/vue-util.ts'
 import type { ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
@@ -9,12 +9,13 @@ import {
   defineToolManager,
   Tool,
 } from '../_core-editor-types.ts'
-import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
-import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
+import { makeGetCurrentCursorCssClass } from '../_support/controller/CurrentCursorCssClass.ts'
+import { makeGlobalToolChangeHandler } from '../_support/controller/GlobalToolChangeHandler.ts'
+import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
-import { makeGlobalToolChangeHandler } from '../_support/GlobalToolChangeHandler.ts'
+import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
 import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
-import { makeToolInputCore } from '../_support/ToolInputCore.ts'
+import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
 import { makeLocalToolContexts } from '../Toolset.ts'
 import type { BaseLocalToolContext, LocalToolContexts, LocalToolStates } from './_canvas-paint-editor-types.ts'
 import { makCanvasPaintEditorState } from './CanvasPaintEditorState.ts'
@@ -45,6 +46,7 @@ export function useCanvasPaintController(
 ) {
 
   const state = makCanvasPaintEditorState({
+    id,
     gridDraw,
     scale,
     width,
@@ -124,10 +126,14 @@ export function useCanvasPaintController(
 
   const core = makeToolInputCore(state, toolset, localToolContexts)
 
+  const currentCursorCssClass = ref<string | null>(null)
+  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset, localToolContexts)
+
   return defineToolManager()({
     id,
     state,
     canvasRenderer,
+    currentCursorCssClass,
     getInputHandlers(canvas) {
       return useGlobalInput({
         getCoordsFromEvent: canvasCoordGetter(canvas, state.scale),
@@ -152,6 +158,12 @@ export function useCanvasPaintController(
 
           core.pointerLeave()
           canvasRenderer.queueRender()
+        },
+        onHoverStart() {
+          currentCursorCssClass.value = getCurrentCursorClass()
+        },
+        onHoverEnd() {
+          currentCursorCssClass.value = null
         },
       })
     },

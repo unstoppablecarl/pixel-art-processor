@@ -1,14 +1,15 @@
-import { toRef, watch, watchEffect } from 'vue'
+import { ref, toRef, watch, watchEffect } from 'vue'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
-import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
-import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
+import { makeGetCurrentCursorCssClass } from '../_support/controller/CurrentCursorCssClass.ts'
+import { makeGlobalToolChangeHandler } from '../_support/controller/GlobalToolChangeHandler.ts'
+import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
-import { makeGlobalToolChangeHandler } from '../_support/GlobalToolChangeHandler.ts'
+import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
 import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
+import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
 import { useSelectionCancelOnDocumentClick } from '../_support/tools/selection-helpers.ts'
-import { makeToolInputCore } from '../_support/ToolInputCore.ts'
 import { makeLocalToolContexts } from '../Toolset.ts'
 import {
   type BaseLocalToolContext,
@@ -44,6 +45,7 @@ export function useTileGridController(
 ) {
 
   const state = makeTileGridEditorState({
+    id,
     tileGridManager,
     scale,
   })
@@ -128,9 +130,13 @@ export function useTileGridController(
 
   const core = makeToolInputCore(state, toolset, localToolContexts)
 
+  const currentCursorCssClass = ref<string | null>(null)
+  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset, localToolContexts)
+
   return defineToolManager<TileGridEditorToolHandlerArgs>()({
     id,
     state,
+    currentCursorCssClass,
     gridRenderer,
     tileSheetRenderer,
     tileSheetSelectionRenderer,
@@ -158,6 +164,12 @@ export function useTileGridController(
           clearPointerState(state)
           core.pointerLeave(canvasType, tileId)
           gridRenderer.queueRenderGrid()
+        },
+        onHoverStart() {
+          currentCursorCssClass.value = getCurrentCursorClass()
+        },
+        onHoverEnd() {
+          currentCursorCssClass.value = null
         },
       })
     },

@@ -31,6 +31,7 @@ const dataAttr = DATA_LOCAL_TOOL_ID
   <canvas
     ref="canvasRef"
     class="canvas-pixel-draw"
+    :class="toolController.currentCursorCssClass.value"
     v-bind:[dataAttr]="toolController.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"

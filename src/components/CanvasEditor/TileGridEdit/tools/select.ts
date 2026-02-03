@@ -1,6 +1,6 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseSelectToolHandler, BlendMode, Tool } from '../../_core-editor-types.ts'
+import { type BaseSelectToolHandler, BlendMode, SELECT_HOVER_CSS_CLASS, Tool } from '../../_core-editor-types.ts'
 import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
 import type {
   LocalToolContext,
@@ -17,6 +17,7 @@ export type TileGridSelectToolHandler<L = LocalToolContext<TileGridSelectionTool
 export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHandler {
 
   return {
+    cursorCssClass: SELECT_HOVER_CSS_CLASS,
     onGlobalToolChanging({ toolState }, oldTool, _newTool) {
       if (oldTool === Tool.SELECT && toolState.selection) {
         // optional: commit on tool change

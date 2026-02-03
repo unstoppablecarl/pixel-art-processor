@@ -18,6 +18,7 @@ export function makeGlobalInputManager() {
   function beginInteraction(target: InputTarget, e: MouseEvent) {
     const { x, y } = target.getCoordsFromEvent(e)
     activeTarget = target
+    target.onHoverStart?.()
     target.onMouseDown(x, y)
     attachGlobal()
   }
@@ -39,15 +40,23 @@ export function makeGlobalInputManager() {
   function hover(target: InputTarget, e: MouseEvent) {
     if (activeTarget) return
     const { x, y } = target.getCoordsFromEvent(e)
+    target.onHoverStart?.()
     target.onMouseMove(x, y)
+  }
+
+  function enter(target: InputTarget) {
+    if (activeTarget === target) return
+    target.onHoverStart?.()
+    target.onMouseEnter?.()
   }
 
   function leave(target: InputTarget) {
     if (activeTarget === target) return
-    target.onMouseLeave()
+    target.onHoverEnd?.()
+    target.onMouseLeave?.()
   }
 
-  return { beginInteraction, hover, leave }
+  return { beginInteraction, hover, leave, enter }
 }
 
 export const globalInputManager = makeGlobalInputManager()
@@ -57,6 +66,7 @@ export function useGlobalInput(target: InputTarget): ToolInputHandlers {
     handleMouseDown: (e: MouseEvent) => globalInputManager.beginInteraction(target, e),
     handleMouseMove: (e: MouseEvent) => globalInputManager.hover(target, e),
     handleMouseLeave: () => globalInputManager.leave(target),
+    handleMouseEnter: () => globalInputManager.enter(target),
   }
 }
 

@@ -1,4 +1,4 @@
-import type { Tool } from '../_core-editor-types'
+import type { Tool } from '../../_core-editor-types.ts'
 
 export function makeGlobalToolChangeHandler<
   Toolset extends {
