@@ -2,29 +2,27 @@
 import { onMounted, useTemplateRef } from 'vue'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { DATA_LOCAL_TOOL_ID } from '../../_core-editor-types.ts'
-import { createTileMouseHandlers } from '../lib/tile-grid-mouse-handler.ts'
+import { CanvasType } from '../_tile-grid-editor-types.ts'
 import { type TileGridController } from '../TileGridController.ts'
 
 const {
   tileId,
-  localToolManager,
+  toolController,
 } = defineProps<{
   tileId: TileId,
-  localToolManager: TileGridController,
+  toolController: TileGridController,
 }>()
 
 const canvasRef = useTemplateRef<HTMLCanvasElement | null>('canvasRef')
 
-const tools = localToolManager
 const {
   handleMouseDown,
   handleMouseMove,
-  handleMouseUp,
   handleMouseLeave,
-} = createTileMouseHandlers(localToolManager, canvasRef, tileId)
+} = toolController.getInputHandlers(canvasRef, CanvasType.TILE, tileId)
 
 onMounted(() => {
-  tools.gridRenderer.registerTileCanvas(tileId, canvasRef.value!)
+  toolController.gridRenderer.registerTileCanvas(tileId, canvasRef.value!)
 })
 
 const dataAttr = DATA_LOCAL_TOOL_ID
@@ -33,10 +31,9 @@ const dataAttr = DATA_LOCAL_TOOL_ID
   <canvas
     ref="canvasRef"
     class="canvas-pixel-draw"
-    v-bind:[dataAttr]="localToolManager.id"
+    v-bind:[dataAttr]="toolController.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
-    @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   ></canvas>
 </template>

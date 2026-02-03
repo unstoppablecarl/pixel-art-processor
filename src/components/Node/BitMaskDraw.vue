@@ -86,7 +86,7 @@ if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
 
-const paint = useCanvasPaintController({
+const canvasPaintController = useCanvasPaintController({
   id: node.id,
   width: computed(() => config.size.value),
   height: computed(() => config.size.value),
@@ -97,9 +97,9 @@ const paint = useCanvasPaintController({
 // canvasPaint.state.imageDataRef.set(maskImageData.get())
 
 useInterval(() => {
-  if (paint.state.imageDataDirty) {
-    config.maskImageData = paint.state.imageDataRef.serialize()
-    paint.state.imageDataDirty = false
+  if (canvasPaintController.state.imageDataDirty) {
+    config.maskImageData = canvasPaintController.state.imageDataRef.serialize()
+    canvasPaintController.state.imageDataDirty = false
   }
 }, 1000)
 </script>
@@ -111,7 +111,7 @@ useInterval(() => {
   >
     <template #body>
       <CanvasPaint
-        :local-tool-manager="paint"
+        :tool-controller="canvasPaintController"
       />
     </template>
 
@@ -133,7 +133,7 @@ useInterval(() => {
 
           <button
             role="button"
-            @click="paint.canvasRenderer.clear()"
+            @click="canvasPaintController.canvasRenderer.clear()"
             class="btn btn-danger btn-sm ms-2"
           >
             Clear Canvas

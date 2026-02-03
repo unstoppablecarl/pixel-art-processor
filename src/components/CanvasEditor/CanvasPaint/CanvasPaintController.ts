@@ -11,14 +11,12 @@ import {
 } from '../_core-editor-types.ts'
 import { useBrushCursor } from '../_support/BrushCursor.ts'
 import { makeBrushToolState } from '../_support/BrushToolState.ts'
+import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
+import { makeGlobalToolChangeHandler } from '../_support/GlobalToolChangeHandler.ts'
 import { makePixelGridLineRenderer } from '../_support/PixelGridLineRenderer.ts'
+import { makeToolInputCore } from '../_support/ToolInputCore.ts'
 import { makeLocalToolContexts } from '../Toolset.ts'
-import type {
-  BaseLocalToolContext,
-  LocalToolContext,
-  LocalToolContexts,
-  LocalToolStates,
-} from './_canvas-paint-editor-types.ts'
+import type { BaseLocalToolContext, LocalToolContexts, LocalToolStates } from './_canvas-paint-editor-types.ts'
 import { makCanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import { makeCanvasPaintSelectionToolState } from './CanvasPaintSelectionToolState.ts'
 import { type CanvasPaintToolset, useCanvasPaintToolset } from './CanvasPaintToolset.ts'
@@ -89,7 +87,9 @@ export function useCanvasPaintController(
   canvasRenderer.setCurrentToolRenderer(currentToolRenderer)
 
   useDocumentClick((t) => {
+    if (state.isDragging) return
     if (toolset.currentTool !== Tool.SELECT) return
+    if (state.mouseDownX !== null || state.mouseDownY !== null) return
     if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
     if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
 
@@ -118,86 +118,39 @@ export function useCanvasPaintController(
     state.mouseY = y
   }
 
+  const core = makeToolInputCore(state, toolset, localToolContexts)
+
   return defineToolManager()({
     id,
     state,
     canvasRenderer,
-    onGlobalToolChanging(newTool, prevTool) {
-      if (prevTool) {
-        const local = localToolContexts[prevTool] as LocalToolContext<any>
-        toolset.tools[prevTool]?.onGlobalToolChanging?.(local, newTool, prevTool)
-      }
+    getInputHandlers(canvas) {
+      return useGlobalInput({
+        getCoordsFromEvent: canvasCoordGetter(canvas, state.scale),
+        onMouseDown(x: number, y: number) {
+          setMousePos(x, y)
+          core.pointerDown(x, y)
+          canvasRenderer.queueRender()
+        },
+        onMouseMove(x: number, y: number) {
+          setMousePos(x, y)
+          core.pointerMove(x, y)
+        },
+        onMouseUp(x: number, y: number) {
+          setMousePos(x, y)
+          core.pointerUp(x, y)
+        },
+        onMouseLeave() {
+          if (state.isDragging) return
+
+          state.mouseX = null
+          state.mouseY = null
+
+          core.pointerLeave()
+          canvasRenderer.queueRender()
+        },
+      })
     },
-
-    onMouseDown(x: number, y: number): void {
-      setMousePos(x, y)
-      const local = localToolContexts[toolset.currentTool] as LocalToolContext<any>
-
-      toolset.setActiveLocal(local)
-
-      state.mouseDownX = x
-      state.mouseDownY = y
-      state.isDragging = false
-
-      toolset.tools[toolset.currentTool]?.onMouseDown?.(local, x, y)
-      canvasRenderer.queueRender()
-    },
-    onMouseMove(x: number, y: number) {
-      setMousePos(x, y)
-      const local = localToolContexts[toolset.currentTool] as LocalToolContext<any>
-
-      if (state.mouseDownX !== null && state.mouseDownY !== null) {
-        const dx = x - state.mouseDownX
-        const dy = y - state.mouseDownY
-
-        if (!state.isDragging &&
-          (Math.abs(dx) > state.dragThreshold || Math.abs(dy) > state.dragThreshold)) {
-
-          state.isDragging = true
-          state.mouseDragStartX = state.mouseDownX
-          state.mouseDragStartY = state.mouseDownY
-
-          toolset.tools[toolset.currentTool]?.onDragStart?.(
-            local,
-            state.mouseDownX,
-            state.mouseDownY,
-          )
-        } else {
-          toolset.tools[toolset.currentTool]?.onDragMove?.(local, x, y)
-        }
-
-      } else {
-        toolset.tools[toolset.currentTool]?.onMouseMove?.(local, x, y)
-      }
-
-      state.mouseLastX = x
-      state.mouseLastY = y
-    },
-
-    onMouseUp(x: number, y: number) {
-      setMousePos(x, y)
-      const local = localToolContexts[toolset.currentTool] as LocalToolContext<any>
-
-      if (state.isDragging) {
-        toolset.tools[toolset.currentTool]?.onDragEnd?.(local, x, y)
-        state.mouseDragStartX = null
-        state.mouseDragStartY = null
-      } else {
-        toolset.tools[toolset.currentTool]?.onClick?.(local, x, y)
-      }
-
-      state.mouseDownX = null
-      state.mouseDownY = null
-      state.isDragging = false
-    },
-    onMouseLeave() {
-      const local = localToolContexts[toolset.currentTool] as LocalToolContext<any>
-
-      state.mouseX = null
-      state.mouseY = null
-
-      toolset.tools[toolset.currentTool]?.onMouseLeave?.(local)
-      canvasRenderer.queueRender()
-    },
+    onGlobalToolChanging: makeGlobalToolChangeHandler(toolset, localToolContexts),
   })
 }

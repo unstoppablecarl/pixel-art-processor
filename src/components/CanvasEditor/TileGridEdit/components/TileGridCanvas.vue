@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
 import { DATA_LOCAL_TOOL_ID } from '../../_core-editor-types.ts'
-import { createGridMouseHandlers } from '../lib/tile-grid-mouse-handler.ts'
+import { CanvasType } from '../_tile-grid-editor-types.ts'
 import { type TileGridController } from '../TileGridController.ts'
 
 const {
-  localToolManager,
+  toolController,
 } = defineProps<{
-  localToolManager: TileGridController,
+  toolController: TileGridController,
 }>()
 
 const canvasRef = useTemplateRef<HTMLCanvasElement | null>('canvasRef')
@@ -15,12 +15,11 @@ const canvasRef = useTemplateRef<HTMLCanvasElement | null>('canvasRef')
 const {
   handleMouseDown,
   handleMouseMove,
-  handleMouseUp,
   handleMouseLeave,
-} = createGridMouseHandlers(localToolManager, canvasRef)
+} = toolController.getInputHandlers(canvasRef, CanvasType.GRID)
 
 onMounted(() => {
-  localToolManager.gridRenderer.setTileGridCanvas(canvasRef.value!)
+  toolController.gridRenderer.setTileGridCanvas(canvasRef.value!)
 })
 const dataAttr = DATA_LOCAL_TOOL_ID
 </script>
@@ -28,10 +27,9 @@ const dataAttr = DATA_LOCAL_TOOL_ID
   <canvas
     ref="canvasRef"
     class="canvas-pixel-draw"
-    v-bind:[dataAttr]="localToolManager.id"
+    v-bind:[dataAttr]="toolController.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
-    @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   ></canvas>
 </template>

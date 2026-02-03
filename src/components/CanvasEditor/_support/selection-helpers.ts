@@ -34,3 +34,43 @@ export function drawSelectOutline(ctx: CanvasRenderingContext2D, scale: number, 
     h * scale + 1,
   )
 }
+
+import { useDocumentClick } from '../../../lib/util/vue-util'
+import {
+  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK,
+  DATA_LOCAL_TOOL_ID,
+  Tool,
+} from '../_core-editor-types'
+
+export interface SelectionCancelDeps<State, Toolset, LocalToolStates> {
+  id: string
+  state: State & {
+    isDragging: boolean
+    mouseDownX: number | null
+    mouseDownY: number | null
+  }
+  toolset: Toolset & {
+    currentTool: Tool
+  }
+  localToolStates: LocalToolStates & {
+    [Tool.SELECT]: { clearSelection(): void }
+  }
+}
+
+export function useSelectionCancelOnDocumentClick<
+  State,
+  Toolset,
+  LocalToolStates
+>(deps: SelectionCancelDeps<State, Toolset, LocalToolStates>) {
+  const { id, state, toolset, localToolStates } = deps
+
+  useDocumentClick((t) => {
+    if (state.isDragging) return
+    if (toolset.currentTool !== Tool.SELECT) return
+    if (state.mouseDownX !== null || state.mouseDownY !== null) return
+    if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
+    if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
+
+    localToolStates[Tool.SELECT].clearSelection()
+  })
+}

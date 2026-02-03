@@ -133,7 +133,7 @@ if (import.meta.hot && !import.meta.env.VITEST) {
   handleNodeConfigHMR(import.meta.hot, node)
 }
 
-const localToolManger = useTileGridController({
+const tileGridController = useTileGridController({
   id: node.id,
   tileGridManager,
   gridColor:  toRef(config, 'showGridColor'),
@@ -142,9 +142,9 @@ const localToolManger = useTileGridController({
 const tileSheetCanvas = useTemplateRef('tileSheetCanvas')
 
 useInterval(() => {
-  localToolManger.tileSheetRenderer.draw()
-  localToolManger.tileSheetSelectionRenderer.resize()
-  localToolManger.tileSheetSelectionRenderer.draw()
+  tileGridController.tileSheetRenderer.draw()
+  tileGridController.tileSheetSelectionRenderer.resize()
+  tileGridController.tileSheetSelectionRenderer.draw()
 
   const tileSheet = tileGridManager.tileSheet.value
   if (tileSheet.isDirty()) {
@@ -156,11 +156,11 @@ useInterval(() => {
 const debugSidebar = useDebugSidebar()
 
 onMounted(() => {
-  localToolManger.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
+  tileGridController.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
 })
 watchEffect(() => {
   if (debugSidebar.canvas.value) {
-    localToolManger.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
+    tileGridController.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
   }
 })
 
@@ -176,13 +176,13 @@ const uiStore = useUIStore()
       <div class="canvas-tile-container" v-for="item in tileset.tiles" :key="item.id">
         <TileCanvas
           :tile-id="item.id"
-          :local-tool-manager="localToolManger"
+          :tool-controller="tileGridController"
         />
       </div>
     </template>
     <template #footer>
       <TileGridCanvas
-        :local-tool-manager="localToolManger"
+        :tool-controller="tileGridController"
       />
       <div>
         <canvas

@@ -13,7 +13,7 @@
     "build": "vue-tsc -b && vite build --config=vite.config.ts",
     "circ": "tsx scripts/check-circular.ts",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit --noErrorTruncation",
+    "typecheck": "vue-tsc --noEmit",
     "test": "vitest --reporter=verbose",
     "test:coverage": "vitest --coverage"
   },

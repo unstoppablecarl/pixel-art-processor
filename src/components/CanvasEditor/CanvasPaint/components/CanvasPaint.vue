@@ -2,26 +2,23 @@
 import { onMounted, useTemplateRef } from 'vue'
 import { DATA_LOCAL_TOOL_ID } from '../../_core-editor-types.ts'
 import type { CanvasPaintController } from '../CanvasPaintController.ts'
-import { createCanvasPaintMouseHandlers } from '../lib/canvas-paint-mouse-handler.ts'
 
 const {
-  localToolManager,
+  toolController,
 } = defineProps<{
-  localToolManager: CanvasPaintController,
+  toolController: CanvasPaintController,
 }>()
 
 const canvasRef = useTemplateRef<HTMLCanvasElement | null>('canvasRef')
 
-const tools = localToolManager
 const {
   handleMouseDown,
   handleMouseMove,
-  handleMouseUp,
   handleMouseLeave,
-} = createCanvasPaintMouseHandlers(localToolManager, canvasRef)
+} = toolController.getInputHandlers(canvasRef)
 
 onMounted(() => {
-  tools.canvasRenderer.setCanvas(canvasRef.value!)
+  toolController.canvasRenderer.setCanvas(canvasRef.value!)
 })
 
 const dataAttr = DATA_LOCAL_TOOL_ID
@@ -30,10 +27,9 @@ const dataAttr = DATA_LOCAL_TOOL_ID
   <canvas
     ref="canvasRef"
     class="canvas-pixel-draw"
-    v-bind:[dataAttr]="localToolManager.id"
+    v-bind:[dataAttr]="toolController.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
-    @mouseup="handleMouseUp"
     @mouseleave="handleMouseLeave"
   ></canvas>
 </template>

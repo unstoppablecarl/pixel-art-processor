@@ -1,4 +1,4 @@
-import type { Ref } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 
 export enum Tool {
   BRUSH = 'BRUSH',
@@ -52,21 +52,24 @@ export interface BaseEditorState {
   get shouldDrawGrid(): boolean
 }
 
-export type BaseToolMouseHandlers = {
-  handleMouseMove?: (e: MouseEvent) => void,
-  handleMouseDown?: (e: MouseEvent) => void,
-  handleMouseUp?: (e: MouseEvent) => void,
-  handleMouseLeave?: (e: MouseEvent) => void,
-  handleMouseEnter?: (e: MouseEvent) => void,
+export type ToolInputHandlers = {
+  handleMouseDown: (e: MouseEvent) => void,
+  handleMouseMove: (e: MouseEvent) => void,
+  handleMouseLeave: () => void,
 }
 
 export type BaseToolManager<TArgs extends any[] = []> = {
   id: string,
-  onMouseMove: (x: number, y: number, ...args: TArgs) => void,
-  onMouseDown: (x: number, y: number, ...args: TArgs) => void,
-  onMouseUp: (x: number, y: number, ...args: TArgs) => void,
-  onMouseLeave: (...args: TArgs) => void,
+  getInputHandlers: (canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, ...args: TArgs) => ToolInputHandlers,
   onGlobalToolChanging: (newTool: Tool, prevTool: Tool | null) => void,
+}
+
+export type InputTarget = {
+  getCoordsFromEvent(e: MouseEvent): { x: number, y: number }
+  onMouseDown(x: number, y: number): void
+  onMouseMove(x: number, y: number): void
+  onMouseUp(x: number, y: number): void
+  onMouseLeave(): void
 }
 
 export type BaseToolHandler<L, TArgs extends any[] = []> = {
@@ -95,7 +98,7 @@ export type BaseSelectToolHandler<L, TArgs extends any[] = []> = BaseToolHandler
 }
 
 export const defineToolManager = <TArgs extends any[]>() =>
-  <T extends BaseToolManager<TArgs>>(toolset: T) => toolset;
+  <T extends BaseToolManager<TArgs>>(toolset: T) => toolset
 
 export type BaseToolManagerSettings = {
   id: string,

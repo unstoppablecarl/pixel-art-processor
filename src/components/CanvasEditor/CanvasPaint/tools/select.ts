@@ -18,7 +18,6 @@ export function makeCanvasPaintSelectTool(toolContext: GlobalToolContext): Canva
         // optional: commit on tool change
       }
     },
-
     onModeChanged({ toolState }) {
       toolState.draw()
     },
@@ -65,6 +64,7 @@ export function makeCanvasPaintSelectTool(toolContext: GlobalToolContext): Canva
     onDragEnd({ state, toolState, canvasRenderer }, _x, _y) {
       const ts = toolState
 
+      console.log('dragEnd', ts.selecting)
       if (ts.selecting) {
         ts.finalizeSelection()
       }
