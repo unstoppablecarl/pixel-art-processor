@@ -86,7 +86,7 @@ export function useTileGridController(
     tileSheetWriter,
   }
 
-  watch(gridCache, () => gridRenderer.queueRenderAll())
+  watch(gridCache.watchTarget, () => gridRenderer.queueRenderAll())
 
   const localToolContexts = makeLocalToolContexts(localBase, localToolStates) as LocalToolContexts
 
