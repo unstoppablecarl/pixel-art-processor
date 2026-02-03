@@ -3,10 +3,10 @@ import { defineStore } from 'pinia'
 import { computed, ref, shallowRef } from 'vue'
 import {
   BlendMode,
-  BrushMode,
   BrushShape,
-  SelectSubTool,
+  BrushSubTool,
   type SubToolOf,
+  SubTools,
   Tool,
 } from '../../components/CanvasEditor/_core-editor-types.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
@@ -14,9 +14,9 @@ import { makeStateMapper } from './_store-helpers.ts'
 
 type SerializedData = {
   currentTool: Tool,
+  currentSubTool: SubToolOf<Tool> | null,
 
   brushShape: BrushShape,
-  brushMode: BrushMode,
   primaryColor: RGBA,
   brushSize: number,
   cursorColor: string,
@@ -24,18 +24,16 @@ type SerializedData = {
   tileMarginCopySize: number,
   selectFloodContiguous: boolean,
   selectFloodTolerance: number,
-  currentSubTool: SubToolOf<Tool>,
 }
 
 export type CanvasEditToolStore = ReturnType<typeof useCanvasEditToolStore>
 export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const currentTool = ref<Tool>(Tool.BRUSH)
-  const currentSubTool = ref<SubToolOf<Tool>>(null)
+  const currentSubTool = ref<SubToolOf<Tool> | null>(null)
 
   const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
 
   const brushShape = ref<BrushShape>(BrushShape.CIRCLE)
-  const brushMode = ref<BrushMode>(BrushMode.ADD)
   const brushSize = shallowRef<number>(10)
 
   const selectMoveBlendMode = ref<BlendMode>(BlendMode.IGNORE_TRANSPARENT)
@@ -44,8 +42,8 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const selectFloodTolerance = ref(0)
 
   const brushSizeDebounced = refDebounced(brushSize, 200)
-  const brushColor = computed(() => brushMode.value === BrushMode.ADD ? primaryColor.value : RGBA_ERASE)
-  const brushBitMaskColor = computed(() => brushMode.value === BrushMode.ADD ? RGBA_WHITE : RGBA_ERASE)
+  const brushColor = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor.value : RGBA_ERASE)
+  const brushBitMaskColor = computed(() => brushMode.value === BrushSubTool.ADD ? RGBA_WHITE : RGBA_ERASE)
 
   const tileMarginCopySize = ref<number>(1)
   const cursorColor = ref('cyan')
@@ -56,7 +54,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       currentSubTool,
       primaryColor,
       brushShape,
-      brushMode,
       brushSize,
       cursorColor,
       selectMoveBlendMode,
@@ -69,7 +66,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       currentSubTool: null,
       primaryColor: RGBA_WHITE,
       brushShape: BrushShape.CIRCLE,
-      brushMode: BrushMode.ADD,
       cursorColor: 'cyan',
       brushSize: 10,
       selectMoveBlendMode: BlendMode.IGNORE_TRANSPARENT,
@@ -93,21 +89,27 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     mapper.$restoreState(data)
   }
 
-  function setTool(tool: Tool, subTool?: SubToolOf<Tool> | null) {
+  function setTool(tool: Tool, subTool: SubToolOf<Tool> | null = null) {
     currentTool.value = tool
-    if (tool === Tool.SELECT) {
-      if (subTool != null) {
-        currentSubTool.value = subTool
-        return
-      }
-
-      if (currentSubTool.value == null) {
-        currentSubTool.value = SelectSubTool.RECT
-      }
-    } else {
+    const hasSubTools = !!SubTools[tool]
+    if (!hasSubTools) {
       currentSubTool.value = null
+      return
+    }
+
+    if (subTool !== null) {
+      currentSubTool.value = subTool
+      return
+    } else {
+      currentSubTool.value = Object.keys(SubTools[tool])[0] as SubToolOf<Tool>
     }
   }
+
+  const brushMode = computed(() => {
+    if (currentTool.value === Tool.BRUSH) {
+      return currentSubTool.value
+    }
+  })
 
   return {
     $reset,

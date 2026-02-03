@@ -10,6 +10,11 @@ export enum Tool {
   SELECT = 'SELECT'
 }
 
+export enum BrushSubTool {
+  ADD = 'ADD',
+  REMOVE = 'REMOVE'
+}
+
 export enum SelectSubTool {
   RECT = 'RECT',
   FLOOD = 'FLOOD'
@@ -17,10 +22,12 @@ export enum SelectSubTool {
 
 type SubToolMap = {
   [Tool.SELECT]: SelectSubTool,
+  [Tool.BRUSH]: BrushSubTool,
 }
 
 export const SubTools = {
   [Tool.SELECT]: SelectSubTool,
+  [Tool.BRUSH]: BrushSubTool,
 } as const
 
 export type AnySubTool = SubToolOf<Tool>
@@ -34,10 +41,6 @@ export enum BrushShape {
   SQUARE = 'SQUARE'
 }
 
-export enum BrushMode {
-  ADD = 'ADD',
-  REMOVE = 'REMOVE'
-}
 
 export enum BlendMode {
   OVERWRITE = 'OVERWRITE',
@@ -115,7 +118,7 @@ export type BaseToolHandler<L, TArgs extends any[] = []> = {
 }
 
 export type BaseBlendModeToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
-  onModeChanged?: (local: L, newMode: BrushMode) => void,
+  onModeChanged?: (local: L, newMode: BrushSubTool) => void,
 }
 
 export const defineToolManager = <TArgs extends any[]>() =>

@@ -3,9 +3,9 @@ import { storeToRefs } from 'pinia'
 import { useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
 import { usePipelineStore } from '../../../../../lib/store/pipeline-store.ts'
 import SetValueButton from '../../../../UI/SetValueButton.vue'
-import { BrushMode, BrushShape } from '../../../_core-editor-types.ts'
+import { BrushShape } from '../../../_core-editor-types.ts'
 
-const { brushShape, brushMode, brushSize } = storeToRefs(useCanvasEditToolStore())
+const { brushShape, brushSize } = storeToRefs(useCanvasEditToolStore())
 const store = usePipelineStore()
 </script>
 <template>
@@ -27,23 +27,6 @@ const store = usePipelineStore()
         :min="1"
         :max="store.getRootNodeOutputSize().width * 1.5"
         v-model.number="brushSize"
-      />
-    </div>
-  </div>
-
-  <div class="section">
-    <div class="btn-group w-100" role="group">
-      <SetValueButton
-        label="Add"
-        v-model="brushMode"
-        :value="BrushMode.ADD"
-        icon="ink_highlighter"
-      />
-      <SetValueButton
-        label="Erase"
-        v-model="brushMode"
-        :value="BrushMode.REMOVE"
-        icon="ink_eraser"
       />
     </div>
   </div>

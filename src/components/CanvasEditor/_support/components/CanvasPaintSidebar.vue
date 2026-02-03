@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import ToolButton from '../../../UI/ToolButton.vue'
-import { SelectSubTool, Tool } from '../../_core-editor-types.ts'
+import { BrushSubTool, SelectSubTool, Tool } from '../../_core-editor-types.ts'
 import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
 import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 
@@ -16,9 +16,15 @@ const { currentTool } = storeToRefs(store)
         <ToolButton
           label="Brush"
           :tool="Tool.BRUSH"
+          :sub-tool="BrushSubTool.ADD"
           icon="ink_highlighter"
         />
-        <button role="button" class="btn disabled"></button>
+        <ToolButton
+          label="Brush"
+          :tool="Tool.BRUSH"
+          :sub-tool="BrushSubTool.REMOVE"
+          icon="ink_eraser"
+        />
 
         <ToolButton
           label="Select"
