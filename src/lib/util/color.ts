@@ -24,3 +24,13 @@ export function arrayIndexToColor(index: number, length: number, alpha = 255, sp
   return color
 }
 
+export function colorDistance(a: RGBA, b: RGBA) {
+  // Photoshop-like: max channel difference
+  return Math.max(
+    Math.abs(a.r - b.r),
+    Math.abs(a.g - b.g),
+    Math.abs(a.b - b.b),
+    Math.abs(a.a - b.a),
+  )
+}
+

@@ -69,6 +69,7 @@ export function blendImageData(
   sw: number = src.width,
   sh: number = src.height,
   blend: BlendFn,
+  mask?: Uint8Array,
 ) {
   const byteBlend = makeByteBlendAdapter(blend)
 
@@ -76,6 +77,7 @@ export function blendImageData(
   const srcData = src.data
   const dstW = dst.width
   const srcW = src.width
+  const useMask = !!mask
 
   // Clip to destination bounds
   const maxW = Math.min(sw, dst.width - x)
@@ -87,6 +89,8 @@ export function blendImageData(
     const srcRow = (iy + sy) * srcW
 
     for (let ix = 0; ix < maxW; ix++) {
+      if (useMask && mask![iy * sw + ix] === 0) continue
+
       const di = (dstRow + (ix + x)) * 4
       const si = (srcRow + (ix + sx)) * 4
 
@@ -104,6 +108,7 @@ export type ImageDataBlendFn = (
   sy?: number,
   sw?: number,
   sh?: number,
+  mask?: Uint8Array,
 ) => void
 
 export const blendImageDataSourceOver: ImageDataBlendFn = (
@@ -115,7 +120,8 @@ export const blendImageDataSourceOver: ImageDataBlendFn = (
   sy: number = 0,
   sw: number = src.width,
   sh: number = src.height,
-) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendSourceOver)
+  mask?: Uint8Array,
+) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendSourceOver, mask)
 
 export const blendImageDataIgnoreTransparent: ImageDataBlendFn = (
   dst: ImageData,
@@ -126,7 +132,8 @@ export const blendImageDataIgnoreTransparent: ImageDataBlendFn = (
   sy: number = 0,
   sw: number = src.width,
   sh: number = src.height,
-) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreTransparent)
+  mask?: Uint8Array,
+) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreTransparent, mask)
 
 export const blendImageDataIgnoreSolid: ImageDataBlendFn = (
   dst: ImageData,
@@ -137,4 +144,5 @@ export const blendImageDataIgnoreSolid: ImageDataBlendFn = (
   sy: number = 0,
   sw: number = src.width,
   sh: number = src.height,
-) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreSolid)
+  mask?: Uint8Array,
+) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreSolid, mask)

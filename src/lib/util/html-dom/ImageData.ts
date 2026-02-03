@@ -1,5 +1,8 @@
 import { markRaw, type Raw } from 'vue'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
+import { colorDistance } from '../color.ts'
+import type { RectBounds } from '../data/Bounds.ts'
+import { trimRectBounds } from '../data/Rect.ts'
 import { type BlendFn, makeByteBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
@@ -264,27 +267,33 @@ export function writeImageData(
   sy: number = 0,
   sw: number = source.width,
   sh: number = source.height,
+  mask?: Uint8Array,
 ) {
   const dstData = target.data
   const srcData = source.data
   const dstW = target.width
   const srcW = source.width
 
+  const useMask = !!mask
+
   for (let iy = 0; iy < sh; iy++) {
     const dstRow = (iy + y) * dstW
     const srcRow = (iy + sy) * srcW
 
     for (let ix = 0; ix < sw; ix++) {
+      if (useMask && mask![iy * sw + ix] === 0) continue
+
       const di = (dstRow + (ix + x)) * 4
       const si = (srcRow + (ix + sx)) * 4
 
-      dstData[di] = srcData[si]
+      dstData[di]     = srcData[si]
       dstData[di + 1] = srcData[si + 1]
       dstData[di + 2] = srcData[si + 2]
       dstData[di + 3] = srcData[si + 3]
     }
   }
 }
+
 
 const pixelCanvas = makeReusablePixelCanvas()
 const getTmpImageData = makeReusableImageData()
@@ -424,3 +433,101 @@ export function makeReusableImageData() {
   }
 }
 
+export type FloodFillResult = {
+  rect: RectBounds
+  pixels: ImageData
+  mask: Uint8Array   // length = rect.w * rect.h
+}
+
+export function floodFillImageDataSelection(
+  img: ImageData,
+  startX: number,
+  startY: number,
+  contiguous = true,
+  tolerance = 0,
+): FloodFillResult | null {
+  if (!img) return null
+
+  const w = img.width
+  const h = img.height
+
+  const visited = new Uint8Array(w * h)
+  const queue: [number, number][] = []
+
+  const baseColor = getImageDataPixelColor(img, startX, startY)
+
+  queue.push([startX, startY])
+  visited[startY * w + startX] = 1
+
+  let minX = startX, maxX = startX
+  let minY = startY, maxY = startY
+
+  const matches: [number, number][] = []
+
+  while (queue.length) {
+    const [x, y] = queue.pop()!
+    matches.push([x, y])
+
+    if (x < minX) minX = x
+    if (x > maxX) maxX = x
+    if (y < minY) minY = y
+    if (y > maxY) maxY = y
+
+    const neighbors = contiguous
+      ? [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
+      : []
+
+    for (const [nx, ny] of neighbors) {
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue
+      const idx = ny * w + nx
+      if (visited[idx]) continue
+
+      const c = getImageDataPixelColor(img, nx, ny)
+      if (colorDistance(c, baseColor) <= tolerance) {
+        visited[idx] = 1
+        queue.push([nx, ny])
+      }
+    }
+  }
+
+  // Non-contiguous mode: scan entire image
+  if (!contiguous) {
+    for (let y = 0; y < h; y++) {
+      for (let x = 0; x < w; x++) {
+        const c = getImageDataPixelColor(img, x, y)
+        if (colorDistance(c, baseColor) <= tolerance) {
+          matches.push([x, y])
+          if (x < minX) minX = x
+          if (x > maxX) maxX = x
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+      }
+    }
+  }
+
+  if (matches.length === 0) return null
+
+  const rect: RectBounds = {
+    x: minX,
+    y: minY,
+    w: maxX - minX + 1,
+    h: maxY - minY + 1,
+  }
+
+  trimRectBounds(rect, { x: 0, y: 0, w, h })
+
+  // Extract pixel buffer for the bounding rect
+  const pixels = extractImageData(img, rect.x, rect.y, rect.w, rect.h)
+
+  // Build mask inside the rect
+  const mask = new Uint8Array(rect.w * rect.h)
+
+  for (const [x, y] of matches) {
+    const mx = x - rect.x
+    const my = y - rect.y
+    mask[my * rect.w + mx] = 1
+  }
+
+  return { rect, pixels, mask }
+}
