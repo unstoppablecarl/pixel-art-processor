@@ -91,6 +91,7 @@ const canvasPaintController = useCanvasPaintController({
   width: computed(() => config.size.value),
   height: computed(() => config.size.value),
   gridColor: toRef(config, 'showGridColor'),
+  gridDraw: toRef(config, 'showGrid'),
   imageDataRef: maskImageData,
 })
 

@@ -33,8 +33,6 @@ export type ToolRegistry<T> = {
 export interface BaseEditorState {
   scale: number,
 
-  gridColor: string,
-
   mouseX: number | null,
   mouseY: number | null,
 
@@ -104,4 +102,5 @@ export type BaseToolManagerSettings = {
   id: string,
   scale?: Ref<number>,
   gridColor: Ref<string>,
+  gridDraw: Ref<boolean>
 }

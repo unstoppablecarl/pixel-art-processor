@@ -136,7 +136,8 @@ if (import.meta.hot && !import.meta.env.VITEST) {
 const tileGridController = useTileGridController({
   id: node.id,
   tileGridManager,
-  gridColor:  toRef(config, 'showGridColor'),
+  gridColor: toRef(config, 'showGridColor'),
+  gridDraw: toRef(config, 'showGrid'),
 })
 
 const tileSheetCanvas = useTemplateRef('tileSheetCanvas')

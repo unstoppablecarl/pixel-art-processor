@@ -10,14 +10,15 @@ export function makeCanvasRenderer(
   {
     state,
     getImageData,
+    gridCache,
   }: {
     state: CanvasPaintEditorState,
     getImageData: () => ImageData,
+    gridCache: PixelGridLineRenderer
   }) {
 
   let currentToolRenderer: CurrentToolRenderer
   let pixelCanvas: PixelCanvas | undefined
-  let gridCache: PixelGridLineRenderer | undefined
 
   function setCanvas(canvas: HTMLCanvasElement) {
     pixelCanvas = makePixelCanvas(canvas)
@@ -57,9 +58,6 @@ export function makeCanvasRenderer(
     queueRender,
     setCurrentToolRenderer(val: CurrentToolRenderer) {
       currentToolRenderer = val
-    },
-    setPixelGridLineRenderer(val: PixelGridLineRenderer) {
-      gridCache = val
     },
     setCanvas,
     clear,

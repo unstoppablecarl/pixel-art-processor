@@ -36,6 +36,7 @@ export function useTileGridController(
     toolset = useTileGridToolset(),
     scale = toRef(useUIStore(), 'imgScale'),
     gridColor,
+    gridDraw,
   }: BaseToolManagerSettings & {
     tileGridManager: TileGridManager,
     toolset?: TileGridToolset,
@@ -44,7 +45,6 @@ export function useTileGridController(
 
   const state = makeTileGridEditorState({
     tileGridManager,
-    gridColor,
     scale,
   })
 
@@ -110,6 +110,11 @@ export function useTileGridController(
   const uiStore = useUIStore()
   const brushCursor = useBrushCursor()
   watch(brushCursor.watchTarget, () => gridRenderer.queueRenderAll())
+
+  watch(gridDraw, () => {
+    gridRenderer.queueRenderAll()
+    tileSheetRenderer.draw()
+  })
 
   watchEffect(() => {
     state.tileSize = tileGridManager.tileSize.value

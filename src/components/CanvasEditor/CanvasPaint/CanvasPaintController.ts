@@ -33,26 +33,23 @@ export function useCanvasPaintController(
     toolset = useCanvasPaintToolset(),
     scale = toRef(useUIStore(), 'imgScale'),
     gridColor,
+    gridDraw,
     imageDataRef,
   }: BaseToolManagerSettings & {
     toolset?: CanvasPaintToolset,
     width: Ref<number>,
     height: Ref<number>,
-    imageDataRef: ImageDataRef
+    imageDataRef: ImageDataRef,
+    gridColor: Ref<string>,
   },
 ) {
 
   const state = makCanvasPaintEditorState({
-    gridColor,
+    gridDraw,
     scale,
     width,
     height,
     imageDataRef,
-  })
-
-  const canvasRenderer = makeCanvasRenderer({
-    state,
-    getImageData: () => state.imageDataRef.get()!,
   })
 
   const gridCache = makePixelGridLineRenderer({
@@ -62,7 +59,12 @@ export function useCanvasPaintController(
     scale,
   })
   watch(gridCache.watchTarget, () => canvasRenderer.queueRender())
-  canvasRenderer.setPixelGridLineRenderer(gridCache)
+
+  const canvasRenderer = makeCanvasRenderer({
+    state,
+    gridCache,
+    getImageData: () => state.imageDataRef.get()!,
+  })
 
   const localToolStates: LocalToolStates = {
     [Tool.BRUSH]: makeBrushToolState({ state }),
@@ -103,6 +105,8 @@ export function useCanvasPaintController(
   watchEffect(() => {
     state.imageDataRef.resize(width.value, height.value)
   })
+
+  watch(gridDraw, () => canvasRenderer.queueRender())
 
   watch([
     () => uiStore.imgScale,

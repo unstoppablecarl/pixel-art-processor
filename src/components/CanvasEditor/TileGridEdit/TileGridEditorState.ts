@@ -50,7 +50,6 @@ type MouseGridState =
 }
 
 interface BaseTileGridEditorState {
-
   gridTilesWidth: number
   gridTilesHeight: number
 
@@ -86,8 +85,6 @@ interface BaseTileGridEditorState {
   isDragging: boolean
   dragThreshold: number
   dragStartTileId: TileId | null
-
-  gridColor: string
 
   readonly tileSheet: TileSheet
   readonly tileGrid: AxialEdgeWangGrid<number>
