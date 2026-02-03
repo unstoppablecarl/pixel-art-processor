@@ -2,6 +2,7 @@
 import { BApp } from 'bootstrap-vue-next'
 import Processor from './components/Processor.vue'
 import DebugSidebar from './DebugSidebar.vue'
+import './lib/key-bindings.ts'
 
 const appDefaults = {
   BPopover: {
