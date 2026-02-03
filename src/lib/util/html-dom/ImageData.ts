@@ -332,7 +332,6 @@ export function putImageDataScaled(
     ctx.putImageData(tmp, 0, 0)
   }
 
-  target.clearRect(dx, dy, width, height)
   target.drawImage(canvas, dx, dy)
 }
 
