@@ -93,8 +93,6 @@ interface BaseTileGridEditorState {
 }
 
 class TileGridEditorStateC extends EditorState {
-  public gridTilesWidth = 1
-  public gridTilesHeight = 1
 
   public tileSize = 64
 
@@ -164,6 +162,14 @@ class TileGridEditorStateC extends EditorState {
 
   get tileGridManager() {
     return this._tileGridManager
+  }
+
+  get gridTilesWidth() {
+    return this._tileGridManager.tileGrid.value.width
+  }
+
+  get gridTilesHeight() {
+    return this._tileGridManager.tileGrid.value.height
   }
 }
 

@@ -1,4 +1,4 @@
-import { ref, toRef, watch, watchEffect } from 'vue'
+import { ref, toRef, watch } from 'vue'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
@@ -116,12 +116,12 @@ export function useTileGridController(
     tileSheetRenderer.draw()
   })
 
-  watchEffect(() => {
-    state.tileSize = tileGridManager.tileSize.value
-    state.scale = uiStore.imgScale
-    state.gridTilesWidth = tileGridManager.tileGrid.value.width
-    state.gridTilesHeight = tileGridManager.tileGrid.value.height
-    state.drawTileIds = uiStore.showTileIds
+  watch([
+    tileGridManager.tileSize,
+    uiStore.imgScale,
+    uiStore.showTileIds,
+    tileGridManager.tileGrid,
+  ], () => {
     gridRenderer.resize()
     gridRenderer.queueRenderAll()
     tileSheetRenderer.resize()

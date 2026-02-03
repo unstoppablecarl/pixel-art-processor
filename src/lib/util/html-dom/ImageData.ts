@@ -354,6 +354,9 @@ export function putImageDataScaled(
   }
 
   ctx.putImageData(tmp, 0, 0)
+  if (blend?.alwaysClearFirst) {
+    target.clearRect(dx, dy, sw, sh)
+  }
   target.drawImage(canvas, dx, dy)
 }
 

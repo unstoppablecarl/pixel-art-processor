@@ -1,6 +1,9 @@
 import type { RGBAFloat } from './ImageData.ts'
 
-export type BlendFn = (src: RGBAFloat, dst: RGBAFloat) => RGBAFloat
+export type BlendFn = {
+  alwaysClearFirst?: boolean,
+  (src: RGBAFloat, dst: RGBAFloat): RGBAFloat
+}
 
 export function makeByteBlendAdapter(blend: BlendFn) {
   return (
@@ -48,6 +51,7 @@ export const blendSourceAlphaOver = (alpha: number): BlendFn => (src, dst) => {
 export const blendOverwrite: BlendFn = (src, dst) => {
   return { r: src.r, g: src.g, b: src.b, a: src.a } as RGBAFloat
 }
+blendOverwrite.alwaysClearFirst = true
 
 export const blendSourceOver: BlendFn = blendSourceAlphaOver(1)
 
