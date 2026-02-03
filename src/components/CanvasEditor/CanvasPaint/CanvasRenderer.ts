@@ -1,5 +1,5 @@
 import { makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../../../lib/util/html-dom/renderCanvasFrame.ts'
+import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { type PixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
@@ -17,6 +17,7 @@ export function makeCanvasRenderer(
     gridCache: PixelGridLineRenderer
   }) {
 
+  const renderCanvasFrame = makeCanvasFrameRenderer()
   let currentToolRenderer: CurrentToolRenderer
   let pixelCanvas: PixelCanvas | undefined
 
@@ -32,7 +33,7 @@ export function makeCanvasRenderer(
 
   const queueRender = makeRenderQueue(() => {
     renderCanvasFrame(
-      pixelCanvas,
+      pixelCanvas!,
       state.scale,
       getImageData,
       (ctx) => {

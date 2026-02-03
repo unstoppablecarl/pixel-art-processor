@@ -1,6 +1,6 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseBlendModeToolHandler, BlendMode, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
+import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
 import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
 import type {
   LocalToolContext,
@@ -138,19 +138,18 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           const drawX = g.x
           const drawY = g.y
 
-          if (mode === BlendMode.OVERWRITE) {
-            ctx.clearRect(drawX, drawY, r.w, r.h)
-          }
-          putImageDataScaled(
+          putImageData(
             ctx,
             sel.pixels,
-            drawX,
-            drawY,
-            blendMode,
-            r.bufferX,
-            r.bufferY,
-            r.w,
-            r.h,
+            {
+              dx: drawX,
+              dy: drawY,
+              blendMode,
+              sx: r.bufferX,
+              sy: r.bufferY,
+              sw: r.w,
+              sh: r.h,
+            },
           )
         }
       }
@@ -202,20 +201,18 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           y: localY,
         } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
-        if (mode === BlendMode.OVERWRITE) {
-          ctx.clearRect(localX, localY, r.w, r.h)
-        }
-
-        putImageDataScaled(
+        putImageData(
           ctx,
           composed,
-          localX,
-          localY,
-          blendMode,
-          r.bufferX,
-          r.bufferY,
-          r.w,
-          r.h,
+          {
+            blendMode,
+            dx: localX,
+            dy: localY,
+            sx: r.bufferX,
+            sy: r.bufferY,
+            sw: r.w,
+            sh: r.h,
+          },
         )
       }
     },

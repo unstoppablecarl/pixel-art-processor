@@ -7,18 +7,15 @@ import {
 } from '../../../lib/util/data/Grid.ts'
 import {
   clearImageDataRect,
-  extractImageData,
   type RGBA,
   setImageDataPixelColor,
   setImageDataPixelsColor,
-  writeImageData,
 } from '../../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../_core-editor-types.ts'
 import { selectMoveBlendModeToWriter } from '../_support/tools/selection-helpers.ts'
 import type { TileSheet } from './data/TileSheet.ts'
-import type { SelectionTileSheetRect, TileSheetSelection } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
 
@@ -46,27 +43,6 @@ export function makeTileSheetWriter(
     state.tileSheet.markDirty()
   }
 
-  function blendTileSheetRectFromGrid(
-    rect: SelectionTileSheetRect,
-    pixels: ImageData,
-    blendMode: BlendMode,
-    selection: TileSheetSelection,
-  ) {
-    const srcX = rect.x - selection.tileSheetBounds.x
-    const srcY = rect.y - selection.tileSheetBounds.y
-
-    blendSheetImageData(
-      pixels,
-      blendMode,
-      rect.x,   // dest X in tilesheet
-      rect.y,   // dest Y in tilesheet
-      srcX,     // src X inside selection buffer
-      srcY,     // src Y inside selection buffer
-      rect.w,
-      rect.h,
-    )
-  }
-
   function blendSheetImageData(
     imageData: ImageData,
     blendMode: BlendMode,
@@ -82,12 +58,17 @@ export function makeTileSheetWriter(
   }
 
   return {
-    blendTileSheetRectFromGrid,
     blendSheetImageData,
     clear() {
+      clearImageDataRect(
+        state.tileSheet.imageData,
+        0,
+        0,
+        state.tileSheet.imageData.width,
+        state.tileSheet.imageData.height,
+      )
+
       for (const tile of state.tileset.tiles) {
-        const rect = state.tileSheet.getTileRect(tile.id)
-        clearImageDataRect(state.tileSheet.imageData, rect.x, rect.y, rect.w, rect.h)
         markDirty(tile.id)
       }
       state.tileSheet.markDirty()
@@ -131,38 +112,6 @@ export function makeTileSheetWriter(
       }
       state.tileSheet.markDirty()
     },
-
-    clearGridRect(gx: number, gy: number, w: number, h: number) {
-      const rect = { x: gx, y: gy, w, h }
-      const overlapping = state.tileGridManager.getOverlappingTiles(rect)
-
-      for (const { tile, tileOverlap } of overlapping) {
-        const { x, y, w: tw, h: th } = tileOverlap
-        const sheetPos = state.tileSheet.tileLocalToSheet(tile.id, x, y)
-        clearImageDataRect(state.tileSheet.imageData, sheetPos.x, sheetPos.y, tw, th)
-        markDirty(tile.id)
-      }
-      state.tileSheet.markDirty()
-    },
-
-    blendGridImageData(imageData: ImageData, gx: number, gy: number, blendMode: BlendMode): TileId[] {
-      const rect = { x: gx, y: gy, w: imageData.width, h: imageData.height }
-      const overlapping = state.tileGridManager.getOverlappingTiles(rect)
-
-      for (const { tile, tileOverlap, gridOverlap } of overlapping) {
-        const { x, y } = tileOverlap
-        const { x: sx, y: sy, w, h } = gridOverlap
-
-        const sheetPos = state.tileSheet.tileLocalToSheet(tile.id, x, y)
-
-        blendSheetImageData(imageData, blendMode, sheetPos.x, sheetPos.y, sx, sy, w, h)
-
-        markDirty(tile.id)
-      }
-      state.tileSheet.markDirty()
-      return overlapping.map(d => d.tile.id)
-    },
-
     writeTilePixels(tilePixels: Point[], tileId: TileId, color: RGBA) {
       tilePixels.forEach(({ x, y }) => {
         writeTilePixel(tileId, x, y, color)
@@ -179,36 +128,6 @@ export function makeTileSheetWriter(
 
       affected?.forEach(t => markDirty(t.id))
       markDirty(tileId)
-      state.tileSheet.markDirty()
-    },
-
-    clearTileRect(tileId: TileId, tx: number, ty: number, w: number, h: number) {
-      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
-      clearImageDataRect(state.tileSheet.imageData, sheetPos.x, sheetPos.y, w, h)
-      markDirty(tileId)
-      state.tileSheet.markDirty()
-    },
-
-    writeTileImageData(tileId: TileId, tx: number, ty: number, imageData: ImageData) {
-      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
-      writeImageData(state.tileSheet.imageData, imageData, sheetPos.x, sheetPos.y)
-      markDirty(tileId)
-      state.tileSheet.markDirty()
-    },
-
-    extractTileRect(tileId: TileId, tx: number, ty: number, w: number, h: number): ImageData {
-      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
-      return extractImageData(state.tileSheet.imageData, sheetPos.x, sheetPos.y, w, h)
-    },
-
-    blendTileImageData(tileId: TileId, imageData: ImageData, tx: number, ty: number, blendMode: BlendMode) {
-      const w = imageData.width
-      const h = imageData.height
-      const sheetPos = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
-      blendSheetImageData(imageData, blendMode, sheetPos.x, sheetPos.y, tx, ty, w, h)
-
-      markDirty(tileId)
-
       state.tileSheet.markDirty()
     },
   }

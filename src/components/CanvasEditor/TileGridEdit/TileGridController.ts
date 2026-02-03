@@ -118,8 +118,8 @@ export function useTileGridController(
 
   watch([
     tileGridManager.tileSize,
-    uiStore.imgScale,
-    uiStore.showTileIds,
+    () => uiStore.imgScale,
+    () => uiStore.showTileIds,
     tileGridManager.tileGrid,
   ], () => {
     gridRenderer.resize()

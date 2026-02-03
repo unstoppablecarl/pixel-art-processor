@@ -294,37 +294,81 @@ export function writeImageData(
   }
 }
 
+export interface PutImageDataOptions {
+  dx?: number
+  dy?: number
+
+  // source cropping
+  sx?: number
+  sy?: number
+  sw?: number
+  sh?: number
+
+  blendMode?: BlendFn
+
+  // mask (1 = write, 0 = skip)
+  mask?: Uint8Array | null
+}
+
 const pixelCanvas = makeReusablePixelCanvas()
 const getTmpImageData = makeReusableImageData()
 
-export function putImageDataScaled(
+export function putImageData(
   target: CanvasRenderingContext2D,
   imageData: ImageData,
-  dx = 0,
-  dy = 0,
-  blend?: BlendFn,
-  sx = 0,
-  sy = 0,
-  sw = imageData.width,
-  sh = imageData.height,
-  mask?: Uint8Array | null,
+  opts: PutImageDataOptions = {},
 ) {
-  let src: ImageData
+  const {
+    dx = 0,
+    dy = 0,
+    blendMode,
+    sx = 0,
+    sy = 0,
+    sw = imageData.width,
+    sh = imageData.height,
+    mask,
+  } = opts
 
   const fullWidth = sw === imageData.width
   const fullHeight = sh === imageData.height
   const atOrigin = sx === 0 && sy === 0
 
-  if (fullWidth && fullHeight && atOrigin) {
-    src = imageData
-  } else {
-    src = extractImageData(imageData, sx, sy, sw, sh)
-  }
+  // Extract region if needed
+  const src = (fullWidth && fullHeight && atOrigin)
+    ? imageData
+    : extractImageData(imageData, sx, sy, sw, sh)
 
   const { width, height } = src
+
+  if (blendMode?.alwaysClearFirst) {
+    if (!mask) {
+      // Fast path: clear entire destination rect
+      target.clearRect(dx, dy, width, height)
+    } else {
+      // Masked clear: clear only pixels where mask = 1
+      const clearImg = target.getImageData(dx, dy, width, height)
+      const cdata = clearImg.data
+
+      for (let iy = 0; iy < height; iy++) {
+        for (let ix = 0; ix < width; ix++) {
+          const mi = iy * width + ix   // rect-local mask index
+          if (mask[mi] === 0) continue
+
+          const idx = (iy * width + ix) * 4
+          cdata[idx]     = 0
+          cdata[idx + 1] = 0
+          cdata[idx + 2] = 0
+          cdata[idx + 3] = 0
+        }
+      }
+
+      target.putImageData(clearImg, dx, dy)
+    }
+  }
+
   const { canvas, ctx } = pixelCanvas(width, height)
 
-  if (!blend && !mask) {
+  if (!blendMode && !mask) {
     ctx.putImageData(src, 0, 0)
     target.drawImage(canvas, dx, dy)
     return
@@ -333,17 +377,17 @@ export function putImageDataScaled(
   const tmp = getTmpImageData(width, height)
   const dst = tmp.data
   const sdata = src.data
-  const byteBlend = blend ? makeByteBlendAdapter(blend) : null
+  const byteBlend = blendMode ? makeByteBlendAdapter(blendMode) : null
 
   for (let iy = 0; iy < height; iy++) {
     for (let ix = 0; ix < width; ix++) {
-      const mi = iy * width + ix
+      const mi = iy * width + ix   // rect-local mask index
       if (mask && mask[mi] === 0) continue
 
-      const i = mi * 4
+      const i = (iy * width + ix) * 4
 
       if (!byteBlend) {
-        dst[i] = sdata[i]
+        dst[i]     = sdata[i]
         dst[i + 1] = sdata[i + 1]
         dst[i + 2] = sdata[i + 2]
         dst[i + 3] = sdata[i + 3]
@@ -354,9 +398,6 @@ export function putImageDataScaled(
   }
 
   ctx.putImageData(tmp, 0, 0)
-  if (blend?.alwaysClearFirst) {
-    target.clearRect(dx, dy, sw, sh)
-  }
   target.drawImage(canvas, dx, dy)
 }
 
@@ -390,43 +431,75 @@ export function extractImageData(
 }
 
 export function clearImageDataRect(
-  img: ImageData,
+  target: ImageData | CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
+  mask?: Uint8Array | null,
 ) {
-  fillImageDataRect(img, x, y, w, h, RGBA_ERASE)
+  fillImageDataRect(target, x, y, w, h, RGBA_ERASE, mask)
 }
 
 export function fillImageDataRect(
-  img: ImageData,
+  target: ImageData | CanvasRenderingContext2D,
   x: number,
   y: number,
   w: number,
   h: number,
   { r, g, b, a }: RGBA,
+  mask?: Uint8Array | null,
 ) {
-  const data = img.data
-  const width = img.width
-  const height = img.height
+  const isCtx = target instanceof CanvasRenderingContext2D
 
-  // clamp to bounds
+  // Resolve dimensions
+  const width = isCtx ? target.canvas.width : target.width
+  const height = isCtx ? target.canvas.height : target.height
+
+  // Clamp to bounds
   const startX = Math.max(0, x)
   const startY = Math.max(0, y)
   const endX = Math.min(width, x + w)
   const endY = Math.min(height, y + h)
 
-  for (let iy = startY; iy < endY; iy++) {
-    const row = iy * width
-    for (let ix = startX; ix < endX; ix++) {
-      const idx = (row + ix) * 4
+  if (startX >= endX || startY >= endY) return
 
-      data[idx] = r
+  // If target is a context, extract only the needed region
+  let img: ImageData
+  if (isCtx) {
+    img = target.getImageData(startX, startY, endX - startX, endY - startY)
+  } else {
+    img = target
+  }
+
+  const data = img.data
+  const regionWidth = img.width
+  const regionHeight = img.height
+
+  const useMask = !!mask
+
+  // Fill pixels
+  for (let iy = 0; iy < regionHeight; iy++) {
+    const globalY = startY + iy
+    const maskRow = globalY * width
+
+    for (let ix = 0; ix < regionWidth; ix++) {
+      const globalX = startX + ix
+      const mi = maskRow + globalX
+
+      if (useMask && mask![mi] === 0) continue
+
+      const idx = (iy * regionWidth + ix) * 4
+      data[idx]     = r
       data[idx + 1] = g
       data[idx + 2] = b
       data[idx + 3] = a
     }
+  }
+
+  // Commit back to context if needed
+  if (isCtx) {
+    target.putImageData(img, startX, startY)
   }
 }
 

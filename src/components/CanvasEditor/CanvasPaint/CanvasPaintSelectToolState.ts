@@ -171,7 +171,7 @@ export function makeCanvasPaintSelectToolState(
     const writer = selectMoveBlendModeToWriter[mode]
 
     const o = selection.original
-    clearImageDataRect(img, o.x, o.y, o.w, o.h)
+    clearImageDataRect(img, o.x, o.y, o.w, o.h, selection.mask)
 
     const c = selection.current
     writer(img, selection.pixels, c.x, c.y, undefined, undefined, undefined, undefined, selection.mask ?? undefined)

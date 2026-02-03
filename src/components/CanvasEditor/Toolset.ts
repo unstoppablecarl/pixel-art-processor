@@ -20,11 +20,12 @@ export function makeToolset<
   tools: TTools,
 ): Toolset<TTools> {
   let currentTool: Tool = store.currentTool
+  let prevActiveLocal: any = null
   let activeLocal: any = null
 
   function setTool(tool: Tool) {
-    if (activeLocal) {
-      tools[currentTool]?.onDeselect?.(activeLocal)
+    if (prevActiveLocal) {
+      tools[currentTool]?.onDeselect?.(prevActiveLocal)
     }
     currentTool = tool
     if (activeLocal) {
@@ -44,6 +45,7 @@ export function makeToolset<
     },
     setTool,
     setActiveLocal: (local: any) => {
+      prevActiveLocal = activeLocal
       activeLocal = local
     },
     get activeLocal() {

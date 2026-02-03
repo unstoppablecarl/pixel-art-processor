@@ -1,11 +1,11 @@
-import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
+import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
+import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { Tool } from '../../_core-editor-types.ts'
-import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
-import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
-import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
+import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
+import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
+import type { TileGridEditorState } from '../TileGridEditorState.ts'
 
 export type TileSheetRenderer = ReturnType<typeof makeTileSheetRenderer>
 
@@ -20,6 +20,7 @@ export function makeTileSheetRenderer(
     gridCache: PixelGridLineRenderer,
 
   }) {
+  const renderCanvasFrame = makeCanvasFrameRenderer()
 
   let tileGridPixelCanvas: PixelCanvas | undefined
 
@@ -37,7 +38,6 @@ export function makeTileSheetRenderer(
   }
 
   function draw() {
-
     const toolState = localToolStates[Tool.SELECT]
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       const { tileSize } = state
@@ -60,13 +60,19 @@ export function makeTileSheetRenderer(
           const srcX = r.bufferX
           const srcY = r.bufferY
 
-          putImageDataScaled(ctx, pixels, r.x, r.y, undefined, srcX, srcY, r.w, r.h)
+          putImageData(ctx, pixels, {
+            dx: r.x,
+            dy: r.y,
+            sx: srcX,
+            sy: srcY,
+            sw: r.w,
+            sh: r.h,
+          })
         })
       }
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
-
       const { scale, tileSize } = state
       gridCache.draw(ctx)
       if (state.drawTileIds) {
@@ -88,7 +94,7 @@ export function makeTileSheetRenderer(
       }
     }
     renderCanvasFrame(
-      tileGridPixelCanvas,
+      tileGridPixelCanvas!,
       state.scale,
       () => state.tileSheet.imageData,
       drawPixelLayer,

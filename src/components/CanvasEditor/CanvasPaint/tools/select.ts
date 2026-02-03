@@ -1,5 +1,5 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
+import { clearImageDataRect, putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
 import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
@@ -87,20 +87,18 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
 
       if (toolState.selectionHasMoved()) {
         const r = sel.original
-        ctx.clearRect(r.x, r.y, r.w, r.h)
+        clearImageDataRect(ctx, r.x, r.y, r.w, r.h, sel.mask)
       }
 
-      putImageDataScaled(
+      putImageData(
         ctx,
         sel.pixels,
-        sel.current.x,
-        sel.current.y,
-        blendMode,
-        undefined,
-        undefined,
-        undefined,
-        undefined,
-        sel.mask,
+        {
+          dx: sel.current.x,
+          dy: sel.current.y,
+          blendMode,
+          mask: sel.mask,
+        },
       )
     },
     screenOverlayDraw({ state, toolState }, ctx) {

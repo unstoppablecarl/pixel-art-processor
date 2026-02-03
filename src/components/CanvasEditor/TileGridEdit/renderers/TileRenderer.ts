@@ -1,9 +1,9 @@
 import { drawText, makePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
+import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
-import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
+import type { TileGridEditorState } from '../TileGridEditorState.ts'
+import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
 
@@ -23,7 +23,7 @@ export function makeTileRenderer(
     tileCanvas: HTMLCanvasElement,
     currentToolRenderer: CurrentToolRenderer,
   }) {
-
+  const renderCanvasFrame = makeCanvasFrameRenderer()
   const pixelCanvas = makePixelCanvas(tileCanvas)
 
   function resize() {

@@ -1,12 +1,12 @@
 import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
-import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
+import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
+import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { Tool } from '../../_core-editor-types.ts'
-import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
-import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
-import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
+import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
+import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
+import type { TileGridEditorState } from '../TileGridEditorState.ts'
 
 export type TileSheetSelectionRenderer = ReturnType<typeof makeTileSheetSelectionRenderer>
 
@@ -20,6 +20,7 @@ export function makeTileSheetSelectionRenderer(
     localToolStates: LocalToolStates,
     gridCache: PixelGridLineRenderer,
   }) {
+  const renderCanvasFrame = makeCanvasFrameRenderer()
 
   let tileGridPixelCanvas: PixelCanvas | undefined
 
@@ -49,7 +50,15 @@ export function makeTileSheetSelectionRenderer(
         toolState.selection.currentRects.forEach((r) => {
           drawRect(ctx, r, 'rgba(0, 255, 0, 0.25)')
 
-          putImageDataScaled(ctx, pixels, r.bufferX, r.bufferY, undefined, r.bufferX, r.bufferY, r.w, r.h)
+          putImageData(ctx, pixels, {
+              dx: r.bufferX,
+              dy: r.bufferY,
+              sx: r.bufferX,
+              sy: r.bufferY,
+              sw: r.w,
+              sh: r.h,
+            },
+          )
         })
       }
     }
@@ -69,7 +78,7 @@ export function makeTileSheetSelectionRenderer(
       }
     }
     renderCanvasFrame(
-      tileGridPixelCanvas,
+      tileGridPixelCanvas!,
       state.scale,
       () => null,
       drawPixelLayer,

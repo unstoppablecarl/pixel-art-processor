@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import { computed } from 'vue'
 
 const model = defineModel({ required: true })
@@ -7,20 +7,22 @@ const {
   label,
   value,
   icon,
+  selected = null,
 } = defineProps<{
   label: string,
-  value: string | number,
+  value: T,
   icon: string,
+  selected?: boolean,
 }>()
-const selected = computed(() => model.value == value)
+const isSelected = computed(() => selected ?? model.value == value)
 </script>
 <template>
   <button
     @click="model = value"
     :class="{
             'btn btn-sm': true,
-            'btn-primary': selected,
-            'btn-outline-primary': !selected,
+            'btn-primary': isSelected,
+            'btn-outline-primary': !isSelected,
           }"
     :title="label"
   >

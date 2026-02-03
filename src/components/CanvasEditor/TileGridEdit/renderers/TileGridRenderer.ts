@@ -1,8 +1,8 @@
 import { writeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
+import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { imageDataRef } from '../../../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { type PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
@@ -13,16 +13,17 @@ export type TileGridRenderer = ReturnType<typeof makeTileGridRenderer>
 export function makeTileGridRenderer(
   {
     state,
-    gridCache
+    gridCache,
   }: {
     state: TileGridEditorState,
     gridCache: PixelGridLineRenderer,
   }) {
+  const renderCanvasFrame = makeCanvasFrameRenderer()
+  const tileGridImageDataRef = imageDataRef()
 
   let currentToolRenderer: CurrentToolRenderer
   let tileGridPixelCanvas: PixelCanvas | undefined
 
-  const tileGridImageDataRef = imageDataRef()
   const tileRenderers: Record<TileId, TileRenderer> = {}
 
   function setTileGridCanvas(canvas: HTMLCanvasElement) {
@@ -102,7 +103,7 @@ export function makeTileGridRenderer(
     }
 
     renderCanvasFrame(
-      tileGridPixelCanvas,
+      tileGridPixelCanvas!,
       state.scale,
       () => tileGridImageDataRef?.get(),
       drawPixelLayer,

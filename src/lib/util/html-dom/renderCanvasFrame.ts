@@ -1,34 +1,45 @@
-import { putImageDataScaled } from './ImageData.ts'
-import type { PixelCanvas } from './PixelCanvas.ts'
 import type { DrawLayer } from '../../../components/CanvasEditor/_core-editor-types.ts'
+import { putImageData } from './ImageData.ts'
+import { makeReusablePixelCanvas, type PixelCanvas } from './PixelCanvas.ts'
 
-export function renderCanvasFrame(
-  pixelCanvas: PixelCanvas | undefined,
-  scale: number,
-  getImageData: () => ImageData | undefined | null,
-  drawPixelLayer?: DrawLayer,
-  drawScreenLayer?: DrawLayer,
-) {
-  if (!pixelCanvas) return
-  const { canvas, ctx } = pixelCanvas
+export function makeCanvasFrameRenderer() {
 
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-  ctx.clearRect(0, 0, canvas.width, canvas.height)
+  const screenCanvas = makeReusablePixelCanvas()
 
-  // pixel space
-  ctx.scale(scale, scale)
+  return function renderCanvasFrame(
+    pixelCanvas: PixelCanvas,
+    scale: number,
+    getImageData: () => ImageData | undefined | null,
+    drawPixelLayer?: DrawLayer,
+    drawScreenLayer?: DrawLayer,
+  ) {
+    const { canvas, ctx } = pixelCanvas
 
-  const targetImageData = getImageData()
-  if (targetImageData) {
-    putImageDataScaled(ctx, targetImageData)
+    const {ctx: pxCtx, canvas: pxCanvas} = screenCanvas(canvas.width, canvas.height)
+
+    // 1. Clear pixel buffer (unscaled)
+    pxCtx.setTransform(1, 0, 0, 1, 0, 0)
+    pxCtx.clearRect(0, 0, pxCanvas.width, pxCanvas.height)
+
+    // 2. Draw pixel data into pixel buffer
+    const img = getImageData()
+    if (img) {
+      putImageData(pxCtx, img)
+    }
+
+    drawPixelLayer?.(pxCtx)
+
+    // 3. Draw pixel buffer scaled onto screen
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+
+    ctx.setTransform(scale, 0, 0, scale, 0, 0)
+    ctx.drawImage(pxCanvas, 0, 0)
+
+    // 4. Draw overlays in screen space
+    ctx.setTransform(1, 0, 0, 1, 0, 0)
+    drawScreenLayer?.(ctx)
   }
-
-  drawPixelLayer?.(ctx)
-
-  // screen space
-  ctx.setTransform(1, 0, 0, 1, 0, 0)
-
-  drawScreenLayer?.(ctx)
 }
 
 export function makeRenderQueue(cb: () => void) {
