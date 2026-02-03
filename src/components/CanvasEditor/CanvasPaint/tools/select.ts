@@ -1,17 +1,15 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { blendOverwrite } from '../../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { drawSelectOutline } from '../../_support/tools/selection-helpers.ts'
+import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
-import type { CanvasPaintSelectionToolState } from '../CanvasPaintSelectionToolState.ts'
+import type { CanvasPaintSelectToolState } from '../CanvasPaintSelectToolState.ts'
 
-export type CanvasPaintSelectToolHandler<L = LocalToolContext<CanvasPaintSelectionToolState>> =
+export type CanvasPaintSelectToolHandler<L = LocalToolContext<CanvasPaintSelectToolState>> =
   BaseBlendModeToolHandler<L>
   & CanvasPaintToolHandlerRender<L>
 
 export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPaintSelectToolHandler {
-
   return {
     cursorCssClass: TOOL_HOVER_CSS_CLASSES.SELECT,
     onDeselect({ toolState }) {
@@ -23,10 +21,14 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
     onClick({ state, toolState, canvasRenderer }, x, y) {
       const ts = toolState
       const sel = ts.selection
-      if (!sel) return
+      if (!sel) {
+        if (ts.inFloodMode()) {
+          ts.finalizeFloodSelection(x, y)
+        }
+        return
+      }
 
       if (!ts.pointInSelection(x, y)) {
-
         if (ts.selectionHasMoved()) {
           ts.commit(store.selectMoveBlendMode)
         } else {
@@ -34,12 +36,15 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
           canvasRenderer.queueRender()
         }
       }
+      if (ts.inFloodMode()) {
+        ts.finalizeFloodSelection(x, y)
+      }
     },
     onDragStart({ state, toolState, canvasRenderer }, x, y) {
       const ts = toolState
       const sel = ts.selection
-      if (!sel) {
-        ts.startSelection(x, y)
+      if (!sel && !ts.inFloodMode()) {
+        ts.startRectSelection(x, y)
         return
       }
 
@@ -48,7 +53,9 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
         return
       }
 
-      ts.startSelection(x, y)
+      if (!ts.inFloodMode()) {
+        ts.startRectSelection(x, y)
+      }
       canvasRenderer.queueRender()
     },
     onDragMove({ state, toolState, canvasRenderer }, x, y) {
@@ -62,10 +69,8 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
     },
     onDragEnd({ state, toolState, canvasRenderer }, _x, _y) {
       const ts = toolState
-
-      console.log('dragEnd', ts.selecting)
       if (ts.selecting) {
-        ts.finalizeSelection()
+        ts.finalizeRectSelection()
       }
 
       if (ts.dragging) {
@@ -77,8 +82,8 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
       const sel = toolState.selection
       if (!sel) return
 
-      // const mode = toolContext.selectMoveBlendMode
-      // const blendMode = selectMoveBlendModeToBlendFn[mode]
+      const mode = store.selectMoveBlendMode
+      const blendMode = selectMoveBlendModeToBlendFn[mode]
 
       if (toolState.selectionHasMoved()) {
         const r = sel.original
@@ -90,18 +95,23 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
         sel.pixels,
         sel.current.x,
         sel.current.y,
-        blendOverwrite,
+        blendMode,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        sel.mask,
       )
     },
     screenOverlayDraw({ state, toolState }, ctx) {
       const sel = toolState.selection
       const { scale } = state
       if (sel) {
-        drawSelectOutline(ctx, scale, sel.current)
+        drawSelectOutline(ctx, scale, sel.current, store.cursorColor, sel.mask)
       } else {
         const r = toolState.currentDraggedRect
         if (!r) return
-        drawSelectOutline(ctx, scale, r)
+        drawSelectOutline(ctx, scale, r, store.cursorColor)
       }
     },
   }

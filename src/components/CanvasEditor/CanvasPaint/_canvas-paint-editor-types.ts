@@ -1,7 +1,7 @@
 import { Tool } from '../_core-editor-types.ts'
 import type { BrushToolState } from '../_support/tools/BrushToolState.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
-import type { CanvasPaintSelectionToolState } from './CanvasPaintSelectionToolState.ts'
+import type { CanvasPaintSelectToolState } from './CanvasPaintSelectToolState.ts'
 import type { CanvasRenderer } from './CanvasRenderer.ts'
 
 export type BaseLocalToolContext = {
@@ -20,7 +20,7 @@ export type CanvasPaintToolHandlerRender<L> = {
 
 export type LocalToolStates = {
   [Tool.BRUSH]: BrushToolState,
-  [Tool.SELECT]: CanvasPaintSelectionToolState
+  [Tool.SELECT]: CanvasPaintSelectToolState
 }
 
 export type LocalToolContexts = { [K in Tool]: LocalToolContext<LocalToolStates[K]> }

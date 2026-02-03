@@ -286,14 +286,13 @@ export function writeImageData(
       const di = (dstRow + (ix + x)) * 4
       const si = (srcRow + (ix + sx)) * 4
 
-      dstData[di]     = srcData[si]
+      dstData[di] = srcData[si]
       dstData[di + 1] = srcData[si + 1]
       dstData[di + 2] = srcData[si + 2]
       dstData[di + 3] = srcData[si + 3]
     }
   }
 }
-
 
 const pixelCanvas = makeReusablePixelCanvas()
 const getTmpImageData = makeReusableImageData()
@@ -308,10 +307,10 @@ export function putImageDataScaled(
   sy = 0,
   sw = imageData.width,
   sh = imageData.height,
+  mask?: Uint8Array | null,
 ) {
   let src: ImageData
 
-  // FAST PATH: full image, no clipping
   const fullWidth = sw === imageData.width
   const fullHeight = sh === imageData.height
   const atOrigin = sx === 0 && sy === 0
@@ -319,28 +318,42 @@ export function putImageDataScaled(
   if (fullWidth && fullHeight && atOrigin) {
     src = imageData
   } else {
-    // Only extract when needed
     src = extractImageData(imageData, sx, sy, sw, sh)
   }
 
   const { width, height } = src
   const { canvas, ctx } = pixelCanvas(width, height)
 
-  if (!blend) {
+  if (!blend && !mask) {
     ctx.putImageData(src, 0, 0)
-  } else {
-    const tmp = getTmpImageData(width, height)
-    const dst = tmp.data
-    const sdata = src.data
-    const byteBlend = makeByteBlendAdapter(blend)
-
-    for (let i = 0; i < sdata.length; i += 4) {
-      byteBlend(sdata, dst, i, i)
-    }
-
-    ctx.putImageData(tmp, 0, 0)
+    target.drawImage(canvas, dx, dy)
+    return
   }
 
+  const tmp = getTmpImageData(width, height)
+  const dst = tmp.data
+  const sdata = src.data
+  const byteBlend = blend ? makeByteBlendAdapter(blend) : null
+
+  for (let iy = 0; iy < height; iy++) {
+    for (let ix = 0; ix < width; ix++) {
+      const mi = iy * width + ix
+      if (mask && mask[mi] === 0) continue
+
+      const i = mi * 4
+
+      if (!byteBlend) {
+        dst[i] = sdata[i]
+        dst[i + 1] = sdata[i + 1]
+        dst[i + 2] = sdata[i + 2]
+        dst[i + 3] = sdata[i + 3]
+      } else {
+        byteBlend(sdata, dst, i, i)
+      }
+    }
+  }
+
+  ctx.putImageData(tmp, 0, 0)
   target.drawImage(canvas, dx, dy)
 }
 

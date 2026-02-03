@@ -10,10 +10,22 @@ export enum Tool {
   SELECT = 'SELECT'
 }
 
-export enum SelectSubTools {
+export enum SelectSubTool {
   RECT = 'RECT',
   FLOOD = 'FLOOD'
 }
+
+type SubToolMap = {
+  [Tool.SELECT]: SelectSubTool,
+}
+
+export const SubTools = {
+  [Tool.SELECT]: SelectSubTool,
+} as const
+
+export type AnySubTool = SubToolOf<Tool>
+export type SubToolOf<T extends Tool> =
+  T extends keyof SubToolMap ? SubToolMap[T] : null
 
 export type DrawLayer = (ctx: CanvasRenderingContext2D, offX?: number, offY?: number) => void
 
@@ -58,7 +70,7 @@ export interface BaseEditorState {
   isDragging: boolean,
   dragThreshold: number,
 
-  get shouldDrawGrid(): boolean
+  shouldDrawGrid(): boolean
 }
 
 export type ToolInputHandlers = {

@@ -18,7 +18,7 @@ import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
 import { makeLocalToolContexts } from '../Toolset.ts'
 import type { BaseLocalToolContext, LocalToolContexts, LocalToolStates } from './_canvas-paint-editor-types.ts'
 import { makCanvasPaintEditorState } from './CanvasPaintEditorState.ts'
-import { makeCanvasPaintSelectionToolState } from './CanvasPaintSelectionToolState.ts'
+import { makeCanvasPaintSelectToolState } from './CanvasPaintSelectToolState.ts'
 import { type CanvasPaintToolset, useCanvasPaintToolset } from './CanvasPaintToolset.ts'
 import { makeCanvasRenderer } from './CanvasRenderer.ts'
 import { makeCurrentToolRenderer } from './CurrentToolRenderer.ts'
@@ -69,7 +69,7 @@ export function useCanvasPaintController(
 
   const localToolStates: LocalToolStates = {
     [Tool.BRUSH]: makeBrushToolState({ state }),
-    [Tool.SELECT]: makeCanvasPaintSelectionToolState({
+    [Tool.SELECT]: makeCanvasPaintSelectToolState({
       state,
       canvasRenderer,
     }),

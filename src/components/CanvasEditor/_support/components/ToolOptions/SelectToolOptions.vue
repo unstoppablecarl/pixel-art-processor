@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
+import SetValueButton from '../../../../UI/SetValueButton.vue'
 import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK } from '../../../_core-editor-types.ts'
-import ToolButton from '../../../../UI/ToolButton.vue'
 
 const dataAttr = DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK
 const { selectMoveBlendMode } = storeToRefs(useCanvasEditToolStore())
@@ -10,21 +10,21 @@ const { selectMoveBlendMode } = storeToRefs(useCanvasEditToolStore())
 <template>
   <div class="section">
     <div class="btn-group-vertical">
-      <ToolButton
+      <SetValueButton
         label="Overwrite"
         v-model="selectMoveBlendMode"
         :value="BlendMode.OVERWRITE"
         icon="shadow"
         v-bind:[dataAttr]="true"
       />
-      <ToolButton
+      <SetValueButton
         label="Ignore Transparent"
         v-model="selectMoveBlendMode"
         :value="BlendMode.IGNORE_TRANSPARENT"
         icon="shadow_add"
         v-bind:[dataAttr]="true"
       />
-      <ToolButton
+      <SetValueButton
         label="Ignore Solid"
         v-model="selectMoveBlendMode"
         :value="BlendMode.IGNORE_SOLID"

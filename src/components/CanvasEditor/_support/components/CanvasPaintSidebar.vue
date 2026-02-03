@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { Tool } from '../../_core-editor-types.ts'
 import ToolButton from '../../../UI/ToolButton.vue'
+import { SelectSubTool, Tool } from '../../_core-editor-types.ts'
 import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
 import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 
-const { currentTool } = storeToRefs(useCanvasEditToolStore())
+const store = useCanvasEditToolStore()
+const { currentTool } = storeToRefs(store)
 </script>
 <template>
   <div class="canvas-paint-sidebar shadow-sm">
@@ -14,15 +15,20 @@ const { currentTool } = storeToRefs(useCanvasEditToolStore())
       <div class="btn-group w-100" role="group">
         <ToolButton
           label="Brush"
-          v-model="currentTool"
-          :value="Tool.BRUSH"
+          :tool="Tool.BRUSH"
           icon="ink_highlighter"
         />
         <ToolButton
           label="Select"
-          v-model="currentTool"
-          :value="Tool.SELECT"
+          :tool="Tool.SELECT"
+          :sub-tool="SelectSubTool.RECT"
           icon="select"
+        />
+        <ToolButton
+          label="Select Wand"
+          :tool="Tool.SELECT"
+          :sub-tool="SelectSubTool.FLOOD"
+          icon="wand_shine"
         />
       </div>
     </div>

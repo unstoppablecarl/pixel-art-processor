@@ -1,7 +1,7 @@
 import type { AxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { BaseEditorState } from '../_core-editor-types.ts'
-import { type BaseEditorSettings, makeBaseEditorState } from '../BaseEditorState.ts'
+import { type BaseEditorSettings, EditorState } from '../BaseEditorState.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 
@@ -63,8 +63,6 @@ interface BaseTileGridEditorState {
 
   readonly scaledTileSize: number
 
-  readonly shouldDrawGrid: boolean
-
   drawTileIds: boolean
 
   scale: number
@@ -94,82 +92,85 @@ interface BaseTileGridEditorState {
   tileMarginCopySize: number
 }
 
+class TileGridEditorStateC extends EditorState {
+  public gridTilesWidth = 1
+  public gridTilesHeight = 1
+
+  public tileSize = 64
+
+  public drawTileIds = true
+
+  // only when mouse over grid
+  public mouseGridX: number | null = null
+  public mouseGridY: number | null = null
+
+  // only when mouse over tile
+  public mouseTileId: number | null = null
+  public mouseTilePixelX: number | null = null
+  public mouseTilePixelY: number | null = null
+
+  // simulated from mouse over grid or tile
+  public hoverTileId: number | null = null
+  public hoverTilePixelX: number | null = null
+  public hoverTilePixelY: number | null = null
+
+  public mouseDragStartX: number | null = null
+  public mouseDragStartY: number | null = null
+
+  public dragStartTileId: number | null = null
+
+  public tileMarginCopySize = 1
+  protected _tileGridManager: TileGridManager
+
+  constructor(settings: BaseEditorSettings & {
+    tileGridManager: TileGridManager
+  }) {
+    super(settings)
+
+    this._tileGridManager = settings.tileGridManager
+  }
+
+  get gridPixelWidth() {
+    return this.gridTilesWidth * this.tileSize
+  }
+
+  get gridPixelHeight() {
+    return this.gridTilesWidth * this.tileSize
+  }
+
+  get gridScreenWidth() {
+    return this.scale * this.gridTilesWidth * this.tileSize
+  }
+
+  get gridScreenHeight() {
+    return this.scale * this.gridTilesHeight * this.tileSize
+  }
+
+  get scaledTileSize() {
+    return this.scale * this.tileSize
+  }
+
+  get tileset() {
+    return this._tileGridManager.tileset.value
+  }
+
+  get tileSheet() {
+    return this._tileGridManager.tileSheet.value
+  }
+
+  get tileGrid() {
+    return this._tileGridManager.tileGrid.value
+  }
+
+  get tileGridManager() {
+    return this._tileGridManager
+  }
+}
+
 export function makeTileGridEditorState(
   settings: BaseEditorSettings & {
     tileGridManager: TileGridManager
   },
-): TileGridEditorState {
-
-  const tileGridManager = settings.tileGridManager
-
-  return {
-    ...makeBaseEditorState(settings),
-    gridTilesWidth: 1,
-    gridTilesHeight: 1,
-
-    tileSize: 64,
-
-    get gridPixelWidth() {
-      return this.gridTilesWidth * this.tileSize
-    },
-
-    get gridPixelHeight() {
-      return this.gridTilesWidth * this.tileSize
-    },
-
-    get gridScreenWidth() {
-      return this.scale * this.gridTilesWidth * this.tileSize
-    },
-
-    get gridScreenHeight() {
-      return this.scale * this.gridTilesHeight * this.tileSize
-    },
-
-    get scaledTileSize() {
-      return this.scale * this.tileSize
-    },
-
-    drawTileIds: true,
-
-    // only when mouse over grid
-    mouseGridX: null,
-    mouseGridY: null,
-
-    // only when mouse over tile
-    mouseTileId: null,
-    mouseTilePixelX: null,
-    mouseTilePixelY: null,
-
-    // simulated from mouse over grid or tile
-    hoverTileId: null,
-    hoverTilePixelX: null,
-    hoverTilePixelY: null,
-
-    mouseDragStartX: null,
-    mouseDragStartY: null,
-
-    dragStartTileId: null,
-
-    get shouldDrawGrid() {
-      return this.scale > 3
-    },
-
-    get tileset() {
-      return tileGridManager.tileset.value
-    },
-
-    get tileSheet() {
-      return tileGridManager.tileSheet.value
-    },
-
-    get tileGrid() {
-      return tileGridManager.tileGrid.value
-    },
-
-    get tileGridManager() {
-      return tileGridManager
-    },
-
-    tileMarginCopySize: 1,
-  }
+) {
+  return new TileGridEditorStateC(settings) as TileGridEditorState
 }

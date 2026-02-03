@@ -161,12 +161,12 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       if (sel) {
         // Convert GRID → SCREEN for drawing
         for (const g of toolState.selectionGridSpaceMergedRects()) {
-          drawSelectOutline(ctx, scale, g)
+          drawSelectOutline(ctx, scale, g, store.cursorColor)
         }
       } else {
         const r = toolState.currentDraggedRect
         if (!r) return
-        drawSelectOutline(ctx, scale, r)
+        drawSelectOutline(ctx, scale, r, store.cursorColor)
       }
     },
     tilePixelOverlayDraw({ state, toolState }, ctx, tileId) {
@@ -229,14 +229,14 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           const { x, y } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
           const { w, h } = r
 
-          drawSelectOutline(ctx, scale, { x, y, w, h })
+          drawSelectOutline(ctx, scale, { x, y, w, h }, store.cursorColor)
         }
 
       } else {
         if (toolState.inputTileId === tileId) {
           const r = toolState.currentDraggedRect
           if (!r) return
-          drawSelectOutline(ctx, scale, r)
+          drawSelectOutline(ctx, scale, r, store.cursorColor)
         }
       }
     },

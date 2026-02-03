@@ -87,7 +87,7 @@ export function makeTileGridRenderer(
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
-      if (state.shouldDrawGrid) {
+      if (state.shouldDrawGrid()) {
         gridCache!.draw(ctx)
       }
       if (state.drawTileIds) {

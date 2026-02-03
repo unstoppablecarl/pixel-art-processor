@@ -39,7 +39,7 @@ export function makeCanvasRenderer(
         currentToolRenderer.pixelOverlayDraw(ctx)
       },
       (ctx) => {
-        if (state.shouldDrawGrid) {
+        if (state.shouldDrawGrid()) {
           gridCache!.draw(ctx)
         }
 

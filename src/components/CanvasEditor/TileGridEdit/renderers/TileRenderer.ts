@@ -40,7 +40,7 @@ export function makeTileRenderer(
         state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
       },
       (ctx) => {
-        if (state.shouldDrawGrid) {
+        if (state.shouldDrawGrid()) {
           gridCache.draw(ctx)
         }
         if (state.drawTileIds) {

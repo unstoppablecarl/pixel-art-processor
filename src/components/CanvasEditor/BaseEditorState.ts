@@ -4,40 +4,40 @@ import type { BaseEditorState } from './_core-editor-types.ts'
 export type BaseEditorSettings = {
   id: string,
   gridDraw?: Ref<boolean>,
-  scale?: Ref<number>
+  scale: Ref<number>
 }
 
-export function makeBaseEditorState(
-  {
-    id,
-    scale = ref(1),
-    gridDraw = ref(true),
-  }: BaseEditorSettings,
-): BaseEditorState {
+export class EditorState implements BaseEditorState {
+  protected _gridDraw: Ref<boolean>
+  protected _scale: Ref<number>
+  public mouseX: number | null = null
+  public mouseY: number | null = null
+  public mouseLastX: number | null = null
+  public mouseLastY: number | null = null
+  public mouseDownX: number | null = null
+  public mouseDownY: number | null = null
+  public mouseDragStartX: number | null = null
+  public mouseDragStartY: number | null = null
+  public id: string
+  public isDragging = false
+  public dragThreshold = 2
 
-  return {
-    id,
-    get scale() {
-      return scale.value
-    },
+  constructor({
+                id,
+                scale,
+                gridDraw = ref(true),
+              }: BaseEditorSettings,
+  ) {
+    this.id = id
+    this._scale = scale
+    this._gridDraw = gridDraw
+  }
 
-    mouseX: null,
-    mouseY: null,
+  get scale() {
+    return this._scale.value
+  }
 
-    mouseLastX: null,
-    mouseLastY: null,
-
-    mouseDownX: null,
-    mouseDownY: null,
-
-    mouseDragStartX: null,
-    mouseDragStartY: null,
-
-    isDragging: false,
-    dragThreshold: 2,
-
-    get shouldDrawGrid() {
-      return gridDraw.value && this.scale > 3
-    },
+  shouldDrawGrid() {
+    return this._gridDraw.value && this._scale.value > 3
   }
 }
