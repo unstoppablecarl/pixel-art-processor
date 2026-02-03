@@ -1,7 +1,7 @@
 import { drawText, makePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../../_support/canvas-frame.ts'
+import { makeRenderQueue, renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 import type { PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
 

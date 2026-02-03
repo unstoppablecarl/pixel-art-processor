@@ -1,5 +1,5 @@
 import { makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
-import { makeRenderQueue, renderCanvasFrame } from '../_support/canvas-frame.ts'
+import { makeRenderQueue, renderCanvasFrame } from '../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { type PixelGridLineRenderer } from '../_support/PixelGridLineRenderer.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'

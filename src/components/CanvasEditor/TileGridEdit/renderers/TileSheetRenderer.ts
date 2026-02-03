@@ -3,7 +3,7 @@ import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/uti
 import { Tool } from '../../_core-editor-types.ts'
 import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { renderCanvasFrame } from '../../_support/canvas-frame.ts'
+import { renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
 import type { PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
 
