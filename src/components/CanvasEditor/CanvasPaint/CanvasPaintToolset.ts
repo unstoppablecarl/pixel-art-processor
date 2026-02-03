@@ -1,8 +1,4 @@
-import {
-  type CanvasEditToolStore,
-  useCanvasEditToolStore,
-  useGlobalToolContext,
-} from '../../../lib/store/canvas-edit-tool-store.ts'
+import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { Tool } from '../_core-editor-types.ts'
 import { makeToolset } from '../Toolset.ts'
 import { type CanvasPaintBrushToolHandler, makeBrushTool } from './tools/brush.ts'
@@ -20,12 +16,11 @@ export function useCanvasPaintToolset() {
 export type CanvasPaintToolset = ReturnType<typeof makeCanvasPaintToolset>
 
 export function makeCanvasPaintToolset(store: CanvasEditToolStore) {
-  const toolContext = useGlobalToolContext(store)
 
   const tools = {
-    [Tool.BRUSH]: makeBrushTool(toolContext) as CanvasPaintBrushToolHandler,
-    [Tool.SELECT]: makeCanvasPaintSelectTool(toolContext) as CanvasPaintSelectToolHandler,
+    [Tool.BRUSH]: makeBrushTool(store) as CanvasPaintBrushToolHandler,
+    [Tool.SELECT]: makeCanvasPaintSelectTool(store) as CanvasPaintSelectToolHandler,
   }
 
-  return makeToolset(store, tools, toolContext)
+  return makeToolset(store, tools)
 }

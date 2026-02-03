@@ -1,11 +1,11 @@
-import type { GlobalToolContext } from '../../../../lib/store/canvas-edit-tool-store.ts'
+import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseSelectToolHandler, BlendMode, Tool } from '../../_core-editor-types.ts'
-import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/selection-helpers.ts'
+import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
 import type {
+  LocalToolContext,
   TileGridEditorToolHandlerArgs,
   TileGridEditorToolHandlerRender,
-  LocalToolContext,
 } from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
 import type { TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
@@ -14,7 +14,7 @@ export type TileGridSelectToolHandler<L = LocalToolContext<TileGridSelectionTool
   BaseSelectToolHandler<L, TileGridEditorToolHandlerArgs>
   & TileGridEditorToolHandlerRender<L>
 
-export function makeSelectTool(toolContext: GlobalToolContext): TileGridSelectToolHandler {
+export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHandler {
 
   return {
     onGlobalToolChanging({ toolState }, oldTool, _newTool) {
@@ -34,7 +34,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): TileGridSelectTo
         if (!ts.gridPointInSelection(x, y)) {
 
           if (ts.selectionHasMoved()) {
-            ts.commit(toolContext.selectMoveBlendMode)
+            ts.commit(store.selectMoveBlendMode)
           } else {
             ts.clearSelection()
             gridRenderer.queueRenderGrid()
@@ -42,7 +42,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): TileGridSelectTo
         }
       } else {
         if (!ts.tilePointInSelection(tileId!, x, y)) {
-          ts.commit(toolContext.selectMoveBlendMode)
+          ts.commit(store.selectMoveBlendMode)
         }
         gridRenderer.queueRenderGrid()
       }
@@ -118,7 +118,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): TileGridSelectTo
       if (!sel) return
 
       const { tileGridManager } = state
-      const mode = toolContext.selectMoveBlendMode
+      const mode = store.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
       // 1. Clear original footprint (GRID SPACE)
@@ -177,7 +177,7 @@ export function makeSelectTool(toolContext: GlobalToolContext): TileGridSelectTo
       const { tileSheet } = state
       const composed = sel.pixels
 
-      const mode = toolContext.selectMoveBlendMode
+      const mode = store.selectMoveBlendMode
       const blendMode = selectMoveBlendModeToBlendFn[mode]
 
       // 1. Clear original selection footprint on this tile (if moved)

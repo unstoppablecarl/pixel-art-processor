@@ -1,6 +1,6 @@
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { Tool } from '../_core-editor-types.ts'
-import type { BrushToolState } from '../_support/BrushToolState.ts'
+import type { BrushToolState } from '../_support/tools/BrushToolState.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
 import type { TileGridSelectionToolState } from './TileGridSelectionToolState.ts'

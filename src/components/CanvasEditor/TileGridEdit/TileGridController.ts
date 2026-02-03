@@ -2,12 +2,12 @@ import { toRef, watch, watchEffect } from 'vue'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
-import { useBrushCursor } from '../_support/BrushCursor.ts'
-import { makeBrushToolState } from '../_support/BrushToolState.ts'
+import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
+import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
 import { makeGlobalToolChangeHandler } from '../_support/GlobalToolChangeHandler.ts'
-import { makePixelGridLineRenderer } from '../_support/PixelGridLineRenderer.ts'
-import { useSelectionCancelOnDocumentClick } from '../_support/selection-helpers.ts'
+import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
+import { useSelectionCancelOnDocumentClick } from '../_support/tools/selection-helpers.ts'
 import { makeToolInputCore } from '../_support/ToolInputCore.ts'
 import { makeLocalToolContexts } from '../Toolset.ts'
 import {
@@ -63,7 +63,6 @@ export function useTileGridController(
   const tileSheetWriter = makeTileSheetWriter({
     state,
     gridRenderer,
-    globalToolContext: toolset.toolContext,
   })
 
   const localToolStates: LocalToolStates = {

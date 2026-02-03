@@ -1,8 +1,8 @@
-import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
-import { useGlobalToolContext } from '../../../lib/store/canvas-edit-tool-store.ts'
-import { getPerfectCircleCoords, getRectCenterCoords } from '../../../lib/util/data/Grid.ts'
-import { setImageDataPixelColor } from '../../../lib/util/html-dom/ImageData.ts'
-import { type BaseEditorState, BrushShape } from '../_core-editor-types.ts'
+import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
+import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
+import { getPerfectCircleCoords, getRectCenterCoords } from '../../../../lib/util/data/Grid.ts'
+import { setImageDataPixelColor } from '../../../../lib/util/html-dom/ImageData.ts'
+import { type BaseEditorState, BrushShape } from '../../_core-editor-types.ts'
 
 export type BrushToolState = ReturnType<typeof makeBrushToolState>
 
@@ -13,7 +13,7 @@ export function makeBrushToolState(
     state: BaseEditorState,
   }) {
 
-  const globalContext = useGlobalToolContext()
+  const store = useCanvasEditToolStore()
 
   function getBrushPixels(
     x: number,
@@ -21,7 +21,7 @@ export function makeBrushToolState(
     boundsWidth: number,
     boundsHeight: number,
   ): Point[] {
-    const { brushSize, brushShape } = globalContext
+    const { brushSize, brushShape } = store
     const w = boundsWidth
     const h = boundsHeight
 
@@ -41,7 +41,7 @@ export function makeBrushToolState(
   ) {
     const pixels = getBrushPixels(x, y, boundsWidth, boundsHeight)
     for (const p of pixels) {
-      setImageDataPixelColor(target, p.x, p.y, globalContext.brushColor)
+      setImageDataPixelColor(target, p.x, p.y, store.brushColor)
     }
   }
 

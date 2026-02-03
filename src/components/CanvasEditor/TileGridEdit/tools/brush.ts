@@ -1,11 +1,11 @@
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { GlobalToolContext } from '../../../../lib/store/canvas-edit-tool-store.ts'
+import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import { RGBA_WHITE } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseBrushToolHandler, BrushShape } from '../../_core-editor-types.ts'
-import { useBrushCursor } from '../../_support/BrushCursor.ts'
-import type { BrushToolState } from '../../_support/BrushToolState.ts'
+import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
+import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
 import {
   CanvasType,
   type LocalToolContext,
@@ -18,7 +18,7 @@ export type TileGridBrushToolHandler<L = LocalToolContext<BrushToolState>> =
   BaseBrushToolHandler<L, TileGridEditorToolHandlerArgs>
   & TileGridEditorToolHandlerRender<L>
 
-export function makeBrushTool(toolContext: GlobalToolContext): TileGridBrushToolHandler {
+export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHandler {
   let isDrawing = false
   const cursor = useBrushCursor()
 
@@ -28,11 +28,10 @@ export function makeBrushTool(toolContext: GlobalToolContext): TileGridBrushTool
     w: number,
     h: number,
   ): Point[] {
-    const { brushSize, brushShape } = toolContext
-    if (brushShape === BrushShape.CIRCLE) {
-      return getPerfectCircleCoords(x, y, brushSize / 2, w, h)
+    if (store.brushShape === BrushShape.CIRCLE) {
+      return getPerfectCircleCoords(x, y, store.brushSize / 2, w, h)
     } else {
-      return getRectCenterCoords(x, y, brushSize, brushSize, w, h)
+      return getRectCenterCoords(x, y, store.brushSize, store.brushSize, w, h)
     }
   }
 
@@ -56,10 +55,10 @@ export function makeBrushTool(toolContext: GlobalToolContext): TileGridBrushTool
   ) {
     if (canvasType === CanvasType.GRID) {
       const pixels = getGridBrushPixels(state, x, y)
-      tileSheetWriter.writeGridPixels(pixels, toolContext.brushColor)
+      tileSheetWriter.writeGridPixels(pixels, store.brushColor)
     } else {
       const tilePixels = getTileBrushPixels(state, x, y)
-      tileSheetWriter.writeTilePixels(tilePixels, tileId, toolContext.brushColor)
+      tileSheetWriter.writeTilePixels(tilePixels, tileId, store.brushColor)
     }
   }
 
@@ -94,7 +93,7 @@ export function makeBrushTool(toolContext: GlobalToolContext): TileGridBrushTool
           pixels = pixels.concat(getGridBrushPixels(state, ix, iy))
         }
 
-        tileSheetWriter.writeGridPixels(pixels, toolContext.brushColor)
+        tileSheetWriter.writeGridPixels(pixels, store.brushColor)
       }
 
       if (canvasType === CanvasType.TILE && tileId != null) {

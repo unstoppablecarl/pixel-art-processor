@@ -91,45 +91,13 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     brushBitMaskColor,
     selectMoveBlendMode,
     tileMarginCopySize,
+    decreaseBrushSize() {
+      brushSize.value--
+    },
+    increaseBrushSize() {
+      brushSize.value++
+    },
   }
 }, {
   persist: true,
 })
-
-export type GlobalToolContext = ReturnType<typeof useGlobalToolContext>
-
-export function useGlobalToolContext(store: CanvasEditToolStore = useCanvasEditToolStore()) {
-
-  return {
-    get brushSize() {
-      return store.brushSize
-    },
-    get brushShape() {
-      return store.brushShape
-    },
-    get brushMode() {
-      return store.brushMode
-    },
-    get brushColor() {
-      return store.brushColor
-    },
-    get selectMoveBlendMode() {
-      return store.selectMoveBlendMode
-    },
-    decreaseBrushSize() {
-      store.brushSize--
-    },
-    increaseBrushSize() {
-      store.brushSize++
-    },
-    setBrushSize(n: number) {
-      store.brushSize = n
-    },
-    setBrushShape(s: BrushShape) {
-      store.brushShape = s
-    },
-    setSelectMoveBlendMode(m: BlendMode) {
-      store.selectMoveBlendMode = m
-    },
-  }
-}

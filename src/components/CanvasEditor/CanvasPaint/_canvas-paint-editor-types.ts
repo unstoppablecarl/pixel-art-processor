@@ -1,5 +1,5 @@
 import { Tool } from '../_core-editor-types.ts'
-import type { BrushToolState } from '../_support/BrushToolState.ts'
+import type { BrushToolState } from '../_support/tools/BrushToolState.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CanvasPaintSelectionToolState } from './CanvasPaintSelectionToolState.ts'
 import type { CanvasRenderer } from './CanvasRenderer.ts'

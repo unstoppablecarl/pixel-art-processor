@@ -1,8 +1,8 @@
-import type { GlobalToolContext } from '../../../../lib/store/canvas-edit-tool-store.ts'
+import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { blendOverwrite } from '../../../../lib/util/html-dom/blit.ts'
 import { putImageDataScaled } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseSelectToolHandler, Tool } from '../../_core-editor-types.ts'
-import { drawSelectOutline } from '../../_support/selection-helpers.ts'
+import { drawSelectOutline } from '../../_support/tools/selection-helpers.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
 import type { CanvasPaintSelectionToolState } from '../CanvasPaintSelectionToolState.ts'
 
@@ -10,7 +10,7 @@ export type CanvasPaintSelectToolHandler<L = LocalToolContext<CanvasPaintSelecti
   BaseSelectToolHandler<L>
   & CanvasPaintToolHandlerRender<L>
 
-export function makeCanvasPaintSelectTool(toolContext: GlobalToolContext): CanvasPaintSelectToolHandler {
+export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPaintSelectToolHandler {
 
   return {
     onGlobalToolChanging({ toolState }, _newTool, oldTool) {
@@ -29,7 +29,7 @@ export function makeCanvasPaintSelectTool(toolContext: GlobalToolContext): Canva
       if (!ts.pointInSelection(x, y)) {
 
         if (ts.selectionHasMoved()) {
-          ts.commit(toolContext.selectMoveBlendMode)
+          ts.commit(store.selectMoveBlendMode)
         } else {
           ts.clearSelection()
           canvasRenderer.queueRender()

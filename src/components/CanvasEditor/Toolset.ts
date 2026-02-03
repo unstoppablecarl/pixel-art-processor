@@ -1,12 +1,11 @@
 import { watchEffect } from 'vue'
-import { type CanvasEditToolStore, type GlobalToolContext } from '../../lib/store/canvas-edit-tool-store.ts'
+import { type CanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
 import { type BaseToolHandler, Tool, type ToolRegistry } from './_core-editor-types.ts'
 
 export type Toolset<
   TTools extends ToolRegistry<BaseToolHandler<any, any>>
 > = {
   tools: TTools
-  toolContext: GlobalToolContext
   readonly currentTool: Tool
   readonly currentToolHandler: TTools[Tool]
   setTool: (tool: Tool) => void
@@ -19,7 +18,6 @@ export function makeToolset<
 >(
   store: CanvasEditToolStore,
   tools: TTools,
-  toolContext: GlobalToolContext,
 ): Toolset<TTools> {
   let currentTool: Tool = store.currentTool
   let activeLocal: any = null
@@ -38,7 +36,6 @@ export function makeToolset<
 
   return {
     tools,
-    toolContext,
     get currentTool() {
       return currentTool
     },

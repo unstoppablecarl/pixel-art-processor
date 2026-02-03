@@ -1,8 +1,8 @@
-import type { GlobalToolContext } from '../../../../lib/store/canvas-edit-tool-store.ts'
+import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import { type BaseBrushToolHandler } from '../../_core-editor-types.ts'
-import { useBrushCursor } from '../../_support/BrushCursor.ts'
-import type { BrushToolState } from '../../_support/BrushToolState.ts'
+import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
+import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
 
 type L = LocalToolContext<BrushToolState>
@@ -10,7 +10,7 @@ export type CanvasPaintBrushToolHandler =
   BaseBrushToolHandler<L>
   & CanvasPaintToolHandlerRender<L>
 
-export function makeBrushTool(toolContext: GlobalToolContext): CanvasPaintBrushToolHandler {
+export function makeBrushTool(store: CanvasEditToolStore): CanvasPaintBrushToolHandler {
   let isDrawing = false
   const cursor = useBrushCursor()
 

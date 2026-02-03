@@ -3,7 +3,7 @@ import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/uti
 import { imageDataRef } from '../../../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { makeRenderQueue, renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
-import { type PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
+import { type PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'

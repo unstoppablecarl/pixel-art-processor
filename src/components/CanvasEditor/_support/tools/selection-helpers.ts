@@ -1,4 +1,4 @@
-import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
+import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
 import {
   type BlendFn,
   blendIgnoreTransparent,
@@ -7,9 +7,9 @@ import {
   blendOverwrite,
   blendSourceAlphaOver,
   type ImageDataBlendFn,
-} from '../../../lib/util/html-dom/blit.ts'
-import { writeImageData } from '../../../lib/util/html-dom/ImageData.ts'
-import { BlendMode } from '../_core-editor-types.ts'
+} from '../../../../lib/util/html-dom/blit.ts'
+import { writeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { BlendMode } from '../../_core-editor-types.ts'
 
 export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn | undefined> = {
   [BlendMode.OVERWRITE]: blendOverwrite,
@@ -35,12 +35,12 @@ export function drawSelectOutline(ctx: CanvasRenderingContext2D, scale: number, 
   )
 }
 
-import { useDocumentClick } from '../../../lib/util/vue-util'
+import { useDocumentClick } from '../../../../lib/util/vue-util.ts'
 import {
   DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK,
   DATA_LOCAL_TOOL_ID,
   Tool,
-} from '../_core-editor-types'
+} from '../../_core-editor-types.ts'
 
 export interface SelectionCancelDeps<State, Toolset, LocalToolStates> {
   id: string

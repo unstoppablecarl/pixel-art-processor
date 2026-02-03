@@ -3,7 +3,7 @@ import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { makeRenderQueue, renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
-import type { PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
+import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
 

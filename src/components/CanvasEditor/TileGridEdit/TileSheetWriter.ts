@@ -1,6 +1,5 @@
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import type { Direction } from '../../../lib/pipeline/_types.ts'
-import type { GlobalToolContext } from '../../../lib/store/canvas-edit-tool-store.ts'
 import {
   getPointsInEdgeMargins,
   mirrorTilePixelHorizontal,
@@ -17,7 +16,7 @@ import {
 import { useDirtyBatching } from '../../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../_core-editor-types.ts'
-import { selectMoveBlendModeToWriter } from '../_support/selection-helpers.ts'
+import { selectMoveBlendModeToWriter } from '../_support/tools/selection-helpers.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 import type { SelectionTileSheetRect, TileSheetSelection } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
@@ -29,11 +28,9 @@ export function makeTileSheetWriter(
   {
     state,
     gridRenderer,
-    globalToolContext,
   }: {
     state: TileGridEditorState
     gridRenderer: TileGridRenderer,
-    globalToolContext: GlobalToolContext
   }) {
 
   const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {

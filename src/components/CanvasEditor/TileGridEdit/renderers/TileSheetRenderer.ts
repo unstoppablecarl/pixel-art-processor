@@ -5,7 +5,7 @@ import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { renderCanvasFrame } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
-import type { PixelGridLineRenderer } from '../../_support/PixelGridLineRenderer.ts'
+import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 
 export type TileSheetRenderer = ReturnType<typeof makeTileSheetRenderer>
 

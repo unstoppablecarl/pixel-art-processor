@@ -9,11 +9,11 @@ import {
   defineToolManager,
   Tool,
 } from '../_core-editor-types.ts'
-import { useBrushCursor } from '../_support/BrushCursor.ts'
-import { makeBrushToolState } from '../_support/BrushToolState.ts'
+import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
+import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
 import { makeGlobalToolChangeHandler } from '../_support/GlobalToolChangeHandler.ts'
-import { makePixelGridLineRenderer } from '../_support/PixelGridLineRenderer.ts'
+import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
 import { makeToolInputCore } from '../_support/ToolInputCore.ts'
 import { makeLocalToolContexts } from '../Toolset.ts'
 import type { BaseLocalToolContext, LocalToolContexts, LocalToolStates } from './_canvas-paint-editor-types.ts'

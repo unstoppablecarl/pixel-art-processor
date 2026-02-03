@@ -1,5 +1,5 @@
 import { type Ref, ref, watchEffect } from 'vue'
-import { makePixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
+import { makePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 
 export type PixelGridLineRenderer = ReturnType<typeof makePixelGridLineRenderer>
 

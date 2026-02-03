@@ -2,7 +2,7 @@ import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { trimRectBounds } from '../../../lib/util/data/Rect.ts'
 import { clearImageDataRect, extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import { BlendMode } from '../_core-editor-types.ts'
-import { selectMoveBlendModeToWriter } from '../_support/selection-helpers.ts'
+import { selectMoveBlendModeToWriter } from '../_support/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from './CanvasRenderer.ts'
 
