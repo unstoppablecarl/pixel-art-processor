@@ -1,0 +1,9 @@
+
+.canvas-pixel-draw {
+  image-rendering: pixelated;
+  cursor: crosshair;
+
+  &.brush {
+    cursor: none;
+  }
+}
