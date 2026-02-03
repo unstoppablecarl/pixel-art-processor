@@ -3,7 +3,7 @@ import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool
 import { getPerfectCircleCoords, getRectCenterCoords, interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import { RGBA_WHITE } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseBrushToolHandler, BRUSH_HOVER_CSS_CLASS, BrushShape } from '../../_core-editor-types.ts'
+import { type BaseBlendModeToolHandler, BrushShape, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
 import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
 import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
 import {
@@ -15,7 +15,7 @@ import {
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 
 export type TileGridBrushToolHandler<L = LocalToolContext<BrushToolState>> =
-  BaseBrushToolHandler<L, TileGridEditorToolHandlerArgs>
+  BaseBlendModeToolHandler<L, TileGridEditorToolHandlerArgs>
   & TileGridEditorToolHandlerRender<L>
 
 export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHandler {
@@ -63,7 +63,7 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
   }
 
   return {
-    cursorCssClass: BRUSH_HOVER_CSS_CLASS,
+    cursorCssClass: TOOL_HOVER_CSS_CLASSES.BRUSH,
     onMouseDown: ({ state, tileSheetWriter }, x, y, canvasType, tileId) => {
       isDrawing = true
       writeBrushAt(state, tileSheetWriter, canvasType, x, y, tileId)

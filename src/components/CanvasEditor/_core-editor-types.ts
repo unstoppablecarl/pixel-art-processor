@@ -1,11 +1,18 @@
 import type { Ref, ShallowRef } from 'vue'
 
-export const BRUSH_HOVER_CSS_CLASS = 'brush'
-export const SELECT_HOVER_CSS_CLASS = 'select'
+export const TOOL_HOVER_CSS_CLASSES: Record<Tool, string> = {
+  BRUSH: 'brush',
+  SELECT: 'select',
+}
 
 export enum Tool {
   BRUSH = 'BRUSH',
   SELECT = 'SELECT'
+}
+
+export enum SelectSubTools {
+  RECT = 'RECT',
+  FLOOD = 'FLOOD'
 }
 
 export type DrawLayer = (ctx: CanvasRenderingContext2D, offX?: number, offY?: number) => void
@@ -95,12 +102,8 @@ export type BaseToolHandler<L, TArgs extends any[] = []> = {
   cursorCssClass?: ((local: L) => string | null) | string,
 }
 
-export type BaseBrushToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
+export type BaseBlendModeToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
   onModeChanged?: (local: L, newMode: BrushMode) => void,
-}
-
-export type BaseSelectToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
-  onModeChanged?: (local: L, newMode: SelectionMode) => void,
 }
 
 export const defineToolManager = <TArgs extends any[]>() =>
