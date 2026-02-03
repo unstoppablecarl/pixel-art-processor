@@ -10,7 +10,6 @@ import {
   Tool,
 } from '../_core-editor-types.ts'
 import { makeGetCurrentCursorCssClass } from '../_support/controller/CurrentCursorCssClass.ts'
-import { makeGlobalToolChangeHandler } from '../_support/controller/GlobalToolChangeHandler.ts'
 import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
 import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
@@ -167,6 +166,5 @@ export function useCanvasPaintController(
         },
       })
     },
-    onGlobalToolChanging: makeGlobalToolChangeHandler(toolset, localToolContexts),
   })
 }

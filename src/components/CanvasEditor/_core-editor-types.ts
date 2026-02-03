@@ -64,7 +64,6 @@ export type ToolInputHandlers = {
 export type BaseToolManager<TArgs extends any[] = []> = {
   id: string,
   getInputHandlers: (canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, ...args: TArgs) => ToolInputHandlers,
-  onGlobalToolChanging: (newTool: Tool, prevTool: Tool | null) => void,
   currentCursorCssClass: Ref<string | null>,
 }
 
@@ -93,7 +92,6 @@ export type BaseToolHandler<L, TArgs extends any[] = []> = {
   onSelect?: (local: L) => void,
   onDeselect?: (local: L) => void,
 
-  onGlobalToolChanging?: (local: L, newTool: Tool, prevTool: Tool | null) => void,
   cursorCssClass?: ((local: L) => string | null) | string,
 }
 

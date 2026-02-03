@@ -3,7 +3,6 @@ import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
 import { makeGetCurrentCursorCssClass } from '../_support/controller/CurrentCursorCssClass.ts'
-import { makeGlobalToolChangeHandler } from '../_support/controller/GlobalToolChangeHandler.ts'
 import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
 import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
@@ -173,7 +172,6 @@ export function useTileGridController(
         },
       })
     },
-    onGlobalToolChanging: makeGlobalToolChangeHandler(toolset, localToolContexts),
   })
 }
 
