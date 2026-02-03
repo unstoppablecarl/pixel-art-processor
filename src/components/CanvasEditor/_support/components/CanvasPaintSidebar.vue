@@ -12,12 +12,14 @@ const { currentTool } = storeToRefs(store)
 <template>
   <div class="canvas-paint-sidebar shadow-sm">
     <div class="section">
-      <div class="btn-group w-100" role="group">
+      <div class="btn-grid w-100" role="group">
         <ToolButton
           label="Brush"
           :tool="Tool.BRUSH"
           icon="ink_highlighter"
         />
+        <button role="button" class="btn disabled"></button>
+
         <ToolButton
           label="Select"
           :tool="Tool.SELECT"
