@@ -1,5 +1,23 @@
 import type { RectBounds } from './Bounds.ts'
 
+export function trimRectBounds(target: RectBounds, trimTo: RectBounds): RectBounds {
+  const nx = Math.max(target.x, trimTo.x)
+  const ny = Math.max(target.y, trimTo.y)
+
+  const maxX = Math.min(target.x + target.w, trimTo.x + trimTo.w)
+  const maxY = Math.min(target.y + target.h, trimTo.y + trimTo.h)
+
+  const nw = Math.max(0, maxX - nx)
+  const nh = Math.max(0, maxY - ny)
+
+  target.x = nx
+  target.y = ny
+  target.w = nw
+  target.h = nh
+
+  return target
+}
+
 export function getRectsBounds(rects: RectBounds[]): RectBounds {
   let minX = Infinity, minY = Infinity
   let maxX = -Infinity, maxY = -Infinity
@@ -19,4 +37,5 @@ export function getRectsBounds(rects: RectBounds[]): RectBounds {
 
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
 }
+
 

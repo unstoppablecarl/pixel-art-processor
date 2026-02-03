@@ -1,4 +1,5 @@
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
+import { trimRectBounds } from '../../../lib/util/data/Rect.ts'
 import { clearImageDataRect, extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import { BlendMode } from '../_core-editor-types.ts'
 import { selectMoveBlendModeToWriter } from '../_support/selection-helpers.ts'
@@ -68,6 +69,7 @@ export function makeCanvasPaintSelectionToolState(
 
     const r = selectionRect()
     if (!r) return
+    trimRectBounds(r, { x: 0, y: 0, w: state.width, h: state.height })
 
     const pixels = extractImageData(imgData, r.x, r.y, r.w, r.h)
 
