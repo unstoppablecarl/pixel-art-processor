@@ -35,7 +35,7 @@ export function makeTileGridSelectionToolState(
     tileSheetWriter: TileSheetWriter
     gridRenderer: TileGridRenderer
     tileGridManager: TileGridManager,
-    store: CanvasEditToolStore
+    store?: CanvasEditToolStore
   }) {
   let selection: TileSheetSelection | null = null
 
