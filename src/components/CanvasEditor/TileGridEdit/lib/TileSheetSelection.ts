@@ -1,3 +1,4 @@
+import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
@@ -23,6 +24,8 @@ export type SelectionTileSheetRect = BaseTileSheetRect & {
   // buffer space coord
   bufferX: number,
   bufferY: number,
+
+  mask: Uint8Array | null,
 }
 
 export type NormalizedTileSheetRect = SelectionTileSheetRect & {
@@ -36,6 +39,8 @@ export type TileSheetSelection = {
   // tileSheet-space rects at extraction time
   // These define the exact pixels copied into `pixels`.
   readonly originalRects: SelectionTileSheetRect[],
+
+  readonly floodFillOrigin: Point | null,
 
   // tilesheet-space rects after movement.
   // These are the authoritative positions used for overlay + commit.
@@ -94,6 +99,7 @@ type InternalGridOptions = {
   tileSheetBounds: Rect,
   origin: CanvasType.GRID,
   gridBounds: Rect,
+  floodFillOrigin: Point | null,
 }
 
 type InternalTileOptions = {
@@ -103,6 +109,7 @@ type InternalTileOptions = {
   origin: CanvasType.TILE,
   tileId: TileId,
   tileLocalBounds: Rect,
+  floodFillOrigin: Point | null,
 }
 
 export function makeGridSelection(
@@ -110,6 +117,7 @@ export function makeGridSelection(
   rects: NormalizedTileSheetRect[],
   tileSheetBounds: Rect,
   gridBounds: Rect,
+  floodFillOrigin: Point | null = null,
 ): TileSheetSelection {
   return _makeSelection({
     pixels,
@@ -117,15 +125,17 @@ export function makeGridSelection(
     tileSheetBounds,
     origin: CanvasType.GRID,
     gridBounds,
+    floodFillOrigin,
   })
 }
 
 export function makeTileSelection(
   pixels: ImageData,
-  rects: SelectionTileSheetRect[],
+  rects: SelectionTileSheetRect[] | NormalizedTileSheetRect[],
   tileSheetBounds: Rect,
   tileId: TileId,
   tileLocalBounds: Rect,
+  floodFillOrigin: Point | null = null,
 ): TileSheetSelection {
   return _makeSelection({
     pixels,
@@ -134,6 +144,7 @@ export function makeTileSelection(
     origin: CanvasType.TILE,
     tileId,
     tileLocalBounds,
+    floodFillOrigin,
   })
 }
 
@@ -141,7 +152,7 @@ function _makeSelection(
   opts: InternalGridOptions | InternalTileOptions,
 ) {
 
-  const { pixels, rects, tileSheetBounds, origin } = opts
+  const { pixels, rects, tileSheetBounds, origin, floodFillOrigin } = opts
 
   const originalRects = rects.map(r => ({ ...r }))
   const currentRects = rects.map(r => ({ ...r }))
@@ -178,6 +189,7 @@ function _makeSelection(
 
     origin,
 
+    floodFillOrigin,
     dragMoveStartGridX: null,
     dragMoveStartGridY: null,
 
@@ -301,7 +313,7 @@ function findIslands(rects: Rect[]): Rect[][] {
  * Merge rects into adjacency-connected islands.
  * Returns one merged rect per island.
  */
-export function mergeRectBounds(rects: Rect[]): Rect[] {
+export function mergeAdjacentRects(rects: Rect[]): Rect[] {
   if (rects.length === 0) return []
   const islands = findIslands(rects)
   return islands.map(getRectsBounds)

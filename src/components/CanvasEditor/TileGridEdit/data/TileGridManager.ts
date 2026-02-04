@@ -107,20 +107,29 @@ export function makeTileGridManager(
   }
 
   // rect must only overlap with one tileSheet tile
-  function projectTileSheetRectToGridRects(rect: SelectionTileSheetRect): Rect[] {
-    const { tileId, x, y, w, h } = rect
+  function projectTileSheetRectToGridRects(rect: SelectionTileSheetRect): SelectionTileSheetRect[] {
+    const { tileId, x, y, w, h, bufferX, bufferY, mask } = rect
 
     // Convert sheet → tile-local
     const { x: localX, y: localY } = tileSheet.value.sheetToTileLocal(tileId, x, y)
 
-    return tileGrid.value.mapWithTileId(tileId, (gx, gy) => {
-      return {
-        x: gx * tileSize.value + localX,
-        y: gy * tileSize.value + localY,
-        w,
-        h,
-      }
+    const results: SelectionTileSheetRect[] = []
+
+    tileGrid.value.mapWithTileId(tileId, (gx, gy) => {
+      results.push({
+        tileId,
+        x, y, w, h,
+        tileX: localX,
+        tileY: localY,
+        gridX: gx * tileSize.value + localX,
+        gridY: gy * tileSize.value + localY,
+        bufferX,
+        bufferY,
+        mask,
+      })
     })
+
+    return results
   }
 
   function gridPointInTileSheetSelection(
@@ -182,7 +191,7 @@ export function makeTileGridManager(
         // buffer space coords
         bufferX: o.sourceX,
         bufferY: o.sourceY,
-      })
+      } as SelectionTileSheetRect)
     }
 
     return out

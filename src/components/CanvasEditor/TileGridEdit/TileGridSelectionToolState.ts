@@ -1,13 +1,18 @@
-import type { Rect } from '../../../lib/util/data/Rect.ts'
-import { extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
+import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
+import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
+import {
+  extractImageData,
+  floodFillImageDataSelection,
+  type FloodFillResult,
+} from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from '../_core-editor-types.ts'
+import { BlendMode, SelectSubTool } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import {
   makeGridSelection,
   makeTileSelection,
-  mergeRectBounds,
+  mergeAdjacentRects,
   normalizeTileSheetRects,
   type SelectionTileSheetRect,
   type TileSheetSelection,
@@ -24,18 +29,23 @@ export function makeTileGridSelectionToolState(
     tileSheetWriter,
     gridRenderer,
     tileGridManager,
+    store = useCanvasEditToolStore(),
   }: {
     state: TileGridEditorState,
     tileSheetWriter: TileSheetWriter
     gridRenderer: TileGridRenderer
-    tileGridManager: TileGridManager
+    tileGridManager: TileGridManager,
+    store: CanvasEditToolStore
   }) {
   let selection: TileSheetSelection | null = null
 
+  // true during the initial drag that defines a selection rectangle.
   let selecting = false
+
+  // moving an existing selection
   let dragging = false
 
-  // raw input for selection creation (grid/tile canvas coords)
+  // raw input for selection rect creation (grid/tile canvas coords)
   let dragStartX: number | null = null
   let dragStartY: number | null = null
 
@@ -46,8 +56,8 @@ export function makeTileGridSelectionToolState(
   let inputTileId: TileId | null = null
 
   // drag move selection anchors
-  let dragStartGridBounds: Rect | null
-  let dragStartSheetRects: SelectionTileSheetRect[] | null = null
+  let dragMoveStartGridBounds: Rect | null
+  let dragMoveStartSheetRects: SelectionTileSheetRect[] | null = null
 
   function clearRenderedSelection(sel: TileSheetSelection) {
     gridRenderer.queueRenderTiles(sel.getOverlappingTileIds())
@@ -186,6 +196,102 @@ export function makeTileGridSelectionToolState(
     gridRenderer.queueRenderAll()
   }
 
+  function finalizeFloodSelection(
+    x: number,
+    y: number,
+    canvasType: CanvasType,
+    tileId: TileId | null = null,
+  ) {
+    let result: FloodFillResult | null = null
+
+    // ───────────────────────────────────────────────
+    // TILE CANVAS FLOOD-FILL
+    // ───────────────────────────────────────────────
+    if (canvasType === CanvasType.TILE) {
+      const tileImg = state.tileSheet.extractTile(tileId!)
+      if (!tileImg) return
+
+      result = floodFillImageDataSelection(
+        tileImg,
+        x,
+        y,
+        store.selectFloodContiguous,
+        store.selectFloodTolerance,
+      )
+      if (!result) return
+
+      // Convert tile-local rect → sheet-space rect
+      const sheetRect = state.tileSheet.tileLocalRectToTileSheetRect(tileId!, result.rect)
+
+      // Build TILE-origin selection
+      selection = makeTileSelection(
+        result.pixels,
+        [{
+          ...sheetRect,
+          gridX: null,
+          gridY: null,
+          bufferX: 0,
+          bufferY: 0,
+          mask: result.mask,
+        }],
+        sheetRect,
+        tileId!,
+        result.rect,
+        { x, y },
+      )
+
+      clearState()
+      gridRenderer.queueRenderGrid()
+      return
+    }
+
+    // ───────────────────────────────────────────────
+    // GRID CANVAS FLOOD-FILL
+    // ───────────────────────────────────────────────
+    const gridImg = gridRenderer.tileGridImageDataRef.get()
+    if (!gridImg) return
+
+    result = floodFillImageDataSelection(
+      gridImg,
+      x,
+      y,
+      store.selectFloodContiguous,
+      store.selectFloodTolerance,
+    )
+    if (!result) return
+
+    // Convert flood rect (grid-local) → tile-sheet rects
+    const rects = tileGridManager.gridRectToTileSheetRects(result.rect)
+    if (rects.length === 0) return
+
+    // Normalize rects (compute srcX/srcY/bufferX/bufferY)
+    const { tileSheetBounds, normalizedRects } = normalizeTileSheetRects(rects)
+
+    // Split flood mask into per-rect masks
+    const rectMasks = splitMaskForRects(
+      result.mask,
+      result.rect,
+      normalizedRects,
+      state.tileGridManager,
+    )
+
+    normalizedRects.forEach((r, i) => {
+      r.mask = rectMasks[i]
+    })
+
+    // Build GRID-origin selection
+    selection = makeGridSelection(
+      result.pixels,
+      normalizedRects,
+      tileSheetBounds,
+      result.rect,
+      { x, y },
+    )
+
+    clearState()
+    gridRenderer.queueRenderGrid()
+  }
+
   function finalizeSelection() {
     if (!selecting) return
     if (dragStartX == null || dragStartY == null) return
@@ -205,8 +311,8 @@ export function makeTileGridSelectionToolState(
     dragCurrentX = null
     dragCurrentY = null
     inputTileId = null
-    dragStartSheetRects = null
-    dragStartGridBounds = null
+    dragMoveStartSheetRects = null
+    dragMoveStartGridBounds = null
 
     // clear drag-move state on the selection, but keep the selection itself
     if (selection) {
@@ -234,12 +340,12 @@ export function makeTileGridSelectionToolState(
     selection.dragMoveStartGridX = mouseGridX
     selection.dragMoveStartGridY = mouseGridY
 
-    dragStartGridBounds = selection.gridBounds
+    dragMoveStartGridBounds = selection.gridBounds
       ? { ...selection.gridBounds }
       : null
 
     // Anchor sheet rects for both origins
-    dragStartSheetRects = selection.currentRects.map(r => ({ ...r }))
+    dragMoveStartSheetRects = selection.currentRects.map(r => ({ ...r }))
 
     // For TILE-origin, also compute sheet-space mouse anchor
     if (selection.origin === CanvasType.TILE) {
@@ -253,50 +359,80 @@ export function makeTileGridSelectionToolState(
 
   function moveSelectionOnGrid(mouseGridX: number, mouseGridY: number) {
     if (!selection) return
-
-    // GRID-ORIGIN → grid-pixel movement
+    // ───────────────────────────────────────────────
+    // GRID‑ORIGIN SELECTION
+    // ───────────────────────────────────────────────
     if (selection.origin === CanvasType.GRID) {
       if (
         selection.dragMoveStartGridX == null ||
         selection.dragMoveStartGridY == null ||
-        !dragStartGridBounds
+        !dragMoveStartGridBounds ||
+        !dragMoveStartSheetRects
       ) return
 
+      // Compute delta in GRID PIXELS
       const dx = mouseGridX - selection.dragMoveStartGridX
       const dy = mouseGridY - selection.dragMoveStartGridY
 
-      const newGridBounds: Rect = {
-        x: dragStartGridBounds.x + dx,
-        y: dragStartGridBounds.y + dy,
-        w: dragStartGridBounds.w,
-        h: dragStartGridBounds.h,
+      // Move the grid bounds
+      selection.gridBounds = {
+        x: dragMoveStartGridBounds.x + dx,
+        y: dragMoveStartGridBounds.y + dy,
+        w: dragMoveStartGridBounds.w,
+        h: dragMoveStartGridBounds.h,
       }
 
-      selection.gridBounds = newGridBounds
-      selection.currentRects = state.tileGridManager.gridRectToTileSheetRects(newGridBounds)
-      return
-    }
-
-    // TILE-ORIGIN dragged on grid canvas → sheet-space movement
-    if (selection.origin === CanvasType.TILE) {
-      if (
-        selection.dragMoveStartSheetX == null ||
-        selection.dragMoveStartSheetY == null ||
-        !dragStartSheetRects
-      ) return
-
-      const r = state.tileGridManager.gridPixelToTileSheetPixel(mouseGridX, mouseGridY)
-      if (!r) return
-
-      const { x: sheetX, y: sheetY } = r
-      const dx = sheetX - selection.dragMoveStartSheetX
-      const dy = sheetY - selection.dragMoveStartSheetY
-
-      selection.currentRects = dragStartSheetRects.map(r => ({
+      // Move the sheet‑space rects WITHOUT regenerating them
+      // This preserves mask, bufferX/bufferY, srcX/srcY, tileId, tileX/tileY
+      selection.currentRects = dragMoveStartSheetRects.map(r => ({
         ...r,
         x: r.x + dx,
         y: r.y + dy,
       }))
+
+
+      console.log(JSON.stringify({
+        LOG_NAME: 'MOVE currentRects',
+        currentRects: selection.currentRects.map(r => ({ x: r.x, y: r.y, w: r.w, h: r.h })),
+      }))
+
+      // Recompute gridBounds from moved rects
+      const projected = []
+      for (const r of selection.currentRects) {
+        projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
+      }
+
+      selection.gridBounds = getRectsBounds(projected)
+
+      return
+    }
+
+    // ───────────────────────────────────────────────
+    // TILE‑ORIGIN SELECTION DRAGGED ON GRID CANVAS
+    // (movement is in sheet‑space)
+    // ───────────────────────────────────────────────
+    if (selection.origin === CanvasType.TILE) {
+      if (
+        selection.dragMoveStartSheetX == null ||
+        selection.dragMoveStartSheetY == null ||
+        !dragMoveStartSheetRects
+      ) return
+
+      // Convert mouse → tilesheet pixel
+      const hit = state.tileGridManager.gridPixelToTileSheetPixel(mouseGridX, mouseGridY)
+      if (!hit) return
+
+      const dx = hit.x - selection.dragMoveStartSheetX
+      const dy = hit.y - selection.dragMoveStartSheetY
+
+      // Move rects in sheet‑space
+      selection.currentRects = dragMoveStartSheetRects.map(r => ({
+        ...r,
+        x: r.x + dx,
+        y: r.y + dy,
+      }))
+
+      return
     }
   }
 
@@ -318,7 +454,7 @@ export function makeTileGridSelectionToolState(
     selection.dragMoveStartSheetY = sheetY
 
     // Snapshot rects in sheet-space
-    dragStartSheetRects = selection.currentRects.map(r => ({ ...r }))
+    dragMoveStartSheetRects = selection.currentRects.map(r => ({ ...r }))
 
     // For grid-origin dragging on tile canvas, we also store tile-local
     selection.dragMoveStartTileLocalX = mouseLocalX
@@ -339,7 +475,7 @@ export function makeTileGridSelectionToolState(
       if (
         selection.dragMoveStartSheetX == null ||
         selection.dragMoveStartSheetY == null ||
-        !dragStartSheetRects
+        !dragMoveStartSheetRects
       ) return
 
       const { x: sheetX, y: sheetY } = state.tileSheet.tileLocalToSheet(
@@ -351,7 +487,7 @@ export function makeTileGridSelectionToolState(
       const dx = sheetX - selection.dragMoveStartSheetX
       const dy = sheetY - selection.dragMoveStartSheetY
 
-      selection.currentRects = dragStartSheetRects.map(r => ({
+      selection.currentRects = dragMoveStartSheetRects.map(r => ({
         ...r,
         x: r.x + dx,
         y: r.y + dy,
@@ -365,17 +501,17 @@ export function makeTileGridSelectionToolState(
       if (
         selection.dragMoveStartTileLocalX == null ||
         selection.dragMoveStartTileLocalY == null ||
-        !dragStartGridBounds
+        !dragMoveStartGridBounds
       ) return
 
       const dx = mouseLocalX - selection.dragMoveStartTileLocalX
       const dy = mouseLocalY - selection.dragMoveStartTileLocalY
 
       const newGridBounds: Rect = {
-        x: dragStartGridBounds.x + dx,
-        y: dragStartGridBounds.y + dy,
-        w: dragStartGridBounds.w,
-        h: dragStartGridBounds.h,
+        x: dragMoveStartGridBounds.x + dx,
+        y: dragMoveStartGridBounds.y + dy,
+        w: dragMoveStartGridBounds.w,
+        h: dragMoveStartGridBounds.h,
       }
 
       selection.gridBounds = newGridBounds
@@ -400,12 +536,12 @@ export function makeTileGridSelectionToolState(
     selection = makeGridSelectionFromGridBounds(gridBounds)
 
     // reset drag anchors
-    dragStartGridBounds = { ...selection.gridBounds! }
+    dragMoveStartGridBounds = { ...selection.gridBounds! }
     selection.dragMoveStartGridX = null
     selection.dragMoveStartGridY = null
   }
 
-  function tilePointInSelection(tileId: TileId, tx: number, ty: number) {
+  function tilePointInSelection(tx: number, ty: number, tileId: TileId) {
     if (!selection) return false
     return state.tileSheet.tilePointInTileSheetSelection(tileId, tx, ty, selection)
   }
@@ -462,7 +598,7 @@ export function makeTileGridSelectionToolState(
       projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
     }
 
-    return mergeRectBounds(projected)
+    return mergeAdjacentRects(projected)
   }
 
   function clearSelection() {
@@ -530,6 +666,59 @@ export function makeTileGridSelectionToolState(
     selectionGridSpaceMergedRects,
     commit,
     clearSelection,
+    finalizeFloodSelection,
+    inFloodMode() {
+      return store.currentSubTool === SelectSubTool.FLOOD
+    },
     promoteTileSelectionToGridOrigin,
   }
+}
+
+function splitMaskForRects(
+  floodMask: Uint8Array,
+  floodRect: Rect, // GRID-LOCAL
+  rects: SelectionTileSheetRect[],
+  tileGridManager: TileGridManager,
+): Uint8Array[] {
+  const masks = rects.map(r => new Uint8Array(r.w * r.h))
+
+  const { x: fx0, y: fy0, w: fw, h: fh } = floodRect
+
+  let logged = false
+  for (let iy = 0; iy < fh; iy++) {
+    for (let ix = 0; ix < fw; ix++) {
+      const maskVal = floodMask[iy * fw + ix]
+      if (maskVal === 0) continue
+
+      const gridX = fx0 + ix
+      const gridY = fy0 + iy
+
+      // map grid pixel → tilesheet pixel (and tileId)
+      const sheetHit = tileGridManager.gridPixelToTileSheetPixel(gridX, gridY)
+      if (!sheetHit) continue
+
+      const { tileId, x: sheetX, y: sheetY } = sheetHit
+
+      // find which rect this sheet pixel belongs to
+      for (let rIndex = 0; rIndex < rects.length; rIndex++) {
+        const r = rects[rIndex]
+        if (r.tileId !== tileId) continue
+        if (
+          sheetX < r.x || sheetY < r.y ||
+          sheetX >= r.x + r.w || sheetY >= r.y + r.h
+        ) continue
+
+        const localX = sheetX - r.x
+        const localY = sheetY - r.y
+        const mi = localY * r.w + localX
+        masks[rIndex][mi] = maskVal
+
+        if (!logged) {
+          logged = true
+        }
+      }
+    }
+  }
+
+  return masks
 }

@@ -13,6 +13,7 @@ export type SerializedRGBA = string
 
 export const RGBA_ERASE = { r: 0, g: 0, b: 0, a: 0 } as Readonly<RGBA>
 export const RGBA_WHITE = { r: 255, g: 255, b: 255, a: 255 } as Readonly<RGBA>
+export const RGBA_RED = { r: 255, g: 0, b: 0, a: 255 } as Readonly<RGBA>
 
 export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
   return `${r},${g},${b},${a}`
@@ -494,6 +495,8 @@ export function makeReusableImageData() {
 }
 
 export type FloodFillResult = {
+  startX: number,
+  startY: number,
   rect: Rect
   pixels: ImageData
   mask: Uint8Array   // length = rect.w * rect.h
@@ -589,5 +592,5 @@ export function floodFillImageDataSelection(
     mask[my * rect.w + mx] = 1
   }
 
-  return { rect, pixels, mask }
+  return { startX, startY, rect, pixels, mask }
 }

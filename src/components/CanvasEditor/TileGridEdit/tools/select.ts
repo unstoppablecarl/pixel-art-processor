@@ -27,21 +27,38 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
     onClick({ state, toolState, gridRenderer, tileSheetWriter }, x, y, canvasType, tileId) {
       const ts = toolState
       const sel = ts.selection
-      if (!sel) return
 
       if (canvasType === CanvasType.GRID) {
-        if (!ts.gridPointInSelection(x, y)) {
+        if (!sel) {
+          if (ts.inFloodMode()) {
+            ts.finalizeFloodSelection(x, y, canvasType)
+          }
+          return
+        }
 
+        if (!ts.gridPointInSelection(x, y)) {
           if (ts.selectionHasMoved()) {
             ts.commit(store.selectMoveBlendMode)
+            return
           } else {
             ts.clearSelection()
             gridRenderer.queueRenderGrid()
           }
         }
+        if (ts.inFloodMode()) {
+          ts.finalizeFloodSelection(x, y, canvasType)
+          gridRenderer.queueRenderGrid()
+
+        }
       } else {
-        if (!ts.tilePointInSelection(tileId!, x, y)) {
+        if (!ts.tilePointInSelection(x, y, tileId!)) {
           ts.commit(store.selectMoveBlendMode)
+          return
+        }
+
+        if (ts.inFloodMode()) {
+          ts.finalizeFloodSelection(x, y, canvasType, tileId)
+          gridRenderer.queueRenderGrid()
         }
         gridRenderer.queueRenderGrid()
       }
@@ -51,7 +68,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const sel = ts.selection
 
       if (canvasType === CanvasType.GRID) {
-        if (!sel) {
+        if (!sel && !ts.inFloodMode()) {
           ts.gridStartSelection(x, y)
           return
         }
@@ -61,20 +78,24 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           return
         }
 
-        ts.gridStartSelection(x, y)
+        if (!ts.inFloodMode()) {
+          ts.gridStartSelection(x, y)
+        }
         gridRenderer.queueRenderAll()
       } else {
         if (!tileId) throw new Error('tileId required')
-        if (!sel) {
+        if (!sel && !ts.inFloodMode()) {
           ts.tileStartSelection(tileId, x, y)
           return
         }
-        if (ts.tilePointInSelection(tileId, x, y)) {
+        if (ts.tilePointInSelection(x, y, tileId)) {
           ts.tileDragStart(x, y, tileId)
           return
         }
 
-        ts.tileStartSelection(tileId, x, y)
+        if (!ts.inFloodMode()) {
+          ts.tileStartSelection(tileId, x, y)
+        }
         gridRenderer.queueRenderTile(tileId)
         gridRenderer.queueRenderGrid()
       }
@@ -120,14 +141,16 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const mode = store.selectMoveBlendMode
       const writer = selectMoveBlendModeToWriter[mode]!
       const preview = gridRenderer.tileGridImageDataRef.copy()!
-
       // 1. Clear original footprint (GRID SPACE)
-      if (sel.hasMoved) {
-        for (const r of sel.originalRects) {
-          const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
-          for (const g of gridRects) {
-            clearImageDataRect(preview, g)
-          }
+
+      for (const r of sel.originalRects) {
+        const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
+        for (const g of gridRects) {
+          clearImageDataRect(
+            preview,
+            { x: g.gridX!, y: g.gridY!, w: g.w, h: g.h },
+            g.mask,
+          )
         }
       }
 
@@ -136,27 +159,42 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
 
         for (const g of gridRects) {
-          const drawX = g.x
-          const drawY = g.y
-
           writer(preview, sel.pixels, {
-            dx: drawX,
-            dy: drawY,
-            sx: r.bufferX,
+            dx: g.gridX!,      // dest: grid space
+            dy: g.gridY!,
+            sx: r.bufferX,     // src: selection buffer (same as commit)
             sy: r.bufferY,
-            sw: r.w,
-            sh: r.h,
+            sw: g.w,
+            sh: g.h,
+            mask: r.mask ?? undefined,
           })
         }
       }
+      ctx.putImageData(preview, 0, 0)
     },
     gridScreenOverlayDraw({ state, toolState }, ctx) {
       const sel = toolState.selection
       const { scale } = state
       if (sel) {
-        // Convert GRID → SCREEN for drawing
-        for (const g of toolState.selectionGridSpaceMergedRects()) {
-          drawSelectOutline(ctx, scale, g, store.cursorColor)
+        if (sel.floodFillOrigin) {
+          for (const r of sel.currentRects) {
+            const gridRects = state.tileGridManager.projectTileSheetRectToGridRects(r)
+
+            for (const g of gridRects) {
+              drawSelectOutline(
+                ctx,
+                scale,
+                { x: g.gridX!, y: g.gridY!, w: g.w, h: g.h },
+                store.cursorColor,
+                g.mask,
+              )
+            }
+          }
+        } else {
+          // Convert GRID → SCREEN for drawing
+          for (const g of toolState.selectionGridSpaceMergedRects()) {
+            drawSelectOutline(ctx, scale, g, store.cursorColor)
+          }
         }
       } else {
         const r = toolState.currentDraggedRect
@@ -185,7 +223,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
             y: localY,
           } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
-          clearImageData(preview, localX, localY, r.w, r.h)
+          clearImageData(preview, localX, localY, r.w, r.h, r.mask)
         }
       }
 
@@ -205,6 +243,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           sy: r.bufferY,
           sw: r.w,
           sh: r.h,
+          mask: r.mask,
         })
 
         ctx.putImageData(preview, 0, 0)
