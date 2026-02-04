@@ -1,5 +1,5 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { clearImageDataRect } from '../../../../lib/util/html-dom/ImageData.ts'
+import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
 import { drawSelectOutline, selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
@@ -87,7 +87,9 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
       const preview = state.imageDataRef.copy()!
 
       // Clear original region
-      clearImageDataRect(preview, sel.original.x, sel.original.y, sel.original.w, sel.original.h, sel.mask)
+      if (toolState.selectionHasMoved()) {
+        clearImageData(preview, sel.original.x, sel.original.y, sel.original.w, sel.original.h, sel.mask)
+      }
 
       // Draw moved selection
       writer(preview, sel.pixels, {

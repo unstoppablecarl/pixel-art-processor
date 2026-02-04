@@ -1,7 +1,7 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { clearImageData, clearImageDataRect } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
+import { drawSelectOutline, selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
 import type {
   LocalToolContext,
   TileGridEditorToolHandlerArgs,
@@ -112,20 +112,21 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       }
       gridRenderer.queueRenderAll()
     },
-    gridPixelOverlayDraw({ state, toolState }, ctx) {
+    gridPixelOverlayDraw({ state, toolState, gridRenderer }, ctx) {
       const sel = toolState.selection
       if (!sel) return
 
       const { tileGridManager } = state
       const mode = store.selectMoveBlendMode
-      const blendMode = selectMoveBlendModeToBlendFn[mode]
+      const writer = selectMoveBlendModeToWriter[mode]!
+      const preview = gridRenderer.tileGridImageDataRef.copy()!
 
       // 1. Clear original footprint (GRID SPACE)
       if (sel.hasMoved) {
         for (const r of sel.originalRects) {
           const gridRects = tileGridManager.projectTileSheetRectToGridRects(r)
           for (const g of gridRects) {
-            ctx.clearRect(g.x, g.y, g.w, g.h)
+            clearImageDataRect(preview, g)
           }
         }
       }
@@ -138,19 +139,14 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           const drawX = g.x
           const drawY = g.y
 
-          putImageData(
-            ctx,
-            sel.pixels,
-            {
-              dx: drawX,
-              dy: drawY,
-              blendMode,
-              sx: r.bufferX,
-              sy: r.bufferY,
-              sw: r.w,
-              sh: r.h,
-            },
-          )
+          writer(preview, sel.pixels, {
+            dx: drawX,
+            dy: drawY,
+            sx: r.bufferX,
+            sy: r.bufferY,
+            sw: r.w,
+            sh: r.h,
+          })
         }
       }
     },
@@ -173,10 +169,11 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       if (!sel) return
 
       const { tileSheet } = state
-      const composed = sel.pixels
 
       const mode = store.selectMoveBlendMode
-      const blendMode = selectMoveBlendModeToBlendFn[mode]
+      const writer = selectMoveBlendModeToWriter[mode]!
+
+      const preview = state.tileSheet.extractTile(tileId)
 
       // 1. Clear original selection footprint on this tile (if moved)
       if (sel.hasMoved) {
@@ -188,7 +185,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
             y: localY,
           } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
-          ctx.clearRect(localX, localY, r.w, r.h)
+          clearImageData(preview, localX, localY, r.w, r.h)
         }
       }
 
@@ -201,19 +198,16 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           y: localY,
         } = tileSheet.sheetToTileLocal(tileId, r.x, r.y)
 
-        putImageData(
-          ctx,
-          composed,
-          {
-            blendMode,
-            dx: localX,
-            dy: localY,
-            sx: r.bufferX,
-            sy: r.bufferY,
-            sw: r.w,
-            sh: r.h,
-          },
-        )
+        writer(preview, sel.pixels, {
+          dx: localX,
+          dy: localY,
+          sx: r.bufferX,
+          sy: r.bufferY,
+          sw: r.w,
+          sh: r.h,
+        })
+
+        ctx.putImageData(preview, 0, 0)
       }
     },
     tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {

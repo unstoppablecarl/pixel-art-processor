@@ -186,23 +186,6 @@ export function setImageDataPixelsColor(imageData: ImageData, points: Point[], c
   }
 }
 
-export function fillImageData(
-  imageData: ImageData,
-  color: RGBA,
-): ImageData {
-
-  const { width, height, data } = imageData
-
-  for (let i = 0; i < width * height; i++) {
-    data[i * 4] = color.r
-    data[i * 4 + 1] = color.g
-    data[i * 4 + 2] = color.b
-    data[i * 4 + 3] = color.a
-  }
-
-  return imageData
-}
-
 export function resizeImageData(
   current: ImageData,
   newWidth: number,
@@ -432,22 +415,31 @@ export function extractImageData(
 
 export function clearImageDataRect(
   target: ImageData,
+  rect: RectBounds,
+  mask?: Uint8Array | null,
+) {
+  const { x, y, w, h } = rect
+  fillImageData(target, RGBA_ERASE, x, y, w, h, mask)
+}
+
+export function clearImageData(
+  target: ImageData,
   x: number,
   y: number,
   w: number,
   h: number,
   mask?: Uint8Array | null,
 ) {
-  fillImageDataRect(target, x, y, w, h, RGBA_ERASE, mask)
+  fillImageData(target, RGBA_ERASE, x, y, w, h, mask)
 }
 
-export function fillImageDataRect(
+export function fillImageData(
   target: ImageData,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
   { r, g, b, a }: RGBA,
+  x = 0,
+  y = 0,
+  w = target.width,
+  h = target.height,
   mask?: Uint8Array | null,
 ) {
   const { width, height } = target

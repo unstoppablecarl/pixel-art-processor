@@ -7,7 +7,7 @@ import {
 } from '../../../lib/util/data/Grid.ts'
 import { type BlendImageDataOptions } from '../../../lib/util/html-dom/blit.ts'
 import {
-  clearImageDataRect,
+  clearImageData,
   type RGBA,
   setImageDataPixelColor,
   setImageDataPixelsColor,
@@ -56,7 +56,7 @@ export function makeTileSheetWriter(
   return {
     blendSheetImageData,
     clear() {
-      clearImageDataRect(
+      clearImageData(
         state.tileSheet.imageData,
         0,
         0,
@@ -101,7 +101,7 @@ export function makeTileSheetWriter(
     clearRect(x: number, y: number, w: number, h: number) {
       const rect = { x, y, w, h }
       const overlapping = state.tileGridManager.getOverlappingTiles(rect)
-      clearImageDataRect(state.tileSheet.imageData, x, y, w, h)
+      clearImageData(state.tileSheet.imageData, x, y, w, h)
 
       for (const { tile } of overlapping) {
         markDirty(tile.id)

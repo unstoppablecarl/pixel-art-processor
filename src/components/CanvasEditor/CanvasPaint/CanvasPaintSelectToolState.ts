@@ -2,7 +2,7 @@ import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/s
 import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
 import { trimRectBounds } from '../../../lib/util/data/Rect.ts'
 import {
-  clearImageDataRect,
+  clearImageData,
   extractImageData,
   floodFillImageDataSelection,
 } from '../../../lib/util/html-dom/ImageData.ts'
@@ -171,7 +171,7 @@ export function makeCanvasPaintSelectToolState(
     const writer = selectMoveBlendModeToWriter[mode]
 
     const o = selection.original
-    clearImageDataRect(img, o.x, o.y, o.w, o.h, selection.mask)
+    clearImageData(img, o.x, o.y, o.w, o.h, selection.mask)
 
     const c = selection.current
     writer(img, selection.pixels, {

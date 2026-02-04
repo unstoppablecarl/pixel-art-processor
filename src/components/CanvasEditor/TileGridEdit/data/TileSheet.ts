@@ -1,7 +1,7 @@
 import { markRaw } from 'vue'
 import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
 import {
-  clearImageDataRect,
+  clearImageData,
   deserializeImageData,
   extractImageData,
   resizeImageData,
@@ -55,7 +55,7 @@ export function makeTileSheet(
   let imgData = markRaw(img)
 
   function clearTileSheetRect(rect: RectBounds) {
-    clearImageDataRect(imgData, rect.x, rect.y, rect.w, rect.h)
+    clearImageData(imgData, rect.x, rect.y, rect.w, rect.h)
   }
 
   function getTileRect(tileId: TileId): RectBounds {
