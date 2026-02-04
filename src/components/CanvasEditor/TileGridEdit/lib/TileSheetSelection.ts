@@ -1,5 +1,4 @@
-import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
-import { getRectsBounds } from '../../../../lib/util/data/Rect.ts'
+import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
 
@@ -44,14 +43,14 @@ export type TileSheetSelection = {
 
   // Tilesheet‑space bounding box of `originalRects`.
   // Defines the coordinate space of the selection buffer `pixels`.
-  readonly tileSheetBounds: RectBounds,
+  readonly tileSheetBounds: Rect,
 
   // Current moved selection bounds in GRID‑PIXEL space.
   // Only populated for GRID‑origin selections.
-  gridBounds: RectBounds | null,
+  gridBounds: Rect | null,
 
   // Initial grid‑pixel bounds at creation time (GRID‑origin only).
-  readonly initialGridBounds: RectBounds | null,
+  readonly initialGridBounds: Rect | null,
 
   // Which canvas the selection was created in (TILE or GRID).
   // This determines which drag anchor model is used.
@@ -80,7 +79,7 @@ export type TileSheetSelection = {
   // The tile the selection was originally taken from (TILE‑origin only).
   initialTileId: TileId | null
   // TILE‑local bounds of the selection at creation time (TILE‑origin only).
-  initialTileLocalBounds: RectBounds | null
+  initialTileLocalBounds: Rect | null
 
   // All tileIds touched by original or current rects.
   getOverlappingTileIds(): TileId[],
@@ -92,25 +91,25 @@ export type TileSheetSelection = {
 type InternalGridOptions = {
   pixels: ImageData,
   rects: SelectionTileSheetRect[],
-  tileSheetBounds: RectBounds,
+  tileSheetBounds: Rect,
   origin: CanvasType.GRID,
-  gridBounds: RectBounds,
+  gridBounds: Rect,
 }
 
 type InternalTileOptions = {
   pixels: ImageData,
   rects: SelectionTileSheetRect[],
-  tileSheetBounds: RectBounds,
+  tileSheetBounds: Rect,
   origin: CanvasType.TILE,
   tileId: TileId,
-  tileLocalBounds: RectBounds,
+  tileLocalBounds: Rect,
 }
 
 export function makeGridSelection(
   pixels: ImageData,
   rects: NormalizedTileSheetRect[],
-  tileSheetBounds: RectBounds,
-  gridBounds: RectBounds,
+  tileSheetBounds: Rect,
+  gridBounds: Rect,
 ): TileSheetSelection {
   return _makeSelection({
     pixels,
@@ -124,9 +123,9 @@ export function makeGridSelection(
 export function makeTileSelection(
   pixels: ImageData,
   rects: SelectionTileSheetRect[],
-  tileSheetBounds: RectBounds,
+  tileSheetBounds: Rect,
   tileId: TileId,
-  tileLocalBounds: RectBounds,
+  tileLocalBounds: Rect,
 ): TileSheetSelection {
   return _makeSelection({
     pixels,
@@ -222,7 +221,7 @@ function _makeSelection(
 
 export function normalizeTileSheetRects(rects: SelectionTileSheetRect[]): {
   normalizedRects: NormalizedTileSheetRect[],
-  tileSheetBounds: RectBounds,
+  tileSheetBounds: Rect,
 } {
   // 1. Compute tileSheet bounding box (tileSheet pixel space)
   const tileSheetBounds = getRectsBounds(rects)
@@ -244,7 +243,7 @@ export function normalizeTileSheetRects(rects: SelectionTileSheetRect[]): {
  * Two rects are adjacent if they touch exactly along an edge.
  * Works for clipped rects that live inside a single tile.
  */
-function areAdjacent(a: RectBounds, b: RectBounds): boolean {
+function areAdjacent(a: Rect, b: Rect): boolean {
   const ax2 = a.x + a.w
   const ay2 = a.y + a.h
   const bx2 = b.x + b.w
@@ -269,15 +268,15 @@ function areAdjacent(a: RectBounds, b: RectBounds): boolean {
 /**
  * Find adjacency-connected islands of rects.
  */
-function findIslands(rects: RectBounds[]): RectBounds[][] {
+function findIslands(rects: Rect[]): Rect[][] {
   const visited = new Set<number>()
-  const islands: RectBounds[][] = []
+  const islands: Rect[][] = []
 
   for (let i = 0; i < rects.length; i++) {
     if (visited.has(i)) continue
 
     const stack = [i]
-    const island: RectBounds[] = []
+    const island: Rect[] = []
 
     while (stack.length) {
       const idx = stack.pop()!
@@ -302,7 +301,7 @@ function findIslands(rects: RectBounds[]): RectBounds[][] {
  * Merge rects into adjacency-connected islands.
  * Returns one merged rect per island.
  */
-export function mergeRectBounds(rects: RectBounds[]): RectBounds[] {
+export function mergeRectBounds(rects: Rect[]): Rect[] {
   if (rects.length === 0) return []
   const islands = findIslands(rects)
   return islands.map(getRectsBounds)

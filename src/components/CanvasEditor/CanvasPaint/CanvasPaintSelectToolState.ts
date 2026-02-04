@@ -1,6 +1,5 @@
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
-import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
-import { trimRectBounds } from '../../../lib/util/data/Rect.ts'
+import { type Rect, trimRectBounds } from '../../../lib/util/data/Rect.ts'
 import {
   clearImageData,
   extractImageData,
@@ -27,11 +26,11 @@ export function makeCanvasPaintSelectToolState(
   type LocalSelection = {
     pixels: ImageData
     mask: Uint8Array | null
-    original: RectBounds
-    current: RectBounds
+    original: Rect
+    current: Rect
     dragStartX: number | null
     dragStartY: number | null
-    dragStartRect: RectBounds | null
+    dragStartRect: Rect | null
   }
 
   let selection: LocalSelection | null = null
@@ -43,7 +42,7 @@ export function makeCanvasPaintSelectToolState(
   let dragCurrentNewSelectionX: number | null = null
   let dragCurrentNewSelectionY: number | null = null
 
-  function selectionRect(): RectBounds | null {
+  function selectionRect(): Rect | null {
     if (
       dragStartNewSelectionX == null || dragStartNewSelectionY == null ||
       dragCurrentNewSelectionX == null || dragCurrentNewSelectionY == null

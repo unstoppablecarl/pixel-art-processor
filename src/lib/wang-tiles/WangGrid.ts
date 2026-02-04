@@ -1,5 +1,6 @@
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
-import type { RectBounds } from '../util/data/Bounds.ts'
+
+import type { Rect } from '../util/data/Rect.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
 
@@ -9,8 +10,8 @@ export type OverlappingTile<T> = {
   sourceY: number,
   tileX: number,
   tileY: number,
-  tileOverlap: RectBounds,
-  gridOverlap: RectBounds,
+  tileOverlap: Rect,
+  gridOverlap: Rect,
   tileRelativeOffset: Point,
 }
 
@@ -134,7 +135,7 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
   }
 
   getOverlappingTiles(
-    rect: RectBounds,
+    rect: Rect,
     tileSize: number,
   ): OverlappingTile<T>[] {
     const results: OverlappingTile<T>[] = []

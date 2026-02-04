@@ -1,4 +1,4 @@
-import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
+import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
@@ -101,7 +101,7 @@ function drawRect(ctx: CanvasRenderingContext2D, r: SelectionTileSheetRect, colo
   ctx.fillRect(x, y, w, h)
 }
 
-function drawRectOutline(ctx: CanvasRenderingContext2D, r: RectBounds, scale: number, color: string, i: number) {
+function drawRectOutline(ctx: CanvasRenderingContext2D, r: Rect, scale: number, color: string, i: number) {
   let { x, y, w, h } = r
 
   const screenX = x * scale - 1.5

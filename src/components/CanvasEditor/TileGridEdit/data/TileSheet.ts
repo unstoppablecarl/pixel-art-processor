@@ -1,5 +1,6 @@
 import { markRaw } from 'vue'
-import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
+
+import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import {
   clearImageData,
   deserializeImageData,
@@ -54,11 +55,11 @@ export function makeTileSheet(
   let img = imageData ?? new ImageData(width, height)
   let imgData = markRaw(img)
 
-  function clearTileSheetRect(rect: RectBounds) {
+  function clearTileSheetRect(rect: Rect) {
     clearImageData(imgData, rect.x, rect.y, rect.w, rect.h)
   }
 
-  function getTileRect(tileId: TileId): RectBounds {
+  function getTileRect(tileId: TileId): Rect {
     const { tileX, tileY } = getTileCoords(tileId)
     return {
       x: tileX * tileSize,
@@ -158,7 +159,7 @@ export function makeTileSheet(
     dirty = true
   }
 
-  function tileLocalRectToTileSheetRect(tileId: TileId, rect: RectBounds): SelectionTileSheetRect {
+  function tileLocalRectToTileSheetRect(tileId: TileId, rect: Rect): SelectionTileSheetRect {
     const tile = tileset.byId.get(tileId)
     if (!tile) throw new Error('tileId not found: ' + tileId)
 

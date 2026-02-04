@@ -1,8 +1,7 @@
 import { markRaw, type Raw } from 'vue'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 import { colorDistance } from '../color.ts'
-import type { RectBounds } from '../data/Bounds.ts'
-import { trimRectBounds } from '../data/Rect.ts'
+import { type Rect, trimRectBounds } from '../data/Rect.ts'
 import { type BlendFn, makeByteBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
@@ -415,7 +414,7 @@ export function extractImageData(
 
 export function clearImageDataRect(
   target: ImageData,
-  rect: RectBounds,
+  rect: Rect,
   mask?: Uint8Array | null,
 ) {
   const { x, y, w, h } = rect
@@ -495,7 +494,7 @@ export function makeReusableImageData() {
 }
 
 export type FloodFillResult = {
-  rect: RectBounds
+  rect: Rect
   pixels: ImageData
   mask: Uint8Array   // length = rect.w * rect.h
 }
@@ -569,7 +568,7 @@ export function floodFillImageDataSelection(
 
   if (matches.length === 0) return null
 
-  const rect: RectBounds = {
+  const rect: Rect = {
     x: minX,
     y: minY,
     w: maxX - minX + 1,

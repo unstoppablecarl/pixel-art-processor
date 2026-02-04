@@ -1,3 +1,5 @@
+import type { Rect } from './Rect.ts'
+
 export interface BoundsLike {
   minX: number,
   maxX: number,
@@ -119,12 +121,10 @@ export class Bounds implements BoundsLike {
   }
 }
 
-export type RectBounds = { x: number; y: number; w: number; h: number }
-
 export function inBounds(
   px: number,
   py: number,
-  rect: RectBounds,
+  rect: Rect,
 ): boolean {
   return (
     px >= rect.x &&

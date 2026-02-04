@@ -1,6 +1,7 @@
 import { computed, type ComputedRef, type Ref, shallowRef, watch } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
+
+import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import { type AxialEdgeWangGrid, makeAxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
 import type { AxialEdgeWangTileset, TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { type SelectionTileSheetRect, type TileSheetSelection } from '../lib/TileSheetSelection.ts'
@@ -101,12 +102,12 @@ export function makeTileGridManager(
     tileSheet.value.resizeTileSize(tileSize.value)
   })
 
-  function getOverlappingTilesOnGrid(rect: RectBounds) {
+  function getOverlappingTilesOnGrid(rect: Rect) {
     return tileGrid.value.getOverlappingTiles(rect, tileSize.value)
   }
 
   // rect must only overlap with one tileSheet tile
-  function projectTileSheetRectToGridRects(rect: SelectionTileSheetRect): RectBounds[] {
+  function projectTileSheetRectToGridRects(rect: SelectionTileSheetRect): Rect[] {
     const { tileId, x, y, w, h } = rect
 
     // Convert sheet → tile-local
@@ -145,7 +146,7 @@ export function makeTileGridManager(
     return false
   }
 
-  function gridRectToTileSheetRects(rect: RectBounds): SelectionTileSheetRect[] {
+  function gridRectToTileSheetRects(rect: Rect): SelectionTileSheetRect[] {
     const overlaps = getOverlappingTilesOnGrid(rect)
     const out = []
 

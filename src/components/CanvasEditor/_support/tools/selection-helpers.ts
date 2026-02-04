@@ -1,4 +1,4 @@
-import type { RectBounds } from '../../../../lib/util/data/Bounds.ts'
+import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import {
   type BlendFn,
   blendIgnoreTransparent,
@@ -60,7 +60,7 @@ export function useSelectionCancelOnDocumentClick<
 export function drawSelectOutline(
   ctx: CanvasRenderingContext2D,
   scale: number,
-  rect: RectBounds,
+  rect: Rect,
   color: string,
   mask?: Uint8Array | null,
 ) {

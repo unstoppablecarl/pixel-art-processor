@@ -1,4 +1,4 @@
-import type { RectBounds } from '../../../lib/util/data/Bounds.ts'
+import type { Rect } from '../../../lib/util/data/Rect.ts'
 import { extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../_core-editor-types.ts'
@@ -46,7 +46,7 @@ export function makeTileGridSelectionToolState(
   let inputTileId: TileId | null = null
 
   // drag move selection anchors
-  let dragStartGridBounds: RectBounds | null
+  let dragStartGridBounds: Rect | null
   let dragStartSheetRects: SelectionTileSheetRect[] | null = null
 
   function clearRenderedSelection(sel: TileSheetSelection) {
@@ -54,7 +54,7 @@ export function makeTileGridSelectionToolState(
     gridRenderer.queueRenderGrid()
   }
 
-  function makeGridSelectionFromGridBounds(gridBounds: RectBounds) {
+  function makeGridSelectionFromGridBounds(gridBounds: Rect) {
     const rects = tileGridManager.gridRectToTileSheetRects(gridBounds)
     if (rects.length === 0) throw new Error('no rects')
 
@@ -265,7 +265,7 @@ export function makeTileGridSelectionToolState(
       const dx = mouseGridX - selection.dragMoveStartGridX
       const dy = mouseGridY - selection.dragMoveStartGridY
 
-      const newGridBounds: RectBounds = {
+      const newGridBounds: Rect = {
         x: dragStartGridBounds.x + dx,
         y: dragStartGridBounds.y + dy,
         w: dragStartGridBounds.w,
@@ -371,7 +371,7 @@ export function makeTileGridSelectionToolState(
       const dx = mouseLocalX - selection.dragMoveStartTileLocalX
       const dy = mouseLocalY - selection.dragMoveStartTileLocalY
 
-      const newGridBounds: RectBounds = {
+      const newGridBounds: Rect = {
         x: dragStartGridBounds.x + dx,
         y: dragStartGridBounds.y + dy,
         w: dragStartGridBounds.w,
@@ -455,9 +455,9 @@ export function makeTileGridSelectionToolState(
     dragging = false
   }
 
-  function selectionGridSpaceMergedRects(): RectBounds[] {
+  function selectionGridSpaceMergedRects(): Rect[] {
     if (!selection) throw new Error('no selection')
-    const projected: RectBounds[] = []
+    const projected: Rect[] = []
     for (const r of selection.currentRects) {
       projected.push(...tileGridManager.projectTileSheetRectToGridRects(r))
     }
@@ -490,7 +490,7 @@ export function makeTileGridSelectionToolState(
       return inputSpace === CanvasType.TILE
     },
 
-    get currentDraggedRect(): RectBounds | undefined {
+    get currentDraggedRect(): Rect | undefined {
       if (dragCurrentX !== null && dragCurrentY !== null && dragStartX !== null && dragStartY !== null) {
         return {
           x: dragStartX,
