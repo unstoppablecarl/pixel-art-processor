@@ -3,8 +3,7 @@ import { putImageData } from './ImageData.ts'
 import { makeReusablePixelCanvas, type PixelCanvas } from './PixelCanvas.ts'
 
 export function makeCanvasFrameRenderer() {
-
-  const screenCanvas = makeReusablePixelCanvas()
+  const bufferCanvas = makeReusablePixelCanvas()
 
   return function renderCanvasFrame(
     pixelCanvas: PixelCanvas,
@@ -14,8 +13,7 @@ export function makeCanvasFrameRenderer() {
     drawScreenLayer?: DrawLayer,
   ) {
     const { canvas, ctx } = pixelCanvas
-
-    const {ctx: pxCtx, canvas: pxCanvas} = screenCanvas(canvas.width, canvas.height)
+    const {ctx: pxCtx, canvas: pxCanvas} = bufferCanvas(canvas.width, canvas.height)
 
     // 1. Clear pixel buffer (unscaled)
     pxCtx.setTransform(1, 0, 0, 1, 0, 0)
