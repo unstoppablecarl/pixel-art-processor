@@ -4,11 +4,11 @@ import {
   blendIgnoreTransparent,
   blendImageDataIgnoreSolid,
   blendImageDataIgnoreTransparent,
+  blendImageDataOverwrite,
   blendOverwrite,
   blendSourceAlphaOver,
   type ImageDataBlendFn,
 } from '../../../../lib/util/html-dom/blit.ts'
-import { writeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { useDocumentClick } from '../../../../lib/util/vue-util.ts'
 import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID, Tool } from '../../_core-editor-types.ts'
 
@@ -19,7 +19,7 @@ export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn | undefined
 }
 
 export const selectMoveBlendModeToWriter: Record<BlendMode, ImageDataBlendFn> = {
-  [BlendMode.OVERWRITE]: writeImageData,
+  [BlendMode.OVERWRITE]: blendImageDataOverwrite,
   [BlendMode.IGNORE_TRANSPARENT]: blendImageDataIgnoreTransparent,
   [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
 }
@@ -56,6 +56,7 @@ export function useSelectionCancelOnDocumentClick<
     localToolStates[Tool.SELECT].clearSelection()
   })
 }
+
 export function drawSelectOutline(
   ctx: CanvasRenderingContext2D,
   scale: number,
@@ -95,9 +96,9 @@ export function drawSelectOutline(
       if (mask[i] === 0) continue
       if (((ix + iy) % dashPeriod) !== 0) continue
 
-      const left   = ix === 0     || mask[i - 1] === 0
-      const right  = ix === w - 1 || mask[i + 1] === 0
-      const top    = iy === 0     || mask[i - w] === 0
+      const left = ix === 0 || mask[i - 1] === 0
+      const right = ix === w - 1 || mask[i + 1] === 0
+      const top = iy === 0 || mask[i - w] === 0
       const bottom = iy === h - 1 || mask[i + w] === 0
 
       const px = (rx + ix) * scale

@@ -63,19 +63,34 @@ export const blendIgnoreSolid: BlendFn = (src, dst) => {
   return src.a === 1 ? dst : src
 }
 
+export type BlendImageDataOptions = {
+  dx?: number,
+  dy?: number,
+  sx?: number,
+  sy?: number,
+  sw?: number,
+  sh?: number,
+  mask?: Uint8Array | null,
+  blendMode?: BlendFn,
+}
+
 export function blendImageData(
   dst: ImageData,
   src: ImageData,
-  x: number,
-  y: number,
-  sx: number = 0,
-  sy: number = 0,
-  sw: number = src.width,
-  sh: number = src.height,
-  blend: BlendFn,
-  mask?: Uint8Array,
+  opts: BlendImageDataOptions,
 ) {
-  const byteBlend = makeByteBlendAdapter(blend)
+  const {
+    dx = 0,
+    dy = 0,
+    sx = 0,
+    sy = 0,
+    sw = src.width,
+    sh = src.height,
+    blendMode = blendOverwrite,
+    mask,
+  } = opts
+
+  const byteBlend = makeByteBlendAdapter(blendMode)
 
   const dstData = dst.data
   const srcData = src.data
@@ -84,18 +99,18 @@ export function blendImageData(
   const useMask = !!mask
 
   // Clip to destination bounds
-  const maxW = Math.min(sw, dst.width - x)
-  const maxH = Math.min(sh, dst.height - y)
+  const maxW = Math.min(sw, dst.width - dx)
+  const maxH = Math.min(sh, dst.height - dy)
   if (maxW <= 0 || maxH <= 0) return
 
   for (let iy = 0; iy < maxH; iy++) {
-    const dstRow = (iy + y) * dstW
+    const dstRow = (iy + dy) * dstW
     const srcRow = (iy + sy) * srcW
 
     for (let ix = 0; ix < maxW; ix++) {
       if (useMask && mask![iy * sw + ix] === 0) continue
 
-      const di = (dstRow + (ix + x)) * 4
+      const di = (dstRow + (ix + dx)) * 4
       const si = (srcRow + (ix + sx)) * 4
 
       byteBlend(srcData, dstData, si, di)
@@ -106,47 +121,18 @@ export function blendImageData(
 export type ImageDataBlendFn = (
   dst: ImageData,
   src: ImageData,
-  dx: number,
-  dy: number,
-  sx?: number,
-  sy?: number,
-  sw?: number,
-  sh?: number,
-  mask?: Uint8Array,
+  opts: BlendImageDataOptions,
 ) => void
 
-export const blendImageDataSourceOver: ImageDataBlendFn = (
-  dst: ImageData,
-  src: ImageData,
-  dx: number,
-  dy: number,
-  sx: number = 0,
-  sy: number = 0,
-  sw: number = src.width,
-  sh: number = src.height,
-  mask?: Uint8Array,
-) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendSourceOver, mask)
+export const blendImageDataOverwrite = makeVariant(blendOverwrite)
+export const blendImageDataSourceOver = makeVariant(blendSourceOver)
+export const blendImageDataIgnoreTransparent = makeVariant(blendIgnoreTransparent)
+export const blendImageDataIgnoreSolid = makeVariant(blendIgnoreSolid)
 
-export const blendImageDataIgnoreTransparent: ImageDataBlendFn = (
-  dst: ImageData,
-  src: ImageData,
-  dx: number,
-  dy: number,
-  sx: number = 0,
-  sy: number = 0,
-  sw: number = src.width,
-  sh: number = src.height,
-  mask?: Uint8Array,
-) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreTransparent, mask)
-
-export const blendImageDataIgnoreSolid: ImageDataBlendFn = (
-  dst: ImageData,
-  src: ImageData,
-  dx: number,
-  dy: number,
-  sx: number = 0,
-  sy: number = 0,
-  sw: number = src.width,
-  sh: number = src.height,
-  mask?: Uint8Array,
-) => blendImageData(dst, src, dx, dy, sx, sy, sw, sh, blendIgnoreSolid, mask)
+function makeVariant(blendMode: BlendFn) {
+  return (
+    dst: ImageData,
+    src: ImageData,
+    opts: BlendImageDataOptions,
+  ) => blendImageData(dst, src, { ...opts, blendMode })
+}

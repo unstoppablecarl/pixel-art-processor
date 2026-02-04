@@ -4,7 +4,6 @@ import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
-import type { TileGridEditorState } from './TileGridEditorState.ts'
 import {
   makeGridSelection,
   makeTileSelection,
@@ -14,6 +13,7 @@ import {
   type TileSheetSelection,
 } from './lib/TileSheetSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
+import type { TileGridEditorState } from './TileGridEditorState.ts'
 import type { TileSheetWriter } from './TileSheetWriter.ts'
 
 export type TileGridSelectionToolState = ReturnType<typeof makeTileGridSelectionToolState>
@@ -432,12 +432,14 @@ export function makeTileGridSelectionToolState(
       tileSheetWriter.blendSheetImageData(
         pixels,
         mode,
-        r.x,      // dest tilesheet X
-        r.y,      // dest tilesheet Y
-        r.bufferX,  // src X inside selection buffer
-        r.bufferY,  // src Y inside selection buffer
-        r.w,
-        r.h,
+        {
+          dx: r.x,      // dest tilesheet X
+          dy: r.y,      // dest tilesheet Y
+          sx: r.bufferX,  // src X inside selection buffer
+          sy: r.bufferY,  // src Y inside selection buffer
+          sw: r.w,
+          sh: r.h,
+        },
       )
 
       movedTileIds.add(r.tileId)

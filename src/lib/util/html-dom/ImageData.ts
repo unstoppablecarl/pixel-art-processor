@@ -267,7 +267,7 @@ export function writeImageData(
   sy: number = 0,
   sw: number = source.width,
   sh: number = source.height,
-  mask?: Uint8Array,
+  mask?: Uint8Array | null,
 ) {
   const dstData = target.data
   const srcData = source.data
@@ -355,7 +355,7 @@ export function putImageData(
           if (mask[mi] === 0) continue
 
           const idx = (iy * width + ix) * 4
-          cdata[idx]     = 0
+          cdata[idx] = 0
           cdata[idx + 1] = 0
           cdata[idx + 2] = 0
           cdata[idx + 3] = 0
@@ -387,7 +387,7 @@ export function putImageData(
       const i = (iy * width + ix) * 4
 
       if (!byteBlend) {
-        dst[i]     = sdata[i]
+        dst[i] = sdata[i]
         dst[i + 1] = sdata[i + 1]
         dst[i + 2] = sdata[i + 2]
         dst[i + 3] = sdata[i + 3]
@@ -431,7 +431,7 @@ export function extractImageData(
 }
 
 export function clearImageDataRect(
-  target: ImageData | CanvasRenderingContext2D,
+  target: ImageData,
   x: number,
   y: number,
   w: number,
@@ -442,7 +442,7 @@ export function clearImageDataRect(
 }
 
 export function fillImageDataRect(
-  target: ImageData | CanvasRenderingContext2D,
+  target: ImageData,
   x: number,
   y: number,
   w: number,
@@ -450,11 +450,7 @@ export function fillImageDataRect(
   { r, g, b, a }: RGBA,
   mask?: Uint8Array | null,
 ) {
-  const isCtx = target instanceof CanvasRenderingContext2D
-
-  // Resolve dimensions
-  const width = isCtx ? target.canvas.width : target.width
-  const height = isCtx ? target.canvas.height : target.height
+  const { width, height } = target
 
   // Clamp to bounds
   const startX = Math.max(0, x)
@@ -464,42 +460,26 @@ export function fillImageDataRect(
 
   if (startX >= endX || startY >= endY) return
 
-  // If target is a context, extract only the needed region
-  let img: ImageData
-  if (isCtx) {
-    img = target.getImageData(startX, startY, endX - startX, endY - startY)
-  } else {
-    img = target
-  }
-
-  const data = img.data
-  const regionWidth = img.width
-  const regionHeight = img.height
-
+  const data = target.data
   const useMask = !!mask
 
-  // Fill pixels
+  // Actual region size after clamping
+  const regionWidth = endX - startX
+  const regionHeight = endY - startY
+
   for (let iy = 0; iy < regionHeight; iy++) {
-    const globalY = startY + iy
-    const maskRow = globalY * width
-
     for (let ix = 0; ix < regionWidth; ix++) {
-      const globalX = startX + ix
-      const mi = maskRow + globalX
 
+      const mi = iy * w + ix
       if (useMask && mask![mi] === 0) continue
 
-      const idx = (iy * regionWidth + ix) * 4
-      data[idx]     = r
-      data[idx + 1] = g
-      data[idx + 2] = b
-      data[idx + 3] = a
-    }
-  }
+      const di = ((startY + iy) * width + (startX + ix)) * 4
 
-  // Commit back to context if needed
-  if (isCtx) {
-    target.putImageData(img, startX, startY)
+      data[di] = r
+      data[di + 1] = g
+      data[di + 2] = b
+      data[di + 3] = a
+    }
   }
 }
 

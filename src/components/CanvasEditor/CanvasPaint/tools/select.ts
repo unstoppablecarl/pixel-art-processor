@@ -1,7 +1,7 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { clearImageDataRect, putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { clearImageDataRect } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { drawSelectOutline, selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
+import { drawSelectOutline, selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
 import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
 import type { CanvasPaintSelectToolState } from '../CanvasPaintSelectToolState.ts'
 
@@ -83,23 +83,20 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
       if (!sel) return
 
       const mode = store.selectMoveBlendMode
-      const blendMode = selectMoveBlendModeToBlendFn[mode]
+      const writer = selectMoveBlendModeToWriter[mode]!
+      const preview = state.imageDataRef.copy()!
 
-      if (toolState.selectionHasMoved()) {
-        const r = sel.original
-        clearImageDataRect(ctx, r.x, r.y, r.w, r.h, sel.mask)
-      }
+      // Clear original region
+      clearImageDataRect(preview, sel.original.x, sel.original.y, sel.original.w, sel.original.h, sel.mask)
 
-      putImageData(
-        ctx,
-        sel.pixels,
-        {
-          dx: sel.current.x,
-          dy: sel.current.y,
-          blendMode,
-          mask: sel.mask,
-        },
-      )
+      // Draw moved selection
+      writer(preview, sel.pixels, {
+        dx: sel.current.x,
+        dy: sel.current.y,
+        mask: sel.mask,
+      })
+
+      ctx.putImageData(preview, 0, 0)
     },
     screenOverlayDraw({ state, toolState }, ctx) {
       const sel = toolState.selection

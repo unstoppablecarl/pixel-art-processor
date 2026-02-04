@@ -1,5 +1,6 @@
 import { markRaw, type Raw, reactive, type Ref, shallowReactive, type ShallowReactive, watch } from 'vue'
 import {
+  copyImageData,
   deserializeImageData,
   resizeImageData,
   type SerializedImageData,
@@ -22,7 +23,7 @@ export type ImageDataRef = ShallowReactive<{
   height: number,
 
   readonly get: () => ImageData | null,
-
+  readonly copy: () => ImageData | null,
   readonly set: (newValue: ImageData | null) => void,
   readonly setQuiet: (newValue: ImageData | null) => void,
 
@@ -131,6 +132,7 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
     onChange(value: Sync) {
       sync = value
     },
+    copy: () => image ? copyImageData(image) : null,
     serialize: () => serializeImageData(image),
     setSerialized(serialized: SerializedImageData | null) {
       capsule.set(deserializeImageData(serialized))

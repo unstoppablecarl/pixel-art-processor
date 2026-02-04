@@ -5,6 +5,7 @@ import {
   mirrorTilePixelHorizontal,
   mirrorTilePixelVertical,
 } from '../../../lib/util/data/Grid.ts'
+import { type BlendImageDataOptions } from '../../../lib/util/html-dom/blit.ts'
 import {
   clearImageDataRect,
   type RGBA,
@@ -46,15 +47,10 @@ export function makeTileSheetWriter(
   function blendSheetImageData(
     imageData: ImageData,
     blendMode: BlendMode,
-    x = 0,
-    y = 0,
-    sx = 0,
-    sy = 0,
-    w = imageData.width,
-    h = imageData.height,
+    opts: Omit<BlendImageDataOptions, 'blendMode' | 'mask'>,
   ) {
     const writer = selectMoveBlendModeToWriter[blendMode]
-    writer(state.tileSheet.imageData, imageData, x, y, sx, sy, w, h)
+    writer(state.tileSheet.imageData, imageData, opts)
   }
 
   return {

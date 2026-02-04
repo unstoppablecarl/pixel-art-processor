@@ -174,7 +174,11 @@ export function makeCanvasPaintSelectToolState(
     clearImageDataRect(img, o.x, o.y, o.w, o.h, selection.mask)
 
     const c = selection.current
-    writer(img, selection.pixels, c.x, c.y, undefined, undefined, undefined, undefined, selection.mask ?? undefined)
+    writer(img, selection.pixels, {
+      dx: c.x,
+      dy: c.y,
+      mask: selection.mask,
+    })
 
     state.imageDataDirty = true
     selection = null
