@@ -190,6 +190,7 @@ export function makeTileGridSelectionToolState(
     const dy = y - state.mouseLastY
     if (dx === 0 && dy === 0) return
     selection.moveOnGrid(dx, dy)
+    drawAffectedTiles()
   }
 
   function moveSelectionOnTile(x: number, y: number, tileId: TileId) {
@@ -199,6 +200,7 @@ export function makeTileGridSelectionToolState(
     const dy = y - state.mouseLastY
     if (dx === 0 && dy === 0) return
     selection.moveOnTile(dx, dy, tileId)
+    drawAffectedTiles()
   }
 
   function tilePointInSelection(tx: number, ty: number, tileId: TileId) {
@@ -212,9 +214,10 @@ export function makeTileGridSelectionToolState(
 
   function gridPointInSelection(gx: number, gy: number) {
     if (!selection) return false
-    return selection.getCurrentGridRects().some(r =>
-      gx >= r.x && gx < r.x + r.w &&
-      gy >= r.y && gy < r.y + r.h,
+    const rects = selection.getCurrentGridDrawRects()
+    return rects.some(r =>
+      gx >= r.dx && gx < r.dx + r.w &&
+      gy >= r.dy && gy < r.dy + r.h
     )
   }
 

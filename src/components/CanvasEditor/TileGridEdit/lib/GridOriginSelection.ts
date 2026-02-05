@@ -205,16 +205,20 @@ export class GridOriginSelection implements ISelection {
   private tileDrawRectsFrom(tileRects: TileAlignedRect[], tileId: TileId): DrawRect[] {
     return tileRects
       .filter(r => r.tileId === tileId)
-      .map(r => ({
-        dx: r.selectionX,
-        dy: r.selectionY,
-        sx: r.bufferX,
-        sy: r.bufferY,
-        w: r.w,
-        h: r.h,
-        mask: r.mask ?? undefined,
-        tileId: r.tileId,
-      }))
+      .map(r => {
+        // convert grid-local → tile-local
+        const tile = this.geometry.tileSheet.sheetToTileLocal(tileId, r.sx, r.sy)
+        return {
+          dx: tile.x,
+          dy: tile.y,
+          sx: r.bufferX,
+          sy: r.bufferY,
+          w: r.w,
+          h: r.h,
+          mask: r.mask ?? undefined,
+          tileId: r.tileId,
+        }
+      })
   }
 
   getOriginalTileDrawRects(tileId: TileId): DrawRect[] {

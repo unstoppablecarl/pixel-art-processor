@@ -223,18 +223,15 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           clearImageData(preview, r.selectionX, r.selectionY, r.w, r.h, r.mask ?? undefined)
         }
       }
-
-      for (const r of sel.getCurrentTileAlignedRects()) {
-        if (r.tileId !== tileId) continue
-
+      for (const r of sel.getCurrentTileDrawRects(tileId)) {
         writer(preview, sel.pixels, {
-          dx: r.selectionX,
-          dy: r.selectionY,
-          sx: r.bufferX,
-          sy: r.bufferY,
+          dx: r.dx,
+          dy: r.dy,
+          sx: r.sx,
+          sy: r.sy,
           sw: r.w,
           sh: r.h,
-          mask: r.mask ?? undefined,
+          mask: r.mask,
         })
       }
 
@@ -246,13 +243,11 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const { scale } = state
 
       if (sel) {
-        for (const r of sel.getCurrentTileAlignedRects()) {
-          if (r.tileId !== tileId) continue
-
+        for (const r of sel.getCurrentTileDrawRects(tileId)) {
           drawSelectOutline(
             ctx,
             scale,
-            { x: r.selectionX, y: r.selectionY, w: r.w, h: r.h },
+            { x: r.dx, y: r.dy, w: r.w, h: r.h },
             store.cursorColor,
             r.mask ?? undefined,
           )

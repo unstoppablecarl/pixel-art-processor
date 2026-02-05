@@ -83,12 +83,12 @@ export function makeTileSheet(
     return { x: rect.x + tx, y: rect.y + ty }
   }
 
-  function sheetToTileLocal(tileId: TileId, sheetX: number, sheetY: number) {
+  function sheetToTileLocal(tileId: TileId, sx: number, sy: number) {
     // Get the tile’s position in the tile sheet grid
     const { sTileX, sTileY } = getTileCoords(tileId)
 
-    const localX = sheetX - sTileX * tileSize
-    const localY = sheetY - sTileY * tileSize
+    const localX = sx - sTileX * tileSize
+    const localY = sy - sTileY * tileSize
 
     return { x: localX, y: localY }
   }
