@@ -12,29 +12,25 @@ export function bindInputKey(bindings: InputBindings, target: Window | HTMLEleme
   }
 }
 
-function makeKeyListener() {
+export function makeKeyDownListener() {
   const pressedKeys = new Set()
-  window.addEventListener('keydown', (event) => {
-    if (pressedKeys.has(event.key)) return
-    pressedKeys.add(event.key)
-  })
+  const onKeyDown = (e: KeyboardEvent) => {
+    if (pressedKeys.has(e.key)) return
+    pressedKeys.add(e.key)
+  }
+  const onKeyUp = (e: KeyboardEvent) => pressedKeys.delete(e.key)
+  const onBlur = () => pressedKeys.clear()
 
-  window.addEventListener('keyup', (event) => {
-    pressedKeys.delete(event.key)
-  })
-
-  window.addEventListener('blur', () => {
-    pressedKeys.clear()
-  })
+  window.addEventListener('keydown', onKeyDown)
+  window.addEventListener('keyup', onKeyUp)
+  window.addEventListener('blur', onBlur)
 
   return {
-    isDown: (keyCode: string) => pressedKeys.has(keyCode),
-    controlIsDown: () => pressedKeys.has('Control'),
-    shiftIsDown: () => pressedKeys.has('Shift'),
-    altIsDown: () => pressedKeys.has('Alt'),
-    metaIsDown: () => pressedKeys.has('Meta'),
+    control: () => pressedKeys.has('Control'),
+    shift: () => pressedKeys.has('Shift'),
+    alt: () => pressedKeys.has('Alt'),
+    meta: () => pressedKeys.has('Meta'),
   }
 }
 
-export const KEY_INPUT = makeKeyListener()
-
+export const KEY_DOWN = makeKeyDownListener()
