@@ -26,7 +26,7 @@ onMounted(() => {
       <span class="arrow">{{ store.debugSidebarVisible ? '›' : '‹' }}</span>
     </button>
     <div class="sidebar-content">
-      <div><small>Debug Sidebar</small></div>
+      <div style="font-size: 0.5rem" class="mb-2">Debug Sidebar</div>
       <div v-for="(item, key) in data">
         <strong>{{ key }}:</strong> {{ item }}
       </div>
