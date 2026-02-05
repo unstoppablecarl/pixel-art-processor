@@ -55,8 +55,8 @@ export function makeTileSheetRenderer(
       if (!sel) return
 
       // use real sheet footprint, not buffer rects
-      const original = sel.getOriginalDrawRectsForSheet()
-      const current = sel.getCurrentDrawRectsForSheet()
+      const original = sel.getOriginalSheetDrawRects()
+      const current = sel.getCurrentSheetDrawRects()
 
       original.forEach(r => {
         drawDebugRect(ctx, { x: r.dx, y: r.dy, w: r.w, h: r.h }, 'rgba(255, 0, 0, 0.25)')
@@ -88,8 +88,8 @@ export function makeTileSheetRenderer(
       }
 
       if (sel) {
-        const original = sel.getOriginalDrawRectsForSheet()
-        const current = sel.getCurrentDrawRectsForSheet()
+        const original = sel.getOriginalSheetDrawRects()
+        const current = sel.getCurrentSheetDrawRects()
 
         original.forEach((r, i) => {
           drawDebugRectOutline(ctx, { x: r.dx, y: r.dy, w: r.w, h: r.h }, scale, 'rgba(255, 0, 0, 0.75)', i)

@@ -17,7 +17,6 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { TileAlignedRect } from '../lib/ISelection.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -57,6 +56,7 @@ export function makeTileSheet(
 
   function clearTileSheetRect(rect: Rect) {
     clearImageData(imgData, rect.x, rect.y, rect.w, rect.h)
+    dirty = true
   }
 
   function getTileRect(tileId: TileId): Rect {
@@ -159,48 +159,6 @@ export function makeTileSheet(
     dirty = true
   }
 
-  function tileLocalRectToTileSheetRect(
-    tileId: TileId,
-    rect: Rect,
-    mask: Uint8Array | null = null,
-  ): { sheetRect: Rect; tileAligned: TileAlignedRect } {
-    const tile = tileset.byId.get(tileId)
-    if (!tile) throw new Error('tileId not found: ' + tileId)
-
-    const x1 = Math.max(0, rect.x)
-    const y1 = Math.max(0, rect.y)
-    const x2 = Math.min(tileSize, rect.x + rect.w)
-    const y2 = Math.min(tileSize, rect.y + rect.h)
-
-    const w = x2 - x1
-    const h = y2 - y1
-    if (w <= 0 || h <= 0) throw new Error('selection bounds has zero size')
-
-    const { sTileX, sTileY } = getTileCoords(tileId)
-    const sheetX = sTileX * tileSize + x1
-    const sheetY = sTileY * tileSize + y1
-
-    const tileAligned: TileAlignedRect = {
-      tileId,
-      selectionX: x1,
-      selectionY: y1,
-      w,
-      h,
-      bufferX: 0,
-      bufferY: 0,
-      mask,
-    }
-
-    const sheetRect: Rect = {
-      x: sheetX,
-      y: sheetY,
-      w,
-      h,
-    }
-
-    return { sheetRect, tileAligned }
-  }
-
   function sheetPixelToTileId(sx: number, sy: number): TileId | null {
     if (sx < 0 || sy < 0) return null
 
@@ -209,6 +167,7 @@ export function makeTileSheet(
 
     if (tileX < 0 || tileY < 0) return null
     if (tileX >= tilesPerRow) return null
+    if (tileY >= tilesPerCol) return null
 
     const tileIndex = tileY * tilesPerRow + tileX
     const tile = tileset.tiles[tileIndex]
@@ -286,7 +245,6 @@ export function makeTileSheet(
     writeTile,
     resizeTileSize,
     getTileCoords,
-    tileLocalRectToTileSheetRect,
     clearTileSheetRect,
     each,
     sheetPixelToTileId,

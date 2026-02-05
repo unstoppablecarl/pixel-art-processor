@@ -5,7 +5,7 @@ import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode, SelectSubTool } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import { GridOriginSelection } from './lib/GridOriginSelection.ts'
-import type { GridSelectionRect, ISelection } from './lib/ISelection.ts'
+import type { ISelection, SelectionRect } from './lib/ISelection.ts'
 import { TileOriginSelection } from './lib/TileOriginSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
@@ -59,14 +59,25 @@ export function makeTileGridSelectionToolState(
     return result
   }
 
-  function clearRenderedSelection(sel: ISelection) {
-    const tileIds = sel.getOverlappingTileIds()
-    gridRenderer.queueRenderTiles(tileIds)
-    gridRenderer.queueRenderGrid()
+  function makeGridOriginSelectionFromBounds(bounds: Rect, mask: Uint8Array | null = null): ISelection {
+    const selectionRect: SelectionRect = {
+      x: bounds.x,
+      y: bounds.y,
+      w: bounds.w,
+      h: bounds.h,
+      mask,
+    }
+    const pixels = extractImageData(gridRenderer.tileGridImageDataRef.get()!, bounds)
+
+    return new GridOriginSelection([selectionRect], pixels, state.tileGridGeometry)
   }
 
-  function makeGridOriginSelectionFromBounds(bounds: Rect, mask: Uint8Array | null = null): ISelection {
-    const gridRect: GridSelectionRect = {
+  function makeTileOriginSelectionFromTileRect(
+    tileId: TileId,
+    bounds: Rect,
+    mask: Uint8Array | null = null,
+  ): ISelection {
+    const selectionRect: SelectionRect = {
       x: bounds.x,
       y: bounds.y,
       w: bounds.w,
@@ -74,34 +85,40 @@ export function makeTileGridSelectionToolState(
       mask,
     }
 
-    const tileAligned = state.tileGridGeometry.gridRectsToTileAlignedRects([gridRect])
-    const sheetRects = tileAligned.map(r => state.tileGridGeometry.tileAlignedRectToSheetRect(r))
-    const tileSheetBounds = getRectsBounds(sheetRects)
+    const originX = bounds.x
+    const originY = bounds.y
 
-    const pixels = extractImageData(
-      gridRenderer.tileGridImageDataRef.get()!,
-      bounds,
+    const tileAlignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(
+      tileId,
+      [selectionRect],
+      originX,
+      originY,
     )
 
-    return new GridOriginSelection(
-      [gridRect],
-      state.tileGridGeometry,
-      pixels,
-      tileSheetBounds,
+    const sheetBounds = getRectsBounds(
+      tileAlignedRects.map(r => ({
+        x: r.sx,
+        y: r.sy,
+        w: r.w,
+        h: r.h,
+      })),
     )
-  }
 
-  function makeTileOriginSelectionFromTileRect(tileId: TileId, localRect: Rect): ISelection {
+    const pixels = state.tileSheet.extractImageData(sheetBounds)
 
-    const { sheetRect, tileAligned } = state.tileSheet.tileLocalRectToTileSheetRect(tileId, localRect)
-
-    const pixels = state.tileSheet.extractImageData(sheetRect)
+    const clippedSelectionRects: SelectionRect[] = tileAlignedRects.map(r => ({
+      x: r.selectionX,
+      y: r.selectionY,
+      w: r.w,
+      h: r.h,
+      mask: r.mask,
+    }))
 
     return new TileOriginSelection(
-      [tileAligned],
-      state.tileGridGeometry,
+      clippedSelectionRects,
       pixels,
-      sheetRect,
+      tileId,
+      state.tileGridGeometry,
     )
   }
 
@@ -122,7 +139,7 @@ export function makeTileGridSelectionToolState(
   }
 
   function startSelection(x: number, y: number, canvasType: CanvasType, tileId: TileId | null = null) {
-    if (selection) clearRenderedSelection(selection)
+    if (selection) drawAffectedTiles()
     selection = null
     selecting = true
     dragging = false
@@ -154,31 +171,16 @@ export function makeTileGridSelectionToolState(
     if (!selecting) return
     selection = makeSelectionFromInput()
     selecting = false
-    for (const r of selection!.getCurrentTileAlignedRects()) {
-      const sheetRect = state.tileGridGeometry.tileAlignedRectToSheetRect(r)
-      console.log(JSON.stringify({
-        LOG_NAME: 'ASSERT TILE→SHEET',
-        tileId: r.tileId,
-        tileIndex: state.tileset.byId.get(r.tileId)!.index,
-        selectionX: r.selectionX,
-        selectionY: r.selectionY,
-        w: r.w,
-        h: r.h,
-        sheetRect,
-      }))
-    }
   }
 
   function gridDragStart(gx: number, gy: number) {
     if (!selection) return
     dragging = true
-    selection.startGridDrag(gx, gy)
   }
 
   function tileDragStart(tx: number, ty: number, tileId: TileId) {
     if (!selection) return
     dragging = true
-    selection.startTileDrag(tx, ty, tileId)
   }
 
   function moveSelectionOnGrid(x: number, y: number) {
@@ -210,7 +212,7 @@ export function makeTileGridSelectionToolState(
 
   function gridPointInSelection(gx: number, gy: number) {
     if (!selection) return false
-    return selection.getCurrentGridFootprint().some(r =>
+    return selection.getCurrentGridRects().some(r =>
       gx >= r.x && gx < r.x + r.w &&
       gy >= r.y && gy < r.y + r.h,
     )
@@ -219,8 +221,8 @@ export function makeTileGridSelectionToolState(
   function commit(mode: BlendMode) {
     if (!selection) return
 
-    const originalSheetDrawRects = selection.getOriginalDrawRectsForSheet()
-    const currentSheetDrawRects = selection.getCurrentDrawRectsForSheet()
+    const originalSheetDrawRects = selection.getOriginalSheetDrawRects()
+    const currentSheetDrawRects = selection.getCurrentSheetDrawRects()
     const pixels = selection.pixels
 
     for (const r of originalSheetDrawRects) {
@@ -243,24 +245,29 @@ export function makeTileGridSelectionToolState(
       )
     }
 
-    const movedTileIds = selection.getOverlappingTileIds()
-    gridRenderer.queueRenderTiles(movedTileIds)
-    gridRenderer.queueRenderGrid()
-
-    selection = null
     dragging = false
+    clearSelection()
   }
 
   function clearSelection() {
     if (!selection) return
-    clearRenderedSelection(selection)
+    const prev = selection
     selection = null
+    dragCurrentX = null
+    dragCurrentY = null
+    dragStartX = null
+    dragStartY = null
+    drawAffectedTiles(prev)
   }
 
-  function draw() {
-    const tileIds = selection?.getOverlappingTileIds() ?? []
-    gridRenderer.queueRenderTiles(tileIds)
-    gridRenderer.queueRenderGrid()
+  function drawAffectedTiles(target: ISelection | null = selection!) {
+    if (target) {
+      const tileIds = target.getOverlappingTileIds() ?? []
+      gridRenderer.queueRenderTiles(tileIds)
+      gridRenderer.queueRenderGrid()
+    } else {
+      gridRenderer.queueRenderAll()
+    }
   }
 
   function finalizeFloodSelection(
@@ -290,15 +297,40 @@ export function makeTileGridSelectionToolState(
     const { rect, mask } = result
 
     if (isTile) {
-      const { sheetRect, tileAligned } = state.tileSheet.tileLocalRectToTileSheetRect(tileId, rect)
+      const originX = rect.x
+      const originY = rect.y
 
-      const pixels = state.tileSheet.extractImageData(sheetRect)
+      const tileAlignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(
+        tileId!,
+        [{ ...rect, mask }],
+        originX,
+        originY,
+      )
+
+      const sheetBounds = getRectsBounds(
+        tileAlignedRects.map(r => ({
+          x: r.sx,
+          y: r.sy,
+          w: r.w,
+          h: r.h,
+        })),
+      )
+
+      const pixels = state.tileSheet.extractImageData(sheetBounds)
+
+      const clippedSelectionRects: SelectionRect[] = tileAlignedRects.map(r => ({
+        x: r.selectionX,
+        y: r.selectionY,
+        w: r.w,
+        h: r.h,
+        mask: r.mask,
+      }))
 
       selection = new TileOriginSelection(
-        [tileAligned],
-        state.tileGridGeometry,
+        clippedSelectionRects,
         pixels,
-        sheetRect,
+        tileId!,
+        state.tileGridGeometry,
       )
     } else {
       selection = makeGridOriginSelectionFromBounds(rect, mask)
@@ -362,6 +394,6 @@ export function makeTileGridSelectionToolState(
 
     commit,
     clearSelection,
-    draw,
+    draw: () => drawAffectedTiles(),
   }
 }

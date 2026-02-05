@@ -1,7 +1,8 @@
 // TileGridGeometry.ts
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
-import type { GridSelectionRect, TileAlignedRect, SheetAlignedRect } from '../lib/ISelection.ts'
+import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
+import type { SelectionRect, TileAlignedRect } from '../lib/ISelection.ts'
 import type { TileSheet } from './TileSheet.ts'
 
 export type TileGridGeometry = ReturnType<typeof makeTileGridGeometry>
@@ -44,7 +45,9 @@ export function makeTileGridGeometry(
   }
 
   function gridRectsToTileAlignedRects(
-    rects: GridSelectionRect[],
+    rects: SelectionRect[],
+    originX: number,
+    originY: number,
   ): TileAlignedRect[] {
     const out: TileAlignedRect[] = []
 
@@ -56,17 +59,32 @@ export function makeTileGridGeometry(
 
       for (const o of overlaps) {
         const { tile, tileOverlap } = o
-        const { w, h } = tileOverlap
+        const { x: tx, y: ty, w, h } = tileOverlap
         if (w <= 0 || h <= 0) continue
 
         const mask = sliceMask(r.mask, o.sourceX, o.sourceY, w, h, r.w)
 
+        const { x: tsx, y: tsy } = tileSheet.getTileRect(tile.id)
+
+        const gridPixelX = r.x + o.sourceX
+        const gridPixelY = r.y + o.sourceY
+
         out.push({
           tileId: tile.id,
-          selectionX: o.sourceX,
-          selectionY: o.sourceY,
+
+          // sheet space
+          sx: tsx + tx,
+          sy: tsy + ty,
+
+          // selection space (relative to selection origin)
+          selectionX: gridPixelX - originX,
+          selectionY: gridPixelY - originY,
+
+          // shared
           w,
           h,
+
+          // pixel buffer space
           bufferX: o.sourceX,
           bufferY: o.sourceY,
           mask,
@@ -77,23 +95,67 @@ export function makeTileGridGeometry(
     return out
   }
 
-  function tileAlignedRectToSheetRect(r: TileAlignedRect): SheetAlignedRect {
-    const tileRect = tileSheet.getTileRect(r.tileId)
+  function tileRectsToTileAlignedRects(
+    tileId: TileId,
+    rects: SelectionRect[],
+    originX: number,
+    originY: number,
+  ): TileAlignedRect[] {
+    const { x: tileSheetX, y: tileSheetY } = tileSheet.getTileRect(tileId)
 
-    return {
-      x: tileRect.x + r.selectionX,
-      y: tileRect.y + r.selectionY,
-      w: r.w,
-      h: r.h,
-      bufferX: r.bufferX,
-      bufferY: r.bufferY,
-      mask: r.mask,
+    const out: TileAlignedRect[] = []
+
+    for (const r of rects) {
+      const x1 = Math.max(0, r.x)
+      const y1 = Math.max(0, r.y)
+      const x2 = Math.min(tileSize, r.x + r.w)
+      const y2 = Math.min(tileSize, r.y + r.h)
+
+      const w = x2 - x1
+      const h = y2 - y1
+      if (w <= 0 || h <= 0) continue
+
+      const clippedMask = r.mask
+        ? sliceMask(r.mask, x1 - r.x, y1 - r.y, w, h, r.w)
+        : null
+
+      const sheetX = tileSheetX + x1
+      const sheetY = tileSheetY + y1
+
+      const selectionX = x1 - originX
+      const selectionY = y1 - originY
+
+      const bufferX = x1 - originX
+      const bufferY = y1 - originY
+
+      out.push({
+        tileId,
+
+        // sheet space
+        sx: sheetX,
+        sy: sheetY,
+
+        // selection space
+        selectionX,
+        selectionY,
+
+        // all spaces
+        w,
+        h,
+
+        // pixel buffer space
+        bufferX,
+        bufferY,
+        mask: clippedMask,
+      })
     }
+
+    return out
   }
 
-  function tileAlignedRectToGridRects(rect: TileAlignedRect): GridSelectionRect[] {
+  function tileAlignedRectToGridRects(rect: TileAlignedRect): SelectionRect[] {
     const { tileId, selectionX, selectionY, w, h, mask } = rect
-    const results: GridSelectionRect[] = []
+    const results: SelectionRect[] = []
 
     tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
       const x = gTileX * tileSize + selectionX
@@ -111,108 +173,36 @@ export function makeTileGridGeometry(
     return results
   }
 
-  function splitGridMaskForRects(
-    floodMask: Uint8Array,
-    floodRect: Rect,
-    rects: SheetAlignedRect[],
-  ): Uint8Array[] {
-    const masks = rects.map(r => new Uint8Array(r.w * r.h))
-    const { x: fx0, y: fy0, w: fw, h: fh } = floodRect
+  function selectionRectToTileAlignedRect(
+    rect: SelectionRect,
+    tileId: TileId,
+  ): TileAlignedRect {
+    // rect.x/y are selection‑space inside the tile
+    // rect.w/h are the clipped selection region inside the tile
+    // rect.mask is the selection mask for this clipped region
 
-    for (let iy = 0; iy < fh; iy++) {
-      for (let ix = 0; ix < fw; ix++) {
-        const maskVal = floodMask[iy * fw + ix]
-        if (maskVal === 0) continue
+    const { x: tileSheetX, y: tileSheetY } = tileSheet.getTileRect(tileId)
 
-        const gridX = fx0 + ix
-        const gridY = fy0 + iy
+    return {
+      tileId,
 
-        const sheetHit = gridPixelToSheetPixel(gridX, gridY)
-        if (!sheetHit) continue
+      // sheet space
+      sx: tileSheetX + rect.x,
+      sy: tileSheetY + rect.y,
 
-        const { x: sheetX, y: sheetY } = sheetHit
+      // selection space
+      selectionX: rect.x,
+      selectionY: rect.y,
 
-        for (let rIndex = 0; rIndex < rects.length; rIndex++) {
-          const r = rects[rIndex]
+      // all spaces
+      w: rect.w,
+      h: rect.h,
 
-          if (
-            sheetX < r.x || sheetY < r.y ||
-            sheetX >= r.x + r.w || sheetY >= r.y + r.h
-          ) continue
-
-          const localX = sheetX - r.x
-          const localY = sheetY - r.y
-          const mi = localY * r.w + localX
-          masks[rIndex][mi] = maskVal
-        }
-      }
+      // pixel buffer space
+      bufferX: rect.x,
+      bufferY: rect.y,
+      mask: rect.mask,
     }
-
-    return masks
-  }
-
-  function splitSheetMaskForRects(
-    mask: Uint8Array,
-    bounds: Rect,
-    rects: SheetAlignedRect[],
-  ): Uint8Array[] {
-    const { x: bx, y: by, w: bw } = bounds
-
-    return rects.map(r => {
-      const out = new Uint8Array(r.w * r.h)
-
-      for (let dy = 0; dy < r.h; dy++) {
-        for (let dx = 0; dx < r.w; dx++) {
-          const sx = r.x + dx
-          const sy = r.y + dy
-
-          const mx = sx - bx
-          const my = sy - by
-
-          const maskIndex = my * bw + mx
-          const outIndex = dy * r.w + dx
-
-          out[outIndex] = mask[maskIndex]
-        }
-      }
-
-      return out
-    })
-  }
-
-  function validateTileAlignedRect(
-    r: TileAlignedRect,
-    bufferWidth: number,
-    bufferHeight: number,
-  ) {
-    const errors: string[] = []
-
-    if (r.w <= 0 || r.h <= 0)
-      errors.push(`Invalid size: w=${r.w}, h=${r.h}`)
-
-    if (r.selectionX < 0 || r.selectionY < 0)
-      errors.push(`selectionX/selectionY must be >= 0`)
-
-    if (r.selectionX + r.w > tileSize)
-      errors.push(`Rect overhangs tile horizontally`)
-
-    if (r.selectionY + r.h > tileSize)
-      errors.push(`Rect overhangs tile vertically`)
-
-    if (r.bufferX < 0 || r.bufferY < 0)
-      errors.push(`bufferX/bufferY must be >= 0`)
-
-    if (r.bufferX + r.w > bufferWidth)
-      errors.push(`Rect overhangs buffer horizontally`)
-
-    if (r.bufferY + r.h > bufferHeight)
-      errors.push(`Rect overhangs buffer vertically`)
-
-    if (r.mask && r.mask.length !== r.w * r.h)
-      errors.push(`Mask length mismatch`)
-
-    if (errors.length)
-      throw new Error(errors.join('\n'))
   }
 
   function getOverlappingTilesOnGrid(rect: Rect) {
@@ -222,22 +212,20 @@ export function makeTileGridGeometry(
   return {
     tileSheet,
     tileAlignedRectToGridRects,
-    tileAlignedRectToSheetRect,
     gridRectsToTileAlignedRects,
-    splitSheetMaskForRects,
-    splitGridMaskForRects,
+    tileRectsToTileAlignedRects,
+    selectionRectToTileAlignedRect,
     gridPixelToGridTile,
     gridPixelToTilePixel,
     gridPixelToSheetPixel,
     gridTileToGridPixel,
     getOverlappingTilesOnGrid,
-    validateTileAlignedRect,
     sheetPixelToTileId: tileSheet.sheetPixelToTileId,
     tileLocalToSheet: tileSheet.tileLocalToSheet,
   }
 }
 
-function sliceMask(
+export function sliceMask(
   mask: Uint8Array | null,
   srcX: number,
   srcY: number,

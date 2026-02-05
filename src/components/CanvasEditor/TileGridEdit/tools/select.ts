@@ -158,12 +158,12 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const preview = gridRenderer.tileGridImageDataRef.copy()!
 
       // 1. Clear original footprint using tile-aligned rects
-      for (const r of sel.getOriginalDrawRectsForGrid()) {
+      for (const r of sel.getOriginalGridDrawRects()) {
         clearImageData(preview, r.dx, r.dy, r.w, r.h, r.mask)
       }
 
       // 2. Draw current footprint using tile-aligned rects
-      for (const r of sel.getCurrentDrawRectsForGrid()) {
+      for (const r of sel.getCurrentGridDrawRects()) {
         writer(preview, sel.pixels, {
           dx: r.dx,
           dy: r.dy,
@@ -189,11 +189,11 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       }
 
       // Draw unsplit selection outline (cyan)
-      for (const g of sel.getCurrentGridFootprint()) {
+      for (const g of sel.getCurrentGridDrawRects()) {
         drawSelectOutline(
           ctx,
           scale,
-          { x: g.x, y: g.y, w: g.w, h: g.h },
+          { x: g.dx, y: g.dy, w: g.w, h: g.h },
           store.cursorColor,
           g.mask ?? undefined,
         )

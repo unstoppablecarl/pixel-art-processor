@@ -46,11 +46,11 @@ export function makeTileSheetSelectionRenderer(
       const sel = toolState.selection
       if (!sel) return
 
-      const sheetRects = sel.getCurrentTileAlignedRects()
+      const rects = sel.getCurrentTileAlignedRects()
       const pixels = sel.pixels
 
-      for (const r of sheetRects) {
-        // buffer-local rects
+      for (const r of rects) {
+        // buffer-space rects
         const dx = r.bufferX
         const dy = r.bufferY
 
@@ -74,15 +74,13 @@ export function makeTileSheetSelectionRenderer(
       gridCache.draw(ctx)
 
       if (sel) {
-        const sheetRects = sel.getCurrentTileAlignedRects()
+        const rects = sel.getCurrentTileAlignedRects()
 
         ctx.translate(scale, scale)
-        sheetRects.forEach((r, i) => {
-          const dx = r.bufferX
-          const dy = r.bufferY
+        rects.forEach((r, i) => {
           drawDebugRectOutline(
             ctx,
-            { x: dx, y: dy, w: r.w, h: r.h },
+            { x: r.bufferX, y: r.bufferY, w: r.w, h: r.h },
             scale,
             'rgba(0, 255, 0, 0.75)',
             i,

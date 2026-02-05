@@ -1,139 +1,263 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
+import { getRectsBounds } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'
-import type { DrawRect, GridSelectionRect, ISelection, SheetAlignedRect, TileAlignedRect } from './ISelection.ts'
+import type { DrawRect, ISelection, SelectionRect, TileAlignedRect } from './ISelection.ts'
 
 export class TileOriginSelection implements ISelection {
   private originalRects: TileAlignedRect[]
   private currentRects: TileAlignedRect[]
-  private dragStartRects: TileAlignedRect[] | null = null
   private moved = false
 
   pixels: ImageData
-  tileSheetBounds: Rect
 
   constructor(
-    rects: TileAlignedRect[],
-    private geometry: TileGridGeometry,
+    rects: SelectionRect[],
     pixels: ImageData,
-    tileSheetBounds: Rect,
+    private tileId: TileId,
+    private geometry: TileGridGeometry,
   ) {
-    this.originalRects = rects
-    this.currentRects = rects.map(r => ({ ...r }))
+    this.originalRects = rects.map(r =>
+      this.selectionRectToTileAlignedRect(r, tileId),
+    )
+
+    this.currentRects = this.originalRects.map(r => ({ ...r }))
     this.pixels = pixels
-    this.tileSheetBounds = tileSheetBounds
   }
 
   hasMoved() {
     return this.moved
   }
 
-  // --- FOOTPRINTS (grid-space) ---
-  getOriginalGridFootprint(): GridSelectionRect[] {
-    return this.originalRects.flatMap(r =>
-      this.geometry.tileAlignedRectToGridRects(r),
+  // conversion
+
+  private selectionRectToTileAlignedRect(
+    rect: SelectionRect,
+    tileId: TileId,
+  ): TileAlignedRect {
+    const { x: tsx, y: tsy } = this.geometry.tileSheet.getTileRect(tileId)
+
+    return {
+      tileId,
+
+      // sheet space
+      sx: tsx + rect.x,
+      sy: tsy + rect.y,
+
+      // selection space
+      selectionX: rect.x,
+      selectionY: rect.y,
+
+      // all spaces
+      w: rect.w,
+      h: rect.h,
+
+      // pixel buffer space
+      bufferX: rect.x,
+      bufferY: rect.y,
+      mask: rect.mask,
+    }
+  }
+
+  // bounds
+
+  private sheetBounds(rects: TileAlignedRect[]): Rect {
+    return getRectsBounds(
+      rects.map(r => ({
+        x: r.sx,
+        y: r.sy,
+        w: r.w,
+        h: r.h,
+      })),
     )
   }
 
-  getCurrentGridFootprint(): GridSelectionRect[] {
-    return this.currentRects.flatMap(r =>
-      this.geometry.tileAlignedRectToGridRects(r),
+  private tileLocalBounds(rects: TileAlignedRect[]): Rect {
+    return getRectsBounds(
+      rects.map(r => ({
+        x: r.selectionX,
+        y: r.selectionY,
+        w: r.w,
+        h: r.h,
+      })),
     )
   }
 
-  // --- TILE-ALIGNED GEOMETRY ---
-  getOriginalTileAlignedRects() {
+  private gridBounds(rects: SelectionRect[]): Rect {
+    return getRectsBounds(rects)
+  }
+
+  // sheet bounds
+
+  getOriginalSheetBounds(): Rect {
+    return this.sheetBounds(this.originalRects)
+  }
+
+  getCurrentSheetBounds(): Rect {
+    return this.sheetBounds(this.currentRects)
+  }
+
+  // tile bounds (tile-local selection space)
+
+  getOriginalTileBounds(): Rect {
+    return this.tileLocalBounds(this.originalRects)
+  }
+
+  getCurrentTileBounds(): Rect {
+    return this.tileLocalBounds(this.currentRects)
+  }
+
+  // tile-aligned rects
+
+  getOriginalTileAlignedRects(): TileAlignedRect[] {
     return this.originalRects
   }
 
-  getCurrentTileAlignedRects() {
+  getCurrentTileAlignedRects(): TileAlignedRect[] {
     return this.currentRects
   }
 
-  // --- MOVEMENT (tile-space only) ---
-  moveOnGrid() {
-    throw new Error("Tile-origin selection must be promoted before grid movement")
+  // tile rects (selection-space)
+
+  private tileRects(rects: TileAlignedRect[], tileId: TileId): SelectionRect[] {
+    return rects
+      .filter(r => r.tileId === tileId)
+      .map(r => ({
+        x: r.selectionX,
+        y: r.selectionY,
+        w: r.w,
+        h: r.h,
+        mask: r.mask,
+      }))
+  }
+
+  getOriginalTileRects(tileId: TileId): SelectionRect[] {
+    return this.tileRects(this.originalRects, tileId)
+  }
+
+  getCurrentTileRects(tileId: TileId): SelectionRect[] {
+    return this.tileRects(this.currentRects, tileId)
+  }
+
+  // tile draw rects (tile-local)
+
+  private tileDrawRects(rects: TileAlignedRect[], tileId: TileId): DrawRect[] {
+    return rects
+      .filter(r => r.tileId === tileId)
+      .map(r => ({
+        dx: r.selectionX,
+        dy: r.selectionY,
+        sx: r.bufferX,
+        sy: r.bufferY,
+        w: r.w,
+        h: r.h,
+        mask: r.mask ?? undefined,
+        tileId: r.tileId,
+      }))
+  }
+
+  getOriginalTileDrawRects(tileId: TileId): DrawRect[] {
+    return this.tileDrawRects(this.originalRects, tileId)
+  }
+
+  getCurrentTileDrawRects(tileId: TileId): DrawRect[] {
+    return this.tileDrawRects(this.currentRects, tileId)
+  }
+
+  // sheet draw rects
+
+  private sheetDrawRects(rects: TileAlignedRect[]): DrawRect[] {
+    return rects.map(r => ({
+      dx: r.sx,
+      dy: r.sy,
+      sx: r.bufferX,
+      sy: r.bufferY,
+      w: r.w,
+      h: r.h,
+      mask: r.mask ?? undefined,
+      tileId: r.tileId,
+    }))
+  }
+
+  getOriginalSheetDrawRects(): DrawRect[] {
+    return this.sheetDrawRects(this.originalRects)
+  }
+
+  getCurrentSheetDrawRects(): DrawRect[] {
+    return this.sheetDrawRects(this.currentRects)
+  }
+
+  // grid rects
+
+  private gridRects(rects: TileAlignedRect[]): SelectionRect[] {
+    return rects.flatMap(r => this.geometry.tileAlignedRectToGridRects(r))
+  }
+
+  getOriginalGridRects(): SelectionRect[] {
+    return this.gridRects(this.originalRects)
+  }
+
+  getCurrentGridRects(): SelectionRect[] {
+    return this.gridRects(this.currentRects)
+  }
+
+  // grid bounds
+
+  getOriginalGridBounds(): Rect {
+    return this.gridBounds(this.getOriginalGridRects())
+  }
+
+  getCurrentGridBounds(): Rect {
+    return this.gridBounds(this.getCurrentGridRects())
+  }
+
+  // grid draw rects (correct buffer offsets)
+
+  private gridDrawRects(rects: TileAlignedRect[]): DrawRect[] {
+    return rects.map(r => ({
+      dx: r.sx,
+      dy: r.sy,
+      sx: r.bufferX,
+      sy: r.bufferY,
+      w: r.w,
+      h: r.h,
+      mask: r.mask ?? undefined,
+      tileId: r.tileId,
+    }))
+  }
+
+  getOriginalGridDrawRects(): DrawRect[] {
+    return this.gridDrawRects(this.originalRects)
+  }
+
+  getCurrentGridDrawRects(): DrawRect[] {
+    return this.gridDrawRects(this.currentRects)
+  }
+
+  // movement
+
+  moveOnGrid(_dx: number, _dy: number) {
+    throw new Error('tile-origin selection must be promoted before grid movement')
   }
 
   moveOnTile(dx: number, dy: number, tileId: TileId) {
-    if (!this.dragStartRects) return
     if (dx === 0 && dy === 0) return
 
     this.moved = true
 
-    this.currentRects = this.dragStartRects.map(r => {
+    this.currentRects = this.currentRects.map(r => {
       if (r.tileId !== tileId) return r
       return {
         ...r,
         selectionX: r.selectionX + dx,
         selectionY: r.selectionY + dy,
+        sx: r.sx + dx,
+        sy: r.sy + dy,
       }
     })
   }
 
-  startGridDrag() {
-    throw new Error("Tile-origin selection cannot start grid drag until promoted")
-  }
-
-  startTileDrag() {
-    this.dragStartRects = this.currentRects.map(r => ({ ...r }))
-  }
-
-  // --- SHEET PROJECTION ---
-  private projectToSheet(rects: TileAlignedRect[]): SheetAlignedRect[] {
-    return rects.map(r => this.geometry.tileAlignedRectToSheetRect(r))
-  }
-
-  getOriginalDrawRectsForSheet(): DrawRect[] {
-    return this.projectToSheet(this.originalRects).map(r => ({
-      dx: r.x,
-      dy: r.y,
-      sx: r.bufferX,
-      sy: r.bufferY,
-      w: r.w,
-      h: r.h,
-      mask: r.mask ?? undefined,
-    }))
-  }
-
-  getCurrentDrawRectsForSheet(): DrawRect[] {
-    return this.projectToSheet(this.currentRects).map(r => ({
-      dx: r.x,
-      dy: r.y,
-      sx: r.bufferX,
-      sy: r.bufferY,
-      w: r.w,
-      h: r.h,
-      mask: r.mask ?? undefined,
-    }))
-  }
-
-  // --- GRID PROJECTION ---
-  getOriginalDrawRectsForGrid(): DrawRect[] {
-    return this.getOriginalGridFootprint().map(g => ({
-      dx: g.x,
-      dy: g.y,
-      sx: 0,
-      sy: 0,
-      w: g.w,
-      h: g.h,
-      mask: g.mask ?? undefined,
-    }))
-  }
-
-  getCurrentDrawRectsForGrid(): DrawRect[] {
-    return this.getCurrentGridFootprint().map(g => ({
-      dx: g.x,
-      dy: g.y,
-      sx: 0,
-      sy: 0,
-      w: g.w,
-      h: g.h,
-      mask: g.mask ?? undefined,
-    }))
-  }
-
   getOverlappingTileIds(): TileId[] {
-    return this.currentRects.map(r => r.tileId)
+    return [this.tileId]
   }
 }
