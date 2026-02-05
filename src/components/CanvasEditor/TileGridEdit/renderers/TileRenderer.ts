@@ -4,6 +4,7 @@ import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
+import type { TileGridEdgeColorRenderer } from './TileGridEdgeColorRenderer.ts'
 
 export type TileRenderer = ReturnType<typeof makeTileRenderer>
 
@@ -15,6 +16,7 @@ export function makeTileRenderer(
     gridCache,
     tileCanvas,
     currentToolRenderer,
+    tileGridEdgeColorRenderer,
   }: {
     tileId: TileId,
     state: TileGridEditorState,
@@ -22,6 +24,7 @@ export function makeTileRenderer(
     gridCache: PixelGridLineRenderer,
     tileCanvas: HTMLCanvasElement,
     currentToolRenderer: CurrentToolRenderer,
+    tileGridEdgeColorRenderer: TileGridEdgeColorRenderer
   }) {
   const renderCanvasFrame = makeCanvasFrameRenderer()
   const pixelCanvas = makePixelCanvas(tileCanvas)
@@ -37,7 +40,7 @@ export function makeTileRenderer(
       getTileImageData,
       (ctx) => {
         currentToolRenderer.tilePixelOverlayDraw(ctx, tileId)
-        state.tileGridManager.tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
+        tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
       },
       (ctx) => {
         if (state.shouldDrawGrid()) {

@@ -47,7 +47,7 @@ export function makeTileSheetWriter(
   function blendSheetImageData(
     imageData: ImageData,
     blendMode: BlendMode,
-    opts: Omit<BlendImageDataOptions, 'blendMode' | 'mask'>,
+    opts: Omit<BlendImageDataOptions, 'blendMode'>,
   ) {
     const writer = selectMoveBlendModeToWriter[blendMode]
     writer(state.tileSheet.imageData, imageData, opts)
@@ -74,13 +74,13 @@ export function makeTileSheetWriter(
       const tileset = state.tileset
 
       gridPixels.forEach(({ x, y }) => {
-        const hit = state.tileGridManager.gridPixelToTile(x, y)
+        const hit = state.tileGridGeometry.gridPixelToGridTile(x, y)
         if (!hit) return
 
         const { tile } = hit
         if (!tile) return
 
-        const { x: tx, y: ty } = state.tileGridManager.gridPixelToTilePixel(x, y)!
+        const { tx, ty } = state.tileGridGeometry.gridPixelToTilePixel(x, y)!
         writeTilePixel(tile.id, tx, ty, color)
 
         const affected = duplicateEdgePixels(
@@ -98,10 +98,10 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    clearRect(x: number, y: number, w: number, h: number) {
+    clearRect(x: number, y: number, w: number, h: number,  mask?: Uint8Array | null) {
       const rect = { x, y, w, h }
-      const overlapping = state.tileGridManager.getOverlappingTiles(rect)
-      clearImageData(state.tileSheet.imageData, x, y, w, h)
+      const overlapping = state.tileGridGeometry.getOverlappingTilesOnGrid(rect)
+      clearImageData(state.tileSheet.imageData, x, y, w, h, mask)
 
       for (const { tile } of overlapping) {
         markDirty(tile.id)

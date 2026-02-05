@@ -1,4 +1,4 @@
-import { ref, toRef, watch } from 'vue'
+import { computed, ref, toRef, watch } from 'vue'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
@@ -17,8 +17,10 @@ import {
   type LocalToolStates,
   type TileGridEditorToolHandlerArgs,
 } from './_tile-grid-editor-types.ts'
+import { makeTileGridGeometry, type TileGridGeometry } from './data/TileGridGeometry.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeCurrentToolRenderer } from './renderers/CurrentToolRenderer.ts'
+import { makeTileGridEdgeColorRenderer } from './renderers/TileGridEdgeColorRenderer.ts'
 import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
 import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
 import { makeTileSheetSelectionRenderer } from './renderers/TileSheetSelectionRenderer.ts'
@@ -43,9 +45,21 @@ export function useTileGridController(
   },
 ) {
 
+  const tileGridGeometry = computed(() => makeTileGridGeometry(
+    tileGridManager.tileGrid.value,
+    tileGridManager.tileSheet.value,
+    tileGridManager.tileSize.value,
+  ))
+
+  const tileGridEdgeColorRenderer = makeTileGridEdgeColorRenderer(
+    tileGridManager.tileGrid,
+    tileGridManager.tileSize,
+  )
+
   const state = makeTileGridEditorState({
     id,
     tileGridManager,
+    tileGridGeometry,
     scale,
   })
 
@@ -59,6 +73,7 @@ export function useTileGridController(
   const gridRenderer = makeTileGridRenderer({
     state,
     gridCache,
+    tileGridEdgeColorRenderer,
   })
 
   const tileSheetWriter = makeTileSheetWriter({
@@ -70,7 +85,6 @@ export function useTileGridController(
     [Tool.BRUSH]: makeBrushToolState({ state }),
     [Tool.SELECT]: makeTileGridSelectionToolState({
       state,
-      tileGridManager,
       tileSheetWriter,
       gridRenderer,
     }),
@@ -97,6 +111,7 @@ export function useTileGridController(
     state,
     localToolStates,
     gridCache,
+    tileGridEdgeColorRenderer,
   })
 
   const tileSheetSelectionRenderer = makeTileSheetSelectionRenderer({
@@ -118,7 +133,7 @@ export function useTileGridController(
 
   watch([
     tileGridManager.tileSize,
-    () => uiStore.imgScale,
+    scale,
     () => uiStore.showTileIds,
     tileGridManager.tileGrid,
   ], () => {
@@ -143,19 +158,19 @@ export function useTileGridController(
     tileSheetWriter,
     getInputHandlers(canvas, canvasType: CanvasType, tileId?: TileId) {
       return useGlobalInput({
-        getCoordsFromEvent: canvasCoordGetter(canvas, state.scale),
+        getCoordsFromEvent: canvasCoordGetter(canvas, scale.value),
         onMouseDown(x: number, y: number) {
-          updatePointerState(state, tileGridManager, x, y, canvasType, tileId)
+          updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
           state.dragStartTileId = state.mouseTileId
           core.pointerDown(x, y, canvasType, tileId)
           gridRenderer.queueRenderGrid()
         },
         onMouseMove(x: number, y: number) {
-          updatePointerState(state, tileGridManager, x, y, canvasType, tileId)
+          updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
           core.pointerMove(x, y, canvasType, tileId)
         },
         onMouseUp(x: number, y: number) {
-          updatePointerState(state, tileGridManager, x, y, canvasType, tileId)
+          updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
           core.pointerUp(x, y, canvasType, tileId)
           state.dragStartTileId = null
         },
@@ -177,7 +192,7 @@ export function useTileGridController(
 
 function updatePointerState(
   state: TileGridEditorState,
-  tileGridManager: TileGridManager,
+  tileGridGeometry: TileGridGeometry,
   x: number,
   y: number,
   canvasType: CanvasType,
@@ -187,11 +202,11 @@ function updatePointerState(
     state.mouseGridX = x
     state.mouseGridY = y
 
-    const d = tileGridManager.gridPixelToTile(x, y)
-    const r = tileGridManager.gridPixelToTilePixel(x, y)
+    const d = tileGridGeometry.gridPixelToGridTile(x, y)
+    const r = tileGridGeometry.gridPixelToTilePixel(x, y)
 
     if (d && r) {
-      const { x: tx, y: ty } = r
+      const { tx, ty } = r
       state.mouseTileId = d.tile.id
       state.mouseTilePixelX = tx
       state.mouseTilePixelY = ty

@@ -6,6 +6,7 @@ import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { type PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
+import type { TileGridEdgeColorRenderer } from './TileGridEdgeColorRenderer.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
 
 export type TileGridRenderer = ReturnType<typeof makeTileGridRenderer>
@@ -14,9 +15,11 @@ export function makeTileGridRenderer(
   {
     state,
     gridCache,
+    tileGridEdgeColorRenderer
   }: {
     state: TileGridEditorState,
     gridCache: PixelGridLineRenderer,
+    tileGridEdgeColorRenderer: TileGridEdgeColorRenderer
   }) {
   const renderCanvasFrame = makeCanvasFrameRenderer()
   const tileGridImageDataRef = imageDataRef()
@@ -41,6 +44,7 @@ export function makeTileGridRenderer(
       gridCache,
       tileCanvas,
       currentToolRenderer,
+      tileGridEdgeColorRenderer,
     })
 
     queueRenderTile(tileId)
@@ -73,9 +77,9 @@ export function makeTileGridRenderer(
     state.tileGrid.each((tileX, tileY, tile) => {
       if (!tile) return
       const tileId = tile.id
-      const { x, y } = state.tileGridManager.tileCoordToGridPixel(tileX, tileY)
+      const { gx, gy } = state.tileGridGeometry.gridTileToGridPixel(tileX, tileY)
       const tileImage = state.tileSheet.extractTile(tileId)
-      writeImageData(tileGridImageDataRef.get()!, tileImage, x, y, 0, 0, tileImage.width, tileImage.height)
+      writeImageData(tileGridImageDataRef.get()!, tileImage, gx, gy, 0, 0, tileImage.width, tileImage.height)
     })
   }
 
@@ -84,7 +88,7 @@ export function makeTileGridRenderer(
     drawTileGrid()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       currentToolRenderer.gridPixelOverlayDraw(ctx)
-      state.tileGridManager.tileGridEdgeColorRenderer.drawGridEdges(ctx)
+      tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {

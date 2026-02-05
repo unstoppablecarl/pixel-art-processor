@@ -1,7 +1,9 @@
+import type { Ref } from 'vue'
 import type { AxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { BaseEditorState } from '../_core-editor-types.ts'
 import { type BaseEditorSettings, EditorState } from '../BaseEditorState.ts'
+import type { TileGridGeometry } from './data/TileGridGeometry.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import type { TileSheet } from './data/TileSheet.ts'
 
@@ -87,9 +89,15 @@ interface BaseTileGridEditorState {
   readonly tileSheet: TileSheet
   readonly tileGrid: AxialEdgeWangGrid<number>
   readonly tileGridManager: TileGridManager,
+  readonly tileGridGeometry: TileGridGeometry,
   readonly tileset: AxialEdgeWangTileset<number>
 
   tileMarginCopySize: number
+}
+
+type TileGridEditorSettings = BaseEditorSettings & {
+  tileGridManager: TileGridManager,
+  tileGridGeometry: Ref<TileGridGeometry>,
 }
 
 class TileGridEditorStateC extends EditorState {
@@ -118,14 +126,15 @@ class TileGridEditorStateC extends EditorState {
   public dragStartTileId: number | null = null
 
   public tileMarginCopySize = 1
-  protected _tileGridManager: TileGridManager
 
-  constructor(settings: BaseEditorSettings & {
-    tileGridManager: TileGridManager
-  }) {
+  protected _tileGridManager: TileGridManager
+  protected _tileGridGeometry: Ref<TileGridGeometry>
+
+  constructor(settings: TileGridEditorSettings) {
     super(settings)
 
     this._tileGridManager = settings.tileGridManager
+    this._tileGridGeometry = settings.tileGridGeometry
   }
 
   get gridPixelWidth() {
@@ -160,6 +169,10 @@ class TileGridEditorStateC extends EditorState {
     return this._tileGridManager.tileGrid.value
   }
 
+  get tileGridGeometry() {
+    return this._tileGridGeometry.value
+  }
+
   get tileGridManager() {
     return this._tileGridManager
   }
@@ -174,9 +187,7 @@ class TileGridEditorStateC extends EditorState {
 }
 
 export function makeTileGridEditorState(
-  settings: BaseEditorSettings & {
-    tileGridManager: TileGridManager
-  },
+  settings: TileGridEditorSettings,
 ) {
   return new TileGridEditorStateC(settings) as TileGridEditorState
 }

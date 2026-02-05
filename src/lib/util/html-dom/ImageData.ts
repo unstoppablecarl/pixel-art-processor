@@ -386,11 +386,26 @@ export function putImageData(
 
 export function extractImageData(
   src: ImageData,
+  rect: Rect,
+): ImageData
+export function extractImageData(
+  src: ImageData,
   x: number,
   y: number,
   w: number,
   h: number,
+): ImageData
+export function extractImageData(
+  src: ImageData,
+  _x: Rect | number,
+  _y?: number,
+  _w?: number,
+  _h?: number,
 ): ImageData {
+  const { x, y, w, h } = typeof _x === 'object'
+    ? _x
+    : { x: _x, y: _y!, w: _w!, h: _h! }
+
   const out = new Uint8ClampedArray(w * h * 4)
   const srcData = src.data
   const srcW = src.width
@@ -594,3 +609,10 @@ export function floodFillImageDataSelection(
 
   return { startX, startY, rect, pixels, mask }
 }
+
+// array of 1 | 0 values. 1 is selected in the mask
+// mask uses normal pixel indexing i = y * width + x
+// export type PixelMask = Uint8Array
+
+// export class PixelMask extends Uint8Array {
+// }

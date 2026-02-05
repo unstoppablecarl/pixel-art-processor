@@ -1,12 +1,11 @@
-import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
-import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
+import { makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { Tool } from '../../_core-editor-types.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
 import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
-import type { SelectionTileSheetRect } from '../lib/TileSheetSelection.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
+import { drawDebugRect, drawDebugRectOutline } from './_debug-draw-helpers.ts'
 
 export type TileSheetSelectionRenderer = ReturnType<typeof makeTileSheetSelectionRenderer>
 
@@ -20,8 +19,8 @@ export function makeTileSheetSelectionRenderer(
     localToolStates: LocalToolStates,
     gridCache: PixelGridLineRenderer,
   }) {
-  const renderCanvasFrame = makeCanvasFrameRenderer()
 
+  const renderCanvasFrame = makeCanvasFrameRenderer()
   let tileGridPixelCanvas: PixelCanvas | undefined
 
   function setTileSheetCanvas(canvas: HTMLCanvasElement) {
@@ -34,49 +33,65 @@ export function makeTileSheetSelectionRenderer(
     if (!tileGridPixelCanvas) return
     if (toolState.selection) {
       tileGridPixelCanvas.resize(
-        (toolState.selection!.pixels.width + 100) * state.scale,
-        (toolState.selection!.pixels.height + 100) * state.scale,
+        (toolState.selection.pixels.width + 100) * state.scale,
+        (toolState.selection.pixels.height + 100) * state.scale,
       )
     }
   }
 
   function draw() {
     const toolState = localToolStates[Tool.SELECT]
+
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
+      const sel = toolState.selection
+      if (!sel) return
 
-      if (toolState.selection) {
-        const pixels = toolState.selection.pixels
+      const sheetRects = sel.getCurrentTileAlignedRects()
+      const pixels = sel.pixels
 
-        toolState.selection.currentRects.forEach((r) => {
-          drawRect(ctx, r, 'rgba(0, 255, 0, 0.25)')
+      for (const r of sheetRects) {
+        // buffer-local rects
+        const dx = r.bufferX
+        const dy = r.bufferY
 
-          putImageData(ctx, pixels, {
-              dx: r.bufferX,
-              dy: r.bufferY,
-              sx: r.bufferX,
-              sy: r.bufferY,
-              sw: r.w,
-              sh: r.h,
-            },
-          )
+        drawDebugRect(ctx, { x: dx, y: dy, w: r.w, h: r.h }, 'rgba(0, 255, 0, 0.25)')
+
+        putImageData(ctx, pixels, {
+          dx,
+          dy,
+          sx: r.bufferX,
+          sy: r.bufferY,
+          sw: r.w,
+          sh: r.h,
         })
       }
     }
 
     const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
-
+      const sel = toolState.selection
       const { scale } = state
+
       gridCache.draw(ctx)
 
-      if (toolState.selection) {
+      if (sel) {
+        const sheetRects = sel.getCurrentTileAlignedRects()
 
         ctx.translate(scale, scale)
-        toolState.selection.currentRects.forEach((r, i) => {
-          drawRectOutline(ctx, { x: r.bufferX, y: r.bufferY, w: r.w, h: r.h }, scale, 'rgba(0, 255, 0, 0.75)', i)
+        sheetRects.forEach((r, i) => {
+          const dx = r.bufferX
+          const dy = r.bufferY
+          drawDebugRectOutline(
+            ctx,
+            { x: dx, y: dy, w: r.w, h: r.h },
+            scale,
+            'rgba(0, 255, 0, 0.75)',
+            i,
+          )
         })
         ctx.translate(0, 0)
       }
     }
+
     renderCanvasFrame(
       tileGridPixelCanvas!,
       state.scale,
@@ -92,33 +107,4 @@ export function makeTileSheetSelectionRenderer(
     setTileSheetCanvas,
     resize,
   }
-}
-
-function drawRect(ctx: CanvasRenderingContext2D, r: SelectionTileSheetRect, color: string) {
-  const { x, y, w, h } = r
-  ctx.globalAlpha = 1
-  ctx.fillStyle = color
-  ctx.fillRect(x, y, w, h)
-}
-
-function drawRectOutline(ctx: CanvasRenderingContext2D, r: Rect, scale: number, color: string, i: number) {
-  let { x, y, w, h } = r
-
-  const screenX = x * scale - 1.5
-  const screenY = y * scale - 1.5
-  const screenW = w * scale + 4
-  const screenH = h * scale + 4
-
-  ctx.strokeStyle = color
-  ctx.lineWidth = 1
-  ctx.strokeRect(screenX, screenY, screenW, screenH)
-  drawText(
-    ctx,
-    i + '',
-    screenX + 2 * scale,
-    screenY + 2 * scale,
-    undefined,
-    undefined,
-    'white',
-  )
 }

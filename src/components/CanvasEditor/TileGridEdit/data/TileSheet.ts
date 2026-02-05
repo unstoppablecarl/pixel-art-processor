@@ -17,7 +17,7 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { SelectionTileSheetRect, TileSheetSelection } from '../lib/TileSheetSelection.ts'
+import type { TileAlignedRect } from '../lib/ISelection.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -60,10 +60,10 @@ export function makeTileSheet(
   }
 
   function getTileRect(tileId: TileId): Rect {
-    const { tileX, tileY } = getTileCoords(tileId)
+    const { sTileX, sTileY } = getTileCoords(tileId)
     return {
-      x: tileX * tileSize,
-      y: tileY * tileSize,
+      x: sTileX * tileSize,
+      y: sTileY * tileSize,
       w: tileSize,
       h: tileSize,
     }
@@ -72,8 +72,8 @@ export function makeTileSheet(
   function getTileCoords(tileId: TileId) {
     const index = tileset.byId.get(tileId)!.index
     return {
-      tileX: index % tilesPerRow,
-      tileY: Math.floor(index / tilesPerRow),
+      sTileX: index % tilesPerRow,
+      sTileY: Math.floor(index / tilesPerRow),
     }
   }
 
@@ -85,18 +85,18 @@ export function makeTileSheet(
 
   function sheetToTileLocal(tileId: TileId, sheetX: number, sheetY: number) {
     // Get the tile’s position in the tile sheet grid
-    const { tileX, tileY } = getTileCoords(tileId)
+    const { sTileX, sTileY } = getTileCoords(tileId)
 
-    const localX = sheetX - tileX * tileSize
-    const localY = sheetY - tileY * tileSize
+    const localX = sheetX - sTileX * tileSize
+    const localY = sheetY - sTileY * tileSize
 
     return { x: localX, y: localY }
   }
 
-  function each(cb: (tileX: number, tileY: number, tile: WangTile<number>) => void) {
+  function each(cb: (sTileX: number, sTileY: number, tile: WangTile<number>) => void) {
     tileset.tiles.forEach((tile) => {
-      const { tileX, tileY } = getTileCoords(tile.id)
-      cb(tileX, tileY, tile)
+      const { sTileX, sTileY } = getTileCoords(tile.id)
+      cb(sTileX, sTileY, tile)
     })
   }
 
@@ -159,11 +159,14 @@ export function makeTileSheet(
     dirty = true
   }
 
-  function tileLocalRectToTileSheetRect(tileId: TileId, rect: Rect): SelectionTileSheetRect {
+  function tileLocalRectToTileSheetRect(
+    tileId: TileId,
+    rect: Rect,
+    mask: Uint8Array | null = null,
+  ): { sheetRect: Rect; tileAligned: TileAlignedRect } {
     const tile = tileset.byId.get(tileId)
     if (!tile) throw new Error('tileId not found: ' + tileId)
 
-    // Clip to tile bounds
     const x1 = Math.max(0, rect.x)
     const y1 = Math.max(0, rect.y)
     const x2 = Math.min(tileSize, rect.x + rect.w)
@@ -173,57 +176,43 @@ export function makeTileSheet(
     const h = y2 - y1
     if (w <= 0 || h <= 0) throw new Error('selection bounds has zero size')
 
-    const { tileX, tileY } = getTileCoords(tileId)
+    const { sTileX, sTileY } = getTileCoords(tileId)
+    const sheetX = sTileX * tileSize + x1
+    const sheetY = sTileY * tileSize + y1
 
-    // Convert tile-local → tileSheet
-    const sheetX = tileX * tileSize + x1
-    const sheetY = tileY * tileSize + y1
-    const bufferX = sheetX - rect.x
-    const bufferY = sheetY - rect.y
-
-    return {
+    const tileAligned: TileAlignedRect = {
       tileId,
+      selectionX: x1,
+      selectionY: y1,
+      w,
+      h,
+      bufferX: 0,
+      bufferY: 0,
+      mask,
+    }
+
+    const sheetRect: Rect = {
       x: sheetX,
       y: sheetY,
       w,
       h,
-      tileX: x1,
-      tileY: y1,
-      bufferX,
-      bufferY,
-      gridX: null,
-      gridY: null,
     }
+
+    return { sheetRect, tileAligned }
   }
 
-  function tilePointInTileSheetSelection(
-    tileId: TileId,
-    tx: number,
-    ty: number,
-    selection: TileSheetSelection,
-  ): boolean {
-    const tile = tileset.byId.get(tileId)
-    if (!tile) return false
+  function sheetPixelToTileId(sx: number, sy: number): TileId | null {
+    if (sx < 0 || sy < 0) return null
 
-    const { tileX, tileY } = getTileCoords(tileId)
+    const tileX = Math.floor(sx / tileSize)
+    const tileY = Math.floor(sy / tileSize)
 
-    // Convert tile-local → tileSheet
-    const sheetX = tileX * tileSize + tx
-    const sheetY = tileY * tileSize + ty
+    if (tileX < 0 || tileY < 0) return null
+    if (tileX >= tilesPerRow) return null
 
-    // Check against selection rects
-    for (const r of selection.currentRects) {
-      if (
-        sheetX >= r.x &&
-        sheetX < r.x + r.w &&
-        sheetY >= r.y &&
-        sheetY < r.y + r.h
-      ) {
-        return true
-      }
-    }
-
-    return false
+    const tileIndex = tileY * tilesPerRow + tileX
+    const tile = tileset.tiles[tileIndex]
+    return tile ? tile.id : null
   }
 
   function serialize(): SerializedTileSheet {
@@ -234,6 +223,34 @@ export function makeTileSheet(
       tilesX: tilesPerRow,
       tilesY: tilesPerCol,
     }
+  }
+
+  function extractSheetImageData(
+    rect: Rect,
+  ): ImageData
+  function extractSheetImageData(
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+  ): ImageData
+  function extractSheetImageData(
+    _x: Rect | number,
+    _y?: number,
+    _w?: number,
+    _h?: number,
+  ): ImageData {
+    const { x, y, w, h } = typeof _x === 'object'
+      ? _x
+      : { x: _x, y: _y!, w: _w!, h: _h! }
+
+    return extractImageData(
+      imgData,
+      x,
+      y,
+      w,
+      h,
+    )
   }
 
   return {
@@ -269,24 +286,11 @@ export function makeTileSheet(
     writeTile,
     resizeTileSize,
     getTileCoords,
-    clearTileSheetRect,
     tileLocalRectToTileSheetRect,
-    tilePointInTileSheetSelection,
+    clearTileSheetRect,
     each,
-    extractImageData(
-      x = 0,
-      y = 0,
-      w = tileSize,
-      h = tileSize,
-    ): ImageData {
-      return extractImageData(
-        imgData,
-        x,
-        y,
-        w,
-        h,
-      )
-    },
+    sheetPixelToTileId,
+    extractImageData: extractSheetImageData,
     serialize,
   }
 }
