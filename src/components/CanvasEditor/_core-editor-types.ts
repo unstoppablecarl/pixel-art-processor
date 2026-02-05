@@ -79,8 +79,8 @@ export interface BaseEditorState {
 export type ToolInputHandlers = {
   handleMouseDown: (e: MouseEvent) => void,
   handleMouseMove: (e: MouseEvent) => void,
-  handleMouseLeave: () => void,
-  handleMouseEnter: () => void,
+  handleMouseLeave: (e: MouseEvent) => void,
+  handleMouseEnter: (e: MouseEvent) => void,
 }
 
 export type BaseToolManager<TArgs extends any[] = []> = {
@@ -91,13 +91,13 @@ export type BaseToolManager<TArgs extends any[] = []> = {
 
 export type InputTarget = {
   getCoordsFromEvent(e: MouseEvent): { x: number, y: number }
-  onMouseDown(x: number, y: number): void
-  onMouseMove(x: number, y: number): void
-  onMouseUp(x: number, y: number): void
-  onMouseLeave?(): void,
-  onMouseEnter?(): void,
-  onHoverStart?(): void
-  onHoverEnd?(): void
+  onMouseDown(x: number, y: number, e: MouseEvent): void
+  onMouseMove(x: number, y: number, e: MouseEvent): void
+  onMouseUp(x: number, y: number, e: MouseEvent): void
+  onMouseLeave?(e: MouseEvent): void,
+  onMouseEnter?(e: MouseEvent): void,
+  onHoverStart?(e: MouseEvent): void
+  onHoverEnd?(e: MouseEvent): void
 }
 
 export type BaseToolHandler<L, TArgs extends any[] = []> = {

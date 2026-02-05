@@ -15,48 +15,46 @@ export function makeGlobalInputManager() {
     window.removeEventListener('mouseup', handleGlobalUp)
   }
 
-  function beginInteraction(target: InputTarget, e: MouseEvent) {
-    const { x, y } = target.getCoordsFromEvent(e)
-    activeTarget = target
-    target.onHoverStart?.()
-    target.onMouseDown(x, y)
-    attachGlobal()
-  }
-
   function handleGlobalMove(e: MouseEvent) {
     if (!activeTarget) return
     const { x, y } = activeTarget.getCoordsFromEvent(e)
-    activeTarget.onMouseMove(x, y)
+    activeTarget.onMouseMove(x, y, e)
   }
 
   function handleGlobalUp(e: MouseEvent) {
     if (!activeTarget) return
     const { x, y } = activeTarget.getCoordsFromEvent(e)
-    activeTarget.onMouseUp(x, y)
+    activeTarget.onMouseUp(x, y, e)
     activeTarget = null
     detachGlobal()
   }
 
-  function hover(target: InputTarget, e: MouseEvent) {
-    if (activeTarget) return
-    const { x, y } = target.getCoordsFromEvent(e)
-    target.onHoverStart?.()
-    target.onMouseMove(x, y)
-  }
+  return {
+    beginInteraction(target: InputTarget, e: MouseEvent) {
+      const { x, y } = target.getCoordsFromEvent(e)
+      activeTarget = target
+      target.onHoverStart?.(e)
+      target.onMouseDown(x, y, e)
+      attachGlobal()
+    },
+    hover(target: InputTarget, e: MouseEvent) {
+      if (activeTarget) return
+      const { x, y } = target.getCoordsFromEvent(e)
+      target.onHoverStart?.(e)
+      target.onMouseMove(x, y, e)
+    },
 
-  function enter(target: InputTarget) {
-    if (activeTarget === target) return
-    target.onHoverStart?.()
-    target.onMouseEnter?.()
+    enter(target: InputTarget, e: MouseEvent) {
+      if (activeTarget === target) return
+      target.onHoverStart?.(e)
+      target.onMouseEnter?.(e)
+    },
+    leave(target: InputTarget, e: MouseEvent) {
+      if (activeTarget === target) return
+      target.onHoverEnd?.(e)
+      target.onMouseLeave?.(e)
+    },
   }
-
-  function leave(target: InputTarget) {
-    if (activeTarget === target) return
-    target.onHoverEnd?.()
-    target.onMouseLeave?.()
-  }
-
-  return { beginInteraction, hover, leave, enter }
 }
 
 export const globalInputManager = makeGlobalInputManager()
@@ -65,8 +63,8 @@ export function useGlobalInput(target: InputTarget): ToolInputHandlers {
   return {
     handleMouseDown: (e: MouseEvent) => globalInputManager.beginInteraction(target, e),
     handleMouseMove: (e: MouseEvent) => globalInputManager.hover(target, e),
-    handleMouseLeave: () => globalInputManager.leave(target),
-    handleMouseEnter: () => globalInputManager.enter(target),
+    handleMouseLeave: (e: MouseEvent) => globalInputManager.leave(target, e),
+    handleMouseEnter: (e: MouseEvent) => globalInputManager.enter(target, e),
   }
 }
 
