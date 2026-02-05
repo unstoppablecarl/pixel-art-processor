@@ -5,7 +5,7 @@ import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode, SelectSubTool } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import { GridOriginSelection } from './lib/GridOriginSelection.ts'
-import type { ISelection, SelectionRect } from './lib/ISelection.ts'
+import { type ISelection, mergeSelectionRects, type SelectionRect, subtractSelectionRects } from './lib/ISelection.ts'
 import { TileOriginSelection } from './lib/TileOriginSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
@@ -59,17 +59,11 @@ export function makeTileGridSelectionToolState(
     return result
   }
 
-  function makeGridOriginSelectionFromBounds(bounds: Rect, mask: Uint8Array | null = null): ISelection {
-    const selectionRect: SelectionRect = {
-      x: bounds.x,
-      y: bounds.y,
-      w: bounds.w,
-      h: bounds.h,
-      mask,
-    }
+  function makeGridOriginSelection(selectionRects: SelectionRect[]): ISelection {
+    const bounds = getRectsBounds(selectionRects)
     const pixels = extractImageData(gridRenderer.tileGridImageDataRef.get()!, bounds)
 
-    return new GridOriginSelection([selectionRect], pixels, state.tileGridGeometry)
+    return new GridOriginSelection(selectionRects, pixels, state.tileGridGeometry)
   }
 
   function makeTileOriginSelectionFromTileRect(
@@ -132,7 +126,7 @@ export function makeTileGridSelectionToolState(
     }
 
     if (inputSpace === CanvasType.GRID) {
-      return makeGridOriginSelectionFromBounds(selectRect)
+      return makeGridOriginSelection([selectRect] as SelectionRect[])
     }
 
     throw new Error('invalid inputSpace: ' + inputSpace)
@@ -217,7 +211,7 @@ export function makeTileGridSelectionToolState(
     const rects = selection.getCurrentGridDrawRects()
     return rects.some(r =>
       gx >= r.dx && gx < r.dx + r.w &&
-      gy >= r.dy && gy < r.dy + r.h
+      gy >= r.dy && gy < r.dy + r.h,
     )
   }
 
@@ -336,11 +330,33 @@ export function makeTileGridSelectionToolState(
         state.tileGridGeometry,
       )
     } else {
-      selection = makeGridOriginSelectionFromBounds(rect, mask)
+      selection = makeGridOriginSelection([{ ...rect, mask }])
     }
 
     selecting = false
     dragging = false
+  }
+
+  function addToSelection(newGridRects: SelectionRect[]) {
+    const sel = selection
+    if (!sel) return
+
+    commit(store.selectMoveBlendMode)
+    const existing = sel.getCurrentGridRects()
+    const all = mergeSelectionRects(existing, newGridRects)
+
+    selection = makeGridOriginSelection(all)
+  }
+
+  function subtractFromSelection(newGridRects: SelectionRect[]) {
+    const sel = selection
+    if (!sel) return
+
+    commit(store.selectMoveBlendMode)
+    const existing = sel.getCurrentGridRects()
+    const all = subtractSelectionRects(existing, newGridRects)
+
+    selection = makeGridOriginSelection(all)
   }
 
   return {
@@ -376,7 +392,8 @@ export function makeTileGridSelectionToolState(
     gridStartSelection,
     updateSelection,
     finalizeSelection,
-
+    addToSelection,
+    subtractFromSelection,
     gridDragStart,
     tileDragStart,
     dragEnd() {
