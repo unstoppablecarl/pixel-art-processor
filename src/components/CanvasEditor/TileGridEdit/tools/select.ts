@@ -8,6 +8,8 @@ import type {
   TileGridEditorToolHandlerRender,
 } from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
+import type { SelectionRect } from '../lib/ISelection.ts'
+import { mergeAdjacentSelectionRects } from '../lib/SelectionRects.ts'
 import type { TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
 
 export type TileGridSelectToolHandler<L = LocalToolContext<TileGridSelectionToolState>> =
@@ -188,12 +190,19 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         return
       }
 
+      const rects = sel.getCurrentGridDrawRects()
+        .map(({ dx, dy, w, h, mask }) => ({
+          x: dx, y: dy, w, h, mask,
+        })) as SelectionRect[]
+
+      const merged = mergeAdjacentSelectionRects(rects)
+
       // Draw unsplit selection outline (cyan)
-      for (const g of sel.getCurrentGridDrawRects()) {
+      for (const g of merged) {
         drawSelectOutline(
           ctx,
           scale,
-          { x: g.dx, y: g.dy, w: g.w, h: g.h },
+          g,
           store.cursorColor,
           g.mask ?? undefined,
         )
@@ -255,6 +264,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           drawSelectOutline(ctx, scale, r, store.cursorColor)
         }
       }
-    }
+    },
   }
 }

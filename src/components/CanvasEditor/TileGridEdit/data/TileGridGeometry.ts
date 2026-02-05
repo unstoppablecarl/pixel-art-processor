@@ -210,7 +210,9 @@ export function makeTileGridGeometry(
   }
 
   return {
+    tileSize,
     tileSheet,
+    tileGrid,
     tileAlignedRectToGridRects,
     gridRectsToTileAlignedRects,
     tileRectsToTileAlignedRects,

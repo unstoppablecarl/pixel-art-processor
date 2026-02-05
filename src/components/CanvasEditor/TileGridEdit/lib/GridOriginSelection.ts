@@ -112,17 +112,42 @@ export class GridOriginSelection implements ISelection {
     return this.sheetDrawRectsFor(this.currentRects, b.x, b.y)
   }
 
-  private gridDrawRectsFor(rects: SelectionRect[], originX: number, originY: number): DrawRect[] {
-    return this.tileAlignedFrom(rects, originX, originY).map(r => ({
-      dx: originX + r.selectionX,
-      dy: originY + r.selectionY,
-      sx: r.bufferX,
-      sy: r.bufferY,
-      w: r.w,
-      h: r.h,
-      mask: r.mask ?? undefined,
-      tileId: r.tileId,
-    }))
+  private gridDrawRectsFor(
+    rects: SelectionRect[],
+    originX: number,
+    originY: number,
+  ): DrawRect[] {
+    const aligned = this.tileAlignedFrom(rects, originX, originY)
+    const out: DrawRect[] = []
+
+    for (const r of aligned) {
+      // selection's grid-space position inside its original tile
+      const localX = originX + r.selectionX
+      const localY = originY + r.selectionY
+
+      // draw at every grid tile that uses this tileId
+      this.geometry.tileGrid.mapWithTileId(r.tileId, (gx, gy) => {
+        const tileOriginX = gx * this.geometry.tileSize
+        const tileOriginY = gy * this.geometry.tileSize
+
+        // position of this rect inside this tile instance
+        const dx = tileOriginX + (localX % this.geometry.tileSize)
+        const dy = tileOriginY + (localY % this.geometry.tileSize)
+
+        out.push({
+          dx,
+          dy,
+          sx: r.bufferX,
+          sy: r.bufferY,
+          w: r.w,
+          h: r.h,
+          mask: r.mask ?? undefined,
+          tileId: r.tileId,
+        })
+      })
+    }
+
+    return out
   }
 
   getOriginalGridDrawRects(): DrawRect[] {
