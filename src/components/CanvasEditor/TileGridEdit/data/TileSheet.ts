@@ -1,4 +1,5 @@
 import { markRaw } from 'vue'
+import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import type { BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
@@ -63,6 +64,14 @@ export function makeTileSheet(
   function clearTileSheetRect(rect: Rect) {
     clearImageData(imgData, rect.x, rect.y, rect.w, rect.h)
     dirty = true
+  }
+
+  // fast path
+  function getTileSheetOffset(tileId: TileId, out: Point = { x: 0, y: 0 }): Point {
+    const index = tileset.byId.get(tileId)!.index
+    out.x = (index % tilesPerRow) * tileSize
+    out.y = (Math.floor(index / tilesPerRow)) * tileSize
+    return out
   }
 
   function getTileRect(tileId: TileId): Rect {
@@ -207,6 +216,91 @@ export function makeTileSheet(
     return tile ? tile.id : null
   }
 
+  function splitRectIntoTileRects(rect: Rect & { srcX?: number, srcY?: number }) {
+    const overlaps = getOverlappingTiles(rect)
+    const out = []
+    for (let i = 0; i < overlaps.length; i++) {
+      const o = overlaps[i]
+      out.push({
+        tileId: o.tileId,
+        x: o.tileOverlap.x,
+        y: o.tileOverlap.y,
+        w: o.tileOverlap.w,
+        h: o.tileOverlap.h,
+        srcX: rect.srcX ?? 0 + o.srcX,
+        srcY: rect.srcY ?? 0 + o.srcY,
+      })
+    }
+
+    return out
+  }
+
+  function getOverlappingTiles(rect: Rect) {
+    const results = []
+
+    const startTileX = Math.floor(rect.x / tileSize)
+    const startTileY = Math.floor(rect.y / tileSize)
+    const endTileX = Math.floor((rect.x + rect.w - 1) / tileSize)
+    const endTileY = Math.floor((rect.y + rect.h - 1) / tileSize)
+
+    for (let ty = startTileY; ty <= endTileY; ty++) {
+      for (let tx = startTileX; tx <= endTileX; tx++) {
+
+        const index = ty * tilesPerRow + tx
+        const tile = tileset.tiles[index]
+        if (!tile) continue
+
+        const tileSheetX = tx * tileSize
+        const tileSheetY = ty * tileSize
+
+        // intersection in sheet space
+        const ix = Math.max(rect.x, tileSheetX)
+        const iy = Math.max(rect.y, tileSheetY)
+        const ix2 = Math.min(rect.x + rect.w, tileSheetX + tileSize)
+        const iy2 = Math.min(rect.y + rect.h, tileSheetY + tileSize)
+
+        const iw = ix2 - ix
+        const ih = iy2 - iy
+        if (iw <= 0 || ih <= 0) continue
+
+        // tile-local overlap
+        const tileLocalX = ix - tileSheetX
+        const tileLocalY = iy - tileSheetY
+
+        // source offsets inside the source image
+        const srcX = ix - rect.x
+        const srcY = iy - rect.y
+
+        results.push({
+          tile,
+          tileId: tile.id,
+
+          // tile-local clipped rect
+          tileOverlap: {
+            x: tileLocalX,
+            y: tileLocalY,
+            w: iw,
+            h: ih,
+          },
+
+          // sheet-space clipped rect
+          sheetOverlap: {
+            x: ix,
+            y: iy,
+            w: iw,
+            h: ih,
+          },
+
+          // source offsets for blending/pasting
+          srcX,
+          srcY,
+        })
+      }
+    }
+
+    return results
+  }
+
   function serialize(): SerializedTileSheet {
     return {
       tileSize,
@@ -240,6 +334,7 @@ export function makeTileSheet(
     blendImageData,
     clear,
     writeTilePixel,
+    getTileSheetOffset,
     get tileSize() {
       return tileSize
     },
@@ -277,6 +372,8 @@ export function makeTileSheet(
     extractImageData: (rect: Rect): ImageData => extractImageData(imgData, rect),
     getHistoryPixels,
     setHistoryPixels,
+    getOverlappingTiles,
+    splitRectIntoTileRects,
     serialize,
   }
 }

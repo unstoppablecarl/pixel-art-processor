@@ -24,6 +24,9 @@ type SerializedData = {
   tileMarginCopySize: number,
   selectFloodContiguous: boolean,
   selectFloodTolerance: number,
+
+  duplicateTileEdges: boolean,
+  duplicateTileEdgesBorderThickness: number,
 }
 
 export type CanvasEditToolStore = ReturnType<typeof useCanvasEditToolStore>
@@ -48,6 +51,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const tileMarginCopySize = ref<number>(1)
   const cursorColor = ref('cyan')
 
+  const duplicateTileEdges = ref(true)
+  const duplicateTileEdgesBorderThickness = ref(1)
+
   const mapper = makeStateMapper<SerializedData>(
     {
       currentTool,
@@ -60,6 +66,8 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       selectFloodContiguous,
       selectFloodTolerance,
       tileMarginCopySize,
+      duplicateTileEdges,
+      duplicateTileEdgesBorderThickness,
     },
     {
       currentTool: Tool.BRUSH,
@@ -72,6 +80,8 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       selectFloodContiguous: true,
       selectFloodTolerance: 0,
       tileMarginCopySize: 1,
+      duplicateTileEdges: true,
+      duplicateTileEdgesBorderThickness: 1,
     },
   )
 
@@ -133,6 +143,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     selectMoveBlendMode,
     selectFloodContiguous,
     selectFloodTolerance,
+
+    duplicateTileEdges,
+    duplicateTileEdgesBorderThickness,
 
     tileMarginCopySize,
     decreaseBrushSize() {

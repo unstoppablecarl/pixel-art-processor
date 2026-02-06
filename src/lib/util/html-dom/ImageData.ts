@@ -2,7 +2,7 @@ import { markRaw, type Raw } from 'vue'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 import { colorDistance } from '../color.ts'
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
-import { type BlendFn, makeByteBlendAdapter } from './blit.ts'
+import { type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
 // ALL values are 0-255 (including alpha which in CSS is 0-1)
@@ -12,6 +12,7 @@ export type RGBAFloat = { r: number, g: number, b: number, a: number, readonly _
 export type SerializedRGBA = string
 
 export type PixelColor = Point & { color: RGBA }
+export type PixelBlend = PixelColor & { blend: BlendFn }
 
 export type ReadonlyImageData = {
   readonly width: number
@@ -375,7 +376,7 @@ export function putImageData(
   const tmp = getTmpImageData(width, height)
   const dst = tmp.data
   const sdata = src.data
-  const byteBlend = blendMode ? makeByteBlendAdapter(blendMode) : null
+  const byteBlend = blendMode ? getBlendAdapter(blendMode) : null
 
   for (let iy = 0; iy < height; iy++) {
     for (let ix = 0; ix < width; ix++) {

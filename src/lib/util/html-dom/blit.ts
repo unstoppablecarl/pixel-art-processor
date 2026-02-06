@@ -5,6 +5,19 @@ export type BlendFn = {
   (src: RGBAFloat, dst: RGBAFloat): RGBAFloat
 }
 
+const blendCache = new Map<BlendFn, ByteBlendAdapter>()
+
+export function getBlendAdapter(fn: BlendFn) {
+  let cached = blendCache.get(fn)
+  if (cached === undefined) {
+    cached = makeByteBlendAdapter(fn)
+    blendCache.set(fn, cached)
+  }
+  return cached
+}
+
+export type ByteBlendAdapter = ReturnType<typeof makeByteBlendAdapter>
+
 export function makeByteBlendAdapter(blend: BlendFn) {
   return (
     srcData: Uint8ClampedArray,

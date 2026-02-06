@@ -1,21 +1,21 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import {
   type BlendFn,
+  blendIgnoreSolid,
   blendIgnoreTransparent,
   blendImageDataIgnoreSolid,
   blendImageDataIgnoreTransparent,
   blendImageDataOverwrite,
   blendOverwrite,
-  blendSourceAlphaOver,
   type ImageDataBlendFn,
 } from '../../../../lib/util/html-dom/blit.ts'
 import { useDocumentClick } from '../../../../lib/util/vue-util.ts'
 import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID, Tool } from '../../_core-editor-types.ts'
 
-export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn | undefined> = {
+export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn> = {
   [BlendMode.OVERWRITE]: blendOverwrite,
   [BlendMode.IGNORE_TRANSPARENT]: blendIgnoreTransparent,
-  [BlendMode.IGNORE_SOLID]: blendSourceAlphaOver(0.5),
+  [BlendMode.IGNORE_SOLID]: blendIgnoreSolid,
 }
 
 export const selectMoveBlendModeToWriter: Record<BlendMode, ImageDataBlendFn> = {
