@@ -40,6 +40,10 @@ export type ImageDataRef = ShallowReactive<{
     offsetX?: number,
     offsetY?: number,
   ) => void
+  readonly destructiveResize: (
+    newWidth: number,
+    newHeight: number,
+  ) => void
 }>
 
 type Sync = (serialized: Raw<SerializedImageData> | null) => void
@@ -103,6 +107,18 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
 
       const newImage = resizeImageData(image, newWidth, newHeight, offsetX, offsetY)
       capsule.set(newImage)
+    },
+    destructiveResize(
+      newWidth: number,
+      newHeight: number,
+    ) {
+      if (!image) {
+        capsule.set(new ImageData(newWidth, newHeight))
+        return
+      }
+      if (image.width === newWidth && image.height === newHeight) return
+
+      capsule.set(new ImageData(newWidth, newHeight))
     },
     clear() {
       if (!image) return

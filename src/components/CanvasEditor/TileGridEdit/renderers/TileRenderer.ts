@@ -2,6 +2,7 @@ import { drawText, makePixelCanvas } from '../../../../lib/util/html-dom/PixelCa
 import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
+import { makeSingleTileSync } from '../data/TileSync.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
 import type { TileGridEdgeColorRenderer } from './TileGridEdgeColorRenderer.ts'
@@ -12,7 +13,6 @@ export function makeTileRenderer(
   {
     tileId,
     state,
-    getTileImageData,
     gridCache,
     tileCanvas,
     currentToolRenderer,
@@ -20,7 +20,6 @@ export function makeTileRenderer(
   }: {
     tileId: TileId,
     state: TileGridEditorState,
-    getTileImageData: () => ImageData,
     gridCache: PixelGridLineRenderer,
     tileCanvas: HTMLCanvasElement,
     currentToolRenderer: CurrentToolRenderer,
@@ -29,16 +28,28 @@ export function makeTileRenderer(
   const renderCanvasFrame = makeCanvasFrameRenderer()
   const pixelCanvas = makePixelCanvas(tileCanvas)
 
+  const tileSync = makeSingleTileSync(tileId)
+  let tileImageData = new ImageData(state.scaledTileSize, state.scaledTileSize)
+
   function resize() {
     pixelCanvas.resize(state.scaledTileSize, state.scaledTileSize)
+    tileImageData = new ImageData(state.scaledTileSize, state.scaledTileSize)
     queueRender()
   }
 
+  function updateTile() {
+    tileSync(state.tileSheet, () => {
+      tileImageData = state.tileSheet.extractTile(tileId)
+    })
+  }
+
   const queueRender = makeRenderQueue(() => {
+    updateTile()
+
     renderCanvasFrame(
       pixelCanvas,
       state.scale,
-      getTileImageData,
+      () => tileImageData!,
       (ctx) => {
         currentToolRenderer.tilePixelOverlayDraw(ctx, tileId)
         tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)

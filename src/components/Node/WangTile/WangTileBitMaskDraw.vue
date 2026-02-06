@@ -160,6 +160,7 @@ const debugSidebar = useDebugSidebar()
 
 onMounted(() => {
   tileGridController.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
+  tileGridController.gridRenderer.queueRenderGrid()
 })
 watchEffect(() => {
   if (debugSidebar.canvas.value) {

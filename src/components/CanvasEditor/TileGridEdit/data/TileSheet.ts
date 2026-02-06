@@ -46,14 +46,17 @@ export function makeTileSheet(
   }) {
   const tileCount = tileset.tiles.length
   const tileVersions = new Uint32Array(tileCount)
-  let sheetVersion = 0
+
+  let currentVersion = 0
 
   function markAllTilesDirty() {
-    sheetVersion++
+    currentVersion++
     for (let i = 0; i < tileCount; i++) {
       tileVersions[i]++
     }
   }
+
+  markAllTilesDirty()
 
   const tilesPerRow = tilesX ?? Math.ceil(Math.sqrt(tileset.tiles.length))
   const tilesPerCol = tilesY ?? Math.ceil(tileset.tiles.length / tilesPerRow)
@@ -305,7 +308,7 @@ export function makeTileSheet(
     const { x: sx, y: sy } = tileLocalToSheet(tileId, x, y)
     const tile = tileset.byId.get(tileId)!
     tileVersions[tile.index]++
-    sheetVersion++
+    currentVersion++
     return applyHistoryPixels(imgData, data, sx, sy, w, h)
   }
 
@@ -317,8 +320,8 @@ export function makeTileSheet(
       const index = tileset.byId.get(tileId)?.index
       return index !== undefined ? tileVersions[index] : -1
     },
-    get version() {
-      return sheetVersion
+    get version(): number {
+      return currentVersion
     },
     get tileSize() {
       return tileSize
