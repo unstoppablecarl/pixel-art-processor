@@ -2,16 +2,13 @@ import { markRaw } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
-import type { BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
 import {
   clearImageData,
   deserializeImageData,
   extractImageData,
   resizeImageData,
-  type RGBA,
   type SerializedImageData,
   serializeImageData,
-  setImageDataPixelColor,
   writeImageData,
 } from '../../../../lib/util/html-dom/ImageData.ts'
 import {
@@ -21,8 +18,6 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from '../../_core-editor-types.ts'
-import { selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
 import { applyHistoryPixels, extractHistoryPixels } from '../history/_history-helpers.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
@@ -49,8 +44,16 @@ export function makeTileSheet(
     tilesY?: number
     tileset: AxialEdgeWangTileset<number>
   }) {
+  const tileCount = tileset.tiles.length
+  const tileVersions = new Uint32Array(tileCount)
+  let sheetVersion = 0
 
-  let dirty = false
+  function markAllTilesDirty() {
+    sheetVersion++
+    for (let i = 0; i < tileCount; i++) {
+      tileVersions[i]++
+    }
+  }
 
   const tilesPerRow = tilesX ?? Math.ceil(Math.sqrt(tileset.tiles.length))
   const tilesPerCol = tilesY ?? Math.ceil(tileset.tiles.length / tilesPerRow)
@@ -60,11 +63,6 @@ export function makeTileSheet(
 
   let img = imageData ?? new ImageData(width, height)
   let imgData = markRaw(img)
-
-  function clearTileSheetRect(rect: Rect) {
-    clearImageData(imgData, rect.x, rect.y, rect.w, rect.h)
-    dirty = true
-  }
 
   // fast path
   function getTileSheetOffset(tileId: TileId, out: Point = { x: 0, y: 0 }): Point {
@@ -132,18 +130,6 @@ export function makeTileSheet(
     )
   }
 
-  function writeTile(tileId: TileId, src: ImageData) {
-    const { x, y } = getTileRect(tileId)
-    writeImageData(imgData, src, x, y)
-    dirty = true
-  }
-
-  function writeTilePixel(tileId: TileId, tx: number, ty: number, color: RGBA) {
-    const { x, y } = tileLocalToSheet(tileId, tx, ty)
-    setImageDataPixelColor(imgData, x, y, color)
-    dirty = true
-  }
-
   function clear(
     x = 0,
     y = 0,
@@ -152,17 +138,7 @@ export function makeTileSheet(
     mask: Uint8Array | null = null,
   ) {
     clearImageData(imgData, x, y, w, h, mask)
-    dirty = true
-  }
-
-  function blendImageData(
-    imageData: ImageData,
-    blendMode: BlendMode,
-    opts: Omit<BlendImageDataOptions, 'blendMode'>,
-  ) {
-    const writer = selectMoveBlendModeToWriter[blendMode]
-    writer(imgData, imageData, opts)
-    dirty = true
+    markAllTilesDirty()
   }
 
   function resizeTileSize(newTileSize: number) {
@@ -198,7 +174,7 @@ export function makeTileSheet(
     // Phase 4: commit
     tileSize = newTileSize
     imgData = markRaw(newSheet)
-    dirty = true
+    markAllTilesDirty()
   }
 
   function sheetPixelToTileId(sx: number, sy: number): TileId | null {
@@ -319,6 +295,7 @@ export function makeTileSheet(
     return extractHistoryPixels(extractTile(tileId, x, y, w, h), rect)
   }
 
+  // this should be the only place the tilesheet image data is directly mutated
   function setHistoryPixels(
     tileId: TileId,
     data: Uint8ClampedArray,
@@ -326,15 +303,23 @@ export function makeTileSheet(
   ) {
     const { x, y, w, h } = rect
     const { x: sx, y: sy } = tileLocalToSheet(tileId, x, y)
+    const tile = tileset.byId.get(tileId)!
+    tileVersions[tile.index]++
+    sheetVersion++
     return applyHistoryPixels(imgData, data, sx, sy, w, h)
   }
 
   return {
     tileset,
-    blendImageData,
     clear,
-    writeTilePixel,
     getTileSheetOffset,
+    getTileVersion: (tileId: TileId) => {
+      const index = tileset.byId.get(tileId)?.index
+      return index !== undefined ? tileVersions[index] : -1
+    },
+    get version() {
+      return sheetVersion
+    },
     get tileSize() {
       return tileSize
     },
@@ -347,26 +332,18 @@ export function makeTileSheet(
     get imageData() {
       return imgData
     },
-
     get pixelWidth() {
       return tilesPerRow * tileSize
     },
-
     get pixelHeight() {
       return tilesPerCol * tileSize
     },
-
-    markDirty: () => dirty = true,
-    isDirty: () => dirty,
-    clearDirty: () => dirty = false,
     getTileRect,
     tileLocalToSheet,
     sheetToTileLocal,
     extractTile,
-    writeTile,
     resizeTileSize,
     getTileCoords,
-    clearTileSheetRect,
     each,
     sheetPixelToTileId,
     extractImageData: (rect: Rect): ImageData => extractImageData(imgData, rect),

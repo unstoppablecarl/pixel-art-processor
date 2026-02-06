@@ -2,14 +2,20 @@ import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheet } from '../data/TileSheet.ts'
+import type { TileSheetPixelAccumulator } from '../data/TileSheetPixelAccumulator.ts'
+import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 
-export type TileSheetPatch = {
+export type ProtoTileSheetPatch = {
   tileId: TileId
   x: number
   y: number
   w: number
   h: number
   before: Uint8ClampedArray
+  after: Uint8ClampedArray | null
+}
+
+export type TileSheetPatch = Omit<ProtoTileSheetPatch, 'after'> & {
   after: Uint8ClampedArray
 }
 
@@ -23,6 +29,7 @@ export const TileSheetHistory = {
   finalize,
   finalizePatches,
   writeWithHistory,
+  applyAccumulator,
 }
 
 // capture the pixel region before modification
@@ -30,7 +37,7 @@ function extract(
   tileSheet: TileSheet,
   tileId: TileId,
   rect: Rect,
-): Omit<TileSheetPatch, 'after'> & { after: Uint8ClampedArray | null } {
+): ProtoTileSheetPatch {
   const before = tileSheet.getHistoryPixels(tileId, rect)
   return {
     tileId,
@@ -42,7 +49,7 @@ function extract(
 
 // capture the pixel region after modification
 function finalize(
-  patch: Omit<TileSheetPatch, 'after'> & { after: Uint8ClampedArray | null },
+  patch: ProtoTileSheetPatch,
   tileSheet: TileSheet,
 ): TileSheetPatch {
   return {
@@ -96,7 +103,7 @@ function extractPatches(
 // finalize patches after pixel modifications
 function finalizePatches(
   tileSheet: TileSheet,
-  patches: (Omit<TileSheetPatch, 'after'> & { after: Uint8ClampedArray | null })[],
+  patches: (ProtoTileSheetPatch)[],
 ): TileSheetPatch[] {
   for (let i = 0; i < patches.length; i++) {
     patches[i] = finalize(patches[i], tileSheet)
@@ -118,5 +125,34 @@ function writeWithHistory(
     do: () => finalPatches.forEach(p => apply(tileSheet, p)),
     undo: () => finalPatches.forEach(p => applyInverse(tileSheet, p)),
   })
+  return finalPatches
+}
+
+function applyAccumulator(
+  tileSheet: TileSheet,
+  gridRenderer: TileGridRenderer,
+  accumulator: TileSheetPixelAccumulator,
+) {
+  const patches = accumulator.toPatches(tileSheet)
+  accumulator.apply(tileSheet)
+  const finalPatches = accumulator.finalizePatches(tileSheet, patches)
+
+  getHistory().execute({
+    do: () => {
+      finalPatches.forEach(p => {
+        gridRenderer.queueRenderTile(p.tileId)
+        TileSheetHistory.apply(tileSheet, p)
+      })
+    },
+    undo: () => {
+      finalPatches.forEach(p => {
+        gridRenderer.queueRenderTile(p.tileId)
+        TileSheetHistory.applyInverse(tileSheet, p)
+      })
+    },
+  })
+
+  accumulator.reset()
+
   return finalPatches
 }

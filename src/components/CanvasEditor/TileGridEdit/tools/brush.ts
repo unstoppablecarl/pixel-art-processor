@@ -12,6 +12,7 @@ import {
   type TileGridEditorToolHandlerArgs,
   type TileGridEditorToolHandlerRender,
 } from '../_tile-grid-editor-types.ts'
+import type { TileSheetWriter } from '../data/TileSheetWriter.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 
 export type TileGridBrushToolHandler<L = LocalToolContext<BrushToolState>> =
@@ -47,7 +48,7 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
 
   function writeBrushAt(
     state: TileGridEditorState,
-    tileSheetWriter: any,
+    tileSheetWriter: TileSheetWriter,
     canvasType: CanvasType,
     x: number,
     y: number,
@@ -55,10 +56,16 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
   ) {
     if (canvasType === CanvasType.GRID) {
       const pixels = getGridBrushPixels(state, x, y)
-      tileSheetWriter.writeGridPixels(pixels, store.brushColor)
+
+      tileSheetWriter.withHistory((mutator) => {
+        mutator.writeGridPixels(pixels, store.brushColor)
+      })
+
     } else {
       const tilePixels = getTileBrushPixels(state, x, y)
-      tileSheetWriter.writeTilePixels(tilePixels, tileId, store.brushColor)
+      tileSheetWriter.withHistory((mutator) => {
+        mutator.writeTilePixels(tileId!, tilePixels, store.brushColor)
+      })
     }
   }
 
@@ -94,7 +101,9 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
           pixels = pixels.concat(getGridBrushPixels(state, ix, iy))
         }
 
-        tileSheetWriter.writeGridPixels(pixels, store.brushColor)
+        tileSheetWriter.withHistory((mutator) => {
+          mutator.writeGridPixels(pixels, store.brushColor)
+        })
       }
 
       if (canvasType === CanvasType.TILE && tileId != null) {
@@ -104,7 +113,9 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
           const iy = Math.floor(p.y)
           allTilePixels = allTilePixels.concat(getTileBrushPixels(state, ix, iy))
         }
-        tileSheetWriter.writeTilePixels(allTilePixels, tileId, RGBA_WHITE)
+        tileSheetWriter.withHistory((mutator) => {
+          mutator.writeTilePixels(tileId, allTilePixels, RGBA_WHITE)
+        })
       }
       gridRenderer.queueRenderTiles()
     },

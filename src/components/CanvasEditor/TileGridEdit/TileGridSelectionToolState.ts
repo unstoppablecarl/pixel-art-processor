@@ -4,12 +4,12 @@ import { extractImageData, floodFillImageDataSelection } from '../../../lib/util
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode, SelectSubTool } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
+import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 import { GridOriginSelection } from './lib/GridOriginSelection.ts'
 import { type ISelection, mergeSelectionRects, type SelectionRect, subtractSelectionRects } from './lib/ISelection.ts'
 import { TileOriginSelection } from './lib/TileOriginSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
-import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 
 export type TileGridSelectionToolState = ReturnType<typeof makeTileGridSelectionToolState>
 
@@ -222,26 +222,27 @@ export function makeTileGridSelectionToolState(
     const currentSheetDrawRects = selection.getCurrentSheetDrawRects()
     const pixels = selection.pixels
 
-    for (const r of originalSheetDrawRects) {
-      tileSheetWriter.clear(r.dx, r.dy, r.w, r.h, r.mask)
-    }
+    tileSheetWriter.withHistory((mutator) => {
+      for (const r of originalSheetDrawRects) {
+        mutator.clear(r.dx, r.dy, r.w, r.h, r.mask)
+      }
 
-    for (const r of currentSheetDrawRects) {
-      tileSheetWriter.blendImageData(
-        pixels,
-        mode,
-        {
-          dx: r.dx,
-          dy: r.dy,
-          sx: r.sx,
-          sy: r.sy,
-          sw: r.w,
-          sh: r.h,
-          mask: r.mask ?? undefined,
-        },
-      )
-    }
-
+      for (const r of currentSheetDrawRects) {
+        mutator.blendImageData(
+          pixels,
+          mode,
+          {
+            dx: r.dx,
+            dy: r.dy,
+            sx: r.sx,
+            sy: r.sy,
+            sw: r.w,
+            sh: r.h,
+            mask: r.mask ?? undefined,
+          },
+        )
+      }
+    })
     dragging = false
     clearSelection()
   }

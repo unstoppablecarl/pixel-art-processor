@@ -142,15 +142,17 @@ const tileGridController = useTileGridController({
 
 const tileSheetCanvas = useTemplateRef('tileSheetCanvas')
 
+let sheetVersion: number | null = null
 useInterval(() => {
   tileGridController.tileSheetRenderer.draw()
   tileGridController.tileSheetSelectionRenderer.resize()
   tileGridController.tileSheetSelectionRenderer.draw()
 
   const tileSheet = tileGridManager.tileSheet.value
-  if (tileSheet.isDirty()) {
+  if (tileSheet.version !== sheetVersion) {
     config.tileSheet = tileSheet.serialize()
-    tileSheet.clearDirty()
+
+    sheetVersion = tileSheet.version
   }
 }, 1000)
 

@@ -1,4 +1,5 @@
 import { computed, ref, toRef, watch } from 'vue'
+import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
@@ -39,9 +40,11 @@ export function useTileGridController(
     scale = toRef(useUIStore(), 'imgScale'),
     gridColor,
     gridDraw,
+    store = useCanvasEditToolStore()
   }: BaseToolManagerSettings & {
     tileGridManager: TileGridManager,
     toolset?: TileGridToolset,
+    store?: CanvasEditToolStore
   },
 ) {
 
@@ -79,6 +82,7 @@ export function useTileGridController(
   const tileSheetWriter = makeTileSheetWriter({
     state,
     gridRenderer,
+    store,
   })
 
   const localToolStates: LocalToolStates = {

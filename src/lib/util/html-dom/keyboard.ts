@@ -1,3 +1,4 @@
+import { getHistory } from '../history/history.ts'
 import { tinykeys } from './tinykey.ts'
 
 export type InputBindings = Record<string, (event: KeyboardEvent) => void>
@@ -34,3 +35,24 @@ export function makeKeyDownListener() {
 }
 
 export const KEY_DOWN = makeKeyDownListener()
+
+function undo() {
+  const history = getHistory()
+  console.log('undo', history.canUndo)
+
+  history.undo()
+}
+
+function redo() {
+  const history = getHistory()
+  console.log('RE do', history.canRedo)
+
+  history.redo()
+}
+
+bindInputKey({
+  'Meta+z': undo,
+  'Meta+Shift+z': redo,
+  'Control+z': undo,
+  'Control+Shift+z': redo,
+})
