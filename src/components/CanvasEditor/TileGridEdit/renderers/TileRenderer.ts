@@ -31,6 +31,7 @@ export function makeTileRenderer(
 
   function resize() {
     pixelCanvas.resize(state.scaledTileSize, state.scaledTileSize)
+    queueRender()
   }
 
   const queueRender = makeRenderQueue(() => {
