@@ -20,7 +20,7 @@
   "dependencies": {
     "@formkit/auto-animate": "^0.9.0",
     "@formkit/drag-and-drop": "^0.5.3",
-    "@napi-rs/canvas": "^0.1.88",
+    "@reddojs/core": "^0.0.8",
     "bootstrap-vue-next": "^0.42.0",
     "pinia": "^3.0.4",
     "poisson-disk-sampling": "^2.3.1",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "@floating-ui/vue": "^1.1.9",
+    "@napi-rs/canvas": "^0.1.90",
     "@types/node": "^24.10.0",
     "@types/poisson-disk-sampling": "^2.2.4",
     "@types/tinycolor2": "^1.4.6",

@@ -17,6 +17,7 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
+import { applyHistoryPixels, extractHistoryPixels } from '../history/_history-helpers.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -102,16 +103,16 @@ export function makeTileSheet(
 
   function extractTile(
     tileId: TileId,
-    x = 0,
-    y = 0,
+    sx = 0,
+    sy = 0,
     w = tileSize,
     h = tileSize,
   ): ImageData {
     const { x: tx, y: ty } = getTileRect(tileId)
     return extractImageData(
       imgData,
-      tx + x,
-      ty + y,
+      tx + sx,
+      ty + sy,
       w,
       h,
     )
@@ -184,32 +185,22 @@ export function makeTileSheet(
     }
   }
 
-  function extractSheetImageData(
+  function getHistoryPixels(
+    tileId: TileId,
     rect: Rect,
-  ): ImageData
-  function extractSheetImageData(
-    x: number,
-    y: number,
-    w: number,
-    h: number,
-  ): ImageData
-  function extractSheetImageData(
-    _x: Rect | number,
-    _y?: number,
-    _w?: number,
-    _h?: number,
-  ): ImageData {
-    const { x, y, w, h } = typeof _x === 'object'
-      ? _x
-      : { x: _x, y: _y!, w: _w!, h: _h! }
+  ) {
+    const { x, y, w, h } = rect
+    return extractHistoryPixels(extractTile(tileId, x, y, w, h), rect)
+  }
 
-    return extractImageData(
-      imgData,
-      x,
-      y,
-      w,
-      h,
-    )
+  function setHistoryPixels(
+    tileId: TileId,
+    data: Uint8ClampedArray,
+    rect: Rect,
+  ) {
+    const { x, y, w, h } = rect
+    const { x: sx, y: sy } = tileLocalToSheet(tileId, x, y)
+    return applyHistoryPixels(imgData, data, sx, sy, w, h)
   }
 
   return {
@@ -248,7 +239,9 @@ export function makeTileSheet(
     clearTileSheetRect,
     each,
     sheetPixelToTileId,
-    extractImageData: extractSheetImageData,
+    extractImageData: (rect: Rect): ImageData => extractImageData(imgData, rect),
+    getHistoryPixels,
+    setHistoryPixels,
     serialize,
   }
 }
