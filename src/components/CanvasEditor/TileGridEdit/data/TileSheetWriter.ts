@@ -6,7 +6,7 @@ import {
   mirrorTilePixelVertical,
 } from '../../../../lib/util/data/Grid.ts'
 import { type BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import { clearImageData, type RGBA, setImageDataPixelsColor } from '../../../../lib/util/html-dom/ImageData.ts'
+import { type RGBA, setImageDataPixelsColor } from '../../../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../../../lib/vue/batching.ts'
 import { type TileId, type WangTile, WangTileset } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../../_core-editor-types.ts'
@@ -48,22 +48,28 @@ export function makeTileSheetWriter(
     writer(state.tileSheet.imageData, imageData, opts)
   }
 
+  function clear(
+    x = 0,
+    y = 0,
+    w = state.tileSheet.imageData.width,
+    h = state.tileSheet.imageData.height,
+    mask: Uint8Array | null = null,
+  ) {
+    const rect = { x, y, w, h }
+
+    const overlapping = state.tileGridGeometry.getOverlappingTilesOnGrid(rect)
+    for (const { tile } of overlapping) {
+      markDirty(tile.id)
+    }
+
+    state.tileSheet.clear(x, y, w, h)
+
+    state.tileSheet.markDirty()
+  }
+
   return {
     blendImageData,
-    clear() {
-      clearImageData(
-        state.tileSheet.imageData,
-        0,
-        0,
-        state.tileSheet.imageData.width,
-        state.tileSheet.imageData.height,
-      )
-
-      for (const tile of state.tileset.tiles) {
-        markDirty(tile.id)
-      }
-      state.tileSheet.markDirty()
-    },
+    clear,
 
     writeGridPixels(gridPixels: Point[], color: RGBA) {
       const tileset = state.tileset
@@ -93,16 +99,6 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    clearRect(x: number, y: number, w: number, h: number, mask?: Uint8Array | null) {
-      const rect = { x, y, w, h }
-      const overlapping = state.tileGridGeometry.getOverlappingTilesOnGrid(rect)
-      clearImageData(state.tileSheet.imageData, x, y, w, h, mask)
-
-      for (const { tile } of overlapping) {
-        markDirty(tile.id)
-      }
-      state.tileSheet.markDirty()
-    },
     writeTilePixels(tilePixels: Point[], tileId: TileId, color: RGBA) {
       tilePixels.forEach(({ x, y }) => {
         state.tileSheet.writeTilePixel(tileId, x, y, color)

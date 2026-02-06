@@ -223,7 +223,7 @@ export function makeTileGridSelectionToolState(
     const pixels = selection.pixels
 
     for (const r of originalSheetDrawRects) {
-      tileSheetWriter.clearRect(r.dx, r.dy, r.w, r.h)
+      tileSheetWriter.clear(r.dx, r.dy, r.w, r.h, r.mask)
     }
 
     for (const r of currentSheetDrawRects) {
