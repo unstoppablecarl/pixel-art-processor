@@ -4,7 +4,7 @@ import type { BrushToolState } from '../_support/tools/BrushToolState.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
 import type { TileGridSelectionToolState } from './TileGridSelectionToolState.ts'
-import type { TileSheetWriter } from './TileSheetWriter.ts'
+import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 
 export enum CanvasType {
   GRID = 'GRID',

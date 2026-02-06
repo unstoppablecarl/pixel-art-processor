@@ -1,13 +1,16 @@
 import { markRaw } from 'vue'
 
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
+import type { BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
 import {
   clearImageData,
   deserializeImageData,
   extractImageData,
   resizeImageData,
+  type RGBA,
   type SerializedImageData,
   serializeImageData,
+  setImageDataPixelColor,
   writeImageData,
 } from '../../../../lib/util/html-dom/ImageData.ts'
 import {
@@ -17,6 +20,8 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
+import { BlendMode } from '../../_core-editor-types.ts'
+import { selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
 import { applyHistoryPixels, extractHistoryPixels } from '../history/_history-helpers.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
@@ -124,6 +129,33 @@ export function makeTileSheet(
     dirty = true
   }
 
+  function writeTilePixel(tileId: TileId, tx: number, ty: number, color: RGBA) {
+    const { x, y } = tileLocalToSheet(tileId, tx, ty)
+    setImageDataPixelColor(imgData, x, y, color)
+    dirty = true
+  }
+
+  function clear(
+    x = 0,
+    y = 0,
+    w = imgData.width,
+    h = imgData.height,
+    mask: Uint8Array | null = null,
+  ) {
+    clearImageData(imgData, x, y, w, h, mask)
+    dirty = true
+  }
+
+  function blendImageData(
+    imageData: ImageData,
+    blendMode: BlendMode,
+    opts: Omit<BlendImageDataOptions, 'blendMode'>,
+  ) {
+    const writer = selectMoveBlendModeToWriter[blendMode]
+    writer(imgData, imageData, opts)
+    dirty = true
+  }
+
   function resizeTileSize(newTileSize: number) {
     if (newTileSize === tileSize) return
 
@@ -205,6 +237,9 @@ export function makeTileSheet(
 
   return {
     tileset,
+    blendImageData,
+    clear,
+    writeTilePixel,
     get tileSize() {
       return tileSize
     },

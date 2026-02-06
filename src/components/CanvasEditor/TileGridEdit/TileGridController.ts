@@ -27,7 +27,7 @@ import { makeTileSheetSelectionRenderer } from './renderers/TileSheetSelectionRe
 import { makeTileGridEditorState, type TileGridEditorState } from './TileGridEditorState.ts'
 import { makeTileGridSelectionToolState } from './TileGridSelectionToolState.ts'
 import { type TileGridToolset, useTileGridToolset } from './TileGridToolset.ts'
-import { makeTileSheetWriter } from './TileSheetWriter.ts'
+import { makeTileSheetWriter } from './data/TileSheetWriter.ts'
 
 export type TileGridController = ReturnType<typeof useTileGridController>
 

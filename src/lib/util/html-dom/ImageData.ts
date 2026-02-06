@@ -11,6 +11,14 @@ export type RGBA = { r: number, g: number, b: number, a: number }
 export type RGBAFloat = { r: number, g: number, b: number, a: number, readonly __brandRGBAFloat: unique symbol }
 export type SerializedRGBA = string
 
+export type PixelColor = Point & { color: RGBA }
+
+export type ReadonlyImageData = {
+  readonly width: number
+  readonly height: number
+  readonly data: Uint8ClampedArray
+}
+
 export const RGBA_ERASE = { r: 0, g: 0, b: 0, a: 0 } as Readonly<RGBA>
 export const RGBA_WHITE = { r: 255, g: 255, b: 255, a: 255 } as Readonly<RGBA>
 export const RGBA_RED = { r: 255, g: 0, b: 0, a: 255 } as Readonly<RGBA>
@@ -182,6 +190,13 @@ export function setImageDataPixelColor(imageData: ImageData, x: number, y: numbe
 export function setImageDataPixelsColor(imageData: ImageData, points: Point[], color: RGBA) {
   for (let i = 0; i < points.length; i++) {
     const { x, y } = points[i]
+    setImageDataPixelColor(imageData, x, y, color)
+  }
+}
+
+export function setImageDataPixelColors(imageData: ImageData, pixels: PixelColor[]) {
+  for (let i = 0; i < pixels.length; i++) {
+    const { x, y, color } = pixels[i]
     setImageDataPixelColor(imageData, x, y, color)
   }
 }

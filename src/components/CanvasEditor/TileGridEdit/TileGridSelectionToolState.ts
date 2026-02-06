@@ -9,7 +9,7 @@ import { type ISelection, mergeSelectionRects, type SelectionRect, subtractSelec
 import { TileOriginSelection } from './lib/TileOriginSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
-import type { TileSheetWriter } from './TileSheetWriter.ts'
+import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 
 export type TileGridSelectionToolState = ReturnType<typeof makeTileGridSelectionToolState>
 
@@ -227,7 +227,7 @@ export function makeTileGridSelectionToolState(
     }
 
     for (const r of currentSheetDrawRects) {
-      tileSheetWriter.blendSheetImageData(
+      tileSheetWriter.blendImageData(
         pixels,
         mode,
         {

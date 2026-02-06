@@ -1,4 +1,5 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
+import { getHistory } from '../../../../lib/util/history/history.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheet } from '../data/TileSheet.ts'
 
@@ -12,6 +13,8 @@ export type TileSheetPatch = {
   after: Uint8ClampedArray
 }
 
+export type TileRect = Rect & { tileId: TileId }
+
 export const TileSheetHistory = {
   apply,
   applyInverse,
@@ -19,6 +22,7 @@ export const TileSheetHistory = {
   extract,
   finalize,
   finalizePatches,
+  writeWithHistory,
 }
 
 // capture the pixel region before modification
@@ -71,8 +75,6 @@ function applyInverse(
   )
 }
 
-type TileRect = Rect & { tileId: TileId }
-
 // extract patches for multiple regions
 function extractPatches(
   tileSheet: TileSheet,
@@ -100,4 +102,21 @@ function finalizePatches(
     patches[i] = finalize(patches[i], tileSheet)
   }
   return patches as TileSheetPatch[]
+}
+
+function writeWithHistory(
+  tileSheet: TileSheet,
+  opts: {
+    getRegions: () => TileRect[],
+    write: () => void
+  }) {
+  const regions = opts.getRegions()
+  const patches = extractPatches(tileSheet, regions)
+  opts.write()
+  const finalPatches = finalizePatches(tileSheet, patches)
+  getHistory().execute({
+    do: () => finalPatches.forEach(p => apply(tileSheet, p)),
+    undo: () => finalPatches.forEach(p => applyInverse(tileSheet, p)),
+  })
+  return finalPatches
 }

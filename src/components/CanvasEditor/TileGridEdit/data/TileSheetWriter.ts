@@ -1,24 +1,19 @@
-import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
-import type { Direction } from '../../../lib/pipeline/_types.ts'
+import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
+import type { Direction } from '../../../../lib/pipeline/_types.ts'
 import {
   getPointsInEdgeMargins,
   mirrorTilePixelHorizontal,
   mirrorTilePixelVertical,
-} from '../../../lib/util/data/Grid.ts'
-import { type BlendImageDataOptions } from '../../../lib/util/html-dom/blit.ts'
-import {
-  clearImageData,
-  type RGBA,
-  setImageDataPixelColor,
-  setImageDataPixelsColor,
-} from '../../../lib/util/html-dom/ImageData.ts'
-import { useDirtyBatching } from '../../../lib/vue/batching.ts'
-import { type TileId, type WangTile, WangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from '../_core-editor-types.ts'
-import { selectMoveBlendModeToWriter } from '../_support/tools/selection-helpers.ts'
-import type { TileSheet } from './data/TileSheet.ts'
-import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
-import type { TileGridEditorState } from './TileGridEditorState.ts'
+} from '../../../../lib/util/data/Grid.ts'
+import { type BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
+import { clearImageData, type RGBA, setImageDataPixelsColor } from '../../../../lib/util/html-dom/ImageData.ts'
+import { useDirtyBatching } from '../../../../lib/vue/batching.ts'
+import { type TileId, type WangTile, WangTileset } from '../../../../lib/wang-tiles/WangTileset.ts'
+import { BlendMode } from '../../_core-editor-types.ts'
+import { selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
+import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
+import type { TileGridEditorState } from '../TileGridEditorState.ts'
+import type { TileSheet } from './TileSheet.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
 
@@ -38,13 +33,13 @@ export function makeTileSheetWriter(
     gridRenderer.queueRenderGrid()
   })
 
-  function writeTilePixel(tileId: TileId, tx: number, ty: number, color: RGBA) {
-    const { x, y } = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
-    setImageDataPixelColor(state.tileSheet.imageData, x, y, color)
-    state.tileSheet.markDirty()
-  }
+  // function writeTilePixel(tileId: TileId, tx: number, ty: number, color: RGBA) {
+  //   const { x, y } = state.tileSheet.tileLocalToSheet(tileId, tx, ty)
+  //   setImageDataPixelColor(state.tileSheet.imageData, x, y, color)
+  //   state.tileSheet.markDirty()
+  // }
 
-  function blendSheetImageData(
+  function blendImageData(
     imageData: ImageData,
     blendMode: BlendMode,
     opts: Omit<BlendImageDataOptions, 'blendMode'>,
@@ -54,7 +49,7 @@ export function makeTileSheetWriter(
   }
 
   return {
-    blendSheetImageData,
+    blendImageData,
     clear() {
       clearImageData(
         state.tileSheet.imageData,
@@ -81,7 +76,7 @@ export function makeTileSheetWriter(
         if (!tile) return
 
         const { tx, ty } = state.tileGridGeometry.gridPixelToTilePixel(x, y)!
-        writeTilePixel(tile.id, tx, ty, color)
+        state.tileSheet.writeTilePixel(tile.id, tx, ty, color)
 
         const affected = duplicateEdgePixels(
           tileset,
@@ -98,7 +93,7 @@ export function makeTileSheetWriter(
       state.tileSheet.markDirty()
     },
 
-    clearRect(x: number, y: number, w: number, h: number,  mask?: Uint8Array | null) {
+    clearRect(x: number, y: number, w: number, h: number, mask?: Uint8Array | null) {
       const rect = { x, y, w, h }
       const overlapping = state.tileGridGeometry.getOverlappingTilesOnGrid(rect)
       clearImageData(state.tileSheet.imageData, x, y, w, h, mask)
@@ -110,7 +105,7 @@ export function makeTileSheetWriter(
     },
     writeTilePixels(tilePixels: Point[], tileId: TileId, color: RGBA) {
       tilePixels.forEach(({ x, y }) => {
-        writeTilePixel(tileId, x, y, color)
+        state.tileSheet.writeTilePixel(tileId, x, y, color)
       })
 
       const affected = duplicateEdgePixels(
