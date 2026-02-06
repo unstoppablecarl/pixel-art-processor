@@ -1,8 +1,8 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { TileSheet } from '../data/TileSheet.ts'
-import type { TileSheetPixelAccumulator } from '../data/TileSheetPixelAccumulator.ts'
+import type { TileSheet } from './TileSheet.ts'
+import type { TileSheetPixelAccumulator } from './TileSheetPixelAccumulator.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 
 export type ProtoTileSheetPatch = {

@@ -7,7 +7,7 @@ import {
   setImageDataPixelColors,
 } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { ProtoTileSheetPatch, TileRect, TileSheetPatch } from '../history/TileSheetHistory.ts'
+import type { ProtoTileSheetPatch, TileRect, TileSheetPatch } from './TileSheetHistory.ts'
 import type { TileSheet } from './TileSheet.ts'
 
 export type TileSheetPixelAccumulator = ReturnType<typeof makeTileSheetPixelAccumulator>
