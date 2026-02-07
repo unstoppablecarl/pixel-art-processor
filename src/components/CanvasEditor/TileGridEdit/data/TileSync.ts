@@ -27,7 +27,6 @@ export function makeTileSheetSync(tileSheet: TileSheet) {
       const currentVersion = sheet.getTileVersion(tile.id)
       const index = tile.index
 
-      console.log('tiles sync', tile.id, currentVersion > localVersions[index], localVersions[index], currentVersion)
       if (currentVersion !== localVersions[index]) {
         onTileChanged(tile.id)
         localVersions[index] = currentVersion
