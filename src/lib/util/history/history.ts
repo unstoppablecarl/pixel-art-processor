@@ -16,8 +16,6 @@ const canUndo = computed(() => canUndoRef.value)
 const canRedo = computed(() => canRedoRef.value)
 
 export function setHistory(history: History) {
-  if (HISTORY) throw new Error('history already set')
-
   HISTORY = history
   canUndoRef.value = HISTORY.canUndo
   canRedoRef.value = HISTORY.canRedo
@@ -44,7 +42,6 @@ function makeVueHistory(
   toast: (options: ToastOrchestratorCreateParam) => void,
   history: History,
 ) {
-
   function undo() {
     if (!history.canUndo) {
       toast({
@@ -85,12 +82,38 @@ function makeVueHistory(
   }
 }
 
-export function useHistory(): VueHistory {
-  if (!HISTORY) throw new Error('setHistory() not called in main.js')
+function HMRStore() {
+  if (HISTORY) {
+    import.meta.hot!.data.history = HISTORY
+  }
 
+  historyUnsub?.()
+  VUE_HISTORY = undefined
+  historyUnsub = undefined
+}
+
+function HMRLoad() {
+  const savedHistory = import.meta.hot?.data?.history as History | undefined
+  if (savedHistory) {
+    setHistory(savedHistory)
+  }
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    HMRStore()
+  })
+
+  import.meta.hot.accept(() => {
+    HMRLoad()
+  })
+  HMRLoad()
+}
+
+export function useHistory(): VueHistory {
   if (!VUE_HISTORY) {
     const toast = useDebouncedToast()
-    VUE_HISTORY = makeVueHistory(toast, HISTORY)
+    VUE_HISTORY = makeVueHistory(toast, getHistory())
   }
 
   return VUE_HISTORY
@@ -99,23 +122,4 @@ export function useHistory(): VueHistory {
 export function getHistory(): History {
   if (!HISTORY) throw new Error('setHistory() not called in main.js')
   return HISTORY
-}
-
-if (import.meta.hot) {
-  import.meta.hot.dispose(() => {
-    // Save history instance
-    if (HISTORY) {
-      import.meta.hot!.data.history = HISTORY
-    }
-
-    historyUnsub?.()
-    VUE_HISTORY?.dispose()
-  })
-  import.meta.hot.accept(() => {
-    // Restore history if it was saved
-    const savedHistory = import.meta.hot?.data?.history
-    if (savedHistory) {
-      setHistory(savedHistory)
-    }
-  })
 }
