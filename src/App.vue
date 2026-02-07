@@ -7,6 +7,7 @@ import './lib/key-bindings.ts'
 const appDefaults = {
   BPopover: {
     delay: { show: 0, hide: 0 },
+    noFade: true
   },
 }
 </script>
