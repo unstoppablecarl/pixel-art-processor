@@ -69,7 +69,6 @@ function makeVueHistory(
 
   function dispose() {
     historyUnsub?.()
-
     VUE_HISTORY = undefined
     HISTORY = undefined
     canUndoRef.value = false
@@ -100,4 +99,23 @@ export function useHistory(): VueHistory {
 export function getHistory(): History {
   if (!HISTORY) throw new Error('setHistory() not called in main.js')
   return HISTORY
+}
+
+if (import.meta.hot) {
+  import.meta.hot.dispose(() => {
+    // Save history instance
+    if (HISTORY) {
+      import.meta.hot!.data.history = HISTORY
+    }
+
+    historyUnsub?.()
+    VUE_HISTORY?.dispose()
+  })
+  import.meta.hot.accept(() => {
+    // Restore history if it was saved
+    const savedHistory = import.meta.hot?.data?.history
+    if (savedHistory) {
+      setHistory(savedHistory)
+    }
+  })
 }
