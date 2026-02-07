@@ -22,6 +22,7 @@ import { makeCanvasPaintSelectToolState } from './CanvasPaintSelectToolState.ts'
 import { type CanvasPaintToolset, useCanvasPaintToolset } from './CanvasPaintToolset.ts'
 import { makeCanvasRenderer } from './CanvasRenderer.ts'
 import { makeCurrentToolRenderer } from './CurrentToolRenderer.ts'
+import { makeCanvasPaintWriter } from './data/CanvasPaintWriter.ts'
 
 export type CanvasPaintController = ReturnType<typeof useCanvasPaintController>
 
@@ -75,9 +76,12 @@ export function useCanvasPaintController(
     }),
   }
 
+  const canvasWriter = makeCanvasPaintWriter({state, canvasRenderer})
+
   const localBase: BaseLocalToolContext = {
     state,
     canvasRenderer,
+    canvasWriter,
   }
 
   const localToolContexts = makeLocalToolContexts(localBase, localToolStates) as LocalToolContexts

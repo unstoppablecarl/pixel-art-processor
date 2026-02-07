@@ -9,8 +9,8 @@ export type CanvasPaintEditorSettings = BaseEditorSettings & {
 }
 
 export class CanvasPaintEditorState extends EditorState {
-  _width: Ref<number>
-  _height: Ref<number>
+  protected _width: Ref<number>
+  protected _height: Ref<number>
   public imageDataRef: ImageDataRef
   public imageDataDirty = false
 

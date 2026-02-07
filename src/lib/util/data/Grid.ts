@@ -107,8 +107,8 @@ export function interpolateLine(x0: number, y0: number, x1: number, y1: number) 
   const sy = dy === 0 ? 0 : (y0 < y1 ? 1 : -1)
 
   let err = dx - dy
-  let x = x0
-  let y = y0
+  let x = Math.floor(x0)
+  let y = Math.floor(y0)
 
   let safety = 0
 

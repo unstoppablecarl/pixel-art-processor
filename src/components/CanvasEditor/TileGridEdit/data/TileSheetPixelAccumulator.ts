@@ -7,8 +7,9 @@ import {
   setImageDataPixelColors,
 } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { ProtoTileSheetPatch, TileRect, TileSheetPatch } from './TileSheetHistory.ts'
+import { finalizePatch } from '../../_support/data/_history-helpers.ts'
 import type { TileSheet } from './TileSheet.ts'
+import type { ProtoTileSheetPatch, TileRect, TileSheetPatch } from './TileSheetHistory.ts'
 
 export type TileSheetPixelAccumulator = ReturnType<typeof makeTileSheetPixelAccumulator>
 
@@ -233,25 +234,7 @@ export function makeTileSheetPixelAccumulator() {
       const p = patches[i]
       const offset = tileSheet.getTileSheetOffset(p.tileId)
 
-      const sx = offset.x + p.x
-      const sy = offset.y + p.y
-
-      const after = new Uint8ClampedArray(p.w * p.h * 4)
-
-      // extract AFTER pixels
-      for (let y = 0; y < p.h; y++) {
-        for (let x = 0; x < p.w; x++) {
-          const di = ((sy + y) * img.width + (sx + x)) * 4
-          const si = (y * p.w + x) * 4
-
-          after[si] = img.data[di]
-          after[si + 1] = img.data[di + 1]
-          after[si + 2] = img.data[di + 2]
-          after[si + 3] = img.data[di + 3]
-        }
-      }
-
-      p.after = after
+      finalizePatch(p, img, offset.x, offset.y)
     }
 
     return patches as TileSheetPatch[]

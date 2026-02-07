@@ -16,19 +16,21 @@ export function makeBrushTool(store: CanvasEditToolStore): CanvasPaintBrushToolH
 
   return {
     cursorCssClass: TOOL_HOVER_CSS_CLASSES.BRUSH,
-    onMouseDown: ({ state, toolState, canvasRenderer }, x, y) => {
+    onMouseDown: ({ state, toolState, canvasWriter }, x, y) => {
       isDrawing = true
-      toolState.writeBrushPixels(state.imageDataRef.get()!, x, y, state.width, state.height)
-      state.imageDataDirty = true
-      canvasRenderer.queueRender()
+      canvasWriter.withHistory((mutator) => {
+        const pixels = toolState.getBrushPixels(x, y, state.width, state.height)
+        mutator.writePoints(pixels, store.brushColor)
+      })
     },
-    onDragStart({ state, toolState, canvasRenderer }, x, y) {
+    onDragStart({ state, toolState, canvasWriter }, x, y) {
       isDrawing = true
-      toolState.writeBrushPixels(state.imageDataRef.get()!, x, y, state.width, state.height)
-      state.imageDataDirty = true
-      canvasRenderer.queueRender()
+      canvasWriter.withHistory((mutator) => {
+        const pixels = toolState.getBrushPixels(x, y, state.width, state.height)
+        mutator.writePoints(pixels, store.brushColor)
+      })
     },
-    onDragMove({ state, canvasRenderer, toolState }, x, y) {
+    onDragMove({ state, canvasRenderer, toolState, canvasWriter }, x, y) {
       if (!isDrawing) return
       const { mouseLastX, mouseLastY } = state
       if (mouseLastX == null || mouseLastY == null) return
@@ -41,12 +43,9 @@ export function makeBrushTool(store: CanvasEditToolStore): CanvasPaintBrushToolH
         Math.floor(y),
       )
 
-      for (const p of points) {
-        toolState.writeBrushPixels(state.imageDataRef.get()!, p.x, p.y, state.width, state.height)
-      }
-
-      state.imageDataDirty = true
-      canvasRenderer.queueRender()
+      canvasWriter.withHistory((mutator) => {
+        mutator.writePoints(points, store.brushColor)
+      })
     },
     onDragEnd() {
       isDrawing = false

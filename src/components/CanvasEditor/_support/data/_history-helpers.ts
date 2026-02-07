@@ -75,3 +75,40 @@ export function applyHistoryPixels(
     o += w * 4
   }
 }
+
+export type ProtoPatch = {
+  x: number
+  y: number
+  w: number
+  h: number
+  before: Uint8ClampedArray
+  after: Uint8ClampedArray | null
+}
+
+export type Patch = Omit<ProtoPatch, 'after'> & {
+  after: Uint8ClampedArray
+}
+
+export function finalizePatch<
+  Proto extends ProtoPatch,
+  P extends Patch
+>
+(p: Proto, img: ImageData, offsetX = 0, offsetY = 0): P {
+  const after = new Uint8ClampedArray(p.w * p.h * 4)
+
+  for (let iy = 0; iy < p.h; iy++) {
+    for (let ix = 0; ix < p.w; ix++) {
+      const di = ((p.y + offsetY + iy) * img.width + (p.x + offsetX + ix)) * 4
+      const si = (iy * p.w + ix) * 4
+
+      after[si] = img.data[di]
+      after[si + 1] = img.data[di + 1]
+      after[si + 2] = img.data[di + 2]
+      after[si + 3] = img.data[di + 3]
+    }
+  }
+
+  p.after = after
+
+  return p as unknown as P
+}

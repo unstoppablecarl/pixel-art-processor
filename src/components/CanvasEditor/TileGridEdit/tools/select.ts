@@ -19,15 +19,12 @@ export type TileGridSelectToolHandler<L = LocalToolContext<TileGridSelectionTool
 export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHandler {
   return {
     cursorCssClass: TOOL_HOVER_CSS_CLASSES.SELECT,
-
     onDeselect({ toolState }) {
       toolState.clearSelection()
     },
-
     onModeChanged({ toolState }) {
       toolState.draw()
     },
-
     onClick({ toolState, gridRenderer }, x, y, canvasType, tileId) {
       const ts = toolState
       const sel = ts.selection
@@ -55,7 +52,8 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           ts.finalizeFloodSelection(x, y, CanvasType.GRID, null)
           gridRenderer.queueRenderGrid()
         }
-      } else {
+      }
+      if (canvasType === CanvasType.TILE) {
         if (!tileId) throw new Error('tileId required')
 
         if (!ts.tilePointInSelection(x, y, tileId)) {
@@ -73,7 +71,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         }
       }
     },
-
     onDragStart({ toolState, gridRenderer }, x, y, canvasType, tileId) {
       const ts = toolState
       const sel = ts.selection
@@ -93,7 +90,8 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           ts.gridStartSelection(x, y)
         }
         gridRenderer.queueRenderAll()
-      } else {
+      }
+      if (canvasType === CanvasType.TILE) {
         if (!tileId) throw new Error('tileId required')
 
         if (!sel && !ts.inFloodMode()) {
@@ -113,7 +111,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         gridRenderer.queueRenderGrid()
       }
     },
-
     onDragMove({ toolState, gridRenderer }, x, y, canvasType, tileId) {
       const ts = toolState
 
@@ -124,7 +121,8 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           ts.updateSelection(x, y)
         }
         gridRenderer.queueRenderAll()
-      } else {
+      }
+      if (canvasType === CanvasType.TILE) {
         if (!tileId) throw new Error('tileId required')
 
         if (ts.dragging) {
@@ -136,7 +134,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         gridRenderer.queueRenderGrid()
       }
     },
-
     onDragEnd({ toolState, gridRenderer }) {
       const ts = toolState
 
@@ -150,7 +147,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
       gridRenderer.queueRenderAll()
     },
-
     gridPixelOverlayDraw({ state, toolState, gridRenderer }, ctx) {
       const sel = toolState.selection
       if (!sel) return
@@ -159,12 +155,12 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const writer = selectMoveBlendModeToWriter[mode]!
       const preview = gridRenderer.tileGridImageDataRef.copy()!
 
-      // 1. Clear original footprint using tile-aligned rects
+      // 1. Clear original pixels
       for (const r of sel.getOriginalGridDrawRects()) {
         clearImageData(preview, r.dx, r.dy, r.w, r.h, r.mask)
       }
 
-      // 2. Draw current footprint using tile-aligned rects
+      // 2. Draw current pixels
       for (const r of sel.getCurrentGridDrawRects()) {
         writer(preview, sel.pixels, {
           dx: r.dx,
@@ -197,7 +193,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
       const merged = mergeAdjacentSelectionRects(rects)
 
-      // Draw unsplit selection outline (cyan)
+      // Draw unsplit selection outline
       for (const g of merged) {
         drawSelectOutline(
           ctx,
@@ -208,7 +204,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         )
       }
     },
-
     tilePixelOverlayDraw({ state, toolState }, ctx, tileId) {
       const sel = toolState.selection
       if (!sel) return
@@ -237,7 +232,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
       ctx.putImageData(preview, 0, 0)
     },
-
     tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
       const sel = toolState.selection
       const { scale } = state

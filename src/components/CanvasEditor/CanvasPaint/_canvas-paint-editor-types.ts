@@ -3,10 +3,12 @@ import type { BrushToolState } from '../_support/tools/BrushToolState.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CanvasPaintSelectToolState } from './CanvasPaintSelectToolState.ts'
 import type { CanvasRenderer } from './CanvasRenderer.ts'
+import type { CanvasPaintWriter } from './data/CanvasPaintWriter.ts'
 
 export type BaseLocalToolContext = {
   state: CanvasPaintEditorState,
   canvasRenderer: CanvasRenderer,
+  canvasWriter: CanvasPaintWriter
 }
 
 export type LocalToolContext<T> = BaseLocalToolContext & {

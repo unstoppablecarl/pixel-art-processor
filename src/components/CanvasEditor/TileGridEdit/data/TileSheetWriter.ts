@@ -6,10 +6,10 @@ import { useDirtyBatching } from '../../../../lib/vue/batching.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../../_core-editor-types.ts'
 import { selectMoveBlendModeToBlendFn } from '../../_support/tools/selection-helpers.ts'
-import { TileSheetHistory } from './TileSheetHistory.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { duplicateEdgePixels } from './TileEdgeDuplicator.ts'
+import { applyTileSheetAccumulator } from './TileSheetHistory.ts'
 import { makeTileSheetPixelAccumulator, type TileSheetPixelAccumulator } from './TileSheetPixelAccumulator.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
@@ -51,7 +51,7 @@ export function makeTileSheetWriter(
         }
       }
 
-      const finalPatches = TileSheetHistory.applyAccumulator(state.tileSheet, gridRenderer, accumulator)
+      const finalPatches = applyTileSheetAccumulator(state.tileSheet, gridRenderer, accumulator)
 
       accumulator.affectedTileIds().forEach(id => markDirty(id))
 
@@ -151,7 +151,7 @@ function makeTileSheetMutator(
     }
   }
 
-  function writeGridPixels(gridPixels: Point[], color: RGBA) {
+  function writeGridPoints(gridPixels: Point[], color: RGBA) {
     for (let i = 0; i < gridPixels.length; i++) {
       const { x, y } = gridPixels[i]
       const hit = state.tileGridGeometry.gridPixelToTilePixel(x, y)
@@ -162,7 +162,7 @@ function makeTileSheetMutator(
     }
   }
 
-  function writeTilePixels(tileId: TileId, tilePixels: Point[], color: RGBA) {
+  function writeTilePoints(tileId: TileId, tilePixels: Point[], color: RGBA) {
     for (let i = 0; i < tilePixels.length; i++) {
       const { x, y } = tilePixels[i]
       accumulator.addTile(tileId, x, y, color)
@@ -170,8 +170,8 @@ function makeTileSheetMutator(
   }
 
   return {
-    writeGridPixels,
-    writeTilePixels,
+    writeGridPoints,
+    writeTilePoints,
     blendImageData,
     clear,
   }
