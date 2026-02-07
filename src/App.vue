@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { BApp } from 'bootstrap-vue-next'
-import Root from './Root.vue'
+import AppRoot from './AppRoot.vue'
 
 const appDefaults = {
   BPopover: {
@@ -11,6 +11,6 @@ const appDefaults = {
 </script>
 <template>
   <BApp :defaults="appDefaults">
-    <Root />
+    <AppRoot />
   </BApp>
 </template>
