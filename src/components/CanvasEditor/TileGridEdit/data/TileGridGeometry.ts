@@ -289,10 +289,27 @@ export function sliceMask(
   if (!mask) return null
   const out = new Uint8Array(w * h)
 
+  // Calculate the total height of the source mask based on the buffer size
+  const srcH = mask.length / stride
+
   for (let row = 0; row < h; row++) {
-    const srcRow = (srcY + row) * stride + srcX
-    const dstRow = row * w
-    out.set(mask.subarray(srcRow, srcRow + w), dstRow)
+    const currentSrcY = srcY + row
+
+    // Safety Check: If the requested row is outside the source mask, skip it (leave as 0)
+    if (currentSrcY < 0 || currentSrcY >= srcH) continue
+
+    // Calculate valid horizontal range within the source stride
+    // We only copy if srcX is within the actual bounds of the source width
+    const start = Math.max(0, srcX)
+    const end = Math.min(stride, srcX + w)
+
+    if (start < end) {
+      const srcOffset = currentSrcY * stride + start
+      const dstOffset = row * w + (start - srcX)
+      const count = end - start
+
+      out.set(mask.subarray(srcOffset, srcOffset + count), dstOffset)
+    }
   }
 
   return out

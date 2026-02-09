@@ -1,5 +1,4 @@
-import type { Rect } from '../../../../lib/util/data/Rect.ts'
-import { getRectsBounds } from '../../../../lib/util/data/Rect.ts'
+import { getRectsBounds, type Rect, trimRectBounds } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'
 import type { DrawRect, ISelection, SelectionRect, TileOriginTileAlignedRect } from './ISelection.ts'
@@ -56,29 +55,64 @@ export class TileOriginSelection implements ISelection {
   }
 
   // --- Tile Aligned Rects ---
-  private tileAlignedFrom(rects: SelectionRect[], originX: number, originY: number): TileOriginTileAlignedRect[] {
+  // --- Tile Aligned Rects ---
+  private tileAlignedFrom(
+    trimmedRects: SelectionRect[],
+    rawRects: SelectionRect[],
+    originX: number,
+    originY: number,
+  ): TileOriginTileAlignedRect[] {
     const { x: tsx, y: tsy } = this.geometry.tileSheet.getTileRect(this.tileId)
-    return rects.map(rect => ({
-      tileId: this.tileId,
-      sx: tsx + rect.x,
-      sy: tsy + rect.y,
-      tileSelectionX: rect.x,
-      tileSelectionY: rect.y,
-      w: rect.w,
-      h: rect.h,
-      bufferX: rect.x - originX,
-      bufferY: rect.y - originY,
-      mask: rect.mask,
-    }))
+
+    return trimmedRects.map((clipped, i) => {
+      const raw = rawRects[i]
+
+      // The "Push" is the distance between where the box SHOULD be and where it is CLAMPED
+      // Left edge: raw.x = -5, clipped.x = 0 -> pushX = 5
+      // Right edge: raw.x = 12, clipped.x = 10 -> pushX = -2
+      const pushX = clipped.x - raw.x
+      const pushY = clipped.y - raw.y
+
+      return {
+        tileId: this.tileId,
+        // Sheet space (clamped to the tile's footprint on the texture sheet)
+        sx: tsx + clipped.x,
+        sy: tsy + clipped.y,
+        // Local tile space (clamped to 0..tileSize)
+        tileSelectionX: clipped.x,
+        tileSelectionY: clipped.y,
+        w: clipped.w,
+        h: clipped.h,
+        // Buffer space: Original local offset + the push delta
+        bufferX: (this.originalRects[i].x - originX) + pushX,
+        bufferY: (this.originalRects[i].y - originY) + pushY,
+        mask: clipped.mask,
+      }
+    })
   }
 
+
   getOriginalTileAlignedRects(): TileOriginTileAlignedRect[] {
-    return this.tileAlignedFrom(this.originalRects, this.originalRectsBounds.x, this.originalRectsBounds.y)
+    return this.tileAlignedFrom(
+      this.originalRects,
+      this.originalRects,
+      this.originalRectsBounds.x,
+      this.originalRectsBounds.y
+    )
   }
 
   getCurrentTileAlignedRects(): TileOriginTileAlignedRect[] {
-    const b = this.getCurrentTileBounds()
-    return this.tileAlignedFrom(this.currentRects, b.x, b.y)
+    const trimmedRects = this.getCurrentTileRects()
+    const rawRects = this.currentRects
+
+    // Using originalRectsBounds as origin is safe because
+    // we assumed initial rects are within tile bounds (0,0 anchor).
+    return this.tileAlignedFrom(
+      trimmedRects,
+      rawRects,
+      this.originalRectsBounds.x,
+      this.originalRectsBounds.y
+    )
   }
 
   private sheetDrawRectsFor(rects: TileOriginTileAlignedRect[]): DrawRect[] {
@@ -131,12 +165,17 @@ export class TileOriginSelection implements ISelection {
     return tileId === this.tileId ? this.originalRects : []
   }
 
-  getCurrentTileRects(tileId: TileId): SelectionRect[] {
-    return tileId === this.tileId ? this.currentRects : []
-  }
+  getCurrentTileRects(): SelectionRect[] {
+    const bounds = {
+      x: 0,
+      y: 0,
+      w: this.geometry.tileSize,
+      h: this.geometry.tileSize,
+    }
 
-  private getCurrentTileBounds(): Rect {
-    return getRectsBounds(this.currentRects)
+    return this.currentRects.map(r => {
+      return trimRectBounds({ ...r }, bounds)
+    })
   }
 
   // --- Tile Draw Rects ---
@@ -169,7 +208,11 @@ export class TileOriginSelection implements ISelection {
   moveOnTile(dx: number, dy: number, tileId: TileId): void {
     if (dx === 0 && dy === 0 || tileId !== this.tileId) return
     this.moved = true
-    this.currentRects = this.currentRects.map(r => ({ ...r, x: r.x + dx, y: r.y + dy }))
+    this.currentRects = this.currentRects.map(r => ({
+      ...r,
+      x: r.x + dx,
+      y: r.y + dy,
+    }))
   }
 
   getOverlappingTileIds(): TileId[] {

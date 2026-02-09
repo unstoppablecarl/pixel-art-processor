@@ -1,6 +1,14 @@
+import { sliceMask } from '../../../components/CanvasEditor/TileGridEdit/data/TileGridGeometry.ts'
+import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
+
 export type Rect = { x: number; y: number; w: number; h: number }
 
-export function trimRectBounds(target: Rect, trimTo: Rect): Rect {
+export function trimRectBounds<T extends Rect | SelectionRect>(target: T, trimTo: Rect): T {
+  // Store original values to calculate relative offsets for the mask slice
+  const oldX = target.x
+  const oldY = target.y
+  const oldW = target.w
+
   const nx = Math.max(target.x, trimTo.x)
   const ny = Math.max(target.y, trimTo.y)
 
@@ -10,10 +18,18 @@ export function trimRectBounds(target: Rect, trimTo: Rect): Rect {
   const nw = Math.max(0, maxX - nx)
   const nh = Math.max(0, maxY - ny)
 
+  // Calculate offsets within the original mask
+  const offsetX = nx - oldX
+  const offsetY = ny - oldY
+
   target.x = nx
   target.y = ny
   target.w = nw
   target.h = nh
+
+  if ('mask' in target && target.mask) {
+    target.mask = sliceMask(target.mask, offsetX, offsetY, nw, nh, oldW)
+  }
 
   return target
 }
