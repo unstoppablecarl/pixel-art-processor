@@ -215,7 +215,7 @@ export function makeTileGridSelectionToolState(
     )
   }
 
-  function commit(mode: BlendMode) {
+  function commit() {
     if (!selection) return
 
     const originalSheetDrawRects = selection.getOriginalSheetDrawRects()
@@ -342,7 +342,7 @@ export function makeTileGridSelectionToolState(
     const sel = selection
     if (!sel) return
 
-    commit(store.selectMoveBlendMode)
+    commit()
     const existing = sel.getCurrentGridRects()
     const all = mergeSelectionRects(existing, newGridRects)
 
@@ -353,7 +353,7 @@ export function makeTileGridSelectionToolState(
     const sel = selection
     if (!sel) return
 
-    commit(store.selectMoveBlendMode)
+    commit()
     const existing = sel.getCurrentGridRects()
     const all = subtractSelectionRects(existing, newGridRects)
 

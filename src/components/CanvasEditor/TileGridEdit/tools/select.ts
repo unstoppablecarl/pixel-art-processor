@@ -40,7 +40,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
         if (!ts.gridPointInSelection(x, y)) {
           if (ts.selectionHasMoved()) {
-            ts.commit(store.selectMoveBlendMode)
+            ts.commit()
           } else {
             ts.clearSelection()
             gridRenderer.queueRenderGrid()
@@ -58,7 +58,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
         if (!ts.tilePointInSelection(x, y, tileId)) {
           if (ts.selectionHasMoved()) {
-            ts.commit(store.selectMoveBlendMode)
+            ts.commit()
           }
           return
         }
