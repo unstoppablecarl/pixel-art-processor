@@ -2,7 +2,12 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { GridOriginTileAlignedRect, SelectionRect, TileOriginTileAlignedRect } from '../lib/ISelection.ts'
+import type {
+  DrawRect,
+  GridOriginTileAlignedRect,
+  SelectionRect,
+  TileOriginTileAlignedRect,
+} from '../lib/ISelection.ts'
 import type { TileSheet } from './TileSheet.ts'
 
 export type TileGridGeometry = ReturnType<typeof makeTileGridGeometry>
@@ -112,6 +117,35 @@ export function makeTileGridGeometry(
   ) {
     const alignedRects = gridRectsToTileAlignedRects(rects, originX, originY)
     return alignedRects.flatMap(r => gridOriginTileAlignedRectToGridRects(r, originX, originY))
+  }
+
+  function gridRectsToDuplicatedGridDrawRects(
+    rects: SelectionRect[],
+    originX: number,
+    originY: number,
+  ): DrawRect[] {
+    const aligned = gridRectsToTileAlignedRects(rects, originX, originY)
+
+    const out: DrawRect[] = []
+    for (const r of aligned) {
+      const localX = originX + r.gridSelectionX
+      const localY = originY + r.gridSelectionY
+      tileGrid.mapWithTileId(r.tileId, (gx, gy) => {
+        const tileOriginX = gx * tileSize
+        const tileOriginY = gy * tileSize
+        out.push({
+          dx: tileOriginX + (localX % tileSize),
+          dy: tileOriginY + (localY % tileSize),
+          sx: r.bufferX,
+          sy: r.bufferY,
+          w: r.w,
+          h: r.h,
+          mask: r.mask ?? undefined,
+          tileId: r.tileId,
+        })
+      })
+    }
+    return out
   }
 
   function tileRectsToTileAlignedRects(
@@ -231,6 +265,7 @@ export function makeTileGridGeometry(
     tileRectsToTileAlignedRects,
     gridOriginTileAlignedRectToGridRects,
     tileOriginTileAlignedRectToGridRects,
+    gridRectsToDuplicatedGridDrawRects,
     tileRectsToDuplicatedGridRects,
     gridRectsToDuplicatedGridRects,
     gridPixelToGridTile,

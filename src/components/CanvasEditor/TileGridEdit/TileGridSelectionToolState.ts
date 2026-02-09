@@ -73,44 +73,6 @@ export function makeTileGridSelectionToolState(
     return new GridOriginSelection(selectionRects, pixels, state.tileGridGeometry)
   }
 
-  function makeTileOriginSelectionFromTileRect(
-    selectionRects: SelectionRect[],
-    tileId: TileId,
-  ): ISelection {
-    const tileAlignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(
-      tileId,
-      selectionRects,
-      0,
-      0,
-    )
-
-    const sheetBounds = getRectsBounds(
-      tileAlignedRects.map(r => ({
-        x: r.sx,
-        y: r.sy,
-        w: r.w,
-        h: r.h,
-      })),
-    )
-
-    const pixels = state.tileSheet.extractImageData(sheetBounds)
-
-    const clippedSelectionRects: SelectionRect[] = tileAlignedRects.map(r => ({
-      x: r.tileSelectionX,
-      y: r.tileSelectionY,
-      w: r.w,
-      h: r.h,
-      mask: r.mask,
-    }))
-
-    return new TileOriginSelection(
-      clippedSelectionRects,
-      pixels,
-      tileId,
-      state.tileGridGeometry,
-    )
-  }
-
   function makeSelectionFromInput(): ISelection | null {
     if (!inputSpace) return null
     const selectRect = currentNormalizedRect()
@@ -118,7 +80,11 @@ export function makeTileGridSelectionToolState(
 
     const rects = [selectRect as SelectionRect]
     if (inputSpace === CanvasType.TILE) {
-      return makeTileOriginSelectionFromTileRect(rects, inputTileId!)
+      return new TileOriginSelection(
+        rects,
+        inputTileId!,
+        state.tileGridGeometry,
+      )
     }
 
     if (inputSpace === CanvasType.GRID) {
@@ -295,38 +261,8 @@ export function makeTileGridSelectionToolState(
     const { rect, mask } = result
 
     if (isTile) {
-      const originX = rect.x
-      const originY = rect.y
-
-      const tileAlignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(
-        tileId!,
-        [{ ...rect, mask }],
-        originX,
-        originY,
-      )
-
-      const sheetBounds = getRectsBounds(
-        tileAlignedRects.map(r => ({
-          x: r.sx,
-          y: r.sy,
-          w: r.w,
-          h: r.h,
-        })),
-      )
-
-      const pixels = state.tileSheet.extractImageData(sheetBounds)
-
-      const clippedSelectionRects: SelectionRect[] = tileAlignedRects.map(r => ({
-        x: r.tileSelectionX,
-        y: r.tileSelectionY,
-        w: r.w,
-        h: r.h,
-        mask: r.mask,
-      }))
-
       selection = new TileOriginSelection(
-        clippedSelectionRects,
-        pixels,
+        [{ ...rect, mask }],
         tileId!,
         state.tileGridGeometry,
       )
@@ -373,11 +309,10 @@ export function makeTileGridSelectionToolState(
     if (inputSpace === CanvasType.TILE && inputTileId != null) {
       const tileRects = selection.getCurrentTileRects(inputTileId)
       if (tileRects.length === 0) return
-
-      const rects = selection.getCurrentTileRects(inputTileId)
-      selection = makeTileOriginSelectionFromTileRect(
-        rects,
+      selection = new TileOriginSelection(
+        tileRects,
         inputTileId,
+        state.tileGridGeometry,
       )
     }
   }

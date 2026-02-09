@@ -1,4 +1,4 @@
-import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
+import { getRectsBounds } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { sliceMask } from '../data/TileGridGeometry.ts'
 
@@ -50,26 +50,17 @@ export interface DrawRect {
 }
 
 export interface ISelection {
-  getOriginalSheetBounds(): Rect
-  getCurrentSheetBounds(): Rect
-
   getOriginalTileAlignedRects(): (TileOriginTileAlignedRect | GridOriginTileAlignedRect)[]
   getCurrentTileAlignedRects(): (TileOriginTileAlignedRect | GridOriginTileAlignedRect)[]
 
   getOriginalSheetDrawRects(): DrawRect[]
   getCurrentSheetDrawRects(): DrawRect[]
 
-  getOriginalTileBounds(): Rect
-  getCurrentTileBounds(): Rect
-
   getOriginalTileRects(tileId: TileId): SelectionRect[]
   getCurrentTileRects(tileId: TileId): SelectionRect[]
 
   getOriginalTileDrawRects(tileId: TileId): DrawRect[]
   getCurrentTileDrawRects(tileId: TileId): DrawRect[]
-
-  getOriginalGridBounds(): Rect
-  getCurrentGridBounds(): Rect
 
   getOriginalGridRects(): SelectionRect[]
   getCurrentGridRects(): SelectionRect[]
