@@ -6,9 +6,9 @@ import type { DrawRect, ISelection, SelectionRect, TileAlignedRect } from './ISe
 export class GridOriginSelection implements ISelection {
   private originalRects: SelectionRect[]
   private currentRects: SelectionRect[]
+  private originalRectsBounds: Rect
   private moved = false
 
-  private originalRectBounds: Rect
   pixels: ImageData
 
   constructor(
@@ -18,7 +18,7 @@ export class GridOriginSelection implements ISelection {
   ) {
     this.originalRects = rects
     this.currentRects = rects.map(r => ({ ...r }))
-    this.originalRectBounds = getRectsBounds(rects)
+    this.originalRectsBounds = getRectsBounds(rects)
     this.pixels = pixels
   }
 
@@ -31,7 +31,7 @@ export class GridOriginSelection implements ISelection {
   }
 
   getOriginalGridBounds(): Rect {
-    return this.originalRectBounds
+    return this.originalRectsBounds
   }
 
   getCurrentGridBounds(): Rect {
@@ -57,8 +57,8 @@ export class GridOriginSelection implements ISelection {
   getOriginalTileAlignedRects(): TileAlignedRect[] {
     return this.tileAlignedFrom(
       this.originalRects,
-      this.originalRectBounds.x,
-      this.originalRectBounds.y,
+      this.originalRectsBounds.x,
+      this.originalRectsBounds.y,
     )
   }
 
@@ -102,8 +102,8 @@ export class GridOriginSelection implements ISelection {
   getOriginalSheetDrawRects(): DrawRect[] {
     return this.sheetDrawRectsFor(
       this.originalRects,
-      this.originalRectBounds.x,
-      this.originalRectBounds.y,
+      this.originalRectsBounds.x,
+      this.originalRectsBounds.y,
     )
   }
 
@@ -153,8 +153,8 @@ export class GridOriginSelection implements ISelection {
   getOriginalGridDrawRects(): DrawRect[] {
     return this.gridDrawRectsFor(
       this.originalRects,
-      this.originalRectBounds.x,
-      this.originalRectBounds.y,
+      this.originalRectsBounds.x,
+      this.originalRectsBounds.y,
     )
   }
 
