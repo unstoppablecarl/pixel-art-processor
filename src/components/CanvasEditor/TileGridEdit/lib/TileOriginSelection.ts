@@ -39,6 +39,10 @@ export class TileOriginSelection implements ISelection {
     return this.gridRectsFrom(this.getCurrentTileAlignedRects())
   }
 
+  private gridRectsFrom(rects: TileAlignedRect[]): SelectionRect[] {
+    return rects.flatMap(r => this.geometry.tileAlignedRectToGridRects(r))
+  }
+
   // --- Tile Aligned Rects ---
   private tileAlignedFrom(rects: SelectionRect[], originX: number, originY: number): TileAlignedRect[] {
     const { x: tsx, y: tsy } = this.geometry.tileSheet.getTileRect(this.tileId)
@@ -78,8 +82,8 @@ export class TileOriginSelection implements ISelection {
     return this.sheetBoundsFrom(this.getCurrentTileAlignedRects())
   }
 
-  private sheetDrawRectsFor(tileRects: TileAlignedRect[]): DrawRect[] {
-    return tileRects.map(r => ({
+  private sheetDrawRectsFor(rects: TileAlignedRect[]): DrawRect[] {
+    return rects.map(r => ({
       dx: r.sx,
       dy: r.sy,
       sx: r.bufferX,
@@ -175,10 +179,5 @@ export class TileOriginSelection implements ISelection {
 
   getOverlappingTileIds(): TileId[] {
     return [this.tileId]
-  }
-
-  // Class-specific internal helper
-  private gridRectsFrom(rects: TileAlignedRect[]): SelectionRect[] {
-    return rects.flatMap(r => this.geometry.tileAlignedRectToGridRects(r))
   }
 }
