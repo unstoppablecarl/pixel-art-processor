@@ -19,6 +19,7 @@ export function trimRectBounds(target: Rect, trimTo: Rect): Rect {
 }
 
 export function getRectsBounds(rects: Rect[]): Rect {
+  if (rects.length === 1) return { ...rects[0] }
   let minX = Infinity, minY = Infinity
   let maxX = -Infinity, maxY = -Infinity
 
