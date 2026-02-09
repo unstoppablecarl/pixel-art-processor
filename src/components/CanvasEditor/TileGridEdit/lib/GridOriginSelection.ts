@@ -65,8 +65,8 @@ export class GridOriginSelection implements ISelection {
     return this.sheetBoundsFrom(this.getCurrentTileAlignedRects())
   }
 
-  private sheetDrawRectsFor(rects: SelectionRect[], originX: number, originY: number): DrawRect[] {
-    return this.tileAlignedFrom(rects, originX, originY).map(r => ({
+  private sheetDrawRectsFor(rects: TileAlignedRect[]): DrawRect[] {
+    return rects.map(r => ({
       dx: r.sx,
       dy: r.sy,
       sx: r.bufferX,
@@ -79,12 +79,11 @@ export class GridOriginSelection implements ISelection {
   }
 
   getOriginalSheetDrawRects(): DrawRect[] {
-    return this.sheetDrawRectsFor(this.originalRects, this.originalRectsBounds.x, this.originalRectsBounds.y)
+    return this.sheetDrawRectsFor(this.getOriginalTileAlignedRects())
   }
 
   getCurrentSheetDrawRects(): DrawRect[] {
-    const b = this.getCurrentGridBounds()
-    return this.sheetDrawRectsFor(this.currentRects, b.x, b.y)
+    return this.sheetDrawRectsFor(this.getCurrentTileAlignedRects())
   }
 
   // --- Grid Draw Rects ---
@@ -100,7 +99,12 @@ export class GridOriginSelection implements ISelection {
         out.push({
           dx: tileOriginX + (localX % this.geometry.tileSize),
           dy: tileOriginY + (localY % this.geometry.tileSize),
-          sx: r.bufferX, sy: r.bufferY, w: r.w, h: r.h, mask: r.mask ?? undefined, tileId: r.tileId,
+          sx: r.bufferX,
+          sy: r.bufferY,
+          w: r.w,
+          h: r.h,
+          mask: r.mask ?? undefined,
+          tileId: r.tileId,
         })
       })
     }
@@ -118,13 +122,15 @@ export class GridOriginSelection implements ISelection {
 
   // --- Tile Bounds & Rects ---
   private tileRectsFor(tileRects: TileAlignedRect[], tileId: TileId): SelectionRect[] {
-    return tileRects.filter(r => r.tileId === tileId).map(r => ({
-      x: r.selectionX,
-      y: r.selectionY,
-      w: r.w,
-      h: r.h,
-      mask: r.mask,
-    }))
+    return tileRects
+      .filter(r => r.tileId === tileId)
+      .map(r => ({
+        x: r.selectionX,
+        y: r.selectionY,
+        w: r.w,
+        h: r.h,
+        mask: r.mask,
+      }))
   }
 
   getOriginalTileRects(tileId: TileId): SelectionRect[] {
@@ -136,7 +142,12 @@ export class GridOriginSelection implements ISelection {
   }
 
   private tileBoundsFrom(tileRects: TileAlignedRect[]): Rect {
-    return getRectsBounds(tileRects.map(r => ({ x: r.selectionX, y: r.selectionY, w: r.w, h: r.h })))
+    return getRectsBounds(tileRects.map(r => ({
+      x: r.selectionX,
+      y: r.selectionY,
+      w: r.w,
+      h: r.h,
+    })))
   }
 
   getOriginalTileBounds(): Rect {
@@ -149,19 +160,21 @@ export class GridOriginSelection implements ISelection {
 
   // --- Tile Draw Rects ---
   private tileDrawRectsFor(tileRects: TileAlignedRect[], tileId: TileId): DrawRect[] {
-    return tileRects.filter(r => r.tileId === tileId).map(r => {
-      const tile = this.geometry.tileSheet.sheetToTileLocal(tileId, r.sx, r.sy)
-      return {
-        dx: tile.x,
-        dy: tile.y,
-        sx: r.bufferX,
-        sy: r.bufferY,
-        w: r.w,
-        h: r.h,
-        mask: r.mask ?? undefined,
-        tileId: r.tileId,
-      }
-    })
+    return tileRects
+      .filter(r => r.tileId === tileId)
+      .map(r => {
+        const tile = this.geometry.tileSheet.sheetToTileLocal(tileId, r.sx, r.sy)
+        return {
+          dx: tile.x,
+          dy: tile.y,
+          sx: r.bufferX,
+          sy: r.bufferY,
+          w: r.w,
+          h: r.h,
+          mask: r.mask ?? undefined,
+          tileId: r.tileId,
+        }
+      })
   }
 
   getOriginalTileDrawRects(tileId: TileId): DrawRect[] {
