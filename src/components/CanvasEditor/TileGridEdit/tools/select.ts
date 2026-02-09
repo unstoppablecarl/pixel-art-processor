@@ -180,9 +180,11 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const { scale } = state
 
       if (!sel) {
-        const r = toolState.currentDraggedRect
-        if (!r) return
-        drawSelectOutline(ctx, scale, r, store.cursorColor)
+        const rects = toolState.currentDraggedRectsGrid
+        if (!rects) return
+        for (const r of rects) {
+          drawSelectOutline(ctx, scale, r, store.cursorColor)
+        }
         return
       }
 
@@ -213,9 +215,8 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       const preview = state.tileSheet.extractTile(tileId)
 
       if (sel.hasMoved()) {
-        for (const r of sel.getOriginalTileAlignedRects()) {
-          if (r.tileId !== tileId) continue
-          clearImageData(preview, r.selectionX, r.selectionY, r.w, r.h, r.mask ?? undefined)
+        for (const r of sel.getOriginalTileDrawRects(tileId)) {
+          clearImageData(preview, r.dx, r.dy, r.w, r.h, r.mask ?? undefined)
         }
       }
       for (const r of sel.getCurrentTileDrawRects(tileId)) {
@@ -247,11 +248,10 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
           )
         }
       } else {
-        if (toolState.inputTileId === tileId) {
-          const r = toolState.currentDraggedRect
-          if (!r) return
-          drawSelectOutline(ctx, scale, r, store.cursorColor)
-        }
+        const r = toolState.currentDraggedRectTile
+        if (!r) return
+        if (r.tileId !== tileId) return
+        drawSelectOutline(ctx, scale, r, store.cursorColor)
       }
     },
   }

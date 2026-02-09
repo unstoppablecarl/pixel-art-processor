@@ -137,5 +137,6 @@ export function makeTileGridRenderer(
     setCurrentToolRenderer(val: CurrentToolRenderer) {
       currentToolRenderer = val
     },
+    updateGridTiles,
   }
 }

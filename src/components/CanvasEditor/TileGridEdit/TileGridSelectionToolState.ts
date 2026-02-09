@@ -2,8 +2,9 @@ import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/s
 import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
 import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode, SelectSubTool } from '../_core-editor-types.ts'
+import { SelectSubTool } from '../_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
+import type { TileRect } from './data/TileSheetHistory.ts'
 import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 import { GridOriginSelection } from './lib/GridOriginSelection.ts'
 import { type ISelection, mergeSelectionRects, type SelectionRect, subtractSelectionRects } from './lib/ISelection.ts'
@@ -67,26 +68,14 @@ export function makeTileGridSelectionToolState(
   }
 
   function makeTileOriginSelectionFromTileRect(
+    selectionRects: SelectionRect[],
     tileId: TileId,
-    bounds: Rect,
-    mask: Uint8Array | null = null,
   ): ISelection {
-    const selectionRect: SelectionRect = {
-      x: bounds.x,
-      y: bounds.y,
-      w: bounds.w,
-      h: bounds.h,
-      mask,
-    }
-
-    const originX = bounds.x
-    const originY = bounds.y
-
     const tileAlignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(
       tileId,
-      [selectionRect],
-      originX,
-      originY,
+      selectionRects,
+      0,
+      0,
     )
 
     const sheetBounds = getRectsBounds(
@@ -121,12 +110,13 @@ export function makeTileGridSelectionToolState(
     const selectRect = currentNormalizedRect()
     if (!selectRect) return null
 
+    const rects = [selectRect as SelectionRect]
     if (inputSpace === CanvasType.TILE) {
-      return makeTileOriginSelectionFromTileRect(inputTileId!, selectRect)
+      return makeTileOriginSelectionFromTileRect(rects, inputTileId!)
     }
 
     if (inputSpace === CanvasType.GRID) {
-      return makeGridOriginSelection([selectRect] as SelectionRect[])
+      return makeGridOriginSelection(rects)
     }
 
     throw new Error('invalid inputSpace: ' + inputSpace)
@@ -218,6 +208,7 @@ export function makeTileGridSelectionToolState(
   function commit() {
     if (!selection) return
 
+    const mode = store.selectMoveBlendMode
     const originalSheetDrawRects = selection.getOriginalSheetDrawRects()
     const currentSheetDrawRects = selection.getCurrentSheetDrawRects()
     const pixels = selection.pixels
@@ -243,8 +234,8 @@ export function makeTileGridSelectionToolState(
         )
       }
     })
+    gridRenderer.updateGridTiles()
     dragging = false
-    clearSelection()
   }
 
   function clearSelection() {
@@ -360,6 +351,45 @@ export function makeTileGridSelectionToolState(
     selection = makeGridOriginSelection(all)
   }
 
+  function rebuildSelectionAfterCommit() {
+    if (!selection) return
+
+    if (inputSpace === CanvasType.GRID) {
+      const rects = selection.getCurrentGridRects()
+      if (rects.length === 0) return
+      selection = makeGridOriginSelection(rects)
+      return
+    }
+
+    if (inputSpace === CanvasType.TILE && inputTileId != null) {
+      const tileRects = selection.getCurrentTileRects(inputTileId)
+      if (tileRects.length === 0) return
+
+      const rects = selection.getCurrentTileRects(inputTileId)
+      selection = makeTileOriginSelectionFromTileRect(
+        rects,
+        inputTileId,
+      )
+    }
+  }
+
+  function dragEnd() {
+    if (!selection) {
+      dragging = false
+      return
+    }
+
+    if (!selection.hasMoved()) {
+      dragging = false
+      return
+    }
+
+    commit()
+    rebuildSelectionAfterCommit()
+    drawAffectedTiles()
+    dragging = false
+  }
+
   return {
     get inputTileId() {
       return inputTileId
@@ -369,8 +399,36 @@ export function makeTileGridSelectionToolState(
       return inputSpace === CanvasType.TILE
     },
 
-    get currentDraggedRect(): Rect | null {
-      return currentNormalizedRect()
+    get currentDraggedRectsGrid(): Rect[] | null {
+      const rect = currentNormalizedRect()
+      if (!rect) return null
+      if (inputTileId) {
+        const selectionRect = { ...rect, mask: null }
+        const alignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(inputTileId, [selectionRect], 0, 0)
+        return state.tileGridGeometry.tileAlignedRectToGridRects(alignedRects[0])
+      }
+
+      return [rect]
+    },
+
+    get currentDraggedRectTile(): TileRect | null {
+      const r = currentNormalizedRect()
+      if (!r) return null
+
+      if (inputTileId) {
+        return { ...r, tileId: inputTileId }
+      }
+
+      const t = state.tileGridGeometry.gridPixelToTilePixel(r.x, r.y)
+      if (!t) return null
+      const { tileId, tx, ty } = t
+      return {
+        tileId,
+        x: tx,
+        y: ty,
+        w: r.w,
+        h: r.h,
+      }
     },
 
     get selection() {
@@ -397,9 +455,7 @@ export function makeTileGridSelectionToolState(
     subtractFromSelection,
     gridDragStart,
     tileDragStart,
-    dragEnd() {
-      dragging = false
-    },
+    dragEnd,
 
     moveSelectionOnGrid,
     moveSelectionOnTile,
