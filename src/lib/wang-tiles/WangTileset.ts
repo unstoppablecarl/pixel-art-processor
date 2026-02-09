@@ -5,6 +5,7 @@ export type TileId = string & { readonly __tileId: unique symbol };
 export interface WangTile<T> {
   readonly id: TileId;
   readonly index: number,
+  readonly edgesId: string,
   readonly edges: DirectionSet<T>;
 }
 
@@ -12,6 +13,7 @@ export function populateIndexedWangTile<T>(tile: WangTile<number>, values: T[]):
   return {
     id: tile.id,
     index: tile.index,
+    edgesId: tile.edgesId,
     edges: {
       N: values[tile.edges.N],
       E: values[tile.edges.E],
@@ -24,6 +26,8 @@ export function populateIndexedWangTile<T>(tile: WangTile<number>, values: T[]):
 export class WangTileset<T> {
   readonly tiles: readonly WangTile<T>[]
   readonly byId: ReadonlyMap<TileId, WangTile<T>>
+  readonly byEdgesId: ReadonlyMap<string, WangTile<T>>
+
   private byEdgeValue: Map<T, readonly WangTile<T>[]> | undefined
 
   private _edgeValues: T[] | undefined
@@ -34,10 +38,12 @@ export class WangTileset<T> {
       for (let E = 0; E < colors.length; E++) {
         for (let S = 0; S < colors.length; S++) {
           for (let W = 0; W < colors.length; W++) {
-            const id = `tile-${N}-${E}-${S}-${W}`
+            const index = tiles.length
+
             tiles.push({
-              id: id as TileId,
-              index: tiles.length,
+              id: makeTileId(index),
+              edgesId: makeEdgesId(N, E, S, W),
+              index,
               edges: {
                 N: colors[N],
                 E: colors[E],
@@ -74,10 +80,11 @@ export class WangTileset<T> {
             const iS = eligibleForS[S].edgeValue
             const iW = eligibleForW[W].edgeValue
 
-            const id = `tile-${iN}-${iE}-${iS}-${iW}`
+            const index = tiles.length
             tiles.push({
-              id: id as TileId,
-              index: tiles.length,
+              id: makeTileId(index),
+              edgesId: makeEdgesId<T>(iN, iE, iS, iW),
+              index,
               edges: {
                 N: iN,
                 E: iE,
@@ -96,6 +103,7 @@ export class WangTileset<T> {
   constructor(tiles: WangTile<T>[]) {
     this.tiles = tiles
     this.byId = new Map(tiles.map(t => [t.id, t] as const))
+    this.byEdgesId = new Map(tiles.map(t => [t.edgesId, t] as const))
   }
 
   buildEdgeIndex() {
@@ -190,12 +198,17 @@ export function makeAxialEdgeWangTileset(
       for (const S of vertical) {
         for (const W of horizontal) {
 
-          const id = `tile-${N}-${E}-${S}-${W}` as TileId
+          const index = tiles.length
 
           tiles.push({
-            id,
-            index: tiles.length,
-            edges: { N, E, S, W },
+            id: makeTileId(index),
+            edgesId: makeEdgesId(N, E, S, W),
+            index,
+            edges:
+              {
+                N, E, S, W,
+              }
+            ,
           })
         }
       }
@@ -219,3 +232,11 @@ export const oppositeEdge: Record<Direction, Direction> = {
   E: 'W' as Direction,
   W: 'E' as Direction,
 } as const
+
+export function makeTileId(index: number) {
+  return 'tile-' + index as TileId
+}
+
+export function makeEdgesId<T = number>(N: T, E: T, S: T, W: T) {
+  return `tile-${N}-${E}-${S}-${W}`
+}

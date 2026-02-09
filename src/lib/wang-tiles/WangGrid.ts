@@ -2,7 +2,7 @@ import type { Point } from '../node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../util/data/Rect.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
-import { AxialEdgeWangTileset, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
+import { AxialEdgeWangTileset, makeEdgesId, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
 
 export type OverlappingTile<T> = {
   tile: WangTile<T>,
@@ -342,9 +342,9 @@ export function makeAxialEdgeWangGrid<T>(
     for (let x = 0; x < baseWidth; x++) {
       const { top: W, bottom: E } = horizontalPairs[x]
 
-      const id = `tile-${N}-${E}-${S}-${W}` as TileId
-      const tile = tileset.byId.get(id)
-      if (!tile) throw new Error(`Missing tile ${id}`)
+      const edgesId = makeEdgesId<T>(N, E, S, W)
+      const tile = tileset.byEdgesId.get(edgesId)
+      if (!tile) throw new Error(`Missing tile with edgesId ${edgesId}`)
 
       const gx = wrapEdges ? x + 1 : x
       const gy = wrapEdges ? y + 1 : y
