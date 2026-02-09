@@ -252,8 +252,27 @@ export function makeTileGridSelectionToolState(
         store.selectFloodContiguous,
         store.selectFloodTolerance,
       )
+
       if (!result) return
       selection = makeGridOriginSelection([result.selectionRect])
+    }
+
+    if (canvasType === CanvasType.TILE) {
+      const imageData = state.tileSheet.extractTile(tileId!)
+      const result = floodFillImageDataSelection(
+        imageData,
+        x,
+        y,
+        store.selectFloodContiguous,
+        store.selectFloodTolerance,
+      )
+      if (!result) return
+
+      selection = new TileOriginSelection(
+        [result.selectionRect],
+        tileId!,
+        state.tileGridGeometry,
+      )
     }
 
     selecting = false

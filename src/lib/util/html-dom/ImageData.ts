@@ -539,15 +539,27 @@ export function floodFillImageDataSelection(
   startY: number,
   contiguous = true,
   tolerance = 0,
+  bounds?: Rect,
 ): FloodFillResult | null {
   if (!img) return null
 
   const w = img.width
   const h = img.height
 
+  // Define the effective search area
+  const limit = bounds || { x: 0, y: 0, w, h }
+  const xMinLimit = Math.max(0, limit.x)
+  const xMaxLimit = Math.min(w - 1, limit.x + limit.w - 1)
+  const yMinLimit = Math.max(0, limit.y)
+  const yMaxLimit = Math.min(h - 1, limit.y + limit.h - 1)
+
+  // Early exit if start point is outside the provided bounds
+  if (startX < xMinLimit || startX > xMaxLimit || startY < yMinLimit || startY > yMaxLimit) {
+    return null
+  }
+
   const visited = new Uint8Array(w * h)
   const queue: [number, number][] = []
-
   const baseColor = getImageDataPixelColor(img, startX, startY)
 
   queue.push([startX, startY])
@@ -558,36 +570,36 @@ export function floodFillImageDataSelection(
 
   const matches: [number, number][] = []
 
-  while (queue.length) {
-    const [x, y] = queue.pop()!
-    matches.push([x, y])
+  if (contiguous) {
+    while (queue.length) {
+      const [x, y] = queue.pop()!
+      matches.push([x, y])
 
-    if (x < minX) minX = x
-    if (x > maxX) maxX = x
-    if (y < minY) minY = y
-    if (y > maxY) maxY = y
+      if (x < minX) minX = x
+      if (x > maxX) maxX = x
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
 
-    const neighbors = contiguous
-      ? [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
-      : []
+      const neighbors = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
 
-    for (const [nx, ny] of neighbors) {
-      if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue
-      const idx = ny * w + nx
-      if (visited[idx]) continue
+      for (const [nx, ny] of neighbors) {
+        // Check against the calculated limits instead of just image dimensions
+        if (nx < xMinLimit || ny < yMinLimit || nx > xMaxLimit || ny > yMaxLimit) continue
 
-      const c = getImageDataPixelColor(img, nx, ny)
-      if (colorDistance(c, baseColor) <= tolerance) {
-        visited[idx] = 1
-        queue.push([nx, ny])
+        const idx = ny * w + nx
+        if (visited[idx]) continue
+
+        const c = getImageDataPixelColor(img, nx, ny)
+        if (colorDistance(c, baseColor) <= tolerance) {
+          visited[idx] = 1
+          queue.push([nx, ny])
+        }
       }
     }
-  }
-
-  // Non-contiguous mode: scan entire image
-  if (!contiguous) {
-    for (let y = 0; y < h; y++) {
-      for (let x = 0; x < w; x++) {
+  } else {
+    // Non-contiguous mode: scan only within the limits
+    for (let y = yMinLimit; y <= yMaxLimit; y++) {
+      for (let x = xMinLimit; x <= xMaxLimit; x++) {
         const c = getImageDataPixelColor(img, x, y)
         if (colorDistance(c, baseColor) <= tolerance) {
           matches.push([x, y])
@@ -609,12 +621,10 @@ export function floodFillImageDataSelection(
     h: maxY - minY + 1,
   }
 
+  // Final safety trim against image dimensions
   trimRectBounds(rect, { x: 0, y: 0, w, h })
 
-  // Extract pixel buffer for the bounding rect
   const pixels = extractImageData(img, rect.x, rect.y, rect.w, rect.h)
-
-  // Build mask inside the rect
   const mask = new Uint8Array(rect.w * rect.h)
 
   for (const [x, y] of matches) {

@@ -32,7 +32,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       if (canvasType === CanvasType.GRID) {
         if (!sel) {
           if (ts.inFloodMode()) {
-            ts.finalizeFloodSelection(x, y, CanvasType.GRID, null)
+            ts.finalizeFloodSelection(x, y, CanvasType.GRID)
             gridRenderer.queueRenderGrid()
           }
           return
@@ -56,13 +56,15 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       if (canvasType === CanvasType.TILE) {
         if (!tileId) throw new Error('tileId required')
 
-        if (!ts.tilePointInSelection(x, y, tileId)) {
+        if (ts.tilePointInSelection(x, y, tileId)) {
           ts.clearSelection()
+          return
         }
+        ts.clearSelection()
 
         if (ts.inFloodMode()) {
           ts.finalizeFloodSelection(x, y, CanvasType.TILE, tileId)
-          gridRenderer.queueRenderGrid()
+          gridRenderer.queueRenderTile(tileId)
         } else {
           gridRenderer.queueRenderGrid()
         }
