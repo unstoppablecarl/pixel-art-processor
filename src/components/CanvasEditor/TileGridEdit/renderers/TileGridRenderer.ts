@@ -81,7 +81,6 @@ export function makeTileGridRenderer(
   function updateGridTiles() {
     tileGridImageDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
     tileSync(state.tileSheet, (tileId) => {
-      console.log('update', tileId)
       state.tileGrid.eachWithTileId(tileId, (tileX, tileY, tile) => {
         const tileId = tile.id
         const { gx, gy } = state.tileGridGeometry.gridTileToGridPixel(tileX, tileY)
