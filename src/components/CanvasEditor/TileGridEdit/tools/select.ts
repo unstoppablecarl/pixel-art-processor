@@ -58,7 +58,6 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
         if (!ts.tilePointInSelection(x, y, tileId)) {
           ts.clearSelection()
-          return
         }
 
         if (ts.inFloodMode()) {

@@ -1,4 +1,5 @@
 import { markRaw, type Raw } from 'vue'
+import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 import { colorDistance } from '../color.ts'
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
@@ -528,9 +529,8 @@ export function makeReusableImageData() {
 export type FloodFillResult = {
   startX: number,
   startY: number,
-  rect: Rect
+  selectionRect: SelectionRect
   pixels: ImageData
-  mask: Uint8Array   // length = rect.w * rect.h
 }
 
 export function floodFillImageDataSelection(
@@ -623,7 +623,7 @@ export function floodFillImageDataSelection(
     mask[my * rect.w + mx] = 1
   }
 
-  return { startX, startY, rect, pixels, mask }
+  return { startX, startY, selectionRect: { ...rect, mask }, pixels }
 }
 
 // array of 1 | 0 values. 1 is selected in the mask

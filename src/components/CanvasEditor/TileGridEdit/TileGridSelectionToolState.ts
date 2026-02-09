@@ -240,34 +240,20 @@ export function makeTileGridSelectionToolState(
     canvasType: CanvasType,
     tileId: TileId | null = null,
   ) {
-    const isTile = tileId !== null
     inputSpace = canvasType
     inputTileId = tileId
 
-    const imageData = isTile
-      ? state.tileSheet.imageData
-      : gridRenderer.tileGridImageDataRef.get()!
-
-    const result = floodFillImageDataSelection(
-      imageData,
-      x,
-      y,
-      store.selectFloodContiguous,
-      store.selectFloodTolerance,
-    )
-
-    if (!result) return
-
-    const { rect, mask } = result
-
-    if (isTile) {
-      selection = new TileOriginSelection(
-        [{ ...rect, mask }],
-        tileId!,
-        state.tileGridGeometry,
+    if (canvasType === CanvasType.GRID) {
+      const imageData = gridRenderer.tileGridImageDataRef.get()!
+      const result = floodFillImageDataSelection(
+        imageData,
+        x,
+        y,
+        store.selectFloodContiguous,
+        store.selectFloodTolerance,
       )
-    } else {
-      selection = makeGridOriginSelection([{ ...rect, mask }])
+      if (!result) return
+      selection = makeGridOriginSelection([result.selectionRect])
     }
 
     selecting = false
