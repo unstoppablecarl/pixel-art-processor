@@ -17,10 +17,6 @@ export type TileAlignedRect = {
   sx: number,
   sy: number,
 
-  // selection space
-  selectionX: number
-  selectionY: number
-
   // all spaces
   w: number
   h: number
@@ -29,6 +25,16 @@ export type TileAlignedRect = {
   bufferX: number
   bufferY: number
   mask: Uint8Array | null
+}
+
+export type TileOriginTileAlignedRect = TileAlignedRect & {
+  tileSelectionX: number
+  tileSelectionY: number
+}
+
+export type GridOriginTileAlignedRect = TileAlignedRect & {
+  gridSelectionX: number
+  gridSelectionY: number
 }
 
 export interface DrawRect {
@@ -47,8 +53,8 @@ export interface ISelection {
   getOriginalSheetBounds(): Rect
   getCurrentSheetBounds(): Rect
 
-  getOriginalTileAlignedRects(): TileAlignedRect[]
-  getCurrentTileAlignedRects(): TileAlignedRect[]
+  getOriginalTileAlignedRects(): (TileOriginTileAlignedRect | GridOriginTileAlignedRect)[]
+  getCurrentTileAlignedRects(): (TileOriginTileAlignedRect | GridOriginTileAlignedRect)[]
 
   getOriginalSheetDrawRects(): DrawRect[]
   getCurrentSheetDrawRects(): DrawRect[]
@@ -116,6 +122,7 @@ export function mergeSelectionRects(current: SelectionRect[], adding: SelectionR
 
   return rects
 }
+
 export function subtractSelectionRects(current: SelectionRect[], subtracting: SelectionRect[]): SelectionRect[] {
   let result = [...current]
 
@@ -154,7 +161,7 @@ export function subtractSelectionRects(current: SelectionRect[], subtracting: Se
           y: r.y,
           w: r.w,
           h: iy - r.y,
-          mask: sliceMaskRegion(newMask, r, r.x, r.y, r.w, iy - r.y)
+          mask: sliceMaskRegion(newMask, r, r.x, r.y, r.w, iy - r.y),
         })
       }
 
@@ -164,7 +171,7 @@ export function subtractSelectionRects(current: SelectionRect[], subtracting: Se
           y: iy2,
           w: r.w,
           h: r.y + r.h - iy2,
-          mask: sliceMaskRegion(newMask, r, r.x, iy2, r.w, r.y + r.h - iy2)
+          mask: sliceMaskRegion(newMask, r, r.x, iy2, r.w, r.y + r.h - iy2),
         })
       }
 
@@ -174,7 +181,7 @@ export function subtractSelectionRects(current: SelectionRect[], subtracting: Se
           y: iy,
           w: ix - r.x,
           h: iy2 - iy,
-          mask: sliceMaskRegion(newMask, r, r.x, iy, ix - r.x, iy2 - iy)
+          mask: sliceMaskRegion(newMask, r, r.x, iy, ix - r.x, iy2 - iy),
         })
       }
 
@@ -184,7 +191,7 @@ export function subtractSelectionRects(current: SelectionRect[], subtracting: Se
           y: iy,
           w: r.x + r.w - ix2,
           h: iy2 - iy,
-          mask: sliceMaskRegion(newMask, r, ix2, iy, r.x + r.w - ix2, iy2 - iy)
+          mask: sliceMaskRegion(newMask, r, ix2, iy, r.x + r.w - ix2, iy2 - iy),
         })
       }
 
@@ -244,7 +251,7 @@ function sliceMaskRegion(
   x: number,
   y: number,
   w: number,
-  h: number
+  h: number,
 ): Uint8Array | null {
   return sliceMask(
     mask,
@@ -252,6 +259,6 @@ function sliceMaskRegion(
     y - r.y,
     w,
     h,
-    r.w
+    r.w,
   )
 }

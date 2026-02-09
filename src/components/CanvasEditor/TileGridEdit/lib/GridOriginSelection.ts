@@ -1,7 +1,7 @@
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'
-import type { DrawRect, ISelection, SelectionRect, TileAlignedRect } from './ISelection.ts'
+import type { DrawRect, GridOriginTileAlignedRect, ISelection, SelectionRect } from './ISelection.ts'
 
 export class GridOriginSelection implements ISelection {
   private originalRects: SelectionRect[]
@@ -39,21 +39,21 @@ export class GridOriginSelection implements ISelection {
   }
 
   // --- Tile Aligned Rects ---
-  private tileAlignedFrom(rects: SelectionRect[], originX: number, originY: number): TileAlignedRect[] {
+  private tileAlignedFrom(rects: SelectionRect[], originX: number, originY: number): GridOriginTileAlignedRect[] {
     return this.geometry.gridRectsToTileAlignedRects(rects, originX, originY)
   }
 
-  getOriginalTileAlignedRects(): TileAlignedRect[] {
+  getOriginalTileAlignedRects(): GridOriginTileAlignedRect[] {
     return this.tileAlignedFrom(this.originalRects, this.originalRectsBounds.x, this.originalRectsBounds.y)
   }
 
-  getCurrentTileAlignedRects(): TileAlignedRect[] {
+  getCurrentTileAlignedRects(): GridOriginTileAlignedRect[] {
     const b = this.getCurrentGridBounds()
     return this.tileAlignedFrom(this.currentRects, b.x, b.y)
   }
 
   // --- Sheet Bounds & Draw Rects ---
-  private sheetBoundsFrom(tileRects: TileAlignedRect[]): Rect {
+  private sheetBoundsFrom(tileRects: GridOriginTileAlignedRect[]): Rect {
     return getRectsBounds(tileRects.map(r => ({ x: r.sx, y: r.sy, w: r.w, h: r.h })))
   }
 
@@ -65,7 +65,7 @@ export class GridOriginSelection implements ISelection {
     return this.sheetBoundsFrom(this.getCurrentTileAlignedRects())
   }
 
-  private sheetDrawRectsFor(rects: TileAlignedRect[]): DrawRect[] {
+  private sheetDrawRectsFor(rects: GridOriginTileAlignedRect[]): DrawRect[] {
     return rects.map(r => ({
       dx: r.sx,
       dy: r.sy,
@@ -91,8 +91,8 @@ export class GridOriginSelection implements ISelection {
     const aligned = this.tileAlignedFrom(rects, originX, originY)
     const out: DrawRect[] = []
     for (const r of aligned) {
-      const localX = originX + r.selectionX
-      const localY = originY + r.selectionY
+      const localX = originX + r.gridSelectionX
+      const localY = originY + r.gridSelectionY
       this.geometry.tileGrid.mapWithTileId(r.tileId, (gx, gy) => {
         const tileOriginX = gx * this.geometry.tileSize
         const tileOriginY = gy * this.geometry.tileSize
@@ -121,12 +121,12 @@ export class GridOriginSelection implements ISelection {
   }
 
   // --- Tile Bounds & Rects ---
-  private tileRectsFor(tileRects: TileAlignedRect[], tileId: TileId): SelectionRect[] {
+  private tileRectsFor(tileRects: GridOriginTileAlignedRect[], tileId: TileId): SelectionRect[] {
     return tileRects
       .filter(r => r.tileId === tileId)
       .map(r => ({
-        x: r.selectionX,
-        y: r.selectionY,
+        x: r.gridSelectionX,
+        y: r.gridSelectionY,
         w: r.w,
         h: r.h,
         mask: r.mask,
@@ -141,10 +141,10 @@ export class GridOriginSelection implements ISelection {
     return this.tileRectsFor(this.getCurrentTileAlignedRects(), tileId)
   }
 
-  private tileBoundsFrom(tileRects: TileAlignedRect[]): Rect {
+  private tileBoundsFrom(tileRects: GridOriginTileAlignedRect[]): Rect {
     return getRectsBounds(tileRects.map(r => ({
-      x: r.selectionX,
-      y: r.selectionY,
+      x: r.gridSelectionX,
+      y: r.gridSelectionY,
       w: r.w,
       h: r.h,
     })))
@@ -159,7 +159,7 @@ export class GridOriginSelection implements ISelection {
   }
 
   // --- Tile Draw Rects ---
-  private tileDrawRectsFor(tileRects: TileAlignedRect[], tileId: TileId): DrawRect[] {
+  private tileDrawRectsFor(tileRects: GridOriginTileAlignedRect[], tileId: TileId): DrawRect[] {
     return tileRects
       .filter(r => r.tileId === tileId)
       .map(r => {

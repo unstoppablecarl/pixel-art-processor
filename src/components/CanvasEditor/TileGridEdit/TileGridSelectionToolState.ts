@@ -7,7 +7,13 @@ import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileRect } from './data/TileSheetHistory.ts'
 import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 import { GridOriginSelection } from './lib/GridOriginSelection.ts'
-import { type ISelection, mergeSelectionRects, type SelectionRect, subtractSelectionRects } from './lib/ISelection.ts'
+import {
+  type ISelection,
+  mergeSelectionRects,
+  type SelectionRect,
+  subtractSelectionRects,
+  type TileOriginTileAlignedRect,
+} from './lib/ISelection.ts'
 import { TileOriginSelection } from './lib/TileOriginSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
@@ -90,8 +96,8 @@ export function makeTileGridSelectionToolState(
     const pixels = state.tileSheet.extractImageData(sheetBounds)
 
     const clippedSelectionRects: SelectionRect[] = tileAlignedRects.map(r => ({
-      x: r.selectionX,
-      y: r.selectionY,
+      x: r.tileSelectionX,
+      y: r.tileSelectionY,
       w: r.w,
       h: r.h,
       mask: r.mask,
@@ -189,10 +195,13 @@ export function makeTileGridSelectionToolState(
 
   function tilePointInSelection(tx: number, ty: number, tileId: TileId) {
     if (!selection) return false
-    return selection.getCurrentTileAlignedRects().some(r =>
+    if (inputSpace !== CanvasType.TILE) throw new Error('invalid canvas type: ' + inputSpace)
+
+    const rects = selection.getCurrentTileAlignedRects() as TileOriginTileAlignedRect[]
+    return rects.some(r =>
       r.tileId === tileId &&
-      tx >= r.selectionX && tx < r.selectionX + r.w &&
-      ty >= r.selectionY && ty < r.selectionY + r.h,
+      tx >= r.tileSelectionX && tx < r.tileSelectionX + r.w &&
+      ty >= r.tileSelectionY && ty < r.tileSelectionY + r.h,
     )
   }
 
@@ -308,8 +317,8 @@ export function makeTileGridSelectionToolState(
       const pixels = state.tileSheet.extractImageData(sheetBounds)
 
       const clippedSelectionRects: SelectionRect[] = tileAlignedRects.map(r => ({
-        x: r.selectionX,
-        y: r.selectionY,
+        x: r.tileSelectionX,
+        y: r.tileSelectionY,
         w: r.w,
         h: r.h,
         mask: r.mask,
@@ -402,13 +411,13 @@ export function makeTileGridSelectionToolState(
     get currentDraggedRectsGrid(): Rect[] | null {
       const rect = currentNormalizedRect()
       if (!rect) return null
-      if (inputTileId) {
-        const selectionRect = { ...rect, mask: null }
-        const alignedRects = state.tileGridGeometry.tileRectsToTileAlignedRects(inputTileId, [selectionRect], 0, 0)
-        return state.tileGridGeometry.tileAlignedRectToGridRects(alignedRects[0])
-      }
+      const selectionRect = { ...rect, mask: null }
 
-      return [rect]
+      if (inputTileId) {
+        return state.tileGridGeometry.tileRectsToDuplicatedGridRects(inputTileId, [selectionRect], 0, 0)
+      } else {
+        return state.tileGridGeometry.gridRectsToDuplicatedGridRects([selectionRect], 0, 0)
+      }
     },
 
     get currentDraggedRectTile(): TileRect | null {

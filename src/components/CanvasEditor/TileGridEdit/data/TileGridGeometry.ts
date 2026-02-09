@@ -2,7 +2,7 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type { SelectionRect, TileAlignedRect } from '../lib/ISelection.ts'
+import type { GridOriginTileAlignedRect, SelectionRect, TileOriginTileAlignedRect } from '../lib/ISelection.ts'
 import type { TileSheet } from './TileSheet.ts'
 
 export type TileGridGeometry = ReturnType<typeof makeTileGridGeometry>
@@ -48,8 +48,8 @@ export function makeTileGridGeometry(
     rects: SelectionRect[],
     originX: number,
     originY: number,
-  ): TileAlignedRect[] {
-    const out: TileAlignedRect[] = []
+  ): GridOriginTileAlignedRect[] {
+    const out: GridOriginTileAlignedRect[] = []
 
     for (const r of rects) {
       const overlaps = tileGrid.getOverlappingTiles(
@@ -77,8 +77,8 @@ export function makeTileGridGeometry(
           sy: tsy + ty,
 
           // selection space (relative to selection origin)
-          selectionX: gridPixelX - originX,
-          selectionY: gridPixelY - originY,
+          gridSelectionX: gridPixelX - originX,
+          gridSelectionY: gridPixelY - originY,
 
           // shared
           w,
@@ -95,15 +95,34 @@ export function makeTileGridGeometry(
     return out
   }
 
+  function tileRectsToDuplicatedGridRects(
+    tileId: TileId,
+    rects: SelectionRect[],
+    originX: number,
+    originY: number,
+  ) {
+    const alignedRects = tileRectsToTileAlignedRects(tileId, rects, originX, originY)
+    return alignedRects.flatMap(r => tileOriginTileAlignedRectToGridRects(r))
+  }
+
+  function gridRectsToDuplicatedGridRects(
+    rects: SelectionRect[],
+    originX: number,
+    originY: number,
+  ) {
+    const alignedRects = gridRectsToTileAlignedRects(rects, originX, originY)
+    return alignedRects.flatMap(r => gridOriginTileAlignedRectToGridRects(r, originX, originY))
+  }
+
   function tileRectsToTileAlignedRects(
     tileId: TileId,
     rects: SelectionRect[],
     originX: number,
     originY: number,
-  ): TileAlignedRect[] {
+  ): TileOriginTileAlignedRect[] {
     const { x: tileSheetX, y: tileSheetY } = tileSheet.getTileRect(tileId)
 
-    const out: TileAlignedRect[] = []
+    const out: TileOriginTileAlignedRect[] = []
 
     for (const r of rects) {
       const x1 = Math.max(0, r.x)
@@ -122,8 +141,8 @@ export function makeTileGridGeometry(
       const sheetX = tileSheetX + x1
       const sheetY = tileSheetY + y1
 
-      const selectionX = x1 - originX
-      const selectionY = y1 - originY
+      const tileSelectionX = x1 - originX
+      const tileSelectionY = y1 - originY
 
       const bufferX = x1 - originX
       const bufferY = y1 - originY
@@ -136,8 +155,8 @@ export function makeTileGridGeometry(
         sy: sheetY,
 
         // selection space
-        selectionX,
-        selectionY,
+        tileSelectionX,
+        tileSelectionY,
 
         // all spaces
         w,
@@ -153,13 +172,13 @@ export function makeTileGridGeometry(
     return out
   }
 
-  function tileAlignedRectToGridRects(rect: TileAlignedRect): SelectionRect[] {
-    const { tileId, selectionX, selectionY, w, h, mask } = rect
+  function tileOriginTileAlignedRectToGridRects(rect: TileOriginTileAlignedRect): SelectionRect[] {
+    const { tileId, tileSelectionX, tileSelectionY, w, h, mask } = rect
     const results: SelectionRect[] = []
 
     tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
-      const x = gTileX * tileSize + selectionX
-      const y = gTileY * tileSize + selectionY
+      const x = gTileX * tileSize + tileSelectionX
+      const y = gTileY * tileSize + tileSelectionY
 
       results.push({
         x,
@@ -173,36 +192,30 @@ export function makeTileGridGeometry(
     return results
   }
 
-  function selectionRectToTileAlignedRect(
-    rect: SelectionRect,
-    tileId: TileId,
-  ): TileAlignedRect {
-    // rect.x/y are selection‑space inside the tile
-    // rect.w/h are the clipped selection region inside the tile
-    // rect.mask is the selection mask for this clipped region
+  function gridOriginTileAlignedRectToGridRects(
+    rect: GridOriginTileAlignedRect,
+    originX: number,
+    originY: number,
+  ): SelectionRect[] {
+    const { tileId, gridSelectionX, gridSelectionY, w, h, mask } = rect
+    const results: SelectionRect[] = []
+    const t = gridPixelToTilePixel(gridSelectionX, gridSelectionY)
+    if (!t) throw new Error('invalid rect')
 
-    const { x: tileSheetX, y: tileSheetY } = tileSheet.getTileRect(tileId)
+    tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
+      const x = gTileX * tileSize + t.tx + originX
+      const y = gTileY * tileSize + t.ty + originY
 
-    return {
-      tileId,
+      results.push({
+        x,
+        y,
+        w,
+        h,
+        mask,
+      })
+    })
 
-      // sheet space
-      sx: tileSheetX + rect.x,
-      sy: tileSheetY + rect.y,
-
-      // selection space
-      selectionX: rect.x,
-      selectionY: rect.y,
-
-      // all spaces
-      w: rect.w,
-      h: rect.h,
-
-      // pixel buffer space
-      bufferX: rect.x,
-      bufferY: rect.y,
-      mask: rect.mask,
-    }
+    return results
   }
 
   function getOverlappingTilesOnGrid(rect: Rect) {
@@ -213,10 +226,13 @@ export function makeTileGridGeometry(
     tileSize,
     tileSheet,
     tileGrid,
-    tileAlignedRectToGridRects,
+    // tileAlignedRectToGridRects,
     gridRectsToTileAlignedRects,
     tileRectsToTileAlignedRects,
-    selectionRectToTileAlignedRect,
+    gridOriginTileAlignedRectToGridRects,
+    tileOriginTileAlignedRectToGridRects,
+    tileRectsToDuplicatedGridRects,
+    gridRectsToDuplicatedGridRects,
     gridPixelToGridTile,
     gridPixelToTilePixel,
     gridPixelToSheetPixel,
