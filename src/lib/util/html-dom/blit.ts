@@ -7,6 +7,10 @@ export type BlendFn = {
 
 const blendCache = new Map<BlendFn, ByteBlendAdapter>()
 
+// Reusable scratch objects to prevent Garbage Collection pressure
+const SRC_SCRATCH = { r: 0, g: 0, b: 0, a: 0 } as RGBAFloat
+const DST_SCRATCH = { r: 0, g: 0, b: 0, a: 0 } as RGBAFloat
+
 export function getBlendAdapter(fn: BlendFn) {
   let cached = blendCache.get(fn)
   if (cached === undefined) {
@@ -18,6 +22,9 @@ export function getBlendAdapter(fn: BlendFn) {
 
 export type ByteBlendAdapter = ReturnType<typeof makeByteBlendAdapter>
 
+/**
+ * High-performance adapter that avoids object allocation in the inner loop.
+ */
 export function makeByteBlendAdapter(blend: BlendFn) {
   return (
     srcData: Uint8ClampedArray,
@@ -25,44 +32,45 @@ export function makeByteBlendAdapter(blend: BlendFn) {
     si: number,
     di: number,
   ) => {
-    const src = {
-      r: srcData[si] / 255,
-      g: srcData[si + 1] / 255,
-      b: srcData[si + 2] / 255,
-      a: srcData[si + 3] / 255,
-    } as RGBAFloat
+    // Inject values into persistent scratch objects instead of creating new ones
+    SRC_SCRATCH.r = srcData[si] / 255
+    SRC_SCRATCH.g = srcData[si + 1] / 255
+    SRC_SCRATCH.b = srcData[si + 2] / 255
+    SRC_SCRATCH.a = srcData[si + 3] / 255
 
-    const dst = {
-      r: dstData[di] / 255,
-      g: dstData[di + 1] / 255,
-      b: dstData[di + 2] / 255,
-      a: dstData[di + 3] / 255,
-    } as RGBAFloat
+    DST_SCRATCH.r = dstData[di] / 255
+    DST_SCRATCH.g = dstData[di + 1] / 255
+    DST_SCRATCH.b = dstData[di + 2] / 255
+    DST_SCRATCH.a = dstData[di + 3] / 255
 
-    const out = blend(src, dst)
+    const out = blend(SRC_SCRATCH, DST_SCRATCH)
 
-    dstData[di] = Math.round(out.r * 255)
-    dstData[di + 1] = Math.round(out.g * 255)
-    dstData[di + 2] = Math.round(out.b * 255)
-    dstData[di + 3] = Math.round(out.a * 255)
+    // Bitwise OR 0 is a faster way to truncate to integer than Math.round/floor
+    dstData[di] = (out.r * 255 + 0.5) | 0
+    dstData[di + 1] = (out.g * 255 + 0.5) | 0
+    dstData[di + 2] = (out.b * 255 + 0.5) | 0
+    dstData[di + 3] = (out.a * 255 + 0.5) | 0
   }
 }
 
 export const blendSourceAlphaOver = (alpha: number): BlendFn => (src, dst) => {
   if (src.a === 0) return dst
 
-  const outA = alpha * src.a + dst.a * (1 - src.a)
+  const srcA = alpha * src.a
+  const outA = srcA + dst.a * (1 - srcA)
+
+  if (outA === 0) return { r: 0, g: 0, b: 0, a: 0 } as RGBAFloat
 
   return {
-    r: (src.r * src.a + dst.r * dst.a * (1 - src.a)) / outA,
-    g: (src.g * src.a + dst.g * dst.a * (1 - src.a)) / outA,
-    b: (src.b * src.a + dst.b * dst.a * (1 - src.a)) / outA,
+    r: (src.r * srcA + dst.r * dst.a * (1 - srcA)) / outA,
+    g: (src.g * srcA + dst.g * dst.a * (1 - srcA)) / outA,
+    b: (src.b * srcA + dst.b * dst.a * (1 - srcA)) / outA,
     a: outA,
   } as RGBAFloat
 }
 
 export const blendOverwrite: BlendFn = (src, dst) => {
-  return { r: src.r, g: src.g, b: src.b, a: src.a } as RGBAFloat
+  return src
 }
 blendOverwrite.alwaysClearFirst = true
 
@@ -103,15 +111,33 @@ export function blendImageData(
     mask,
   } = opts
 
-  const byteBlend = makeByteBlendAdapter(blendMode)
+  // --- FAST PATH: 32-bit Memory Copy ---
+  // If we are overwriting without a mask, use TypedArray.set() which is significantly faster.
+  if (blendMode === blendOverwrite && !mask) {
+    const src32 = new Uint32Array(src.data.buffer)
+    const dst32 = new Uint32Array(dst.data.buffer)
+    const srcW = src.width
+    const dstW = dst.width
 
+    const actualW = Math.min(sw, dst.width - dx)
+    const actualH = Math.min(sh, dst.height - dy)
+
+    for (let iy = 0; iy < actualH; iy++) {
+      const sIndex = (iy + sy) * srcW + sx
+      const dIndex = (iy + dy) * dstW + dx
+      dst32.set(src32.subarray(sIndex, sIndex + actualW), dIndex)
+    }
+    return
+  }
+
+  // --- STANDARD PATH: Pixel-by-pixel blending ---
+  const byteBlend = getBlendAdapter(blendMode)
   const dstData = dst.data
   const srcData = src.data
   const dstW = dst.width
   const srcW = src.width
   const useMask = !!mask
 
-  // Clip to destination bounds
   const maxW = Math.min(sw, dst.width - dx)
   const maxH = Math.min(sh, dst.height - dy)
   if (maxW <= 0 || maxH <= 0) return
@@ -119,12 +145,13 @@ export function blendImageData(
   for (let iy = 0; iy < maxH; iy++) {
     const dstRow = (iy + dy) * dstW
     const srcRow = (iy + sy) * srcW
+    const maskRow = iy * sw
 
     for (let ix = 0; ix < maxW; ix++) {
-      if (useMask && mask![iy * sw + ix] === 0) continue
+      if (useMask && mask![maskRow + ix] === 0) continue
 
-      const di = (dstRow + (ix + dx)) * 4
-      const si = (srcRow + (ix + sx)) * 4
+      const di = (dstRow + (ix + dx)) << 2 // Bitwise shift by 2 is same as * 4
+      const si = (srcRow + (ix + sx)) << 2
 
       byteBlend(srcData, dstData, si, di)
     }

@@ -1,7 +1,7 @@
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { type BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import { type RGBA, RGBA_ERASE } from '../../../../lib/util/html-dom/ImageData.ts'
+import { type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../../../lib/vue/batching.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../../_core-editor-types.ts'
@@ -33,7 +33,7 @@ export function makeTileSheetWriter(
   })
 
   const accumulator = makeTileSheetPixelAccumulator()
-  const mutator = makeTileSheetMutator({ state, markDirty, accumulator })
+  const mutator = makeTileSheetMutator({ state, accumulator })
 
   return {
     withHistory(cb: (mutator: TileSheetMutator) => void) {
@@ -53,7 +53,10 @@ export function makeTileSheetWriter(
 
       const finalPatches = applyTileSheetAccumulator(state.tileSheet, gridRenderer, accumulator)
 
-      accumulator.affectedTileIds().forEach(id => markDirty(id))
+      const allAffected = accumulator.affectedTileIds()
+      for (let i = 0; i < allAffected.length; i++) {
+        markDirty(allAffected[i])
+      }
 
       return finalPatches
     },
@@ -62,14 +65,14 @@ export function makeTileSheetWriter(
 
 export type TileSheetMutator = ReturnType<typeof makeTileSheetMutator>
 
+const PACKED_ERASE = 0x00000000
+
 function makeTileSheetMutator(
   {
     state,
-    markDirty,
     accumulator,
   }: {
     state: TileGridEditorState
-    markDirty: (item: TileId) => void,
     accumulator: TileSheetPixelAccumulator,
   }) {
 
@@ -90,28 +93,26 @@ function makeTileSheetMutator(
     }
 
     const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
+    const imgData32 = new Uint32Array(imageData.data.buffer) // View as 32-bit for faster reads
 
     for (let i = 0; i < tileRects.length; i++) {
       const r = tileRects[i]
       const tileId = r.tileId
 
       for (let y = 0; y < r.h; y++) {
+        const srcYBase = (r.srcY + y) * imageData.width
         for (let x = 0; x < r.w; x++) {
-          const si = ((r.srcY + y) * imageData.width + (r.srcX + x)) * 4
+          // Read the pixel as a single 32-bit integer
+          const si = srcYBase + (r.srcX + x)
+          const packedColor = imgData32[si]
 
-          const color = {
-            r: imageData.data[si],
-            g: imageData.data[si + 1],
-            b: imageData.data[si + 2],
-            a: imageData.data[si + 3],
-          }
-
-          accumulator.addTile(tileId, r.x + x, r.y + y, color, blendFn)
+          // Extract components bitwise instead of creating an object
+          // Note: Check if your ImageData is Little Endian or Big Endian (usually ABGR in 32-bit view)
+          accumulator.addTilePacked(tileId, r.x + x, r.y + y, packedColor, blendFn)
         }
       }
     }
   }
-
   function clear(
     x = 0,
     y = 0,
@@ -119,33 +120,25 @@ function makeTileSheetMutator(
     h = state.tileSheet.imageData.height,
     mask: Uint8Array | null = null,
   ) {
-    // sheet-space rect
-    const sheetRect = {
-      x,
-      y,
-      w,
-      h,
-      srcX: 0,
-      srcY: 0,
-    }
-
-    // split into tile-local rects
-    const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
+    const sheetRect = { x, y, w, h, srcX: 0, srcY: 0 };
+    const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect);
 
     for (let i = 0; i < tileRects.length; i++) {
-      const r = tileRects[i]
-      const tileId = r.tileId
+      const r = tileRects[i];
+      const tileId = r.tileId;
 
       for (let ty = 0; ty < r.h; ty++) {
+        const destY = r.y + ty;
+        // Calculate mask row start once per row
+        let maskIdx = (r.srcY + ty) * sheetRect.w + r.srcX;
+
         for (let tx = 0; tx < r.w; tx++) {
+          if (mask && !mask[maskIdx++]) continue;
 
-          // mask is in sheet-rect space, not tile-local space
-          if (mask) {
-            const maskIndex = (r.srcY + ty) * sheetRect.w + (r.srcX + tx)
-            if (!mask[maskIndex]) continue
-          }
+          // Use addTilePacked directly with our constant
+          accumulator.addTilePacked(tileId, r.x + tx, destY, PACKED_ERASE);
 
-          accumulator.addTile(tileId, r.x + tx, r.y + ty, RGBA_ERASE)
+          if (!mask) maskIdx++; // keep incrementing if we are manually tracking even without mask
         }
       }
     }
@@ -158,7 +151,6 @@ function makeTileSheetMutator(
       if (!hit) continue
 
       accumulator.addTile(hit.tileId, hit.tx, hit.ty, color)
-      markDirty(hit.tileId)
     }
   }
 

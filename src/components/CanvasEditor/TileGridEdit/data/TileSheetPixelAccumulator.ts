@@ -13,6 +13,7 @@ type TileBuffer = {
   data: Uint32Array
   count: number
 }
+
 // written for perf over readability
 export function makeTileSheetPixelAccumulator() {
   const tileBuffers = new Map<TileId, TileBuffer>()
@@ -40,15 +41,8 @@ export function makeTileSheetPixelAccumulator() {
   }
 
   function addTile(tileId: TileId, tx: number, ty: number, color: RGBA, blend = blendOverwrite, isPropagated = false) {
-    const buf = ensureBuffer(tileId)
-    const idx = buf.count * 4
-    const d = buf.data
-
-    d[idx] = (tx << 16) | ty
-    d[idx + 1] = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
-    d[idx + 2] = getBlendIdx(blend)
-    d[idx + 3] = isPropagated ? 1 : 0
-    buf.count++
+    const packed = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0);
+    addTilePacked(tileId, tx, ty, packed, blend, isPropagated);
   }
 
   function addTiles(tileId: TileId, pixels: PixelColor[], blend = blendOverwrite, isPropagated = false) {
@@ -63,6 +57,29 @@ export function makeTileSheetPixelAccumulator() {
       const p = points[i]
       addTile(tileId, p.x, p.y, color, blend, isPropagated)
     }
+  }
+
+  /**
+   * Adds a pixel using a pre-packed 32-bit color integer.
+   * This is the high-performance path for bulk image operations.
+   */
+  function addTilePacked(
+    tileId: TileId,
+    tx: number,
+    ty: number,
+    packedColor: number,
+    blend = blendOverwrite,
+    isPropagated = false,
+  ) {
+    const buf = ensureBuffer(tileId)
+    const d = buf.data
+    const offset = buf.count * 4
+
+    d[offset] = (tx << 16) | ty
+    d[offset + 1] = packedColor
+    d[offset + 2] = getBlendIdx(blend)
+    d[offset + 3] = isPropagated ? 1 : 0
+    buf.count++
   }
 
   function getRawBufferForTile(tileId: TileId) {
@@ -184,6 +201,7 @@ export function makeTileSheetPixelAccumulator() {
     apply,
     affectedTileIds,
     addTile,
+    addTilePacked,
     addTiles,
     addTilePixelsWithColor,
     getRawBufferForTile,
