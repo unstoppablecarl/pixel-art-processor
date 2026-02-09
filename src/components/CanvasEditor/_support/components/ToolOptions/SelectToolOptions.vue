@@ -8,7 +8,7 @@ const dataAttr = DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK
 const { selectMoveBlendMode, selectFloodContiguous, currentSubTool } = storeToRefs(useCanvasEditToolStore())
 </script>
 <template>
-  <div class="section d-flex section-tools">
+  <div class="sub-section d-flex section-tools">
     <div class="btn-group-vertical">
       <SetValueButton
         label="Overwrite"

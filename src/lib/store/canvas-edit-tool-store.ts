@@ -21,7 +21,6 @@ type SerializedData = {
   brushSize: number,
   cursorColor: string,
   selectMoveBlendMode: BlendMode,
-  tileMarginCopySize: number,
   selectFloodContiguous: boolean,
   selectFloodTolerance: number,
 
@@ -48,7 +47,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const brushColor = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor.value : RGBA_ERASE)
   const brushBitMaskColor = computed(() => brushMode.value === BrushSubTool.ADD ? RGBA_WHITE : RGBA_ERASE)
 
-  const tileMarginCopySize = ref<number>(1)
   const cursorColor = ref('cyan')
 
   const duplicateTileEdges = ref(true)
@@ -65,7 +63,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       selectMoveBlendMode,
       selectFloodContiguous,
       selectFloodTolerance,
-      tileMarginCopySize,
       duplicateTileEdges,
       duplicateTileEdgesBorderThickness,
     },
@@ -79,7 +76,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       selectMoveBlendMode: BlendMode.IGNORE_TRANSPARENT,
       selectFloodContiguous: true,
       selectFloodTolerance: 0,
-      tileMarginCopySize: 1,
       duplicateTileEdges: true,
       duplicateTileEdgesBorderThickness: 1,
     },
@@ -147,7 +143,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     duplicateTileEdges,
     duplicateTileEdgesBorderThickness,
 
-    tileMarginCopySize,
     decreaseBrushSize() {
       brushSize.value--
     },

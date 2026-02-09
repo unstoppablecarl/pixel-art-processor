@@ -9,7 +9,7 @@ const { brushShape, brushSize } = storeToRefs(useCanvasEditToolStore())
 const store = usePipelineStore()
 </script>
 <template>
-  <div class="section">
+  <div class="sub-section">
     <div class="range-label hstack mt-1 mx-auto">
       <div class="fw-medium me-1">
         <span class="material-symbols-outlined">ink_highlighter</span>
@@ -31,7 +31,7 @@ const store = usePipelineStore()
     </div>
   </div>
 
-  <div class="section">
+  <div class="sub-section">
     <div class="btn-group w-100" role="group">
       <SetValueButton
         label="Square Brush"

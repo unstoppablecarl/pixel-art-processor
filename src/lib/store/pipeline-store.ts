@@ -118,6 +118,10 @@ export const usePipelineStore = defineStore('pipeline', () => {
       return !!nodes[id]
     }
 
+    function hasWithDef(def: NodeDef): boolean {
+      return Object.values(nodes).some(n => n.def === def)
+    }
+
     function addRaw(def: NodeDef, afterId: NodeId | null): AnyNode {
       const type = nodeRegistry.getNodeType(def)
       if (type == NodeType.STEP) return addStepRaw(def, afterId)
@@ -589,6 +593,7 @@ export const usePipelineStore = defineStore('pipeline', () => {
       maybeGetStep,
       maybeGetFork,
       maybeGetBranch,
+      hasWithDef,
       nodesProcessing,
     }
   },

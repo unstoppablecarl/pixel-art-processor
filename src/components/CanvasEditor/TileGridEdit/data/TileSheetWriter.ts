@@ -106,7 +106,7 @@ function makeTileSheetMutator(
             a: imageData.data[si + 3],
           }
 
-          accumulator.addTileBlend(tileId, r.x + x, r.y + y, color, blendFn)
+          accumulator.addTile(tileId, r.x + x, r.y + y, color, blendFn)
         }
       }
     }

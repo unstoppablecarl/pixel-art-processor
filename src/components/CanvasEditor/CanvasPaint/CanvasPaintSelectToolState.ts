@@ -112,9 +112,9 @@ export function makeCanvasPaintSelectToolState(
 
     selection = {
       pixels: result.pixels,
-      mask: result.mask,
-      original: { ...result.rect },
-      current: { ...result.rect },
+      mask: result.selectionRect.mask,
+      original: { ...result.selectionRect },
+      current: { ...result.selectionRect },
       dragStartX: null,
       dragStartY: null,
       dragStartRect: null,

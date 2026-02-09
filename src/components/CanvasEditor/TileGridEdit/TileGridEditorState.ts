@@ -91,8 +91,6 @@ interface BaseTileGridEditorState {
   readonly tileGridManager: TileGridManager,
   readonly tileGridGeometry: TileGridGeometry,
   readonly tileset: AxialEdgeWangTileset<number>
-
-  tileMarginCopySize: number
 }
 
 type TileGridEditorSettings = BaseEditorSettings & {
@@ -124,8 +122,6 @@ class TileGridEditorStateC extends EditorState {
   public mouseDragStartY: number | null = null
 
   public dragStartTileId: number | null = null
-
-  public tileMarginCopySize = 1
 
   protected _tileGridManager: TileGridManager
   protected _tileGridGeometry: Ref<TileGridGeometry>

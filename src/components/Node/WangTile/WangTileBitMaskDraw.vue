@@ -4,9 +4,11 @@ import { type NodeDef, NodeType } from '../../../lib/pipeline/_types.ts'
 import { defineStep } from '../../../lib/pipeline/types/definitions.ts'
 import { nodeUsesSidebar } from '../../../lib/vue/useSidebar.ts'
 
+export const NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE = 'wang_tile_bit_mask_draw_image' as NodeDef
+
 export const STEP_META = defineStep({
   type: NodeType.STEP,
-  def: 'wang_tile_bit_mask_draw_image' as NodeDef,
+  def: NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE,
   displayName: 'Wang Tile | BitMask: Draw',
   noInput: true,
   outputDataType: BitMask,
@@ -44,7 +46,6 @@ import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'
 import CheckBoxInput from '../../UIForms/CheckBoxInput.vue'
 import NumberInput from '../../UIForms/NumberInput.vue'
-import RangeSlider from '../../UIForms/RangeSlider.vue'
 
 nodeUsesSidebar()
 
@@ -62,7 +63,6 @@ const CONFIG_DEFAULTS = () => (
     tileSheet: null as null | SerializedTileSheet,
     verticalEdgeValueCount: 2,
     horizontalEdgeValueCount: 2,
-    tileMarginCopySize: 3,
   }
 )
 
@@ -247,15 +247,6 @@ const uiStore = useUIStore()
 
         <template #extra>
           <div class="section">
-
-            <RangeSlider
-              :id="`${nodeId}-tile-copy-margin`"
-              label="Tile Copy Margin"
-              v-model:value="config.tileMarginCopySize"
-              :min="1"
-              :max="50"
-              :step="1"
-            />
 
             <button
               role="button"

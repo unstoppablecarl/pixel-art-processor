@@ -1,11 +1,6 @@
-import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import { type BlendFn, getBlendAdapter } from '../../../../lib/util/html-dom/blit.ts'
-import {
-  type PixelBlend,
-  type PixelColor,
-  type RGBA,
-  setImageDataPixelColors,
-} from '../../../../lib/util/html-dom/ImageData.ts'
+import { type Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
+import { blendOverwrite, getBlendAdapter } from '../../../../lib/util/html-dom/blit.ts'
+import { type PixelColor, type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { finalizePatch } from '../../_support/data/_history-helpers.ts'
 import type { TileSheet } from './TileSheet.ts'
@@ -13,199 +8,147 @@ import type { ProtoTileSheetPatch, TileRect, TileSheetPatch } from './TileSheetH
 
 export type TileSheetPixelAccumulator = ReturnType<typeof makeTileSheetPixelAccumulator>
 
+// Internal type for the buffer entry
+type TileBuffer = {
+  data: Uint32Array
+  count: number
+}
+// written for perf over readability
 export function makeTileSheetPixelAccumulator() {
-  const pixelWrites = new Map<TileId, PixelColor[]>()
-  const tileBlends = new Map<TileId, PixelBlend[]>()
+  const tileBuffers = new Map<TileId, TileBuffer>()
+  const blendRegistry: any[] = []
 
-  function addTile(tileId: TileId, tx: number, ty: number, color: RGBA) {
-    let arr = pixelWrites.get(tileId)
-    if (!arr) {
-      arr = []
-      pixelWrites.set(tileId, arr)
-    }
-    arr.push({ x: tx, y: ty, color })
+  // Helper to manage blend function indices
+  function getBlendIdx(fn: any): number {
+    let idx = blendRegistry.indexOf(fn)
+    if (idx === -1) idx = blendRegistry.push(fn) - 1
+    return idx
   }
 
-  function addTiles(tileId: TileId, pixels: PixelColor[]) {
-    let arr = pixelWrites.get(tileId)
-    if (!arr) {
-      arr = []
-      pixelWrites.set(tileId, arr)
+  function ensureBuffer(tileId: TileId): TileBuffer {
+    let buf = tileBuffers.get(tileId)
+    if (!buf) {
+      buf = { data: new Uint32Array(256 * 4), count: 0 }
+      tileBuffers.set(tileId, buf)
     }
+    if (buf.count * 4 >= buf.data.length) {
+      const next = new Uint32Array(buf.data.length * 2)
+      next.set(buf.data)
+      buf.data = next
+    }
+    return buf
+  }
+
+  function addTile(tileId: TileId, tx: number, ty: number, color: RGBA, blend = blendOverwrite, isPropagated = false) {
+    const buf = ensureBuffer(tileId)
+    const idx = buf.count * 4
+    const d = buf.data
+
+    d[idx] = (tx << 16) | ty
+    d[idx + 1] = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
+    d[idx + 2] = getBlendIdx(blend)
+    d[idx + 3] = isPropagated ? 1 : 0
+    buf.count++
+  }
+
+  function addTiles(tileId: TileId, pixels: PixelColor[], blend = blendOverwrite, isPropagated = false) {
     for (let i = 0; i < pixels.length; i++) {
-      arr.push(pixels[i])
+      const p = pixels[i]
+      addTile(tileId, p.x, p.y, p.color, blend, isPropagated)
     }
   }
 
-  function addTilePixelsWithColor(tileId: TileId, points: Point[], color: RGBA) {
-    let arr = pixelWrites.get(tileId)
-    if (!arr) {
-      arr = []
-      pixelWrites.set(tileId, arr)
-    }
+  function addTilePixelsWithColor(tileId: TileId, points: Point[], color: RGBA, blend = blendOverwrite, isPropagated = false) {
     for (let i = 0; i < points.length; i++) {
       const p = points[i]
-      arr.push({ x: p.x, y: p.y, color })
+      addTile(tileId, p.x, p.y, color, blend, isPropagated)
     }
   }
 
-  function addTileBlend(tileId: TileId, tx: number, ty: number, color: RGBA, blend: BlendFn) {
-    let arr = tileBlends.get(tileId)
-    if (!arr) {
-      arr = []
-      tileBlends.set(tileId, arr)
-    }
-    arr.push({ x: tx, y: ty, color, blend })
+  function getRawBufferForTile(tileId: TileId) {
+    return tileBuffers.get(tileId)
   }
 
   function getRegions(): TileRect[] {
     const rects: TileRect[] = []
+    for (const [tileId, buf] of tileBuffers) {
+      if (buf.count === 0) continue
+      const d = buf.data
+      let c0 = d[0]
+      let minX = c0 >> 16, maxX = minX
+      let minY = c0 & 0xFFFF, maxY = minY
 
-    // solids
-    for (const [tileId, writes] of pixelWrites) {
-      const len = writes.length
-      if (len === 0) continue
-
-      let w0 = writes[0]
-      let minX = w0.x
-      let minY = w0.y
-      let maxX = w0.x
-      let maxY = w0.y
-
-      for (let i = 1; i < len; i++) {
-        const w = writes[i]
-        const x = w.x
-        const y = w.y
-        if (x < minX) minX = x
-        if (y < minY) minY = y
-        if (x > maxX) maxX = x
-        if (y > maxY) maxY = y
+      for (let i = 1; i < buf.count; i++) {
+        const coords = d[i * 4]
+        const x = coords >> 16
+        const y = coords & 0xFFFF
+        if (x < minX) {
+          minX = x
+        } else if (x > maxX) {
+          maxX = x
+        }
+        if (y < minY) {
+          minY = y
+        } else if (y > maxY) {
+          maxY = y
+        }
       }
-
-      rects.push({
-        tileId,
-        x: minX,
-        y: minY,
-        w: maxX - minX + 1,
-        h: maxY - minY + 1,
-      })
+      rects.push({ tileId, x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 })
     }
-
-    // blends
-    for (const [tileId, blends] of tileBlends) {
-      const len = blends.length
-      if (len === 0) continue
-
-      let b0 = blends[0]
-      let minX = b0.x
-      let minY = b0.y
-      let maxX = b0.x
-      let maxY = b0.y
-
-      for (let i = 1; i < len; i++) {
-        const b = blends[i]
-        const x = b.x
-        const y = b.y
-        if (x < minX) minX = x
-        if (y < minY) minY = y
-        if (x > maxX) maxX = x
-        if (y > maxY) maxY = y
-      }
-
-      rects.push({
-        tileId,
-        x: minX,
-        y: minY,
-        w: maxX - minX + 1,
-        h: maxY - minY + 1,
-      })
-    }
-
     return rects
   }
 
   function apply(tileSheet: TileSheet) {
     const img = tileSheet.imageData
-
-    // reused offset
+    const data = img.data
+    const width = img.width
     const off = { x: 0, y: 0 }
-    // scratch buffer reused for all pixels
     const scratchSrc = new Uint8ClampedArray(4)
 
-    // 1. Apply solid writes
-    for (const [tileId, writes] of pixelWrites) {
-      const len = writes.length
-      if (len === 0) continue
+    for (const [tileId, buf] of tileBuffers) {
+      if (buf.count === 0) continue
       const offset = tileSheet.getTileSheetOffset(tileId, off)
+      const d = buf.data
 
-      const sheetPts = new Array<{ x: number; y: number; color: RGBA }>(len)
+      for (let i = 0; i < buf.count; i++) {
+        const ptr = i * 4
+        const coords = d[ptr]
+        const rgba = d[ptr + 1]
+        const sx = offset.x + (coords >> 16)
+        const sy = offset.y + (coords & 0xFFFF)
+        const di = (sy * width + sx) * 4
 
-      for (let i = 0; i < len; i++) {
-        const w = writes[i]
-        const sx = offset.x + w.x
-        const sy = offset.y + w.y
-        sheetPts[i] = { x: sx, y: sy, color: w.color }
-      }
+        scratchSrc[0] = (rgba >> 24) & 0xFF
+        scratchSrc[1] = (rgba >> 16) & 0xFF
+        scratchSrc[2] = (rgba >> 8) & 0xFF
+        scratchSrc[3] = rgba & 0xFF
 
-      setImageDataPixelColors(img, sheetPts)
-    }
-
-    // 2. Apply blend writes (byte-level, no per-pixel allocations)
-    for (const [tileId, blends] of tileBlends) {
-      const len = blends.length
-      if (len === 0) continue
-      const offset = tileSheet.getTileSheetOffset(tileId, off)
-
-      for (let i = 0; i < len; i++) {
-        const b = blends[i]
-        const sx = offset.x + b.x
-        const sy = offset.y + b.y
-        const di = (sy * img.width + sx) * 4
-
-        // create adapter once per blendFn per pixel
-        const byteBlend = getBlendAdapter(b.blend)
-
-        scratchSrc[0] = b.color.r
-        scratchSrc[1] = b.color.g
-        scratchSrc[2] = b.color.b
-        scratchSrc[3] = b.color.a
-
-        byteBlend(scratchSrc, img.data, 0, di)
+        getBlendAdapter(blendRegistry[d[ptr + 2]])(scratchSrc, data, 0, di)
       }
     }
   }
 
   function affectedTileIds(): TileId[] {
-    const ids = new Set<TileId>()
-
-    for (const id of pixelWrites.keys()) ids.add(id)
-    for (const id of tileBlends.keys()) ids.add(id)
-
-    return [...ids]
+    return Array.from(tileBuffers.keys())
   }
 
   function toPatches(tileSheet: TileSheet): ProtoTileSheetPatch[] {
     const patches: ProtoTileSheetPatch[] = []
     const img = tileSheet.imageData
-
-    // merge writes + blends into one region set
     const rects = getRegions()
 
     for (let i = 0; i < rects.length; i++) {
       const r = rects[i]
       const offset = tileSheet.getTileSheetOffset(r.tileId)
-
       const sx = offset.x + r.x
       const sy = offset.y + r.y
-
       const before = new Uint8ClampedArray(r.w * r.h * 4)
 
-      // extract BEFORE pixels
       for (let y = 0; y < r.h; y++) {
+        const rowStart = (sy + y) * img.width
         for (let x = 0; x < r.w; x++) {
-          const di = ((sy + y) * img.width + (sx + x)) * 4
+          const di = (rowStart + (sx + x)) * 4
           const si = (y * r.w + x) * 4
-
           before[si] = img.data[di]
           before[si + 1] = img.data[di + 1]
           before[si + 2] = img.data[di + 2]
@@ -213,36 +156,24 @@ export function makeTileSheetPixelAccumulator() {
         }
       }
 
-      patches.push({
-        tileId: r.tileId,
-        x: r.x,
-        y: r.y,
-        w: r.w,
-        h: r.h,
-        before,
-        after: null,
-      })
+      patches.push({ tileId: r.tileId, x: r.x, y: r.y, w: r.w, h: r.h, before, after: null })
     }
-
     return patches
   }
 
   function finalizePatches(tileSheet: TileSheet, patches: ProtoTileSheetPatch[]): TileSheetPatch[] {
     const img = tileSheet.imageData
-
     for (let i = 0; i < patches.length; i++) {
       const p = patches[i]
       const offset = tileSheet.getTileSheetOffset(p.tileId)
-
       finalizePatch(p, img, offset.x, offset.y)
     }
-
     return patches as TileSheetPatch[]
   }
 
   function reset() {
-    pixelWrites.clear()
-    tileBlends.clear()
+    tileBuffers.clear()
+    blendRegistry.length = 0
   }
 
   return {
@@ -255,6 +186,7 @@ export function makeTileSheetPixelAccumulator() {
     addTile,
     addTiles,
     addTilePixelsWithColor,
-    addTileBlend,
+    getRawBufferForTile,
+    getBlendAtIdx: (idx: number) => blendRegistry[idx],
   }
 }
