@@ -5,18 +5,16 @@ export type TileChangeCallback = (tileId: TileId) => void;
 
 export function makeTileSheetSync(tileSheet: TileSheet) {
   const initialTileCount = tileSheet.tileset.tiles.length
+  let currentTileCount = initialTileCount
   let lastSeenVersion = -1
   let localVersions = new Uint32Array(initialTileCount)
 
-  return (sheet: TileSheet, onTileChanged: TileChangeCallback) => {
-    const currentTileCount = sheet.tileset.tiles.length
-
-    // --- Handle Resize ---
-    if (currentTileCount !== localVersions.length) {
-      const newVersions = new Uint32Array(currentTileCount)
-      // Copy over old versions so we don't trigger "dirty" for old tiles
-      newVersions.set(localVersions.subarray(0, Math.min(localVersions.length, currentTileCount)))
-      localVersions = newVersions
+  const result = (sheet: TileSheet, onTileChanged: TileChangeCallback) => {
+    const count = sheet.tileset.tiles.length
+    if (count !== localVersions.length) {
+      currentTileCount = count
+      localVersions = new Uint32Array(count)
+      lastSeenVersion = -1
     }
 
     if (sheet.version === lastSeenVersion) return
@@ -34,15 +32,27 @@ export function makeTileSheetSync(tileSheet: TileSheet) {
     }
     lastSeenVersion = sheet.version
   }
+
+  result.reset = () => {
+    lastSeenVersion = -1
+    localVersions = new Uint32Array(currentTileCount)
+  }
+
+  return result
 }
 
 export function makeSingleTileSync(tileId: TileId) {
   let lastSeenVersion = -1
-  return (sheet: TileSheet, onTileChanged: TileChangeCallback) => {
+  const result = (sheet: TileSheet, onTileChanged: TileChangeCallback) => {
     const currentVersion = sheet.getTileVersion(tileId)
     if (currentVersion !== lastSeenVersion) {
       onTileChanged(tileId)
       lastSeenVersion = currentVersion
     }
   }
+
+  result.reset = () => {
+    lastSeenVersion = -1
+  }
+  return result
 }

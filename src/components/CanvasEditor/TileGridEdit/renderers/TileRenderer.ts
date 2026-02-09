@@ -34,6 +34,7 @@ export function makeTileRenderer(
   function resize() {
     pixelCanvas.resize(state.scaledTileSize, state.scaledTileSize)
     tileImageData = new ImageData(state.scaledTileSize, state.scaledTileSize)
+    tileSync.reset()
     queueRender()
   }
 

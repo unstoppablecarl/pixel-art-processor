@@ -58,6 +58,7 @@ export function makeTileGridRenderer(
     tileGridPixelCanvas.resize(state.gridScreenWidth, state.gridScreenHeight)
     tileGridImageDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
 
+    tileSync.reset()
     for (const tileRenderer of Object.values(tileRenderers)) {
       tileRenderer.resize()
     }
@@ -80,6 +81,7 @@ export function makeTileGridRenderer(
   function updateGridTiles() {
     tileGridImageDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
     tileSync(state.tileSheet, (tileId) => {
+      console.log('update', tileId)
       state.tileGrid.eachWithTileId(tileId, (tileX, tileY, tile) => {
         const tileId = tile.id
         const { gx, gy } = state.tileGridGeometry.gridTileToGridPixel(tileX, tileY)
@@ -131,7 +133,6 @@ export function makeTileGridRenderer(
     queueRenderTile,
     queueRenderTiles,
     queueRenderAll: () => {
-      queueRenderGrid()
       queueRenderTiles()
     },
     setCurrentToolRenderer(val: CurrentToolRenderer) {
