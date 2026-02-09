@@ -7,6 +7,7 @@ import type { DrawRect, ISelection, SelectionRect, TileAlignedRect } from './ISe
 export class TileOriginSelection implements ISelection {
   private originalRects: TileAlignedRect[]
   private currentRects: TileAlignedRect[]
+  private originalRectsBounds: Rect
   private moved = false
 
   pixels: ImageData
@@ -17,8 +18,13 @@ export class TileOriginSelection implements ISelection {
     private tileId: TileId,
     private geometry: TileGridGeometry,
   ) {
+    this.originalRectsBounds = getRectsBounds(rects)
+
     this.originalRects = rects.map(r =>
-      this.selectionRectToTileAlignedRect(r, tileId),
+      this.selectionRectToTileAlignedRect(r, tileId,
+        this.originalRectsBounds.x,
+        this.originalRectsBounds.y,
+      ),
     )
 
     this.currentRects = this.originalRects.map(r => ({ ...r }))
@@ -34,6 +40,8 @@ export class TileOriginSelection implements ISelection {
   private selectionRectToTileAlignedRect(
     rect: SelectionRect,
     tileId: TileId,
+    originX: number,
+    originY: number,
   ): TileAlignedRect {
     const { x: tsx, y: tsy } = this.geometry.tileSheet.getTileRect(tileId)
 
@@ -53,8 +61,8 @@ export class TileOriginSelection implements ISelection {
       h: rect.h,
 
       // pixel buffer space
-      bufferX: rect.x,
-      bufferY: rect.y,
+      bufferX: rect.x - originX,
+      bufferY: rect.y - originY,
       mask: rect.mask,
     }
   }

@@ -57,9 +57,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         if (!tileId) throw new Error('tileId required')
 
         if (!ts.tilePointInSelection(x, y, tileId)) {
-          if (ts.selectionHasMoved()) {
-            ts.commit()
-          }
+          ts.clearSelection()
           return
         }
 
