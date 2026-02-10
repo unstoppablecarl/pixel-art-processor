@@ -3,8 +3,8 @@ import { makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom
 import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { Tool } from '../../_core-editor-types.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
-import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
+import type { TileGridToolset } from '../TileGridToolset.ts'
 import { drawDebugRect, drawDebugRectOutline } from './_debug-draw-helpers.ts'
 
 export type TileSheetSelectionRenderer = ReturnType<typeof makeTileSheetSelectionRenderer>
@@ -13,11 +13,11 @@ export function makeTileSheetSelectionRenderer(
   {
     state,
     gridCache,
-    localToolStates,
+    toolset,
   }: {
     state: TileGridEditorState,
-    localToolStates: LocalToolStates,
     gridCache: PixelGridLineRenderer,
+    toolset: TileGridToolset
   }) {
 
   const renderCanvasFrame = makeCanvasFrameRenderer()
@@ -29,7 +29,7 @@ export function makeTileSheetSelectionRenderer(
   }
 
   function resize() {
-    const toolState = localToolStates[Tool.SELECT]
+    const toolState = toolset.localToolStates[Tool.SELECT]
     if (!tileGridPixelCanvas) return
     if (toolState.selection) {
       tileGridPixelCanvas.resize(
@@ -40,7 +40,7 @@ export function makeTileSheetSelectionRenderer(
   }
 
   function draw() {
-    const toolState = localToolStates[Tool.SELECT]
+    const toolState = toolset.localToolStates[Tool.SELECT]
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       const sel = toolState.selection

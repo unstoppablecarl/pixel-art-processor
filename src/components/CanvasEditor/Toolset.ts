@@ -1,63 +1,63 @@
-import { watchEffect } from 'vue'
-import { type CanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
-import { type BaseToolHandler, Tool, type ToolRegistry } from './_core-editor-types.ts'
+import { watch } from 'vue'
+import { type CanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store'
+import { Tool, type ToolHandlersRecord } from './_core-editor-types'
 
-export type Toolset<
-  TTools extends ToolRegistry<BaseToolHandler<any, any>>
-> = {
-  tools: TTools
+export interface Toolset<
+  B,
+  S extends Record<Tool, any>,
+  H extends ToolHandlersRecord<B, S>
+> {
+  readonly tools: H
+  readonly localToolContexts: { [K in Tool]: B & { toolState: S[K] } }
   readonly currentTool: Tool
-  readonly currentToolHandler: TTools[Tool]
-  setTool: (tool: Tool) => void
-  setActiveLocal: (local: any) => void
-  readonly activeLocal: any
+  readonly currentToolHandler: H[Tool]
+  readonly currentLocalContext: B & { toolState: S[Tool] }
+  readonly setTool: (tool: Tool) => void
+  readonly localToolStates: S
 }
 
 export function makeToolset<
-  TTools extends ToolRegistry<BaseToolHandler<any, any>>
+  TBase extends Record<string, any>,
+  TStates extends Record<Tool, any>,
+  THandlers extends ToolHandlersRecord<TBase, TStates>
 >(
   store: CanvasEditToolStore,
-  tools: TTools,
-): Toolset<TTools> {
-  let currentTool: Tool = store.currentTool
-  let prevActiveLocal: any = null
-  let activeLocal: any = null
+  toolHandlers: THandlers,
+  toolStates: TStates,
+  baseLocalContext: TBase,
+): Toolset<TBase, TStates, THandlers> {
 
-  function setTool(tool: Tool) {
-    if (prevActiveLocal) {
-      tools[currentTool]?.onDeselect?.(prevActiveLocal)
-    }
-    currentTool = tool
-    if (activeLocal) {
-      tools[currentTool]?.onSelect?.(activeLocal)
-    }
-  }
+  const contexts = Object.fromEntries(
+    Object.values(Tool).map((tool) => [
+      tool,
+      { ...baseLocalContext, toolState: toolStates[tool] },
+    ]),
+  ) as { [K in Tool]: TBase & { toolState: TStates[K] } }
 
-  watchEffect(() => setTool(store.currentTool))
+  watch(() => store.currentTool, (newTool, oldTool) => {
+    if (oldTool) {
+      toolHandlers[oldTool]?.onDeselect?.(contexts[oldTool])
+    }
+    if (newTool) {
+      toolHandlers[newTool]?.onSelect?.(contexts[newTool])
+    }
+  }, { immediate: true })
 
   return {
-    tools,
+    tools: toolHandlers,
+    localToolContexts: contexts,
+    localToolStates: toolStates,
     get currentTool() {
-      return currentTool
+      return store.currentTool
     },
     get currentToolHandler() {
-      return tools[currentTool]
+      return toolHandlers[store.currentTool]
     },
-    setTool,
-    setActiveLocal: (local: any) => {
-      prevActiveLocal = activeLocal
-      activeLocal = local
+    get currentLocalContext() {
+      return contexts[store.currentTool]
     },
-    get activeLocal() {
-      return activeLocal
+    setTool: (tool: Tool) => {
+      store.currentTool = tool
     },
   }
-}
-
-export function makeLocalToolContexts<B, S extends ToolRegistry<any>>(baseLocalToolContext: B, localToolStates: S) {
-  return Object.fromEntries(
-    Object.entries(localToolStates).map(([key, val]) => {
-      return [key as Tool, { ...baseLocalToolContext, toolState: localToolStates[key as Tool] }]
-    }),
-  )
 }

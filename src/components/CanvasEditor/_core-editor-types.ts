@@ -121,6 +121,10 @@ export type BaseBlendModeToolHandler<L, TArgs extends any[] = []> = BaseToolHand
   onModeChanged?: (local: L, newMode: BrushSubTool) => void,
 }
 
+export type ToolHandlersRecord<B, S extends Record<Tool, any>> = {
+  [K in Tool]: BaseToolHandler<B & { toolState: S[K] }, any>
+}
+
 export const defineToolManager = <TArgs extends any[]>() =>
   <T extends BaseToolManager<TArgs>>(toolset: T) => toolset
 

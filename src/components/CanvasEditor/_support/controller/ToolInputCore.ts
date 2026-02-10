@@ -1,19 +1,13 @@
-// makeToolInputCore.ts
-import type { BaseEditorState, Tool } from '../../_core-editor-types.ts'
-
-type ToolMap = Record<Tool, any>
-type LocalToolContexts = Record<Tool, any>
+import { type BaseEditorState, Tool, type ToolHandlersRecord } from '../../_core-editor-types.ts'
+import type { Toolset } from '../../Toolset.ts'
 
 export function makeToolInputCore<
-  TState extends BaseEditorState,
+  B,
+  S extends Record<Tool, any>,
+  H extends ToolHandlersRecord<B, S>
 >(
-  state: TState,
-  toolset: {
-    currentTool: Tool
-    tools: ToolMap
-    setActiveLocal(local: any): void
-  },
-  localToolContexts: LocalToolContexts,
+  state: BaseEditorState,
+  toolset: Toolset<B, S, H>,
 ) {
   return {
     pointerDown(x: number, y: number, ...extra: any[]) {
@@ -25,10 +19,9 @@ export function makeToolInputCore<
       state.mouseDragStartY = null
       state.isDragging = false
 
-      const local = localToolContexts[toolset.currentTool]
-      toolset.setActiveLocal(local)
+      const local = toolset.currentLocalContext
 
-      toolset.tools[toolset.currentTool]?.onMouseDown?.(
+      toolset.currentToolHandler?.onMouseDown?.(
         local,
         x,
         y,
@@ -36,7 +29,7 @@ export function makeToolInputCore<
       )
     },
     pointerMove(x: number, y: number, ...extra: any[]) {
-      const local = localToolContexts[toolset.currentTool]
+      const local = toolset.currentLocalContext
 
       if (state.mouseDownX !== null && state.mouseDownY !== null) {
         const dx = x - state.mouseDownX
@@ -49,14 +42,14 @@ export function makeToolInputCore<
           state.mouseDragStartX = state.mouseDownX
           state.mouseDragStartY = state.mouseDownY
 
-          toolset.tools[toolset.currentTool]?.onDragStart?.(
+          toolset.currentToolHandler?.onDragStart?.(
             local,
             state.mouseDownX,
             state.mouseDownY,
             ...extra,
           )
         } else {
-          toolset.tools[toolset.currentTool]?.onDragMove?.(
+          toolset.currentToolHandler?.onDragMove?.(
             local,
             x,
             y,
@@ -64,7 +57,7 @@ export function makeToolInputCore<
           )
         }
       } else {
-        toolset.tools[toolset.currentTool]?.onMouseMove?.(
+        toolset.currentToolHandler?.onMouseMove?.(
           local,
           x,
           y,
@@ -76,17 +69,17 @@ export function makeToolInputCore<
       state.mouseLastY = y
     },
     pointerUp(x: number, y: number, ...extra: any[]) {
-      const local = localToolContexts[toolset.currentTool]
+      const local = toolset.currentLocalContext
 
       if (state.isDragging) {
-        toolset.tools[toolset.currentTool]?.onDragEnd?.(
+        toolset.currentToolHandler?.onDragEnd?.(
           local,
           x,
           y,
           ...extra,
         )
       } else {
-        toolset.tools[toolset.currentTool]?.onClick?.(
+        toolset.currentToolHandler?.onClick?.(
           local,
           x,
           y,
@@ -103,7 +96,7 @@ export function makeToolInputCore<
     pointerLeave(...extra: any[]) {
       if (state.isDragging) return
 
-      const local = localToolContexts[toolset.currentTool]
+      const local = toolset.currentLocalContext
       toolset.tools[toolset.currentTool]?.onMouseLeave?.(
         local,
         ...extra,

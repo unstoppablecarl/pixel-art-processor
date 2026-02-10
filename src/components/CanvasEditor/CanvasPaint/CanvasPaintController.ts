@@ -1,4 +1,5 @@
 import { ref, type Ref, toRef, watch, watchEffect } from 'vue'
+import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import { useDocumentClick } from '../../../lib/util/vue-util.ts'
 import type { ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
@@ -14,12 +15,8 @@ import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
 import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
 import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
-import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
-import { makeLocalToolContexts } from '../Toolset.ts'
-import type { BaseLocalToolContext, LocalToolContexts, LocalToolStates } from './_canvas-paint-editor-types.ts'
 import { makCanvasPaintEditorState } from './CanvasPaintEditorState.ts'
-import { makeCanvasPaintSelectToolState } from './CanvasPaintSelectToolState.ts'
-import { type CanvasPaintToolset, useCanvasPaintToolset } from './CanvasPaintToolset.ts'
+import { makeCanvasPaintToolset } from './CanvasPaintToolset.ts'
 import { makeCanvasRenderer } from './CanvasRenderer.ts'
 import { makeCurrentToolRenderer } from './CurrentToolRenderer.ts'
 import { makeCanvasPaintWriter } from './data/CanvasPaintWriter.ts'
@@ -31,17 +28,17 @@ export function useCanvasPaintController(
     id,
     width,
     height,
-    toolset = useCanvasPaintToolset(),
     scale = toRef(useUIStore(), 'imgScale'),
     gridColor,
     gridDraw,
     imageDataRef,
+    store = useCanvasEditToolStore(),
   }: BaseToolManagerSettings & {
-    toolset?: CanvasPaintToolset,
     width: Ref<number>,
     height: Ref<number>,
     imageDataRef: ImageDataRef,
     gridColor: Ref<string>,
+    store?: CanvasEditToolStore
   },
 ) {
 
@@ -68,27 +65,18 @@ export function useCanvasPaintController(
     getImageData: () => state.imageDataRef.get()!,
   })
 
-  const localToolStates: LocalToolStates = {
-    [Tool.BRUSH]: makeBrushToolState({ state }),
-    [Tool.SELECT]: makeCanvasPaintSelectToolState({
-      state,
-      canvasRenderer,
-    }),
-  }
+  const canvasWriter = makeCanvasPaintWriter({ state, canvasRenderer })
 
-  const canvasWriter = makeCanvasPaintWriter({state, canvasRenderer})
-
-  const localBase: BaseLocalToolContext = {
+  const toolset = makeCanvasPaintToolset({
+    store,
     state,
     canvasRenderer,
     canvasWriter,
-  }
-
-  const localToolContexts = makeLocalToolContexts(localBase, localToolStates) as LocalToolContexts
+  })
 
   const currentToolRenderer = makeCurrentToolRenderer({
     toolset: toolset,
-    localToolContexts,
+    localToolContexts: toolset.localToolContexts,
   })
 
   canvasRenderer.setCurrentToolRenderer(currentToolRenderer)
@@ -100,7 +88,7 @@ export function useCanvasPaintController(
     if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
     if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
 
-    localToolStates.SELECT.clearSelection()
+    toolset.localToolStates.SELECT.clearSelection()
   })
 
   const uiStore = useUIStore()
@@ -127,10 +115,10 @@ export function useCanvasPaintController(
     state.mouseY = y
   }
 
-  const core = makeToolInputCore(state, toolset, localToolContexts)
+  const core = makeToolInputCore(state, toolset)
 
   const currentCursorCssClass = ref<string | null>(null)
-  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset, localToolContexts)
+  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset)
 
   return defineToolManager()({
     id,

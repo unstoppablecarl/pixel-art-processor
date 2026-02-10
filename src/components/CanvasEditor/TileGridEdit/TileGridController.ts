@@ -2,33 +2,24 @@ import { computed, ref, toRef, watch } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseToolManagerSettings, defineToolManager, Tool } from '../_core-editor-types.ts'
+import { type BaseToolManagerSettings, defineToolManager } from '../_core-editor-types.ts'
 import { makeGetCurrentCursorCssClass } from '../_support/controller/CurrentCursorCssClass.ts'
 import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
 import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
 import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
 import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
-import { makeBrushToolState } from '../_support/tools/BrushToolState.ts'
 import { useSelectionCancelOnDocumentClick } from '../_support/tools/selection-helpers.ts'
-import { makeLocalToolContexts } from '../Toolset.ts'
-import {
-  type BaseLocalToolContext,
-  CanvasType,
-  type LocalToolContexts,
-  type LocalToolStates,
-  type TileGridEditorToolHandlerArgs,
-} from './_tile-grid-editor-types.ts'
+import { CanvasType, type TileGridEditorToolHandlerArgs } from './_tile-grid-editor-types.ts'
 import { makeTileGridGeometry, type TileGridGeometry } from './data/TileGridGeometry.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
+import { makeTileSheetWriter } from './data/TileSheetWriter.ts'
 import { makeCurrentToolRenderer } from './renderers/CurrentToolRenderer.ts'
 import { makeTileGridEdgeColorRenderer } from './renderers/TileGridEdgeColorRenderer.ts'
 import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
 import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
 import { makeTileSheetSelectionRenderer } from './renderers/TileSheetSelectionRenderer.ts'
 import { makeTileGridEditorState, type TileGridEditorState } from './TileGridEditorState.ts'
-import { makeTileGridSelectionToolState } from './TileGridSelectionToolState.ts'
-import { type TileGridToolset, useTileGridToolset } from './TileGridToolset.ts'
-import { makeTileSheetWriter } from './data/TileSheetWriter.ts'
+import { makeTileGridToolset } from './TileGridToolset.ts'
 
 export type TileGridController = ReturnType<typeof useTileGridController>
 
@@ -36,14 +27,12 @@ export function useTileGridController(
   {
     id,
     tileGridManager,
-    toolset = useTileGridToolset(),
     scale = toRef(useUIStore(), 'imgScale'),
     gridColor,
     gridDraw,
-    store = useCanvasEditToolStore()
+    store = useCanvasEditToolStore(),
   }: BaseToolManagerSettings & {
     tileGridManager: TileGridManager,
-    toolset?: TileGridToolset,
     store?: CanvasEditToolStore
   },
 ) {
@@ -85,46 +74,32 @@ export function useTileGridController(
     store,
   })
 
-  const localToolStates: LocalToolStates = {
-    [Tool.BRUSH]: makeBrushToolState({ state }),
-    [Tool.SELECT]: makeTileGridSelectionToolState({
-      state,
-      tileSheetWriter,
-      gridRenderer,
-    }),
-  }
-
-  const localBase: BaseLocalToolContext = {
-    state,
-    gridRenderer,
-    tileSheetWriter,
-  }
-
   watch(gridCache.watchTarget, () => gridRenderer.queueRenderAll())
 
-  const localToolContexts = makeLocalToolContexts(localBase, localToolStates) as LocalToolContexts
-
-  const currentToolRenderer = makeCurrentToolRenderer({
-    toolset: toolset,
-    localToolContexts,
+  const toolset = makeTileGridToolset({
+    state,
+    tileSheetWriter,
+    gridRenderer,
   })
+
+  const currentToolRenderer = makeCurrentToolRenderer(toolset)
 
   gridRenderer.setCurrentToolRenderer(currentToolRenderer)
 
   const tileSheetRenderer = makeTileSheetRenderer({
     state,
-    localToolStates,
+    toolset,
     gridCache,
     tileGridEdgeColorRenderer,
   })
 
   const tileSheetSelectionRenderer = makeTileSheetSelectionRenderer({
     state,
-    localToolStates,
+    toolset,
     gridCache,
   })
 
-  useSelectionCancelOnDocumentClick({ id, state, toolset, localToolStates })
+  useSelectionCancelOnDocumentClick({ id, state, toolset, localToolStates: toolset.localToolStates })
 
   const uiStore = useUIStore()
   const brushCursor = useBrushCursor()
@@ -146,10 +121,10 @@ export function useTileGridController(
     tileSheetRenderer.resize()
   })
 
-  const core = makeToolInputCore(state, toolset, localToolContexts)
+  const core = makeToolInputCore(state, toolset)
 
   const currentCursorCssClass = ref<string | null>(null)
-  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset, localToolContexts)
+  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset)
 
   return defineToolManager<TileGridEditorToolHandlerArgs>()({
     id,

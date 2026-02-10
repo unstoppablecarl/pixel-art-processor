@@ -2,8 +2,8 @@ import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/uti
 import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { Tool } from '../../_core-editor-types.ts'
 import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
-import { type LocalToolStates } from '../_tile-grid-editor-types.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
+import type { TileGridToolset } from '../TileGridToolset.ts'
 import { drawDebugRect, drawDebugRectOutline } from './_debug-draw-helpers.ts'
 import type { TileGridEdgeColorRenderer } from './TileGridEdgeColorRenderer.ts'
 
@@ -13,11 +13,11 @@ export function makeTileSheetRenderer(
   {
     state,
     gridCache,
-    localToolStates,
+    toolset,
     tileGridEdgeColorRenderer,
   }: {
     state: TileGridEditorState,
-    localToolStates: LocalToolStates,
+    toolset: TileGridToolset
     gridCache: PixelGridLineRenderer,
     tileGridEdgeColorRenderer: TileGridEdgeColorRenderer
   }) {
@@ -39,7 +39,7 @@ export function makeTileSheetRenderer(
   }
 
   function draw() {
-    const toolState = localToolStates[Tool.SELECT]
+    const toolState = toolset.localToolStates[Tool.SELECT]
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       const { tileSize } = state

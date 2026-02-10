@@ -1,17 +1,16 @@
-import type { BaseToolHandler, Tool, ToolRegistry } from '../../_core-editor-types.ts'
+import { Tool, type ToolHandlersRecord } from '../../_core-editor-types.ts'
 import type { Toolset } from '../../Toolset.ts'
 
 export function makeGetCurrentCursorCssClass<
-  TTools extends ToolRegistry<BaseToolHandler<any, any>>,
-  TLocalToolContexts extends Record<Tool, any>,
-  TToolset extends Toolset<TTools>
+  B,
+  S extends Record<Tool, any>,
+  H extends ToolHandlersRecord<B, S>
 >(
-  toolset: TToolset,
-  localToolContexts: TLocalToolContexts,
+  toolset: Toolset<B, S, H>,
 ) {
   return function getCurrentCursorClass(): string | null {
     const tool = toolset.tools[toolset.currentTool]
-    const local = localToolContexts[toolset.currentTool]
+    const local = toolset.localToolContexts[toolset.currentTool]
 
     if (typeof tool.cursorCssClass === 'function') {
       return tool.cursorCssClass(local) ?? null
