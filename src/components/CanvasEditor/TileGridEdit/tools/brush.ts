@@ -120,13 +120,15 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
     },
     gridScreenOverlayDraw({ state, toolState }, ctx: CanvasRenderingContext2D) {
       if (state.hoverTileId === null) return
-      const { scale, tileGrid, tileSize, hoverTilePixelX, hoverTilePixelY } = state
+      const { scale, tileGrid, tileSize } = state
+      const x = state.hoverTilePixelX
+      const y = state.hoverTilePixelY
 
-      tileGrid.eachWithTileId(state.hoverTileId, (x, y, v) => {
-        const screenX = (x * tileSize + hoverTilePixelX!) * scale
-        const screenY = (y * tileSize + hoverTilePixelY!) * scale
+      tileGrid.eachWithTileId(state.hoverTileId, (gTileX, gTileY, v) => {
+        const screenX = (gTileX * tileSize + x!)
+        const screenY = (gTileY * tileSize + y!)
 
-        cursor.draw(ctx, screenX, screenY)
+        cursor.draw(ctx, screenX, screenY, scale)
       })
     },
     tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
@@ -137,7 +139,6 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
       if (x == null || y == null) return
 
       const { scale } = state
-
       cursor.draw(ctx, x, y, scale)
     },
   }
