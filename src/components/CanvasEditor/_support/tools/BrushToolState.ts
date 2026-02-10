@@ -26,7 +26,7 @@ export function makeBrushToolState(
     const h = boundsHeight
 
     if (brushShape === BrushShape.CIRCLE) {
-      return getPerfectCircleCoords(x, y, brushSize * 0.5, w, h)
+      return getPerfectCircleCoords(x, y, brushSize, w, h)
     } else {
       return getRectCenterCoords(x, y, brushSize, brushSize, w, h)
     }

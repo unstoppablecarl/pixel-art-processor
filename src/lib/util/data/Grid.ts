@@ -1,33 +1,44 @@
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 
+/**
+ * Logic to determine if a pixel is inside the circle.
+ * This specific formula matches standard pixel art tools like Photoshop/Aseprite
+ * for "aesthetic" circles.
+ */
+export function isInsideCircle(x: number, y: number, r: number): boolean {
+  // r^2 + r is a common heuristic for nice-looking pixel circles
+  // It handles both even and odd sizes gracefully.
+  return (x * x + y * y) < (r * r + r)
+}
+
 export function getPerfectCircleCoords(
   centerX: number,
   centerY: number,
-  radius: number,
+  brushSize: number,
   targetWidth?: number,
   targetHeight?: number,
 ): Point[] {
-
   const result: Point[] = []
-  const r = Math.floor(radius)
-  const r2 = r * r
 
-  for (let y = -r; y <= r; y++) {
-    for (let x = -r; x <= r; x++) {
-      if (x * x + y * y < r2) {
-        const px = Math.floor(centerX + x)
-        const py = Math.floor(centerY + y)
+  const r = (brushSize - 1) / 2
+  const limit = Math.ceil(r)
 
-        if (targetWidth !== undefined && (px < 0 || px >= targetWidth)) continue
-        if (targetHeight !== undefined && (py < 0 || py >= targetHeight)) continue
+  for (let y = -limit; y <= limit; y++) {
+    for (let x = -limit; x <= limit; x++) {
+      if (targetWidth !== undefined && (x < 0 || x >= targetWidth)) continue
+      if (targetHeight !== undefined && (y < 0 || y >= targetHeight)) continue
 
-        result.push({ x: px, y: py })
+      if (isInsideCircle(x, y, r)) {
+        result.push({
+          x: Math.floor(centerX + x),
+          y: Math.floor(centerY + y),
+        })
       }
     }
   }
-
   return result
 }
+
 export function getRectCenterCoords(
   x: number,
   y: number,
