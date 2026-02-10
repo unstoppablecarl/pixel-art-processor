@@ -1,20 +1,11 @@
 // makeToolInputCore.ts
-import type { Tool } from '../../_core-editor-types.ts'
+import type { BaseEditorState, Tool } from '../../_core-editor-types.ts'
 
 type ToolMap = Record<Tool, any>
 type LocalToolContexts = Record<Tool, any>
 
 export function makeToolInputCore<
-  TState extends {
-    dragThreshold: number
-    mouseDownX: number | null
-    mouseDownY: number | null
-    mouseLastX: number | null
-    mouseLastY: number | null
-    mouseDragStartX: number | null
-    mouseDragStartY: number | null
-    isDragging: boolean
-  },
+  TState extends BaseEditorState,
 >(
   state: TState,
   toolset: {
