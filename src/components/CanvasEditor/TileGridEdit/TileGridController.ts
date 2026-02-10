@@ -162,7 +162,7 @@ export function useTileGridController(
     tileSheetWriter,
     getInputHandlers(canvas, canvasType: CanvasType, tileId?: TileId) {
       return useGlobalInput({
-        getCoordsFromEvent: canvasCoordGetter(canvas, scale.value),
+        getCoordsFromEvent: canvasCoordGetter(canvas, scale),
         onMouseDown(x: number, y: number) {
           updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
           state.dragStartTileId = state.mouseTileId

@@ -1,4 +1,4 @@
-import type { ShallowRef } from 'vue'
+import type { Ref, ShallowRef } from 'vue'
 import type { Position } from '../../../lib/pipeline/_types.ts'
 import type { InputTarget, ToolInputHandlers } from '../_core-editor-types.ts'
 
@@ -68,12 +68,12 @@ export function useGlobalInput(target: InputTarget): ToolInputHandlers {
   }
 }
 
-export function canvasCoordGetter(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, scale: number) {
+export function canvasCoordGetter(canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, scale: Ref<number>) {
   return (e: MouseEvent): Position => {
     const rect = canvas.value!.getBoundingClientRect()
     return {
-      x: Math.floor((e.clientX - rect.left) / scale),
-      y: Math.floor((e.clientY - rect.top) / scale),
+      x: Math.floor((e.clientX - rect.left) / scale.value),
+      y: Math.floor((e.clientY - rect.top) / scale.value),
     }
   }
 }

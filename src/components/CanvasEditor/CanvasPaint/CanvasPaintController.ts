@@ -139,7 +139,7 @@ export function useCanvasPaintController(
     currentCursorCssClass,
     getInputHandlers(canvas) {
       return useGlobalInput({
-        getCoordsFromEvent: canvasCoordGetter(canvas, state.scale),
+        getCoordsFromEvent: canvasCoordGetter(canvas, scale),
         onMouseDown(x: number, y: number) {
           setMousePos(x, y)
           core.pointerDown(x, y)

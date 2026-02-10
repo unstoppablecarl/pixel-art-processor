@@ -25,13 +25,16 @@ export function getPerfectCircleCoords(
 
   for (let y = -limit; y <= limit; y++) {
     for (let x = -limit; x <= limit; x++) {
-      if (targetWidth !== undefined && (x < 0 || x >= targetWidth)) continue
-      if (targetHeight !== undefined && (y < 0 || y >= targetHeight)) continue
+      const cx = centerX + x
+      const cy = centerY + y
+
+      if (targetWidth !== undefined && (cx < 0 || cx >= targetWidth)) continue
+      if (targetHeight !== undefined && (cy < 0 || cy >= targetHeight)) continue
 
       if (isInsideCircle(x, y, r)) {
         result.push({
-          x: Math.floor(centerX + x),
-          y: Math.floor(centerY + y),
+          x: Math.floor(cx),
+          y: Math.floor(cy),
         })
       }
     }
