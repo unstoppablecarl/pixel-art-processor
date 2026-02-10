@@ -118,8 +118,7 @@ export function makeBrushCursor() {
     },
     watchTarget: readonly(version),
     getBounds(x: number, y: number) {
-      const { dx, dy } = getOrigin(current!.brushSize, x, y)
-      return getRectFromCenter(dx, dy, current!.brushSize, current!.brushSize)
+      return getRectFromCenter(x, y, current!.brushSize, current!.brushSize)
     },
     draw(drawCtx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
       if (!current) return
@@ -127,6 +126,9 @@ export function makeBrushCursor() {
       const { dx, dy } = getOrigin(current.brushSize, x, y, scale)
 
       drawCtx.drawImage(canvas, Math.floor(dx), Math.floor(dy))
+    },
+    drawRaw(drawCtx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
+      drawCtx.drawImage(canvas, Math.floor(x * scale), Math.floor(y * scale))
     },
   }
 }

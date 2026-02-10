@@ -132,8 +132,28 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
       })
     },
     tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
-      if (tileId !== state.hoverTileId) return
+      if (state.mouseGridX && state.mouseGridY) {
 
+        const { scale } = state
+        const bounds = cursor.getBounds(state.mouseGridX, state.mouseGridY)
+        const overlapping = state.tileGridGeometry.getOverlappingTilesOnGrid(bounds)
+
+        for (const r of overlapping) {
+          if (r.tile.id !== tileId) continue
+
+          const rx = r.tileRelativeOffsetX * scale
+          const ry = r.tileRelativeOffsetY * scale
+
+          cursor.drawRaw(
+            ctx,
+            rx - 1.5,
+            ry - 1.5,
+          )
+        }
+        return
+      }
+
+      if (tileId !== state.hoverTileId) return
       const x = state.hoverTilePixelX
       const y = state.hoverTilePixelY
       if (x == null || y == null) return
