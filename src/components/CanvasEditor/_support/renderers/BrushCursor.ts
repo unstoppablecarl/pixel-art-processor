@@ -100,9 +100,6 @@ export function makeBrushCursor(state?: BrushSettings) {
       const r = (current.brushSize - 1) / 2
       const limit = Math.ceil(r)
 
-      console.log(x, y)
-      console.log('-', x - limit - 2, y - limit - 2)
-
       const dx = (x * scale) - (limit * scale) - 2
       const dy = (y * scale) - (limit * scale) - 2
 
