@@ -1,14 +1,12 @@
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
+import type { Rect } from './Rect.ts'
 
 /**
  * Logic to determine if a pixel is inside the circle.
- * This specific formula matches standard pixel art tools like Photoshop/Aseprite
- * for "aesthetic" circles.
+ * This matches Photoshop and most image editors.
  */
 export function isInsideCircle(x: number, y: number, r: number): boolean {
-  // r^2 + r is a common heuristic for nice-looking pixel circles
-  // It handles both even and odd sizes gracefully.
-  return (x * x + y * y) < (r * r + r)
+  return (x * x + y * y) <= (r * r)
 }
 
 export function getPerfectCircleCoords(
@@ -20,18 +18,22 @@ export function getPerfectCircleCoords(
 ): Point[] {
   const result: Point[] = []
 
-  const r = (brushSize - 1) / 2
-  const limit = Math.ceil(r)
+  const r = brushSize / 2  // Changed from (brushSize - 1) / 2
 
-  for (let y = -limit; y <= limit; y++) {
-    for (let x = -limit; x <= limit; x++) {
+  const minOffset = -Math.ceil(r - 0.5)
+  const maxOffset = Math.floor(r - 0.5)
+
+  const centerOffset = (brushSize % 2 === 0) ? 0.5 : 0
+
+  for (let y = minOffset; y <= maxOffset; y++) {
+    for (let x = minOffset; x <= maxOffset; x++) {
       const cx = centerX + x
       const cy = centerY + y
 
       if (targetWidth !== undefined && (cx < 0 || cx >= targetWidth)) continue
       if (targetHeight !== undefined && (cy < 0 || cy >= targetHeight)) continue
 
-      if (isInsideCircle(x, y, r)) {
+      if (isInsideCircle(x + centerOffset, y + centerOffset, r)) {
         result.push({
           x: Math.floor(cx),
           y: Math.floor(cy),
@@ -75,6 +77,35 @@ export function getRectCenterCoords(
   }
 
   return result
+}
+export function getRectFromCenter(
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  targetWidth?: number,
+  targetHeight?: number,
+): Rect {
+  const halfW = Math.floor(width / 2)
+  const halfH = Math.floor(height / 2)
+
+  const rawStartX = x - halfW
+  const rawStartY = y - halfH
+  const rawEndX = rawStartX + width
+  const rawEndY = rawStartY + height
+
+  // Clamp to bounds if target dimensions are provided
+  const startX = targetWidth !== undefined ? Math.max(0, rawStartX) : rawStartX
+  const startY = targetHeight !== undefined ? Math.max(0, rawStartY) : rawStartY
+  const endX = targetWidth !== undefined ? Math.min(targetWidth, rawEndX) : rawEndX
+  const endY = targetHeight !== undefined ? Math.min(targetHeight, rawEndY) : rawEndY
+
+  return {
+    x: startX,
+    y: startY,
+    w: endX - startX,
+    h: endY - startY,
+  }
 }
 
 export function mirrorTilePixelHorizontal(x: number, y: number, tileSize: number): Point {

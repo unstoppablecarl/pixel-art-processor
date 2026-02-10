@@ -1,6 +1,7 @@
 import { readonly, ref, watchEffect } from 'vue'
 import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../../lib/store/ui-store.ts'
+import { getRectFromCenter, isInsideCircle } from '../../../../lib/util/data/Grid.ts'
 import { makeReusablePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { BrushShape } from '../../_core-editor-types.ts'
 
@@ -15,7 +16,7 @@ export type BrushSettings = {
 
 export type BrushCursor = ReturnType<typeof makeBrushCursor>
 
-export function makeBrushCursor(state?: BrushSettings) {
+export function makeBrushCursor() {
   const { canvas, ctx } = pixelCanvas(1, 1)
   const version = ref(0)
   let current: BrushSettings | undefined
@@ -36,42 +37,46 @@ export function makeBrushCursor(state?: BrushSettings) {
     const gutter = 2
     ctx.translate(gutter, gutter)
 
-    const r = (brushSize - 1) / 2
-    const rThreshold = (r * r + r)
-
     if (brushShape === BrushShape.CIRCLE) {
-      const limit = Math.ceil(r)
+      const r = brushSize / 2
+      const minOffset = -Math.ceil(r - 0.5)
+      const maxOffset = Math.floor(r - 0.5)
+      const centerOffset = (brushSize % 2 === 0) ? 0.5 : 0
 
-      for (let y = -limit; y <= limit; y++) {
-        const yy = y * y
-        for (let x = -limit; x <= limit; x++) {
-          const xx = x * x
-          if (xx + yy < rThreshold) {
-            const sx = (limit + x) * scale
-            const sy = (limit + y) * scale
+      for (let y = minOffset; y <= maxOffset; y++) {
+        for (let x = minOffset; x <= maxOffset; x++) {
+          if (isInsideCircle(x + centerOffset, y + centerOffset, r)) {
+            // Convert from relative coords to screen coords
+            const sx = (x - minOffset) * scale
+            const sy = (y - minOffset) * scale
 
-            // LEFT EDGE
-            if ((x - 1) * (x - 1) + yy >= rThreshold) {
+            // LEFT EDGE - check if pixel to the left is outside
+            if (!isInsideCircle(x - 1 + centerOffset, y + centerOffset, r)) {
               ctx.fillRect(sx - 1, sy, 1, scale)
             }
-            // RIGHT EDGE
-            if ((x + 1) * (x + 1) + yy >= rThreshold) {
+            // RIGHT EDGE - check if pixel to the right is outside
+            if (!isInsideCircle(x + 1 + centerOffset, y + centerOffset, r)) {
               ctx.fillRect(sx + scale, sy, 1, scale)
             }
-            // TOP EDGE
-            if (xx + (y - 1) * (y - 1) >= rThreshold) {
-              // Only extend the horizontal line if the left/right neighbors
-              // also don't have a pixel above them.
+            // TOP EDGE - check if pixel above is outside
+            if (!isInsideCircle(x + centerOffset, y - 1 + centerOffset, r)) {
+              // Extend line to cover corners if needed
+              const leftOut = !isInsideCircle(x - 1 + centerOffset, y - 1 + centerOffset, r)
+              const rightOut = !isInsideCircle(x + 1 + centerOffset, y - 1 + centerOffset, r)
 
-              const xOff = (x === -limit || (x - 1) * (x - 1) + (y - 1) * (y - 1) >= rThreshold) ? -1 : 0
-              const wOff = (x === limit || (x + 1) * (x + 1) + (y - 1) * (y - 1) >= rThreshold) ? 1 : 0
+              const xOff = leftOut ? -1 : 0
+              const wOff = rightOut ? 1 : 0
 
               ctx.fillRect(sx + xOff, sy - 1, scale - xOff + wOff, 1)
             }
-            // BOTTOM EDGE
-            if (xx + (y + 1) * (y + 1) >= rThreshold) {
-              const xOff = (x === -limit || (x - 1) * (x - 1) + (y + 1) * (y + 1) >= rThreshold) ? -1 : 0
-              const wOff = (x === limit || (x + 1) * (x + 1) + (y + 1) * (y + 1) >= rThreshold) ? 1 : 0
+            // BOTTOM EDGE - check if pixel below is outside
+            if (!isInsideCircle(x + centerOffset, y + 1 + centerOffset, r)) {
+              // Extend line to cover corners if needed
+              const leftOut = !isInsideCircle(x - 1 + centerOffset, y + 1 + centerOffset, r)
+              const rightOut = !isInsideCircle(x + 1 + centerOffset, y + 1 + centerOffset, r)
+
+              const xOff = leftOut ? -1 : 0
+              const wOff = rightOut ? 1 : 0
 
               ctx.fillRect(sx + xOff, sy + scale, scale - xOff + wOff, 1)
             }
@@ -79,7 +84,6 @@ export function makeBrushCursor(state?: BrushSettings) {
         }
       }
     } else {
-      // Square remains simple and sharp
       ctx.fillRect(-1, -1, footprint + 2, 1) // Top
       ctx.fillRect(-1, footprint, footprint + 2, 1) // Bottom
       ctx.fillRect(-1, 0, 1, footprint) // Left
@@ -90,18 +94,37 @@ export function makeBrushCursor(state?: BrushSettings) {
     current = newState
   }
 
+  const offScratch = { dx: 0, dy: 0 }
+
+  function getOrigin(brushSize: number, x: number, y: number, scale = 1) {
+    const r = brushSize / 2
+    const minOffset = -Math.ceil(r - 0.5)
+
+    const dx = (x * scale) + (minOffset * scale) - 2
+    const dy = (y * scale) + (minOffset * scale) - 2
+
+    offScratch.dx = dx
+    offScratch.dy = dy
+
+    return offScratch
+  }
+
   return {
     update,
     canvas,
     ctx,
+    get brushSize() {
+      return current!.brushSize
+    },
     watchTarget: readonly(version),
+    getBounds(x: number, y: number) {
+      const { dx, dy } = getOrigin(current!.brushSize, x, y)
+      return getRectFromCenter(dx, dy, current!.brushSize, current!.brushSize)
+    },
     draw(drawCtx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
       if (!current) return
-      const r = (current.brushSize - 1) / 2
-      const limit = Math.ceil(r)
 
-      const dx = (x * scale) - (limit * scale) - 2
-      const dy = (y * scale) - (limit * scale) - 2
+      const { dx, dy } = getOrigin(current.brushSize, x, y, scale)
 
       drawCtx.drawImage(canvas, Math.floor(dx), Math.floor(dy))
     },

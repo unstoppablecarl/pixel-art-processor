@@ -46,6 +46,9 @@ export function makeBrushToolState(
   }
 
   return {
+    get brushSize() {
+      return store.brushSize
+    },
     getBrushPixels,
     writeBrushPixels,
   }
