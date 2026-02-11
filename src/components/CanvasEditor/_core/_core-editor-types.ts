@@ -1,4 +1,4 @@
-import type { Ref, ShallowRef } from 'vue'
+import { type Ref, type ShallowRef } from 'vue'
 import type { BrushToolState } from './tools/BrushToolState.ts'
 
 export const TOOL_HOVER_CSS_CLASSES: Record<Tool, string> = {
@@ -81,8 +81,9 @@ export type ToolInputHandlers = {
 
 export type BaseToolController<TArgs extends any[] = []> = {
   id: string,
-  getInputHandlers: (canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, ...args: TArgs) => ToolInputHandlers,
-  currentCursorCssClass: Ref<string | null>,
+  getInputHandlers: (canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, ...args: TArgs) => ToolInputHandlers & {
+    currentCursorCssClass: Ref<string | null>
+  },
 }
 
 export type InputTarget = {
@@ -94,6 +95,9 @@ export type InputTarget = {
   onMouseEnter?(e: MouseEvent): void,
   onHoverStart?(e: MouseEvent): void
   onHoverEnd?(e: MouseEvent): void,
+
+  onCopy?(): void,
+  onPaste?(): void,
 }
 
 export type BaseToolHandler<S, TArgs extends any[] = []> = {
@@ -113,6 +117,9 @@ export type BaseToolHandler<S, TArgs extends any[] = []> = {
   onDeselect?: () => void,
 
   cursorCssClass?: (() => string | null) | string,
+
+  onCopy?: () => void,
+  onPaste?: () => void
 }
 
 export type ToolHandlerSubToolChanged<T extends string> = {

@@ -1,11 +1,10 @@
-import { computed, ref, toRef, watch } from 'vue'
+import { computed, toRef, watch } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolController } from '../_core/_core-editor-types.ts'
-import { makeGetCurrentCursorCssClass } from '../_core/controller/CurrentCursorCssClass.ts'
 import { makeToolInputCore } from '../_core/controller/ToolInputCore.ts'
-import { canvasCoordGetter, useGlobalInput } from '../_core/GlobalInputManager.ts'
+import { makeBaseInputHandlers } from '../_core/GlobalInputManager.ts'
 import { useBrushCursor } from '../_core/renderers/BrushCursor.ts'
 import { makePixelGridLineRenderer } from '../_core/renderers/PixelGridLineRenderer.ts'
 import { CanvasType, type TileGridEditorToolHandlerArgs } from './_tile-grid-editor-types.ts'
@@ -115,49 +114,40 @@ export function useTileGridController(
     tileSheetRenderer.resize()
   })
 
-  const core = makeToolInputCore(state, toolset)
-
-  const currentCursorCssClass = ref<string | null>(null)
-  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset)
+  const input = makeToolInputCore(state, toolset)
 
   return defineToolController<TileGridEditorToolHandlerArgs>()({
     id,
     state,
-    currentCursorCssClass,
     gridRenderer,
     tileSheetRenderer,
     tileSheetSelectionRenderer,
     tileGridManager,
     tileSheetWriter,
-
     getInputHandlers(canvas, canvasType: CanvasType, tileId?: TileId) {
-      return useGlobalInput({
-        getCoordsFromEvent: canvasCoordGetter(canvas, scale),
-        onMouseDown(x: number, y: number) {
-          updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
-          state.dragStartTileId = state.mouseTileId
-          core.pointerDown(x, y, canvasType, tileId)
-          gridRenderer.queueRenderGrid()
-        },
-        onMouseMove(x: number, y: number) {
-          updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
-          core.pointerMove(x, y, canvasType, tileId)
-        },
-        onMouseUp(x: number, y: number) {
-          updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
-          core.pointerUp(x, y, canvasType, tileId)
-          state.dragStartTileId = null
-        },
-        onMouseLeave() {
-          clearPointerState(state)
-          core.pointerLeave(canvasType, tileId)
-          gridRenderer.queueRenderGrid()
-        },
-        onHoverStart() {
-          currentCursorCssClass.value = getCurrentCursorClass()
-        },
-        onHoverEnd() {
-          currentCursorCssClass.value = null
+      return makeBaseInputHandlers({
+        toolset,
+        canvas,
+        scale,
+        input: {
+          onMouseDown(x: number, y: number) {
+            updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
+            state.dragStartTileId = state.mouseTileId
+            input.pointerDown(x, y, canvasType, tileId)
+          },
+          onMouseMove(x: number, y: number) {
+            updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
+            input.pointerMove(x, y, canvasType, tileId)
+          },
+          onMouseUp(x: number, y: number) {
+            updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
+            input.pointerUp(x, y, canvasType, tileId)
+            state.dragStartTileId = null
+          },
+          onMouseLeave() {
+            clearPointerState(state)
+            input.pointerLeave(canvasType, tileId)
+          },
         },
       })
     },

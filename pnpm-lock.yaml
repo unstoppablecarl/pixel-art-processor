@@ -20,6 +20,9 @@ importers:
       bootstrap-vue-next:
         specifier: ^0.42.0
         version: 0.42.0(@floating-ui/vue@1.1.9(vue@3.5.24(typescript@5.9.3)))(@vueuse/core@14.1.0(vue@3.5.24(typescript@5.9.3)))(vue@3.5.24(typescript@5.9.3))
+      hotkeys-js:
+        specifier: ^4.0.0
+        version: 4.0.0
       pinia:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
@@ -1085,6 +1088,9 @@ packages:
 
   hookable@5.5.3:
     resolution: {integrity: sha512-Yc+BQe8SvoXH1643Qez1zqLRmbA5rCL+sSmk6TVos0LWVfNIB7PGncdlId77WzLGSIB5KaWgTaNTs2lNVEI6VQ==}
+
+  hotkeys-js@4.0.0:
+    resolution: {integrity: sha512-gIoeqMWYqPIItc4HaseVbtTRpEpBbeufZMUcoWtN62JZdDq3KadS1ijN6wpaDjTzRK7PjT3QOPUcx+yNT0rrZQ==}
 
   html-encoding-sniffer@4.0.0:
     resolution: {integrity: sha512-Y22oTqIU4uuPgEemfz7NDJz6OeKf12Lsu+QC+s3BVpda64lTiMYCyGwg5ki4vFxkMwQdeZDl2adZoqUgdFuTgQ==}
@@ -2820,6 +2826,8 @@ snapshots:
   has-flag@4.0.0: {}
 
   hookable@5.5.3: {}
+
+  hotkeys-js@4.0.0: {}
 
   html-encoding-sniffer@4.0.0:
     dependencies:

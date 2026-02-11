@@ -1,11 +1,10 @@
-import { ref, type Ref, toRef, watch, watchEffect } from 'vue'
+import { type Ref, toRef, watch, watchEffect } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
 import { type BaseToolManagerSettings, defineToolController } from '../_core/_core-editor-types.ts'
-import { makeGetCurrentCursorCssClass } from '../_core/controller/CurrentCursorCssClass.ts'
 import { makeToolInputCore } from '../_core/controller/ToolInputCore.ts'
-import { canvasCoordGetter, useGlobalInput } from '../_core/GlobalInputManager.ts'
+import { makeBaseInputHandlers } from '../_core/GlobalInputManager.ts'
 import { useBrushCursor } from '../_core/renderers/BrushCursor.ts'
 import { makePixelGridLineRenderer } from '../_core/renderers/PixelGridLineRenderer.ts'
 import { makCanvasPaintEditorState } from './CanvasPaintEditorState.ts'
@@ -92,46 +91,40 @@ export function useCanvasPaintController(
     state.mouseY = y
   }
 
-  const core = makeToolInputCore(state, toolset)
-
-  const currentCursorCssClass = ref<string | null>(null)
-  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset)
+  const input = makeToolInputCore(state, toolset)
 
   return defineToolController()({
     id,
     state,
     canvasRenderer,
-    currentCursorCssClass,
     getInputHandlers(canvas) {
-      return useGlobalInput({
-        getCoordsFromEvent: canvasCoordGetter(canvas, scale),
-        onMouseDown(x: number, y: number) {
-          setMousePos(x, y)
-          core.pointerDown(x, y)
-          canvasRenderer.queueRender()
-        },
-        onMouseMove(x: number, y: number) {
-          setMousePos(x, y)
-          core.pointerMove(x, y)
-        },
-        onMouseUp(x: number, y: number) {
-          setMousePos(x, y)
-          core.pointerUp(x, y)
-        },
-        onMouseLeave() {
-          if (state.isDragging) return
+      return makeBaseInputHandlers({
+        toolset,
+        scale,
+        canvas,
+        input: {
+          onMouseDown(x: number, y: number) {
+            setMousePos(x, y)
+            input.pointerDown(x, y)
+            canvasRenderer.queueRender()
+          },
+          onMouseMove(x: number, y: number) {
+            setMousePos(x, y)
+            input.pointerMove(x, y)
+          },
+          onMouseUp(x: number, y: number) {
+            setMousePos(x, y)
+            input.pointerUp(x, y)
+          },
+          onMouseLeave() {
+            if (state.isDragging) return
 
-          state.mouseX = null
-          state.mouseY = null
+            state.mouseX = null
+            state.mouseY = null
 
-          core.pointerLeave()
-          canvasRenderer.queueRender()
-        },
-        onHoverStart() {
-          currentCursorCssClass.value = getCurrentCursorClass()
-        },
-        onHoverEnd() {
-          currentCursorCssClass.value = null
+            input.pointerLeave()
+            canvasRenderer.queueRender()
+          },
         },
       })
     },
