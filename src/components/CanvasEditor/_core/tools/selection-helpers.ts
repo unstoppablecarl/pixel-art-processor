@@ -9,8 +9,12 @@ import {
   blendOverwrite,
   type ImageDataBlendFn,
 } from '../../../../lib/util/html-dom/blit.ts'
-import { useDocumentClick } from '../../../../lib/util/vue-util.ts'
-import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, DATA_LOCAL_TOOL_ID, Tool } from '../../_core-editor-types.ts'
+import {
+  type BaseSelectToolState,
+  BlendMode,
+  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK,
+  TOOL_HOVER_CSS_CLASSES,
+} from '../_core-editor-types.ts'
 
 export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn> = {
   [BlendMode.OVERWRITE]: blendOverwrite,
@@ -24,39 +28,6 @@ export const selectMoveBlendModeToWriter: Record<BlendMode, ImageDataBlendFn> = 
   [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
 }
 
-export interface SelectionCancelDeps<State, Toolset, LocalToolStates> {
-  id: string
-  state: State & {
-    isDragging: boolean
-    mouseDownX: number | null
-    mouseDownY: number | null
-  }
-  toolset: Toolset & {
-    currentTool: Tool
-  }
-  localToolStates: LocalToolStates & {
-    [Tool.SELECT]: { clearSelection(): void }
-  }
-}
-
-export function useSelectionCancelOnDocumentClick<
-  State,
-  Toolset,
-  LocalToolStates
->(deps: SelectionCancelDeps<State, Toolset, LocalToolStates>) {
-  const { id, state, toolset, localToolStates } = deps
-
-  useDocumentClick((t) => {
-    if (state.isDragging) return
-    if (toolset.currentTool !== Tool.SELECT) return
-    if (state.mouseDownX !== null || state.mouseDownY !== null) return
-    if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
-    if (t.getAttribute(DATA_LOCAL_TOOL_ID) === id) return
-
-    localToolStates[Tool.SELECT].clearSelection()
-  })
-}
-
 export function drawSelectOutline(
   ctx: CanvasRenderingContext2D,
   scale: number,
@@ -67,7 +38,7 @@ export function drawSelectOutline(
   const { x: rx, y: ry, w, h } = rect
   ctx.fillStyle = color
 
-  const dashPeriod = 4
+  const dashPeriod = 1
 
   if (!mask) {
     const x = rx * scale
@@ -125,5 +96,22 @@ export function drawSelectOutline(
         }
       }
     }
+  }
+}
+
+export function selectHandlerDocumentClick(cb: () => void) {
+  return (t: HTMLElement) => {
+    if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
+    cb()
+  }
+}
+
+export function makeBaseSelectHandler(toolState: BaseSelectToolState) {
+  return {
+    cursorCssClass: TOOL_HOVER_CSS_CLASSES.SELECT,
+    onDocumentClick(t: HTMLElement) {
+      if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
+      toolState.clearSelection()
+    },
   }
 }

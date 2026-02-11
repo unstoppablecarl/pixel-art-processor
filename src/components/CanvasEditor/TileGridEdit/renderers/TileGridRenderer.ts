@@ -3,10 +3,10 @@ import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/uti
 import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { imageDataRef } from '../../../../lib/vue/vue-image-data.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { type PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
+import { type PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import { makeTileSheetSync } from '../data/TileSync.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
+import type { TileGridToolset } from '../TileGridToolset.ts'
 import type { TileGridEdgeColorRenderer } from './TileGridEdgeColorRenderer.ts'
 import { makeTileRenderer, type TileRenderer } from './TileRenderer.ts'
 
@@ -27,7 +27,7 @@ export function makeTileGridRenderer(
 
   const tileSync = makeTileSheetSync(state.tileSheet)
 
-  let currentToolRenderer: CurrentToolRenderer
+  let toolset: TileGridToolset
   let tileGridPixelCanvas: PixelCanvas | undefined
 
   const tileRenderers: Record<TileId, TileRenderer> = {}
@@ -39,13 +39,13 @@ export function makeTileGridRenderer(
   }
 
   function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
-    if (!currentToolRenderer) throw new Error('currentToolRenderer not set')
+    if (!toolset) throw new Error('currentToolRenderer not set')
     tileRenderers[tileId] = makeTileRenderer({
       tileId,
       state,
       gridCache,
       tileCanvas,
-      currentToolRenderer,
+      toolset,
       tileGridEdgeColorRenderer,
     })
 
@@ -93,7 +93,7 @@ export function makeTileGridRenderer(
   const queueRenderGrid = makeRenderQueue(() => {
     updateGridTiles()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
-      currentToolRenderer.gridPixelOverlayDraw(ctx)
+      toolset.currentToolHandler.gridPixelOverlayDraw?.(ctx)
       tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 
@@ -109,7 +109,7 @@ export function makeTileGridRenderer(
         })
       }
 
-      currentToolRenderer.gridScreenOverlayDraw(ctx)
+      toolset.currentToolHandler.gridScreenOverlayDraw?.(ctx)
     }
 
     renderCanvasFrame(
@@ -134,8 +134,8 @@ export function makeTileGridRenderer(
     queueRenderAll: () => {
       queueRenderTiles()
     },
-    setCurrentToolRenderer(val: CurrentToolRenderer) {
-      currentToolRenderer = val
+    setToolset(val: TileGridToolset) {
+      toolset = val
     },
     updateGridTiles,
   }

@@ -1,4 +1,4 @@
-import type { DrawLayer } from '../../../components/CanvasEditor/_core-editor-types.ts'
+import type { DrawLayer } from '../../../components/CanvasEditor/_core/_core-editor-types.ts'
 import { putImageData } from './ImageData.ts'
 import { makeReusablePixelCanvas, type PixelCanvas } from './PixelCanvas.ts'
 

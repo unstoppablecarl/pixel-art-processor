@@ -18,7 +18,7 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { applyHistoryPixels, extractHistoryPixels } from '../../_support/data/_history-helpers.ts'
+import { applyHistoryPixels, extractHistoryPixels } from '../../_core/data/_history-helpers.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 

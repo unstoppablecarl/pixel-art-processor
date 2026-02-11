@@ -8,7 +8,7 @@ import {
   type SubToolOf,
   SubTools,
   Tool,
-} from '../../components/CanvasEditor/_core-editor-types.ts'
+} from '../../components/CanvasEditor/_core/_core-editor-types.ts'
 import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/html-dom/ImageData.ts'
 import { makeStateMapper } from './_store-helpers.ts'
 

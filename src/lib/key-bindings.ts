@@ -1,4 +1,4 @@
-import { BrushSubTool, SelectSubTool, Tool } from '../components/CanvasEditor/_core-editor-types.ts'
+import { BrushSubTool, SelectSubTool, Tool } from '../components/CanvasEditor/_core/_core-editor-types.ts'
 import { useCanvasEditToolStore } from './store/canvas-edit-tool-store.ts'
 import type { VueHistory } from './util/history/history.ts'
 import { bindInputKey } from './util/html-dom/keyboard.ts'

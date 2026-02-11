@@ -2,7 +2,7 @@ import { type Point } from '../../../../lib/node-data-types/BaseDataStructure.ts
 import { blendOverwrite, getBlendAdapter } from '../../../../lib/util/html-dom/blit.ts'
 import { type PixelColor, type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { finalizePatch } from '../../_support/data/_history-helpers.ts'
+import { finalizePatch } from '../../_core/data/_history-helpers.ts'
 import type { TileSheet } from './TileSheet.ts'
 import type { ProtoTileSheetPatch, TileRect, TileSheetPatch } from './TileSheetHistory.ts'
 

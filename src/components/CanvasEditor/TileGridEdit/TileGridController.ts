@@ -2,18 +2,16 @@ import { computed, ref, toRef, watch } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseToolManagerSettings, defineToolManager } from '../_core-editor-types.ts'
-import { makeGetCurrentCursorCssClass } from '../_support/controller/CurrentCursorCssClass.ts'
-import { makeToolInputCore } from '../_support/controller/ToolInputCore.ts'
-import { canvasCoordGetter, useGlobalInput } from '../_support/GlobalInputManager.ts'
-import { useBrushCursor } from '../_support/renderers/BrushCursor.ts'
-import { makePixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
-import { useSelectionCancelOnDocumentClick } from '../_support/tools/selection-helpers.ts'
+import { type BaseToolManagerSettings, defineToolController } from '../_core/_core-editor-types.ts'
+import { makeGetCurrentCursorCssClass } from '../_core/controller/CurrentCursorCssClass.ts'
+import { makeToolInputCore } from '../_core/controller/ToolInputCore.ts'
+import { canvasCoordGetter, useGlobalInput } from '../_core/GlobalInputManager.ts'
+import { useBrushCursor } from '../_core/renderers/BrushCursor.ts'
+import { makePixelGridLineRenderer } from '../_core/renderers/PixelGridLineRenderer.ts'
 import { CanvasType, type TileGridEditorToolHandlerArgs } from './_tile-grid-editor-types.ts'
 import { makeTileGridGeometry, type TileGridGeometry } from './data/TileGridGeometry.ts'
 import type { TileGridManager } from './data/TileGridManager.ts'
 import { makeTileSheetWriter } from './data/TileSheetWriter.ts'
-import { makeCurrentToolRenderer } from './renderers/CurrentToolRenderer.ts'
 import { makeTileGridEdgeColorRenderer } from './renderers/TileGridEdgeColorRenderer.ts'
 import { makeTileGridRenderer } from './renderers/TileGridRenderer.ts'
 import { makeTileSheetRenderer } from './renderers/TileSheetRenderer.ts'
@@ -82,9 +80,7 @@ export function useTileGridController(
     gridRenderer,
   })
 
-  const currentToolRenderer = makeCurrentToolRenderer(toolset)
-
-  gridRenderer.setCurrentToolRenderer(currentToolRenderer)
+  gridRenderer.setToolset(toolset)
 
   const tileSheetRenderer = makeTileSheetRenderer({
     state,
@@ -98,8 +94,6 @@ export function useTileGridController(
     toolset,
     gridCache,
   })
-
-  useSelectionCancelOnDocumentClick({ id, state, toolset, localToolStates: toolset.localToolStates })
 
   const uiStore = useUIStore()
   const brushCursor = useBrushCursor()
@@ -126,7 +120,7 @@ export function useTileGridController(
   const currentCursorCssClass = ref<string | null>(null)
   const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset)
 
-  return defineToolManager<TileGridEditorToolHandlerArgs>()({
+  return defineToolController<TileGridEditorToolHandlerArgs>()({
     id,
     state,
     currentCursorCssClass,
@@ -135,6 +129,7 @@ export function useTileGridController(
     tileSheetSelectionRenderer,
     tileGridManager,
     tileSheetWriter,
+
     getInputHandlers(canvas, canvasType: CanvasType, tileId?: TileId) {
       return useGlobalInput({
         getCoordsFromEvent: canvasCoordGetter(canvas, scale),

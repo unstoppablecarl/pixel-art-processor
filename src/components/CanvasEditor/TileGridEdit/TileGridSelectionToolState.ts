@@ -2,7 +2,7 @@ import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/s
 import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
 import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import { SelectSubTool } from '../_core-editor-types.ts'
+import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileRect } from './data/TileSheetHistory.ts'
 import type { TileSheetWriter } from './data/TileSheetWriter.ts'

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useCanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
-import type { AnySubTool, Tool } from '../CanvasEditor/_core-editor-types.ts'
+import type { AnySubTool, Tool } from '../CanvasEditor/_core/_core-editor-types.ts'
 
 const store = useCanvasEditToolStore()
 

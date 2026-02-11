@@ -1,14 +1,11 @@
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect, trimRectBounds } from '../../../lib/util/data/Rect.ts'
-import {
-  clearImageData,
-  extractImageData,
-  floodFillImageDataSelection,
-} from '../../../lib/util/html-dom/ImageData.ts'
-import { BlendMode, SelectSubTool } from '../_core-editor-types.ts'
-import { selectMoveBlendModeToWriter } from '../_support/tools/selection-helpers.ts'
+import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
+import { BlendMode, SelectSubTool } from '../_core/_core-editor-types.ts'
+import { selectMoveBlendModeToBlendFn } from '../_core/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from './CanvasRenderer.ts'
+import type { CanvasPaintWriter } from './data/CanvasPaintWriter.ts'
 
 export type CanvasPaintSelectToolState = ReturnType<typeof makeCanvasPaintSelectToolState>
 
@@ -16,10 +13,12 @@ export function makeCanvasPaintSelectToolState(
   {
     state,
     canvasRenderer,
+    canvasWriter,
     store = useCanvasEditToolStore(),
   }: {
     state: CanvasPaintEditorState,
     canvasRenderer: CanvasRenderer,
+    canvasWriter: CanvasPaintWriter,
     store?: CanvasEditToolStore,
   },
 ) {
@@ -164,19 +163,25 @@ export function makeCanvasPaintSelectToolState(
 
   function commit(mode: BlendMode) {
     if (!selection) return
-    const img = state.imageDataRef.get()
-    if (!img) return
 
-    const writer = selectMoveBlendModeToWriter[mode]
+    canvasWriter.withHistory((mutator) => {
+      if (!selection) return
 
-    const o = selection.original
-    clearImageData(img, o.x, o.y, o.w, o.h, selection.mask)
+      const o = selection.original
+      mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
 
-    const c = selection.current
-    writer(img, selection.pixels, {
-      dx: c.x,
-      dy: c.y,
-      mask: selection.mask,
+      const c = selection.current
+      const modeFn = selectMoveBlendModeToBlendFn[mode]
+      mutator.blendImageData(
+        selection.pixels,
+        modeFn,
+        {
+          dx: c.x,
+          dy: c.y,
+          mask: selection.mask ?? undefined,
+        },
+      )
+
     })
 
     state.imageDataDirty = true

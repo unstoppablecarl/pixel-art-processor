@@ -2,7 +2,7 @@
 import { storeToRefs } from 'pinia'
 import { useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
 import SetValueButton from '../../../../UI/SetValueButton.vue'
-import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, SelectSubTool } from '../../../_core-editor-types.ts'
+import { BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK, SelectSubTool } from '../../_core-editor-types.ts'
 
 const dataAttr = DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK
 const { selectMoveBlendMode, selectFloodContiguous, currentSubTool } = storeToRefs(useCanvasEditToolStore())

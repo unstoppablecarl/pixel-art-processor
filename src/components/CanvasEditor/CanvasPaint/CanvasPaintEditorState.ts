@@ -1,6 +1,6 @@
 import type { Ref } from 'vue'
 import { type ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
-import { type BaseEditorSettings, EditorState } from '../BaseEditorState.ts'
+import { type BaseEditorSettings, EditorState } from '../_core/BaseEditorState.ts'
 
 export type CanvasPaintEditorSettings = BaseEditorSettings & {
   width: Ref<number>

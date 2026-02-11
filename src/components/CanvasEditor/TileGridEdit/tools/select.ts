@@ -1,31 +1,50 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { drawSelectOutline, selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
+import { type BaseSelectToolHandler } from '../../_core/_core-editor-types.ts'
+import {
+  drawSelectOutline,
+  makeBaseSelectHandler,
+  selectMoveBlendModeToWriter,
+} from '../../_core/tools/selection-helpers.ts'
 import type {
-  LocalToolContext,
+  TileGridEditorToolContext,
   TileGridEditorToolHandlerArgs,
   TileGridEditorToolHandlerRender,
 } from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
 import type { SelectionRect } from '../lib/ISelection.ts'
 import { mergeAdjacentSelectionRects } from '../lib/SelectionRects.ts'
-import type { TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
+import { makeTileGridSelectionToolState, type TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
 
-export type TileGridSelectToolHandler<L = LocalToolContext<TileGridSelectionToolState>> =
-  BaseBlendModeToolHandler<L, TileGridEditorToolHandlerArgs> &
-  TileGridEditorToolHandlerRender<L>
+export type TileGridSelectToolHandler =
+  & BaseSelectToolHandler<TileGridSelectionToolState, TileGridEditorToolHandlerArgs>
+  & TileGridEditorToolHandlerRender
 
-export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHandler {
+export function makeSelectTool(
+  {
+    state,
+    gridRenderer,
+    tileSheetWriter,
+  }: TileGridEditorToolContext,
+  store: CanvasEditToolStore,
+): TileGridSelectToolHandler {
+
+  const toolState = makeTileGridSelectionToolState({
+    state,
+    tileSheetWriter,
+    gridRenderer,
+  })
+
   return {
-    cursorCssClass: TOOL_HOVER_CSS_CLASSES.SELECT,
-    onDeselect({ toolState }) {
+    toolState,
+    ...makeBaseSelectHandler(toolState),
+    onDeselect() {
       toolState.clearSelection()
     },
-    onModeChanged({ toolState }) {
+    onSubToolChanged() {
       toolState.draw()
     },
-    onClick({ toolState, gridRenderer }, x, y, canvasType, tileId) {
+    onClick(x, y, canvasType, tileId) {
       const ts = toolState
       const sel = ts.selection
 
@@ -56,11 +75,10 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
       if (canvasType === CanvasType.TILE) {
         if (!tileId) throw new Error('tileId required')
 
+        ts.clearSelection()
         if (ts.tilePointInSelection(x, y, tileId)) {
-          ts.clearSelection()
           return
         }
-        ts.clearSelection()
 
         if (ts.inFloodMode()) {
           ts.finalizeFloodSelection(x, y, CanvasType.TILE, tileId)
@@ -70,7 +88,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         }
       }
     },
-    onDragStart({ toolState, gridRenderer }, x, y, canvasType, tileId) {
+    onDragStart(x, y, canvasType, tileId) {
       const ts = toolState
       const sel = ts.selection
 
@@ -110,7 +128,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         gridRenderer.queueRenderGrid()
       }
     },
-    onDragMove({ toolState, gridRenderer }, x, y, canvasType, tileId) {
+    onDragMove(x, y, canvasType, tileId) {
       const ts = toolState
 
       if (canvasType === CanvasType.GRID) {
@@ -133,7 +151,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         gridRenderer.queueRenderGrid()
       }
     },
-    onDragEnd({ toolState, gridRenderer }) {
+    onDragEnd() {
       const ts = toolState
 
       if (ts.selecting) {
@@ -146,7 +164,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
       gridRenderer.queueRenderAll()
     },
-    gridPixelOverlayDraw({ state, toolState, gridRenderer }, ctx) {
+    gridPixelOverlayDraw(ctx) {
       const sel = toolState.selection
       if (!sel) return
 
@@ -174,7 +192,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
       ctx.putImageData(preview, 0, 0)
     },
-    gridScreenOverlayDraw({ state, toolState }, ctx) {
+    gridScreenOverlayDraw(ctx) {
       const sel = toolState.selection
       const { scale } = state
 
@@ -205,7 +223,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
         )
       }
     },
-    tilePixelOverlayDraw({ state, toolState }, ctx, tileId) {
+    tilePixelOverlayDraw(ctx, tileId) {
       const sel = toolState.selection
       if (!sel) return
 
@@ -232,7 +250,7 @@ export function makeSelectTool(store: CanvasEditToolStore): TileGridSelectToolHa
 
       ctx.putImageData(preview, 0, 0)
     },
-    tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
+    tileScreenOverlayDraw(ctx, tileId) {
       const sel = toolState.selection
       const { scale } = state
 

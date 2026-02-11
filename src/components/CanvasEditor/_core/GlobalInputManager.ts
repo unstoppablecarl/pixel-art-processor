@@ -1,6 +1,6 @@
 import type { Ref, ShallowRef } from 'vue'
 import type { Position } from '../../../lib/pipeline/_types.ts'
-import type { InputTarget, ToolInputHandlers } from '../_core-editor-types.ts'
+import type { InputTarget, ToolInputHandlers } from './_core-editor-types.ts'
 
 export function makeGlobalInputManager() {
   let activeTarget: InputTarget | null = null
@@ -43,7 +43,6 @@ export function makeGlobalInputManager() {
       target.onHoverStart?.(e)
       target.onMouseMove(x, y, e)
     },
-
     enter(target: InputTarget, e: MouseEvent) {
       if (activeTarget === target) return
       target.onHoverStart?.(e)

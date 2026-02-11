@@ -1,24 +1,39 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { drawSelectOutline, selectMoveBlendModeToWriter } from '../../_support/tools/selection-helpers.ts'
-import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
-import type { CanvasPaintSelectToolState } from '../CanvasPaintSelectToolState.ts'
+import { type BaseToolHandler, SelectSubTool, type ToolHandlerSubToolChanged } from '../../_core/_core-editor-types.ts'
+import {
+  drawSelectOutline,
+  makeBaseSelectHandler,
+  selectMoveBlendModeToWriter,
+} from '../../_core/tools/selection-helpers.ts'
+import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
+import { type CanvasPaintSelectToolState, makeCanvasPaintSelectToolState } from '../CanvasPaintSelectToolState.ts'
 
-export type CanvasPaintSelectToolHandler<L = LocalToolContext<CanvasPaintSelectToolState>> =
-  BaseBlendModeToolHandler<L>
-  & CanvasPaintToolHandlerRender<L>
+export type CanvasPaintSelectToolHandler =
+  BaseToolHandler<CanvasPaintSelectToolState>
+  & ToolHandlerSubToolChanged<SelectSubTool>
+  & CanvasPaintToolHandlerRender
 
-export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPaintSelectToolHandler {
+export function makeCanvasPaintSelectTool(
+  {
+    state,
+    canvasRenderer,
+    canvasWriter,
+  }: CanvasPaintToolContext,
+  store: CanvasEditToolStore,
+): CanvasPaintSelectToolHandler {
+  const toolState = makeCanvasPaintSelectToolState({ state, canvasRenderer })
+
   return {
-    cursorCssClass: TOOL_HOVER_CSS_CLASSES.SELECT,
-    onDeselect({ toolState }) {
+    toolState,
+    ...makeBaseSelectHandler(toolState),
+    onDeselect() {
       toolState.clearSelection()
     },
-    onModeChanged({ toolState }) {
+    onSubToolChanged() {
       toolState.draw()
     },
-    onClick({ state, toolState, canvasRenderer }, x, y) {
+    onClick(x, y) {
       const ts = toolState
       const sel = ts.selection
       if (!sel) {
@@ -40,7 +55,7 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
         ts.finalizeFloodSelection(x, y)
       }
     },
-    onDragStart({ state, toolState, canvasRenderer }, x, y) {
+    onDragStart(x, y) {
       const ts = toolState
       const sel = ts.selection
       if (!sel && !ts.inFloodMode()) {
@@ -58,7 +73,7 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
       }
       canvasRenderer.queueRender()
     },
-    onDragMove({ state, toolState, canvasRenderer }, x, y) {
+    onDragMove(x, y) {
       const ts = toolState
       if (ts.dragging) {
         ts.moveSelection(x, y)
@@ -67,7 +82,7 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
       }
       canvasRenderer.queueRender()
     },
-    onDragEnd({ state, toolState, canvasRenderer }, _x, _y) {
+    onDragEnd(_x, _y) {
       const ts = toolState
       if (ts.selecting) {
         ts.finalizeRectSelection()
@@ -78,7 +93,7 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
       }
       canvasRenderer.queueRender()
     },
-    pixelOverlayDraw({ state, toolState }, ctx) {
+    pixelOverlayDraw(ctx) {
       const sel = toolState.selection
       if (!sel) return
 
@@ -100,7 +115,7 @@ export function makeCanvasPaintSelectTool(store: CanvasEditToolStore): CanvasPai
 
       ctx.putImageData(preview, 0, 0)
     },
-    screenOverlayDraw({ state, toolState }, ctx) {
+    screenOverlayDraw(ctx) {
       const sel = toolState.selection
       const { scale } = state
       if (sel) {

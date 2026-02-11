@@ -2,7 +2,7 @@ import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts
 import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { getPerfectCircleCoords, getRectCenterCoords } from '../../../../lib/util/data/Grid.ts'
 import { setImageDataPixelColor } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseEditorState, BrushShape } from '../../_core-editor-types.ts'
+import { type BaseEditorState, BrushShape } from '../_core-editor-types.ts'
 
 export type BrushToolState = ReturnType<typeof makeBrushToolState>
 

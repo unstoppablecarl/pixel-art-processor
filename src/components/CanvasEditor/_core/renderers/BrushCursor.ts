@@ -3,7 +3,7 @@ import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-s
 import { useUIStore } from '../../../../lib/store/ui-store.ts'
 import { getRectFromCenter, isInsideCircle } from '../../../../lib/util/data/Grid.ts'
 import { makeReusablePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
-import { BrushShape } from '../../_core-editor-types.ts'
+import { BrushShape } from '../_core-editor-types.ts'
 
 const pixelCanvas = makeReusablePixelCanvas()
 

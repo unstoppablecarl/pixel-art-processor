@@ -3,7 +3,7 @@ import { storeToRefs } from 'pinia'
 import { useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
 import { usePipelineStore } from '../../../../../lib/store/pipeline-store.ts'
 import SetValueButton from '../../../../UI/SetValueButton.vue'
-import { BrushShape } from '../../../_core-editor-types.ts'
+import { BrushShape } from '../../_core-editor-types.ts'
 
 const { brushShape, brushSize } = storeToRefs(useCanvasEditToolStore())
 const store = usePipelineStore()

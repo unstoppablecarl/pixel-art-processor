@@ -1,8 +1,8 @@
 import { makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../lib/util/html-dom/renderCanvasFrame.ts'
-import { type PixelGridLineRenderer } from '../_support/renderers/PixelGridLineRenderer.ts'
+import { type PixelGridLineRenderer } from '../_core/renderers/PixelGridLineRenderer.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
-import type { CurrentToolRenderer } from './CurrentToolRenderer.ts'
+import type { CanvasPaintToolset } from './CanvasPaintToolset.ts'
 
 export type CanvasRenderer = ReturnType<typeof makeCanvasRenderer>
 
@@ -18,7 +18,7 @@ export function makeCanvasRenderer(
   }) {
 
   const renderCanvasFrame = makeCanvasFrameRenderer()
-  let currentToolRenderer: CurrentToolRenderer
+  let toolset: CanvasPaintToolset
   let pixelCanvas: PixelCanvas | undefined
 
   function setCanvas(canvas: HTMLCanvasElement) {
@@ -37,14 +37,14 @@ export function makeCanvasRenderer(
       state.scale,
       getImageData,
       (ctx) => {
-        currentToolRenderer.pixelOverlayDraw(ctx)
+        toolset.currentToolHandler.pixelOverlayDraw?.(ctx)
       },
       (ctx) => {
         if (state.shouldDrawGrid()) {
           gridCache!.draw(ctx)
         }
 
-        currentToolRenderer.screenOverlayDraw(ctx)
+        toolset.currentToolHandler.screenOverlayDraw?.(ctx)
       },
     )
   })
@@ -57,8 +57,8 @@ export function makeCanvasRenderer(
   return {
     resize,
     queueRender,
-    setCurrentToolRenderer(val: CurrentToolRenderer) {
-      currentToolRenderer = val
+    setToolset(val: CanvasPaintToolset) {
+      toolset = val
     },
     setCanvas,
     clear,

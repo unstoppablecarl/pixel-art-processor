@@ -5,7 +5,7 @@ import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-s
 import { usePipelineStore } from '../../../../lib/store/pipeline-store.ts'
 import { NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE } from '../../../Node/WangTile/WangTileBitMaskDraw.vue'
 import ToolButton from '../../../UI/ToolButton.vue'
-import { BrushSubTool, SelectSubTool, Tool } from '../../_core-editor-types.ts'
+import { BrushSubTool, SelectSubTool, Tool } from '../_core-editor-types.ts'
 import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
 import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 import TileEdgeDuplicationToolOptions from './ToolOptions/TileEdgeDuplicationToolOptions.vue'

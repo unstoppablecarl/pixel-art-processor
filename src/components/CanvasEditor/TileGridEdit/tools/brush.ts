@@ -2,78 +2,80 @@ import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
-import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
+import { type BaseBrushToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core/_core-editor-types.ts'
+import { useBrushCursor } from '../../_core/renderers/BrushCursor.ts'
+import { makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
 import {
   CanvasType,
-  type LocalToolContext,
+  type TileGridEditorToolContext,
   type TileGridEditorToolHandlerArgs,
   type TileGridEditorToolHandlerRender,
 } from '../_tile-grid-editor-types.ts'
 
-export type TileGridBrushToolHandler<L = LocalToolContext<BrushToolState>> =
-  BaseBlendModeToolHandler<L, TileGridEditorToolHandlerArgs>
-  & TileGridEditorToolHandlerRender<L>
+export type TileGridBrushToolHandler =
+  & BaseBrushToolHandler<TileGridEditorToolHandlerArgs>
+  & TileGridEditorToolHandlerRender
 
-export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHandler {
+export function makeBrushTool(
+  {
+    tileSheetWriter,
+    gridRenderer,
+    state,
+  }: TileGridEditorToolContext,
+  store: CanvasEditToolStore,
+): TileGridBrushToolHandler {
+  const toolState = makeBrushToolState({ state })
   let isDrawing = false
   const cursor = useBrushCursor()
 
   function getGridBrushPixels(
-    ctx: LocalToolContext<BrushToolState>,
     x: number,
     y: number,
   ): Point[] {
-    const { state, toolState } = ctx
     const { gridPixelWidth: width, gridPixelHeight: height } = state
     return toolState.getBrushPixels(x, y, width, height)
   }
 
   function getTileBrushPixels(
-    c: LocalToolContext<BrushToolState>,
     x: number,
     y: number,
   ): Point[] {
-    const { state, toolState } = c
     const { tileSize } = state
     return toolState.getBrushPixels(x, y, tileSize, tileSize)
   }
 
   function writeBrushAt(
-    c: LocalToolContext<BrushToolState>,
     x: number,
     y: number,
     canvasType: CanvasType,
     tileId?: TileId,
   ) {
-    const { tileSheetWriter } = c
     if (canvasType === CanvasType.GRID) {
       tileSheetWriter.withHistory((mutator) => {
-        const pixels = getGridBrushPixels(c, x, y)
+        const pixels = getGridBrushPixels(x, y)
         mutator.writeGridPoints(pixels, store.brushColor)
       })
 
     } else {
       tileSheetWriter.withHistory((mutator) => {
-        const tilePixels = getTileBrushPixels(c, x, y)
+        const tilePixels = getTileBrushPixels(x, y)
         mutator.writeTilePoints(tileId!, tilePixels, store.brushColor)
       })
     }
   }
 
   return {
+    toolState,
     cursorCssClass: TOOL_HOVER_CSS_CLASSES.BRUSH,
-    onMouseDown: (c, x, y, canvasType, tileId) => {
+    onMouseDown: (x, y, canvasType, tileId) => {
       isDrawing = true
-      writeBrushAt(c, x, y, canvasType, tileId)
+      writeBrushAt(x, y, canvasType, tileId)
     },
-    onDragStart(c, x, y, canvasType, tileId) {
+    onDragStart(x, y, canvasType, tileId) {
       isDrawing = true
-      writeBrushAt(c, x, y, canvasType, tileId)
+      writeBrushAt(x, y, canvasType, tileId)
     },
-    onDragMove(c, x, y, canvasType, tileId) {
-      const { state, tileSheetWriter, gridRenderer } = c
+    onDragMove(x, y, canvasType, tileId) {
       if (!isDrawing) return
       const { mouseLastX, mouseLastY } = state
       if (mouseLastX == null || mouseLastY == null) return
@@ -89,7 +91,7 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
       if (canvasType === CanvasType.GRID) {
         let pixels: Point[] = []
         for (const p of points) {
-          pixels.push(...getGridBrushPixels(c, p.x, p.y))
+          pixels.push(...getGridBrushPixels(p.x, p.y))
         }
         tileSheetWriter.withHistory((mutator) => {
           mutator.writeGridPoints(pixels, store.brushColor)
@@ -99,7 +101,7 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
       if (canvasType === CanvasType.TILE) {
         let pixels: Point[] = []
         for (const p of points) {
-          pixels.push(...getTileBrushPixels(c, p.x, p.y))
+          pixels.push(...getTileBrushPixels(p.x, p.y))
         }
         tileSheetWriter.withHistory((mutator) => {
           mutator.writeTilePoints(tileId!, pixels, store.brushColor)
@@ -110,15 +112,15 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
     onDragEnd() {
       isDrawing = false
     },
-    onMouseMove({ gridRenderer }, x, y): void {
+    onMouseMove(x, y): void {
       // always draw cursor
       gridRenderer.queueRenderTiles()
       gridRenderer.queueRenderGrid()
     },
-    onMouseLeave({ gridRenderer }, canvasType, tileId) {
+    onMouseLeave(canvasType, tileId) {
       gridRenderer.queueRenderAll()
     },
-    gridScreenOverlayDraw({ state, toolState }, ctx: CanvasRenderingContext2D) {
+    gridScreenOverlayDraw(ctx: CanvasRenderingContext2D) {
       if (state.hoverTileId === null) return
       const { scale, tileGrid, tileSize } = state
       const x = state.hoverTilePixelX
@@ -131,7 +133,7 @@ export function makeBrushTool(store: CanvasEditToolStore): TileGridBrushToolHand
         cursor.draw(ctx, screenX, screenY, scale)
       })
     },
-    tileScreenOverlayDraw({ state, toolState }, ctx, tileId) {
+    tileScreenOverlayDraw(ctx, tileId) {
       if (state.mouseGridX && state.mouseGridY) {
 
         const { scale } = state

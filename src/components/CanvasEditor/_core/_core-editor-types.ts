@@ -1,4 +1,5 @@
 import type { Ref, ShallowRef } from 'vue'
+import type { BrushToolState } from './tools/BrushToolState.ts'
 
 export const TOOL_HOVER_CSS_CLASSES: Record<Tool, string> = {
   BRUSH: 'brush',
@@ -41,7 +42,6 @@ export enum BrushShape {
   SQUARE = 'SQUARE'
 }
 
-
 export enum BlendMode {
   OVERWRITE = 'OVERWRITE',
   IGNORE_TRANSPARENT = 'IGNORE_TRANSPARENT',
@@ -50,10 +50,6 @@ export enum BlendMode {
 
 export const DATA_LOCAL_TOOL_ID = 'data-local-tool-id' as const
 export const DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK = 'data-exclude-select-cancel-click' as const
-
-export type ToolRegistry<T> = {
-  [K in keyof typeof Tool]: T
-}
 
 export interface BaseEditorState {
   id: string,
@@ -83,7 +79,7 @@ export type ToolInputHandlers = {
   handleMouseEnter: (e: MouseEvent) => void,
 }
 
-export type BaseToolManager<TArgs extends any[] = []> = {
+export type BaseToolController<TArgs extends any[] = []> = {
   id: string,
   getInputHandlers: (canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>, ...args: TArgs) => ToolInputHandlers,
   currentCursorCssClass: Ref<string | null>,
@@ -97,36 +93,39 @@ export type InputTarget = {
   onMouseLeave?(e: MouseEvent): void,
   onMouseEnter?(e: MouseEvent): void,
   onHoverStart?(e: MouseEvent): void
-  onHoverEnd?(e: MouseEvent): void
+  onHoverEnd?(e: MouseEvent): void,
 }
 
-export type BaseToolHandler<L, TArgs extends any[] = []> = {
-  onMouseMove?: (local: L, x: number, y: number, ...args: TArgs) => void,
-  onMouseDown?: (local: L, x: number, y: number, ...args: TArgs) => void,
-  onMouseUp?: (local: L, x: number, y: number, ...args: TArgs) => void,
-  onMouseLeave?: (local: L, ...args: TArgs) => void,
+export type BaseToolHandler<S, TArgs extends any[] = []> = {
+  toolState: S,
+  onMouseMove?: (x: number, y: number, ...args: TArgs) => void,
+  onMouseDown?: (x: number, y: number, ...args: TArgs) => void,
+  onMouseUp?: (x: number, y: number, ...args: TArgs) => void,
+  onMouseLeave?: (...args: TArgs) => void,
 
-  onDragStart?: (local: L, x: number, y: number, ...args: TArgs) => void,
-  onDragMove?: (local: L, x: number, y: number, ...args: TArgs) => void,
-  onDragEnd?: (local: L, x: number, y: number, ...args: TArgs) => void,
-  onClick?: (local: L, x: number, y: number, ...args: TArgs) => void,
+  onDragStart?: (x: number, y: number, ...args: TArgs) => void,
+  onDragMove?: (x: number, y: number, ...args: TArgs) => void,
+  onDragEnd?: (x: number, y: number, ...args: TArgs) => void,
+  onClick?: (x: number, y: number, ...args: TArgs) => void,
+  onDocumentClick?: (target: HTMLElement, event: MouseEvent) => void,
 
-  onSelect?: (local: L) => void,
-  onDeselect?: (local: L) => void,
+  onSelect?: () => void,
+  onDeselect?: () => void,
 
-  cursorCssClass?: ((local: L) => string | null) | string,
+  cursorCssClass?: (() => string | null) | string,
 }
 
-export type BaseBlendModeToolHandler<L, TArgs extends any[] = []> = BaseToolHandler<L, TArgs> & {
-  onModeChanged?: (local: L, newMode: BrushSubTool) => void,
+export type ToolHandlerSubToolChanged<T extends string> = {
+  onSubToolChanged?: (newSubTool: T) => void,
 }
 
-export type ToolHandlersRecord<B, S extends Record<Tool, any>> = {
-  [K in Tool]: BaseToolHandler<B & { toolState: S[K] }, any>
+export type ToolHandlersRecord<TArgs extends any[] = []> = {
+  [Tool.SELECT]: BaseSelectToolHandler<any, TArgs>,
+  [Tool.BRUSH]: BaseToolHandler<any, TArgs>,
 }
 
-export const defineToolManager = <TArgs extends any[]>() =>
-  <T extends BaseToolManager<TArgs>>(toolset: T) => toolset
+export const defineToolController = <TArgs extends any[]>() =>
+  <T extends BaseToolController<TArgs>>(toolset: T) => toolset
 
 export type BaseToolManagerSettings = {
   id: string,
@@ -134,3 +133,15 @@ export type BaseToolManagerSettings = {
   gridColor: Ref<string>,
   gridDraw: Ref<boolean>
 }
+
+export type BaseSelectToolState = {
+  clearSelection(): void
+}
+
+export type BaseSelectToolHandler<S extends BaseSelectToolState, TArgs extends any[] = []> =
+  & BaseToolHandler<S, TArgs>
+  & ToolHandlerSubToolChanged<SelectSubTool>
+
+export type BaseBrushToolHandler<TArgs extends any[] = []> =
+  & BaseToolHandler<BrushToolState, TArgs>
+  & ToolHandlerSubToolChanged<BrushSubTool>

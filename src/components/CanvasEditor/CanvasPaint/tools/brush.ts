@@ -1,36 +1,50 @@
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
-import { type BaseBlendModeToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core-editor-types.ts'
-import { useBrushCursor } from '../../_support/renderers/BrushCursor.ts'
-import type { BrushToolState } from '../../_support/tools/BrushToolState.ts'
-import type { CanvasPaintToolHandlerRender, LocalToolContext } from '../_canvas-paint-editor-types.ts'
+import {
+  type BaseToolHandler,
+  BrushSubTool,
+  TOOL_HOVER_CSS_CLASSES,
+  type ToolHandlerSubToolChanged,
+} from '../../_core/_core-editor-types.ts'
+import { useBrushCursor } from '../../_core/renderers/BrushCursor.ts'
+import { type BrushToolState, makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
+import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
 
-type L = LocalToolContext<BrushToolState>
 export type CanvasPaintBrushToolHandler =
-  BaseBlendModeToolHandler<L>
-  & CanvasPaintToolHandlerRender<L>
+  BaseToolHandler<BrushToolState>
+  & ToolHandlerSubToolChanged<BrushSubTool>
+  & CanvasPaintToolHandlerRender
 
-export function makeBrushTool(store: CanvasEditToolStore): CanvasPaintBrushToolHandler {
+export function makeBrushTool(
+  {
+    canvasWriter,
+    canvasRenderer,
+    state,
+  }: CanvasPaintToolContext,
+  store: CanvasEditToolStore,
+): CanvasPaintBrushToolHandler {
   let isDrawing = false
   const cursor = useBrushCursor()
 
+  const toolState = makeBrushToolState({ state })
   return {
+    toolState,
     cursorCssClass: TOOL_HOVER_CSS_CLASSES.BRUSH,
-    onMouseDown: ({ state, toolState, canvasWriter }, x, y) => {
+    onMouseDown: (x, y) => {
       isDrawing = true
       canvasWriter.withHistory((mutator) => {
         const pixels = toolState.getBrushPixels(x, y, state.width, state.height)
         mutator.writePoints(pixels, store.brushColor)
       })
     },
-    onDragStart({ state, toolState, canvasWriter }, x, y) {
+    onDragStart(x, y) {
       isDrawing = true
       canvasWriter.withHistory((mutator) => {
         const pixels = toolState.getBrushPixels(x, y, state.width, state.height)
         mutator.writePoints(pixels, store.brushColor)
       })
     },
-    onDragMove({ state, canvasRenderer, toolState, canvasWriter }, x, y) {
+    onDragMove(x, y) {
       if (!isDrawing) return
       const { mouseLastX, mouseLastY } = state
       if (mouseLastX == null || mouseLastY == null) return
@@ -50,15 +64,15 @@ export function makeBrushTool(store: CanvasEditToolStore): CanvasPaintBrushToolH
     onDragEnd() {
       isDrawing = false
     },
-    onMouseMove({ canvasRenderer }, x, y): void {
+    onMouseMove(x, y): void {
       // always draw cursor
       canvasRenderer.queueRender()
     },
-    onMouseLeave({ canvasRenderer }) {
+    onMouseLeave() {
       // clear cursor when leaving
       canvasRenderer.queueRender()
     },
-    screenOverlayDraw({ state, toolState }, ctx) {
+    screenOverlayDraw(ctx) {
       const x = state.mouseX
       const y = state.mouseY
       if (x == null || y == null) return

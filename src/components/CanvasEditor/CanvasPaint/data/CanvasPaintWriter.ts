@@ -1,5 +1,5 @@
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { BlendFn } from '../../../../lib/util/html-dom/blit.ts'
+import type { BlendFn, BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
 import { type PixelColor, type RGBA, RGBA_ERASE } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { ImageDataRef } from '../../../../lib/vue/vue-image-data.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
@@ -46,14 +46,7 @@ function makeCanvasPaintMutator(
   function blendImageData(
     src: ImageData,
     blendFn: BlendFn,
-    opts: {
-      dx?: number
-      dy?: number
-      sx?: number
-      sy?: number
-      sw?: number
-      sh?: number
-    } = {},
+    opts: Omit<BlendImageDataOptions, 'blendMode'>,
   ) {
     const dx = opts.dx ?? 0
     const dy = opts.dy ?? 0

@@ -1,7 +1,6 @@
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
-import { Tool } from '../../_core-editor-types.ts'
-import type { PixelGridLineRenderer } from '../../_support/renderers/PixelGridLineRenderer.ts'
+import type { PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { TileGridToolset } from '../TileGridToolset.ts'
 import { drawDebugRect, drawDebugRectOutline } from './_debug-draw-helpers.ts'
@@ -39,7 +38,7 @@ export function makeTileSheetRenderer(
   }
 
   function draw() {
-    const toolState = toolset.localToolStates[Tool.SELECT]
+    const toolState = toolset.toolHandlers.SELECT.toolState
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
       const { tileSize } = state

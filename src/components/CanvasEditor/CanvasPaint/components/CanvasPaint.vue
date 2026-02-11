@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, useTemplateRef } from 'vue'
-import { DATA_LOCAL_TOOL_ID } from '../../_core-editor-types.ts'
+import { DATA_LOCAL_TOOL_ID } from '../../_core/_core-editor-types.ts'
 import type { CanvasPaintController } from '../CanvasPaintController.ts'
 
 const {

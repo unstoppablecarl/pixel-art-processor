@@ -1,14 +1,24 @@
-import { type BaseEditorState, Tool, type ToolHandlersRecord } from '../../_core-editor-types.ts'
-import type { Toolset } from '../../Toolset.ts'
+import { useDocumentClick } from '../../../../lib/util/vue-util.ts'
+import { type BaseEditorState, DATA_LOCAL_TOOL_ID, type ToolHandlersRecord } from '../_core-editor-types.ts'
+import type { Toolset } from '../Toolset.ts'
 
 export function makeToolInputCore<
-  B,
-  S extends Record<Tool, any>,
-  H extends ToolHandlersRecord<B, S>
+  H extends ToolHandlersRecord<any>
 >(
   state: BaseEditorState,
-  toolset: Toolset<B, S, H>,
+  toolset: Toolset<H>,
 ) {
+
+  useDocumentClick((t, e) => {
+    const onClick = toolset.currentToolHandler.onDocumentClick
+    if (!onClick) return
+    if (state.isDragging) return
+    if (state.mouseDownX !== null || state.mouseDownY !== null) return
+    // is tool owned canvas
+    if (t.getAttribute(DATA_LOCAL_TOOL_ID) === state.id) return
+    onClick(t, e)
+  })
+
   return {
     pointerDown(x: number, y: number, ...extra: any[]) {
       state.mouseDownX = x
@@ -19,18 +29,13 @@ export function makeToolInputCore<
       state.mouseDragStartY = null
       state.isDragging = false
 
-      const local = toolset.currentLocalContext
-
       toolset.currentToolHandler?.onMouseDown?.(
-        local,
         x,
         y,
         ...extra,
       )
     },
     pointerMove(x: number, y: number, ...extra: any[]) {
-      const local = toolset.currentLocalContext
-
       if (state.mouseDownX !== null && state.mouseDownY !== null) {
         const dx = x - state.mouseDownX
         const dy = y - state.mouseDownY
@@ -43,14 +48,12 @@ export function makeToolInputCore<
           state.mouseDragStartY = state.mouseDownY
 
           toolset.currentToolHandler?.onDragStart?.(
-            local,
             state.mouseDownX,
             state.mouseDownY,
             ...extra,
           )
         } else {
           toolset.currentToolHandler?.onDragMove?.(
-            local,
             x,
             y,
             ...extra,
@@ -58,7 +61,6 @@ export function makeToolInputCore<
         }
       } else {
         toolset.currentToolHandler?.onMouseMove?.(
-          local,
           x,
           y,
           ...extra,
@@ -69,18 +71,14 @@ export function makeToolInputCore<
       state.mouseLastY = y
     },
     pointerUp(x: number, y: number, ...extra: any[]) {
-      const local = toolset.currentLocalContext
-
       if (state.isDragging) {
         toolset.currentToolHandler?.onDragEnd?.(
-          local,
           x,
           y,
           ...extra,
         )
       } else {
         toolset.currentToolHandler?.onClick?.(
-          local,
           x,
           y,
           ...extra,
@@ -96,9 +94,7 @@ export function makeToolInputCore<
     pointerLeave(...extra: any[]) {
       if (state.isDragging) return
 
-      const local = toolset.currentLocalContext
-      toolset.tools[toolset.currentTool]?.onMouseLeave?.(
-        local,
+      toolset.currentToolHandler?.onMouseLeave?.(
         ...extra,
       )
     },

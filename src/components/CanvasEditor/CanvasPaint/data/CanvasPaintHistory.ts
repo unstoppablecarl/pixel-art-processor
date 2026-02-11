@@ -4,7 +4,7 @@ import {
   extractHistoryPixels,
   type Patch,
   type ProtoPatch,
-} from '../../_support/data/_history-helpers.ts'
+} from '../../_core/data/_history-helpers.ts'
 import type { CanvasPixelAccumulator } from './CanvasPixelAccumulator.ts'
 
 export type ProtoCanvasPatch = ProtoPatch
