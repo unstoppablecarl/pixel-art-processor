@@ -1,128 +1,94 @@
-import RGBA = tinycolor.ColorFormats.RGBA
-import { type BlendFn, getBlendAdapter } from '../../../../lib/util/html-dom/blit.ts'
-import type { PixelBlend, PixelColor } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type ProtoCanvasPatch } from './CanvasPaintHistory.ts'
+import {
+  applyBufferToImageData,
+  extractImageDataRect,
+  growBufferIfNeeded,
+  type PixelBuffer,
+  pixelBufferToRect,
+} from '../../../../lib/util/data/pixel-buffer.ts'
+import { type BlendFn, blendOverwrite } from '../../../../lib/util/html-dom/blit.ts'
+import { type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
+import { extractHistoryPixels } from '../../_core/data/_history-helpers.ts'
+import { type CanvasPatch, type ProtoCanvasPatch } from './CanvasPaintHistory.ts'
 
 export type CanvasPixelAccumulator = ReturnType<typeof makeCanvasPixelAccumulator>
 
 export function makeCanvasPixelAccumulator() {
-
-  let width = 1_000_000
-
-  function setWidth(val: number) {
-    width = val
+  const STRIDE = 3
+  const buf: PixelBuffer = {
+    data: new Uint32Array(1024 * STRIDE),
+    count: 0,
   }
 
-  // Map<key, PixelColor>
-  // key = y * width + x
-  const pixelWrites = new Map<number, PixelColor>()
-  const pixelBlends = new Map<number, PixelBlend>()
+  const blendRegistry: BlendFn[] = []
 
-  // bounding box of all writes
-  let minX = Infinity
-  let minY = Infinity
-  let maxX = -Infinity
-  let maxY = -Infinity
-
-  function trackBounds(x: number, y: number) {
-    if (x < minX) minX = x
-    if (y < minY) minY = y
-    if (x > maxX) maxX = x
-    if (y > maxY) maxY = y
+  // Helper to manage blend function indices
+  function getBlendIdx(fn: BlendFn): number {
+    let idx = blendRegistry.indexOf(fn)
+    if (idx === -1) idx = blendRegistry.push(fn) - 1
+    return idx
   }
 
-  function addPixel(x: number, y: number, color: RGBA) {
-    const key = y * width + x // or width, but width not known yet
-    pixelWrites.set(key, { x, y, color })
-    trackBounds(x, y)
+  function addPixel(x: number, y: number, color: RGBA, blend: BlendFn = blendOverwrite) {
+    // Pack RGBA into a single 32-bit integer (ABGR or RGBA depending on endianness)
+    const packed = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
+    addPixelPacked(x, y, packed, blend)
   }
 
-  function addPixelBlend(x: number, y: number, color: RGBA, blend: BlendFn) {
-    const key = y * width + x
-    pixelBlends.set(key, { x, y, color, blend })
-    trackBounds(x, y)
-  }
-
-  function getRegion() {
-    if (pixelWrites.size === 0 && pixelBlends.size === 0) return null
-    return {
-      x: minX,
-      y: minY,
-      w: maxX - minX + 1,
-      h: maxY - minY + 1,
-    }
+  /**
+   * High-performance path: uses 3 slots per pixel in the buffer
+   * [0] : Packed Coords (X << 16 | Y)
+   * [1] : Packed Color
+   * [2] : Blend Function Index
+   */
+  function addPixelPacked(x: number, y: number, packedColor: number, blend = blendOverwrite) {
+    growBufferIfNeeded(buf, STRIDE)
+    const offset = buf.count * STRIDE
+    buf.data[offset] = (x << 16) | (y & 0xFFFF)
+    buf.data[offset + 1] = packedColor
+    buf.data[offset + 2] = getBlendIdx(blend)
+    buf.count++
   }
 
   function toPatches(img: ImageData): ProtoCanvasPatch[] {
-    const region = getRegion()
+    const region = pixelBufferToRect(buf, STRIDE)
     if (!region) return []
 
-    const { x, y, w, h } = region
-    const before = new Uint8ClampedArray(w * h * 4)
-
-    for (let iy = 0; iy < h; iy++) {
-      for (let ix = 0; ix < w; ix++) {
-        const di = ((y + iy) * img.width + (x + ix)) * 4
-        const si = (iy * w + ix) * 4
-
-        before[si] = img.data[di]
-        before[si + 1] = img.data[di + 1]
-        before[si + 2] = img.data[di + 2]
-        before[si + 3] = img.data[di + 3]
-      }
-    }
+    // Use the generic extractor for consistency and brevity
+    const before = extractImageDataRect(img, region)
 
     return [{
-      x, y, w, h,
+      x: region.x,
+      y: region.y,
+      w: region.w,
+      h: region.h,
       before,
       after: null,
     }]
   }
 
   function apply(img: ImageData) {
-    const data = img.data
-    const scratch = new Uint8ClampedArray(4)
-
-    // solids
-    for (const { x, y, color } of pixelWrites.values()) {
-      const di = (y * img.width + x) * 4
-      data[di] = color.r
-      data[di + 1] = color.g
-      data[di + 2] = color.b
-      data[di + 3] = color.a
-    }
-
-    // blends
-    for (const { x, y, color, blend } of pixelBlends.values()) {
-      const di = (y * img.width + x) * 4
-      const byteBlend = getBlendAdapter(blend)
-
-      scratch[0] = color.r
-      scratch[1] = color.g
-      scratch[2] = color.b
-      scratch[3] = color.a
-
-      byteBlend(scratch, data, 0, di)
-    }
+    applyBufferToImageData(buf, img, blendRegistry, STRIDE)
   }
 
   function reset() {
-    pixelWrites.clear()
-    pixelBlends.clear()
-    minX = Infinity
-    minY = Infinity
-    maxX = -Infinity
-    maxY = -Infinity
+    buf.count = 0
+    blendRegistry.length = 0
+  }
+
+  function finalizePatches(img: ImageData, patches: ProtoCanvasPatch[]): CanvasPatch[] {
+    for (let i = 0; i < patches.length; i++) {
+      const p = patches[i]
+      p.after = extractHistoryPixels(img, p)
+    }
+    return patches as CanvasPatch[]
   }
 
   return {
     addPixel,
-    addPixelBlend,
+    addPixelPacked,
     toPatches,
     apply,
     reset,
-    getRegion,
-    setWidth,
+    finalizePatches,
   }
 }
-

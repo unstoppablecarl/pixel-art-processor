@@ -91,28 +91,40 @@ function makeTileSheetMutator(
       srcX: opts.sx ?? 0,
       srcY: opts.sy ?? 0,
     }
+    const mask = opts.mask ?? null
 
     const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
-    const imgData32 = new Uint32Array(imageData.data.buffer) // View as 32-bit for faster reads
+    const imgData32 = new Uint32Array(imageData.data.buffer)
 
     for (let i = 0; i < tileRects.length; i++) {
       const r = tileRects[i]
       const tileId = r.tileId
 
       for (let y = 0; y < r.h; y++) {
-        const srcYBase = (r.srcY + y) * imageData.width
+        // Source Y base for the 32-bit pixel buffer
+        const srcY = r.srcY + y
+        const srcYBase = srcY * imageData.width
+
         for (let x = 0; x < r.w; x++) {
-          // Read the pixel as a single 32-bit integer
-          const si = srcYBase + (r.srcX + x)
+          const srcX = r.srcX + x
+
+          // 1. Check Mask: The mask index corresponds to the source image pixel index
+          if (mask) {
+            const maskIdx = srcYBase + srcX
+            if (mask[maskIdx] === 0) continue
+          }
+
+          // 2. Read the pixel
+          const si = srcYBase + srcX
           const packedColor = imgData32[si]
 
-          // Extract components bitwise instead of creating an object
-          // Note: Check if your ImageData is Little Endian or Big Endian (usually ABGR in 32-bit view)
+          // 3. Write to accumulator
           accumulator.addTilePacked(tileId, r.x + x, r.y + y, packedColor, blendFn)
         }
       }
     }
   }
+
   function clear(
     x = 0,
     y = 0,
@@ -120,25 +132,25 @@ function makeTileSheetMutator(
     h = state.tileSheet.imageData.height,
     mask: Uint8Array | null = null,
   ) {
-    const sheetRect = { x, y, w, h, srcX: 0, srcY: 0 };
-    const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect);
+    const sheetRect = { x, y, w, h, srcX: 0, srcY: 0 }
+    const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
 
     for (let i = 0; i < tileRects.length; i++) {
-      const r = tileRects[i];
-      const tileId = r.tileId;
+      const r = tileRects[i]
+      const tileId = r.tileId
 
       for (let ty = 0; ty < r.h; ty++) {
-        const destY = r.y + ty;
+        const destY = r.y + ty
         // Calculate mask row start once per row
-        let maskIdx = (r.srcY + ty) * sheetRect.w + r.srcX;
+        let maskIdx = (r.srcY + ty) * sheetRect.w + r.srcX
 
         for (let tx = 0; tx < r.w; tx++) {
-          if (mask && !mask[maskIdx++]) continue;
+          if (mask && !mask[maskIdx++]) continue
 
           // Use addTilePacked directly with our constant
-          accumulator.addTilePacked(tileId, r.x + tx, destY, PACKED_ERASE);
+          accumulator.addTilePacked(tileId, r.x + tx, destY, PACKED_ERASE)
 
-          if (!mask) maskIdx++; // keep incrementing if we are manually tracking even without mask
+          if (!mask) maskIdx++ // keep incrementing if we are manually tracking even without mask
         }
       }
     }

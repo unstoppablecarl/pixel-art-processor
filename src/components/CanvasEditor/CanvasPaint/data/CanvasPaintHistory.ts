@@ -1,22 +1,9 @@
 import { getHistory } from '../../../../lib/util/history/history.ts'
-import {
-  applyHistoryPixels,
-  extractHistoryPixels,
-  type Patch,
-  type ProtoPatch,
-} from '../../_core/data/_history-helpers.ts'
+import { applyHistoryPixels, type Patch, type ProtoPatch } from '../../_core/data/_history-helpers.ts'
 import type { CanvasPixelAccumulator } from './CanvasPixelAccumulator.ts'
 
 export type ProtoCanvasPatch = ProtoPatch
 export type CanvasPatch = Patch
-
-function finalizePatches(imageData: ImageData, patches: ProtoCanvasPatch[]): CanvasPatch[] {
-  for (let i = 0; i < patches.length; i++) {
-    const p = patches[i]
-    p.after = extractHistoryPixels(imageData, p)
-  }
-  return patches as CanvasPatch[]
-}
 
 export function applyCanvasPaintAccumulator(
   img: ImageData,
@@ -24,7 +11,7 @@ export function applyCanvasPaintAccumulator(
 ) {
   const patches = accumulator.toPatches(img)
   accumulator.apply(img)
-  const finalPatches = finalizePatches(img, patches)
+  const finalPatches = accumulator.finalizePatches(img, patches)
 
   getHistory().execute({
     do: () => finalPatches.forEach(p => applyHistoryPixels(img, p.after, p)),

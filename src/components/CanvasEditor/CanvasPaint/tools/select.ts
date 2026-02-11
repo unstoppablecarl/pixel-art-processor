@@ -22,7 +22,7 @@ export function makeCanvasPaintSelectTool(
   }: CanvasPaintToolContext,
   store: CanvasEditToolStore,
 ): CanvasPaintSelectToolHandler {
-  const toolState = makeCanvasPaintSelectToolState({ state, canvasRenderer })
+  const toolState = makeCanvasPaintSelectToolState({ state, canvasRenderer, canvasWriter })
 
   return {
     toolState,
