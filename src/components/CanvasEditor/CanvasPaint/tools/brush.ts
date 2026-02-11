@@ -58,7 +58,8 @@ export function makeBrushTool(
       )
 
       canvasWriter.withHistory((mutator) => {
-        mutator.writePoints(points, store.brushColor)
+        const brushPoints = points.flatMap(p => toolState.getBrushPixels(p.x, p.y, state.width, state.height))
+        mutator.writePoints(brushPoints, store.brushColor)
       })
     },
     onDragEnd() {
