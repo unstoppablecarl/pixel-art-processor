@@ -1,7 +1,7 @@
 import { markRaw, type Raw } from 'vue'
 import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
-import { colorDistance } from '../color.ts'
+import { colorDistance, packColor, type PixelColor, type RGBA, RGBA_ERASE } from '../color.ts'
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
 import { type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
@@ -81,29 +81,34 @@ export function invertImageData(imageData: ImageData) {
 export type SerializedImageData = {
   width: number,
   height: number,
-  data: number[],
+  data: string,
 }
 
 export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
-  if (imageData === null) return null as any
-  if (imageData.width === 0 && imageData.height === 0 && imageData.data.length === 0) return null as any
+  if (!imageData) return null as any
+
+  // Convert Uint8ClampedArray to a binary string, then to Base64
+  const binary = String.fromCharCode(...new Uint8Array(imageData.data.buffer))
+  const base64 = btoa(binary)
 
   return markRaw({
     width: imageData.width,
     height: imageData.height,
-    data: Array.from(imageData.data),
+    data: base64,
   }) as any
 }
 
 export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : Raw<ImageData> {
-  if (obj === null) return null as any
-  if (!obj?.width && !obj?.height && (!obj?.data?.length)) return null as any
+  if (!obj) return null as any
 
-  return markRaw(new ImageData(
-    new Uint8ClampedArray(obj.data),
-    obj.width,
-    obj.height,
-  )) as any
+  // Decode Base64 back to a Uint8ClampedArray
+  const binary = atob(obj.data as string)
+  const bytes = new Uint8ClampedArray(binary.length)
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i)
+  }
+
+  return markRaw(new ImageData(bytes, obj.width, obj.height)) as any
 }
 
 export function eachImageDataPixel(
@@ -188,29 +193,27 @@ export function resizeImageData(
   offsetY = 0,
 ): ImageData {
   const result = new ImageData(newWidth, newHeight)
-  const oldData = current.data
+  const { width: oldW, height: oldH, data: oldData } = current
   const newData = result.data
 
-  const oldW = current.width
-  const oldH = current.height
+  // Determine intersection of the old image (at offset) and new canvas bounds
+  const x0 = Math.max(0, offsetX)
+  const y0 = Math.max(0, offsetY)
+  const x1 = Math.min(newWidth, offsetX + oldW)
+  const y1 = Math.min(newHeight, offsetY + oldH)
 
-  for (let y = 0; y < oldH; y++) {
-    for (let x = 0; x < oldW; x++) {
-      const newX = x + offsetX
-      const newY = y + offsetY
+  if (x1 <= x0 || y1 <= y0) return result
 
-      if (newX < 0 || newY < 0 || newX >= newWidth || newY >= newHeight) {
-        continue
-      }
+  for (let row = 0; row < (y1 - y0); row++) {
+    const dstY = y0 + row
+    const srcY = dstY - offsetY
+    const srcX = x0 - offsetX
 
-      const oldIndex = (y * oldW + x) * 4
-      const newIndex = (newY * newWidth + newX) * 4
+    const dstStart = (dstY * newWidth + x0) * 4
+    const srcStart = (srcY * oldW + srcX) * 4
+    const rowLen = (x1 - x0) * 4
 
-      newData[newIndex] = oldData[oldIndex]
-      newData[newIndex + 1] = oldData[oldIndex + 1]
-      newData[newIndex + 2] = oldData[oldIndex + 2]
-      newData[newIndex + 3] = oldData[oldIndex + 3]
-    }
+    newData.set(oldData.subarray(srcStart, srcStart + rowLen), dstStart)
   }
 
   return result
@@ -246,27 +249,40 @@ export function writeImageData(
   sh: number = source.height,
   mask?: Uint8Array | null,
 ) {
-  const dstData = target.data
-  const srcData = source.data
-  const dstW = target.width
-  const srcW = source.width
+  const { width: dstW, height: dstH, data: dstData } = target
+  const { width: srcW, data: srcData } = source
+
+  // Calculate intersection between target and source-rect
+  const x0 = Math.max(0, x, 0)
+  const y0 = Math.max(0, y, 0)
+  const x1 = Math.min(dstW, x + sw)
+  const y1 = Math.min(dstH, y + sh)
+
+  if (x1 <= x0 || y1 <= y0) return
 
   const useMask = !!mask
 
-  for (let iy = 0; iy < sh; iy++) {
-    const dstRow = (iy + y) * dstW
-    const srcRow = (iy + sy) * srcW
+  for (let row = 0; row < (y1 - y0); row++) {
+    const dstY = y0 + row
+    const srcY = sy + (dstY - y)
+    const srcX = sx + (x0 - x)
 
-    for (let ix = 0; ix < sw; ix++) {
-      if (useMask && mask![iy * sw + ix] === 0) continue
+    const rowLenPixels = (x1 - x0)
+    const dstStart = (dstY * dstW + x0) * 4
+    const srcStart = (srcY * srcW + srcX) * 4
 
-      const di = (dstRow + (ix + x)) * 4
-      const si = (srcRow + (ix + sx)) * 4
+    if (useMask) {
+      for (let ix = 0; ix < rowLenPixels; ix++) {
+        const mi = (srcY * srcW + (srcX + ix))
+        if (mask[mi] === 0) continue
 
-      dstData[di] = srcData[si]
-      dstData[di + 1] = srcData[si + 1]
-      dstData[di + 2] = srcData[si + 2]
-      dstData[di + 3] = srcData[si + 3]
+        const di = dstStart + (ix * 4)
+        const si = srcStart + (ix * 4)
+        dstData.set(srcData.subarray(si, si + 4), di)
+      }
+    } else {
+      // High-speed bulk copy
+      dstData.set(srcData.subarray(srcStart, srcStart + (rowLenPixels * 4)), dstStart)
     }
   }
 }
@@ -401,21 +417,25 @@ export function extractImageData(
     : { x: _x, y: _y!, w: _w!, h: _h! }
 
   const out = new Uint8ClampedArray(w * h * 4)
-  const srcData = src.data
-  const srcW = src.width
+  const { width: srcW, height: srcH, data: srcData } = src
 
-  for (let iy = 0; iy < h; iy++) {
-    const srcRow = (y + iy) * srcW
-    const dstRow = iy * w
+  // Calculate valid intersection
+  const x0 = Math.max(0, x)
+  const y0 = Math.max(0, y)
+  const x1 = Math.min(srcW, x + w)
+  const y1 = Math.min(srcH, y + h)
 
-    for (let ix = 0; ix < w; ix++) {
-      const srcIndex = (srcRow + (x + ix)) * 4
-      const dstIndex = (dstRow + ix) * 4
+  if (x1 > x0 && y1 > y0) {
+    for (let row = 0; row < (y1 - y0); row++) {
+      const srcY = y0 + row
+      const srcStart = (srcY * srcW + x0) * 4
+      const rowLen = (x1 - x0) * 4
 
-      out[dstIndex] = srcData[srcIndex]
-      out[dstIndex + 1] = srcData[srcIndex + 1]
-      out[dstIndex + 2] = srcData[srcIndex + 2]
-      out[dstIndex + 3] = srcData[srcIndex + 3]
+      const dstRow = (y0 - y) + row
+      const dstCol = (x0 - x)
+      const dstStart = (dstRow * w + dstCol) * 4
+
+      out.set(srcData.subarray(srcStart, srcStart + rowLen), dstStart)
     }
   }
 
@@ -442,35 +462,35 @@ export function fillImageData(
   h = target.height,
   mask?: Uint8Array | null,
 ) {
-  const { width, height } = target
+  const { width: dstW, height: dstH, data: dstData } = target
 
-  // Clamp to bounds
-  const startX = Math.max(0, x)
-  const startY = Math.max(0, y)
-  const endX = Math.min(width, x + w)
-  const endY = Math.min(height, y + h)
+  // 1. Clamp to canvas bounds
+  const x0 = Math.max(0, x)
+  const y0 = Math.max(0, y)
+  const x1 = Math.min(dstW, x + w)
+  const y1 = Math.min(dstH, y + h)
 
-  if (startX >= endX || startY >= endY) return
+  if (x1 <= x0 || y1 <= y0) return
 
-  const data = target.data
+  const packedColor = packColor(r, g, b, a)
+  // Create a 32-bit view of the same underlying memory
+  const data32 = new Uint32Array(dstData.buffer)
   const useMask = !!mask
 
-  // Actual region size after clamping
-  const regionWidth = endX - startX
-  const regionHeight = endY - startY
+  for (let iy = 0; iy < (y1 - y0); iy++) {
+    const dstY = y0 + iy
+    const rowStart = dstY * dstW + x0
 
-  for (let iy = 0; iy < regionHeight; iy++) {
-    for (let ix = 0; ix < regionWidth; ix++) {
+    for (let ix = 0; ix < (x1 - x0); ix++) {
+      const idx = rowStart + ix
 
-      const mi = iy * w + ix
-      if (useMask && mask![mi] === 0) continue
+      if (useMask) {
+        // Mask usually matches the fill-rect dimensions
+        const mi = iy * w + ix
+        if (mask[mi] === 0) continue
+      }
 
-      const di = ((startY + iy) * width + (startX + ix)) * 4
-
-      data[di] = r
-      data[di + 1] = g
-      data[di + 2] = b
-      data[di + 3] = a
+      data32[idx] = packedColor
     }
   }
 }
