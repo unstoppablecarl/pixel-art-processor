@@ -1,12 +1,12 @@
 import { InvalidFileTypeError } from '../../pipeline/errors/InvalidFileTypeError.ts'
-import { imageToCanvas } from './ImageData.ts'
+import { imageElementToImageData } from './ImageData.ts'
 
 export async function getUploadedImageData(input: string | ArrayBuffer | File): Promise<ImageData> {
   return new Promise((resolve, reject) => {
     const tempImg = new Image()
     tempImg.onload = () => {
       try {
-        const { imageData } = imageToCanvas(tempImg)
+        const imageData = imageElementToImageData(tempImg)
         // Cleanup: Revoke if URL was created
         if (typeof input !== 'string' && 'revokeObjectURL' in URL) {
           URL.revokeObjectURL(tempImg.src)
@@ -91,7 +91,7 @@ export async function arrayBufferToImageData(arrayBuffer: ArrayBuffer, mimeType:
     tempImg.onload = () => {
       try {
         URL.revokeObjectURL(url)  // Cleanup memory
-        const { imageData } = imageToCanvas(tempImg)
+        const imageData = imageElementToImageData(tempImg)
         resolve(imageData)
       } catch (error) {
         URL.revokeObjectURL(url)

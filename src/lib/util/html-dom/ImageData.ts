@@ -29,21 +29,20 @@ export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
   return `${r},${g},${b},${a}`
 }
 
-export function imageToCanvas(img: HTMLImageElement): {
-  canvas: HTMLCanvasElement;
-  ctx: CanvasRenderingContext2D;
-  imageData: ImageData
-} {
+export function imageElementToImageData(img: HTMLImageElement): ImageData {
   const canvas = document.createElement('canvas')
   canvas.width = img.width
   canvas.height = img.height
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+
   ctx.drawImage(img, 0, 0)
   return {
     canvas,
     ctx,
     imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
   }
+
+  return ctx.getImageData(0, 0, canvas.width, canvas.height)
 }
 
 export function imageDataToUrlImage(imgData: ImageData): string {
