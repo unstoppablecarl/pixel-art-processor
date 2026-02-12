@@ -118,7 +118,7 @@ export function makeBaseInputHandlers(
       currentCursorCssClass.value = null
     },
     onCut(e) {
-      toolset.currentToolHandler?.onCopy?.(e)
+      toolset.currentToolHandler?.onCut?.(e)
     },
     onCopy(e) {
       toolset.currentToolHandler?.onCopy?.(e)
