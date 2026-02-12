@@ -6,10 +6,17 @@ import { BaseDataStructure } from './BaseDataStructure.ts'
 export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, SerializedRGBA> {
   readonly __brand = 'PixelMap'
   static displayName = 'PixelMap'
-  canUseDirectAccess = false
 
   protected initData(width: number, height: number): Uint8ClampedArray {
     return new Uint8ClampedArray(width * height * 4)
+  }
+
+  getPacked(x: number, y: number): number {
+    return this._data32![y * this.width + x];
+  }
+
+  setPacked(x: number, y: number, color32: number): void {
+    this._data32![y * this.width + x] = color32;
   }
 
   get(x: number, y: number): RGBA {

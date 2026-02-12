@@ -12,9 +12,9 @@ export type PointValue<T> = Point & {
   value: T
 }
 
-export type PointFilter = (x: number, y: number) => boolean
-export type PointValueFilter<T> = (x: number, y: number, value: T) => boolean
-export type PointValueInspector<T> = (x: number, y: number, value: T) => void
+export type PointValueFilter<T> = (x: number, y: number, value: T, idx: number) => boolean
+export type PointValueInspector<T> = (x: number, y: number, value: T, idx: number) => void
+export type PointValueMapper<T, U> = (x: number, y: number, value: T, idx: number) => U
 
 export const CARDINAL_DIRECTIONS: [number, number][] = [
   [0, 1],  // right
@@ -38,25 +38,16 @@ export type ArrayTypeConstructors = typeof Uint8Array<ArrayBufferLike> |
 
 export type ArrayTypeInstance = InstanceType<ArrayTypeConstructors>;
 
-enum QueryType {
-  FIND,
-  FILTER,
-  EACH
-}
-
 export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>, SerializedT = T> {
   readonly bounds: Readonly<Bounds>
   cacheBust: number
 
   protected _data: D
+  protected _data32?: Uint32Array
 
   get data() {
     return this._data
   }
-
-  // Hook for subclasses with complex storage (like BitMask)
-  // set to false if direct array access does not work
-  protected readonly canUseDirectAccess: boolean = true
 
   constructor(
     readonly width: number,
@@ -66,33 +57,18 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     if (width <= 0 || height <= 0) throw new Error(`Invalid dimensions: ${width}, ${height}`)
     this.bounds = new Bounds(0, width, 0, height)
     this._data = this.initData(width, height)
-    if (sourceData) {
-      this._data.set(sourceData)
-    } else {
-      this._data.fill(0)
+
+    // Create 32-bit view if the buffer is compatible (multiple of 4)
+    if (this._data.buffer.byteLength % 4 === 0) {
+      this._data32 = new Uint32Array(this._data.buffer)
     }
+
+    if (sourceData) this._data.set(sourceData)
+    else this._data.fill(0)
     this.cacheBust = Date.now()
   }
 
   protected abstract initData(width: number, height: number): D;
-
-  // Lazy-computed cached offsets for adjacent cell access
-  private _adjacentOffsets?: number[]
-  private _cardinalOffsets?: number[]
-
-  protected get adjacentOffsets(): number[] {
-    if (!this._adjacentOffsets) {
-      this._adjacentOffsets = ADJACENT_DIRECTIONS.map(([dx, dy]) => dy * this.width + dx)
-    }
-    return this._adjacentOffsets
-  }
-
-  protected get cardinalOffsets(): number[] {
-    if (!this._cardinalOffsets) {
-      this._cardinalOffsets = CARDINAL_DIRECTIONS.map(([dx, dy]) => dy * this.width + dx)
-    }
-    return this._cardinalOffsets
-  }
 
   // Direct index calculation - use instead of get/set in hot paths
   protected idx(x: number, y: number): number {
@@ -180,563 +156,309 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     this._data[idx] = value as any
   }
 
-  each(cb: (x: number, y: number, v: T) => void): void {
-    const width = this.width
-    const height = this.height
+  each(cb: PointValueInspector<T>): void {
+    const w = this.width
+    const h = this.height
 
-    if (this.canUseDirectAccess) {
-      for (let y = 0; y < height; y++) {
-        let idx = y * width
-        for (let x = 0; x < width; x++, idx++) {
-          cb(x, y, this.getRaw(idx))
-        }
-      }
-    } else {
-      // Fallback for complex storage
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          cb(x, y, this.get(x, y)!)
-        }
+    for (let y = 0; y < h; y++) {
+      const rowOffset = y * w
+      for (let x = 0; x < w; x++) {
+        const idx = rowOffset + x
+        cb(x, y, this.getRaw(idx), idx)
       }
     }
-  }
-
-  map<R>(cb: (x: number, y: number, value: T) => R): R[] {
-    const width = this.width
-    const height = this.height
-    const result = new Array<R>(width * height)
-    let i = 0
-
-    if (this.canUseDirectAccess) {
-      for (let y = 0; y < height; y++) {
-        let idx = y * width
-        for (let x = 0; x < width; x++, idx++) {
-          result[i++] = cb(x, y, this.getRaw(idx))
-        }
-      }
-    } else {
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          result[i++] = cb(x, y, this.get(x, y))
-        }
-      }
-    }
-    return result
-  }
-
-  find(cb: PointValueFilter<T>): undefined | PointValue<T> {
-    const width = this.width
-    const height = this.height
-
-    if (this.canUseDirectAccess) {
-      for (let y = 0; y < height; y++) {
-        let idx = y * width
-        for (let x = 0; x < width; x++, idx++) {
-          const value = this.getRaw(idx)
-          if (cb(x, y, value)) {
-            return { x, y, value }
-          }
-        }
-      }
-    } else {
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          const value = this.get(x, y)
-          if (cb(x, y, value)) {
-            return { x, y, value }
-          }
-        }
-      }
-    }
-
-    return
   }
 
   filter(cb: PointValueFilter<T>): Point[] {
-    const width = this.width
-    const height = this.height
-    const result: Point[] = []
-
-    if (this.canUseDirectAccess) {
-      for (let y = 0; y < height; y++) {
-        let idx = y * width
-        for (let x = 0; x < width; x++, idx++) {
-          if (cb(x, y, this.getRaw(idx))) {
-            result.push({ x, y })
-          }
-        }
+    const result: PointValue<T>[] = []
+    this.each((x, y, v, idx) => {
+      if (cb(x, y, v, idx)) {
+        result.push({ x, y, value: v })
       }
-    } else {
-      for (let y = 0; y < height; y++) {
-        for (let x = 0; x < width; x++) {
-          if (cb(x, y, this.get(x, y))) {
-            result.push({ x, y })
-          }
-        }
-      }
-    }
+    })
     return result
   }
 
-  setMultiple(points: Point[], value: T): void {
-    if (this.canUseDirectAccess) {
-      const width = this.width
-
-      for (let i = 0; i < points.length; i++) {
-        const p = points[i]!
-        const idx = p.y * width + p.x
-        this.setRaw(idx, value)
-      }
-    } else {
-      for (let i = 0; i < points.length; i++) {
-        const p = points[i]!
-        this.set(p.x, p.y, value)
-      }
-    }
+  map<M>(cb: PointValueMapper<T, M>): M[] {
+    const result = new Array<M>(this.width * this.height)
+    this.each((x, y, v, idx) => {
+      result[idx] = cb(x, y, v, idx)
+    })
+    return result
   }
 
-  private* iterateAdjacent(x: number, y: number, withinBounds?: Bounds): Generator<PointValue<T>> {
-    const baseIdx = y * this.width + x
-    const width = this.width
-    const height = this.height
-
-    if (this.canUseDirectAccess) {
-      if (withinBounds) {
-        for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
-          const [dx, dy] = ADJACENT_DIRECTIONS[i]!
-          const tx = x + dx
-          const ty = y + dy
-
-          if (tx < 0 || tx >= width || ty < 0 || ty >= height) continue
-          if (!withinBounds.contains(tx, ty)) continue
-
-          const idx = baseIdx + this.adjacentOffsets[i]!
-          yield { x: tx, y: ty, value: this.getRaw(idx) }
-        }
-      } else {
-        for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
-          const [dx, dy] = ADJACENT_DIRECTIONS[i]!
-          const tx = x + dx
-          const ty = y + dy
-
-          if (tx < 0 || tx >= width || ty < 0 || ty >= height) continue
-
-          const idx = baseIdx + this.adjacentOffsets[i]!
-          yield { x: tx, y: ty, value: this.getRaw(idx) }
-        }
-      }
-    } else {
-      // Fallback for complex storage
-      if (withinBounds) {
-        for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
-          const [dx, dy] = ADJACENT_DIRECTIONS[i]!
-          const tx = x + dx
-          const ty = y + dy
-
-          if (tx < 0 || tx >= width || ty < 0 || ty >= height) continue
-          if (!withinBounds.contains(tx, ty)) continue
-
-          yield { x: tx, y: ty, value: this.get(tx, ty) }
-        }
-      } else {
-        for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
-          const [dx, dy] = ADJACENT_DIRECTIONS[i]!
-          const tx = x + dx
-          const ty = y + dy
-
-          if (tx < 0 || tx >= width || ty < 0 || ty >= height) continue
-
-          yield { x: tx, y: ty, value: this.get(tx, ty) }
+  find(condition: PointValueFilter<T>): PointValue<T> | undefined {
+    const w = this.width
+    const h = this.height
+    for (let y = 0; y < h; y++) {
+      const rowOffset = y * w
+      for (let x = 0; x < w; x++) {
+        const idx = rowOffset + x
+        const v = this.getRaw(idx)
+        if (condition(x, y, v, idx)) {
+          return { x, y, value: v }
         }
       }
     }
   }
 
-  private iterateRect(bounds: BoundsLike, withinBounds?: Bounds): Generator<PointValue<T>>;
-
-  private iterateRect(minX: number, maxX: number, minY: number, maxY: number, withinBounds?: Bounds): Generator<PointValue<T>>;
-
-  private* iterateRect(
-    arg1: number | BoundsLike,
-    arg2?: number | Bounds,
-    arg3?: number,
-    arg4?: number,
-    arg5?: Bounds,
-  ): Generator<PointValue<T>> {
-    let minX: number, maxX: number, minY: number, maxY: number, withinBounds: undefined | Bounds
-
-    if (arguments.length === 1 && typeof arg1 === 'object' && arg1 !== null) {
-      const bounds = arg1 as Bounds;
-      ({ minX, maxX, minY, maxY } = bounds)
-      withinBounds = arg2 as undefined | Bounds
-    } else {
-      minX = arg1 as number
-      maxX = arg2 as number
-      minY = arg3 as number
-      maxY = arg4 as number
-      withinBounds = arg5
-    }
-
-    if (arguments.length === 1 && typeof minX === 'object' && minX !== null) {
-      const bounds = minX as BoundsLike;
-      ({ minX, maxX, minY, maxY } = bounds)
-    }
-
-    const {
-      minX: x0,
-      maxX: x1,
-      minY: y0,
-      maxY: y1,
-    } = this.bounds.trimNewBounds({ minX, maxX, minY, maxY })
-    const width = this.width
-
-    if (this.canUseDirectAccess) {
-      if (withinBounds) {
-        for (let y = y0; y < y1; y++) {
-          let idx = y * width + x0
-          for (let x = x0; x < x1; x++, idx++) {
-            if (withinBounds.contains(x, y)) {
-              yield { x, y, value: this.getRaw(idx) }
-            }
-          }
-        }
-      } else {
-        for (let y = y0; y < y1; y++) {
-          let idx = y * width + x0
-          for (let x = x0; x < x1; x++, idx++) {
-            yield { x, y, value: this.getRaw(idx) }
-          }
-        }
-      }
-    } else {
-      // Fallback for complex storage
-      if (withinBounds) {
-        for (let y = y0; y < y1; y++) {
-          for (let x = x0; x < x1; x++) {
-            if (withinBounds.contains(x, y)) {
-              yield { x, y, value: this.get(x, y) }
-            }
-          }
-        }
-      } else {
-        for (let y = y0; y < y1; y++) {
-          for (let x = x0; x < x1; x++) {
-            yield { x, y, value: this.get(x, y) }
-          }
-        }
-      }
-    }
-  }
-
-  private* iterateCircle(
-    cx: number,
-    cy: number,
-    radius: number,
-    withinBounds?: Bounds,
-  ): Generator<PointValue<T>> {
-    const r2 = radius * radius
-    const { minX, maxX, minY, maxY } = this.getCircleBounds(cx, cy, radius)
-    const width = this.width
-
-    if (this.canUseDirectAccess) {
-      if (withinBounds) {
-        for (let ty = minY; ty <= maxY; ty++) {
-          const dy = ty - cy
-          const dy2 = dy * dy
-          let idx = ty * width + minX
-
-          for (let tx = minX; tx <= maxX; tx++, idx++) {
-            const dx = tx - cx
-            if (dx * dx + dy2 <= r2 && withinBounds.contains(tx, ty)) {
-              yield { x: tx, y: ty, value: this.getRaw(idx) }
-            }
-          }
-        }
-      } else {
-        for (let ty = minY; ty <= maxY; ty++) {
-          const dy = ty - cy
-          const dy2 = dy * dy
-          let idx = ty * width + minX
-
-          for (let tx = minX; tx <= maxX; tx++, idx++) {
-            const dx = tx - cx
-            if (dx * dx + dy2 <= r2) {
-              yield { x: tx, y: ty, value: this.getRaw(idx) }
-            }
-          }
-        }
-      }
-    } else {
-      // Fallback for complex storage
-      if (withinBounds) {
-        for (let ty = minY; ty <= maxY; ty++) {
-          const dy = ty - cy
-          const dy2 = dy * dy
-
-          for (let tx = minX; tx <= maxX; tx++) {
-            const dx = tx - cx
-            if (dx * dx + dy2 <= r2 && withinBounds.contains(tx, ty)) {
-              yield { x: tx, y: ty, value: this.get(tx, ty) }
-            }
-          }
-        }
-      } else {
-        for (let ty = minY; ty <= maxY; ty++) {
-          const dy = ty - cy
-          const dy2 = dy * dy
-
-          for (let tx = minX; tx <= maxX; tx++) {
-            const dx = tx - cx
-            if (dx * dx + dy2 <= r2) {
-              yield { x: tx, y: ty, value: this.get(tx, ty) }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  private queryPoints(
-    iterator: Generator<PointValue<T>>,
-    filterValue: T | PointValueFilter<T>,
-    queryType: QueryType.FIND,
-  ): boolean
-
-  private queryPoints(
-    iterator: Generator<PointValue<T>>,
-    filterValue: T | PointValueFilter<T>,
-    queryType: QueryType.FILTER,
-  ): PointValue<T>[]
-
-  private queryPoints(
-    iterator: Generator<PointValue<T>>,
-    each: PointValueInspector<T>,
-    queryType: QueryType.EACH,
-  ): PointValue<T>[]
-
-  // Unified query logic - handles both find and filter operations
-  private queryPoints(
-    iterator: Generator<PointValue<T>>,
-    filterValue: T | PointValueFilter<T> | PointValueInspector<T>,
-    queryType: QueryType,
-  ): boolean | PointValue<T>[] | void {
-    // Determine filter function once, outside the loop
-    const filter = typeof filterValue === 'function'
-      ? filterValue as PointValueFilter<T>
-      : (_x: number, _y: number, v: T) => v === filterValue
-
-    if (queryType === QueryType.FIND) {
-      for (const point of iterator) {
-        if (filter(point.x, point.y, point.value)) {
+  has(condition: PointValueFilter<T>): boolean {
+    const w = this.width
+    const h = this.height
+    for (let y = 0; y < h; y++) {
+      const rowOffset = y * w
+      for (let x = 0; x < w; x++) {
+        const idx = rowOffset + x
+        const v = this.getRaw(idx)
+        if (condition(x, y, v, idx)) {
           return true
         }
       }
-      return false
     }
-    if (queryType === QueryType.FILTER) {
-      const result: PointValue<T>[] = []
-      for (const point of iterator) {
-        if (filter(point.x, point.y, point.value)) {
-          result.push(point)
-        }
-      }
-      return result
-    }
+    return false
+  }
 
-    for (const point of iterator) {
-      filter(point.x, point.y, point.value)
+  queryPoints(points: Point[], cb: (x: number, y: number, v: T, idx: number) => void): void {
+    const w = this.width
+    const h = this.height
+
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i]!
+      // Safety check for external point lists
+      if (p.x >= 0 && p.x < w && p.y >= 0 && p.y < h) {
+        const idx = p.y * w + p.x
+        cb(p.x, p.y, this.getRaw(idx), idx)
+      }
+    }
+  }
+
+  queryIndices(indices: number[] | Set<number>, cb: (x: number, y: number, v: T, idx: number) => void): void {
+    const w = this.width
+    // We use a standard for-of for Set compatibility, or a raw loop for arrays
+    for (const idx of indices) {
+      const x = idx % w
+      const y = (idx / w) | 0
+      cb(x, y, this.getRaw(idx), idx)
     }
   }
 
   // Adjacent operations
-  hasAdjacent(x: number, y: number, filterValue: T | PointValueFilter<T>, withinBounds?: Bounds): boolean {
-    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), filterValue, QueryType.FIND)
+  hasAdjacent(x: number, y: number, condition: PointValueFilter<T> | T): boolean {
+    const w = this.width, h = this.height
+    const dirs = ADJACENT_DIRECTIONS
+    const isCallback = typeof condition === 'function'
+
+    for (let i = 0; i < dirs.length; i++) {
+      const ax = x + dirs[i][0], ay = y + dirs[i][1]
+
+      if (ax >= 0 && ax < w && ay >= 0 && ay < h) {
+        const idx = ay * w + ax
+        const val = this.getRaw(idx)
+
+        if (isCallback) {
+          if ((condition as PointValueFilter<T>)(ax, ay, val, idx)) return true
+        } else {
+          if (val === condition) return true
+        }
+      }
+    }
+    return false
   }
 
-  filterAdjacent(x: number, y: number, filterValue: T | PointValueFilter<T>, withinBounds?: Bounds): PointValue<T>[] {
-    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), filterValue, QueryType.FILTER)
+  filterAdjacent(x: number, y: number, condition: PointValueFilter<T>): PointValue<T>[] {
+    const results: PointValue<T>[] = []
+    this.eachAdjacent(x, y, (ax, ay, v, idx) => {
+      if (condition(ax, ay, v, idx)) results.push({ x: ax, y: ay, value: v })
+    })
+    return results
   }
 
-  eachAdjacent(x: number, y: number, each: PointValueInspector<T>, withinBounds?: Bounds): PointValue<T>[] {
-    return this.queryPoints(this.iterateAdjacent(x, y, withinBounds), each, QueryType.EACH)
+  eachAdjacent(x: number, y: number, cb: PointValueInspector<T>): void {
+    const w = this.width, h = this.height
+    const dirs = ADJACENT_DIRECTIONS
+    for (let i = 0; i < dirs.length; i++) {
+      const ax = x + dirs[i]![0], ay = y + dirs[i]![1]
+      if (ax >= 0 && ax < w && ay >= 0 && ay < h) {
+        const idx = ay * w + ax
+        cb(ax, ay, this.getRaw(idx), idx)
+      }
+    }
   }
 
-  getAdjacent(x: number, y: number): PointValue<T>[] {
-    return Array.from(this.iterateAdjacent(x, y))
+  getAdjacent(x: number, y: number, cb: (v: T, ax: number, ay: number, aidx: number) => void): void {
+    this.eachAdjacent(x, y, (ax, ay, v, aidx) => cb(v, ax, ay, aidx))
   }
 
   setAdjacent(x: number, y: number, value: T): void {
-    const width = this.width
-    const height = this.height
+    const w = this.width
+    const h = this.height
+    for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
+      const dir = ADJACENT_DIRECTIONS[i]!
+      const ax = x + dir[0], ay = y + dir[1]
 
-    if (this.canUseDirectAccess) {
-      const baseIdx = y * width + x
-      for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
-        const [dx, dy] = ADJACENT_DIRECTIONS[i]!
-        const tx = x + dx
-        const ty = y + dy
+      if (ax >= 0 && ax < w && ay >= 0 && ay < h) {
+        this.setRaw(ay * w + ax, value)
+      }
+    }
+    this.invalidate()
+  }
 
-        if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
-          this.setRaw(baseIdx + this.adjacentOffsets[i]!, value)
-        }
+  hasInRect(rect: BoundsLike, condition: PointValueFilter<T>): boolean {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds(rect)
+    const w = this.width
+    for (let y = minY; y < maxY; y++) {
+      const row = y * w
+      for (let x = minX; x < maxX; x++) {
+        const idx = row + x
+        if (condition(x, y, this.getRaw(idx), idx)) return true
+      }
+    }
+    return false
+  }
+
+  findInRect(rect: BoundsLike, cb: PointValueFilter<T>): PointValue<T> | undefined {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds(rect)
+    const w = this.width
+    for (let y = minY; y < maxY; y++) {
+      const rowOffset = y * w
+      for (let x = minX; x < maxX; x++) {
+        const idx = rowOffset + x
+        const v = this.getRaw(idx)
+        if (cb(x, y, v, idx)) return { x, y, value: v }
+      }
+    }
+    return undefined
+  }
+
+  setRect(rect: BoundsLike, value: T): void {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds(rect)
+    const w = this.width
+
+    // Optimization: Use .fill() if we have a 32-bit view and value is a number
+    if (this._data32 && typeof value === 'number') {
+      for (let y = minY; y < maxY; y++) {
+        const row = y * w
+        this._data32.fill(value as number, row + minX, row + maxX)
       }
     } else {
-      for (let i = 0; i < ADJACENT_DIRECTIONS.length; i++) {
-        const [dx, dy] = ADJACENT_DIRECTIONS[i]!
-        const tx = x + dx
-        const ty = y + dy
-
-        if (tx >= 0 && tx < width && ty >= 0 && ty < height) {
-          this.set(tx, ty, value)
+      for (let y = minY; y < maxY; y++) {
+        const row = y * w
+        for (let x = minX; x < maxX; x++) {
+          this.setRaw(row + x, value)
         }
+      }
+    }
+    this.invalidate()
+  }
+
+  filterRect(rect: BoundsLike, condition: (v: T) => boolean): PointValue<T>[] {
+    const results: PointValue<T>[] = []
+    this.eachRect(rect, (x, y, v) => {
+      if (condition(v)) results.push({ x, y, value: v })
+    })
+    return results
+  }
+
+  eachRect(rect: BoundsLike, cb: PointValueInspector<T>): void {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds(rect)
+    const w = this.width
+    for (let y = minY; y < maxY; y++) {
+      const rowOffset = y * w
+      for (let x = minX; x < maxX; x++) {
+        const idx = rowOffset + x
+        cb(x, y, this.getRaw(idx), idx)
       }
     }
   }
 
-  // Rectangle operations
-  hasInRect(
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number,
-    filterValue: T | PointValueFilter<T>,
-    withinBounds?: Bounds,
-  ): boolean {
-    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, QueryType.FIND) as boolean
-  }
+  setRectStroke(rect: BoundsLike, value: T): void {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds(rect)
+    const w = this.width
 
-  filterRect(
-    minX: number,
-    maxX: number,
-    minY: number,
-    maxY: number,
-    filterValue: T | PointValueFilter<T>,
-    withinBounds?: Bounds,
-  ): PointValue<T>[] {
-    return this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), filterValue, QueryType.FILTER) as PointValue<T>[]
-  }
-
-  eachRect(bounds: BoundsLike, cb: PointValueInspector<T>, withinBounds?: Bounds): void;
-
-  eachRect(minX: number, maxX: number, minY: number, maxY: number, cb: PointValueInspector<T>, withinBounds?: Bounds): void;
-  eachRect(
-    arg1: number | BoundsLike,
-    arg2?: number | PointValueInspector<T>,
-    arg3?: number | Bounds,
-    arg4?: number,
-    arg5?: PointValueInspector<T>,
-    arg6?: Bounds,
-  ): void {
-
-    let minX: number, maxX: number, minY: number, maxY: number, cb: PointValueInspector<T>,
-      withinBounds: undefined | Bounds
-
-    if (arguments.length < 5 && typeof arg1 === 'object' && arg1 !== null) {
-      const bounds = arg1 as Bounds;
-      ({ minX, maxX, minY, maxY } = bounds)
-      cb = arg2 as PointValueInspector<T>
-      withinBounds = arg3 as undefined | Bounds
-    } else {
-      minX = arg1 as number
-      maxX = arg2 as number
-      minY = arg3 as number
-      maxY = arg4 as number
-      cb = arg5 as PointValueInspector<T>
-      withinBounds = arg6
+    // Horizontal lines (Top & Bottom)
+    for (let x = minX; x < maxX; x++) {
+      this.setRaw(minY * w + x, value)
+      this.setRaw((maxY - 1) * w + x, value)
     }
-
-    this.queryPoints(this.iterateRect(minX, maxX, minY, maxY, withinBounds), cb, QueryType.EACH)
-  }
-
-  getRect(minX: number, maxX: number, minY: number, maxY: number): PointValue<T>[] {
-    return Array.from(this.iterateRect(minX, maxX, minY, maxY))
-  }
-
-  setRect(startX: number, startY: number, width: number, height: number, value: T): void {
-    const dataWidth = this.width
-    const endY = startY + height
-    const endX = startX + width
-
-    if (this.canUseDirectAccess) {
-      for (let y = startY; y < endY; y++) {
-        let idx = y * dataWidth + startX
-        for (let x = startX; x < endX; x++, idx++) {
-          this.setRaw(idx, value)
-        }
-      }
-    } else {
-      for (let y = startY; y < endY; y++) {
-        for (let x = startX; x < endX; x++) {
-          this.set(x, y, value)
-        }
-      }
+    // Vertical lines (Left & Right - skipping corners already handled)
+    for (let y = minY + 1; y < maxY - 1; y++) {
+      const row = y * w
+      this.setRaw(row + minX, value)
+      this.setRaw(row + (maxX - 1), value)
     }
-  }
-
-  setRectStroke(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    value: T,
-  ): void {
-    const x1 = x
-    const y1 = y
-    const x2 = x + width - 1
-    const y2 = y + height - 1
-
-    // Top + bottom edges
-    for (let px = x1; px <= x2; px++) {
-      this.set(px, y1, value)
-      this.set(px, y2, value)
-    }
-
-    // Left + right edges
-    for (let py = y1; py <= y2; py++) {
-      this.set(x1, py, value)
-      this.set(x2, py, value)
-    }
+    this.invalidate()
   }
 
   // Circle operations
-  hasInCircle(
-    x: number,
-    y: number,
-    radius: number,
-    filterValue: T | PointValueFilter<T>,
-    withinBounds?: Bounds,
-  ): boolean {
-    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), filterValue, QueryType.FIND) as boolean
+  findInCircle(cx: number, cy: number, radius: number, condition: PointValueFilter<T>): PointValue<T> | undefined {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds({
+      minX: cx - radius,
+      maxX: cx + radius + 1,
+      minY: cy - radius,
+      maxY: cy + radius + 1,
+    })
+
+    const r2 = radius * radius
+    const w = this.width
+
+    for (let y = minY; y < maxY; y++) {
+      const dy = y - cy
+      const dy2 = dy * dy
+      const rowOffset = y * w
+      for (let x = minX; x < maxX; x++) {
+        const dx = x - cx
+        if (dx * dx + dy2 <= r2) {
+          const idx = rowOffset + x
+          const v = this.getRaw(idx)
+          if (condition(x, y, v, idx)) return { x, y, value: v }
+        }
+      }
+    }
   }
 
-  filterCircle(
-    x: number,
-    y: number,
-    radius: number,
-    filterValue: T | PointValueFilter<T>,
-    withinBounds?: Bounds,
-  ): PointValue<T>[] {
-    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), filterValue, QueryType.FILTER) as PointValue<T>[]
+  filterCircle(cx: number, cy: number, radius: number, condition: PointValueFilter<T>): PointValue<T>[] {
+    const results: PointValue<T>[] = []
+    this.eachCircle(cx, cy, radius, (x, y, v, idx) => {
+      if (condition(x, y, v, idx)) results.push({ x, y, value: v })
+    })
+    return results
   }
 
-  eachCircle(
-    x: number,
-    y: number,
-    radius: number,
-    each: PointValueInspector<T>,
-    withinBounds?: Bounds,
-  ): PointValue<T>[] {
-    return this.queryPoints(this.iterateCircle(x, y, radius, withinBounds), each, QueryType.EACH) as PointValue<T>[]
+  eachCircle(cx: number, cy: number, radius: number, cb: PointValueInspector<T>): void {
+    const { minX, maxX, minY, maxY } = this.bounds.trimNewBounds({
+      minX: cx - radius,
+      maxX: cx + radius + 1,
+      minY: cy - radius,
+      maxY: cy + radius + 1,
+    })
+
+    const r2 = radius * radius
+    const w = this.width
+
+    for (let y = minY; y < maxY; y++) {
+      const dy = y - cy
+      const dy2 = dy * dy
+      const rowOffset = y * w
+
+      for (let x = minX; x < maxX; x++) {
+        const dx = x - cx
+        if (dx * dx + dy2 <= r2) {
+          const idx = rowOffset + x
+          cb(x, y, this.getRaw(idx), idx)
+        }
+      }
+    }
   }
 
-  getCircle(x: number, y: number, radius: number): PointValue<T>[] {
-    return Array.from(this.iterateCircle(x, y, radius))
+  getCircle(cx: number, cy: number, radius: number): T[] {
+    const results: T[] = []
+    this.eachCircle(cx, cy, radius, (_x, _y, v) => results.push(v))
+    return results
   }
 
   setCircle(cx: number, cy: number, radius: number, value: T): void {
-    for (const { x, y } of this.iterateCircle(cx, cy, radius)) {
-      this.set(x, y, value)
-    }
+    this.eachCircle(cx, cy, radius, (_x, _y, _v, idx) => this.setRaw(idx, value))
+    this.invalidate()
   }
 
   getCircleBounds(x: number, y: number, radius: number) {
@@ -774,10 +496,10 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   }
 
   isOneSolidValue(): boolean {
-    let prev: any = this.get(0, 0)
+    const first = this.getRaw(0)
 
-    return !this.find((_x, _y, v) => {
-      return v !== prev
+    return !this.has((_x, _y, v) => {
+      return v !== first
     })
   }
 
@@ -839,12 +561,12 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   setEdgeS(value: T, index?: number) {
     if (index !== undefined) {
-      this.set(index, this.width - 1, value)
+      this.set(index, this.height - 1, value)
       return
     }
 
     for (let i = 0; i < this.width; i++) {
-      this.set(i, this.width - 1, value)
+      this.set(i, this.height - 1, value)
     }
   }
 
@@ -860,11 +582,11 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   setEdgeE(value: T, index?: number) {
     if (index !== undefined) {
-      this.set(this.height - 1, index, value)
+      this.set(this.width - 1, index, value)
       return
     }
     for (let i = 0; i < this.height; i++) {
-      this.set(this.height - 1, i, value)
+      this.set(this.width - 1, i, value)
     }
   }
 

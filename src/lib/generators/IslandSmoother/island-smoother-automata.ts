@@ -19,8 +19,8 @@ function _smoothAutomata(
   const willAdd: Point[] = []
   const willRemove: Point[] = []
 
-  mask.each((x, y, v) => {
-    if (pointFilter !== undefined && !pointFilter(x, y, v)) return
+  mask.each((x, y, v, idx) => {
+    if (pointFilter !== undefined && !pointFilter(x, y, v, idx)) return
 
     if (v === 1) {
       let count = 0

@@ -38,23 +38,16 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
   }
 
   toImageData(): ImageData {
-    const imageData = new ImageData(this.width, this.height)
-    const pixels = imageData.data
-    const data = this._data
+    const img = new ImageData(this.width, this.height)
+    const out32 = new Uint32Array(img.data.buffer)
+    const src = this._data
 
-    let heightIdx = 0
-    let pixelIdx = 0
-    const len = data.length
-
-    for (let i = 0; i < len; i++) {
-      const value = data[heightIdx++]!
-      pixels[pixelIdx++] = value // R
-      pixels[pixelIdx++] = value // G
-      pixels[pixelIdx++] = value // B
-      pixels[pixelIdx++] = 255   // A
+    for (let i = 0; i < src.length; i++) {
+      const v = src[i]
+      // Blit grayscale directly into 32-bit slot (A=255, B=v, G=v, R=v)
+      out32[i] = (255 << 24) | (v << 16) | (v << 8) | v
     }
-
-    return imageData
+    return img
   }
 }
 
