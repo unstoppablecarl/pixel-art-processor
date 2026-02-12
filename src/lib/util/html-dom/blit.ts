@@ -101,60 +101,60 @@ export function blendImageData(
   src: ImageData,
   opts: BlendImageDataOptions,
 ) {
-  const {
-    dx = 0,
-    dy = 0,
-    sx = 0,
-    sy = 0,
-    sw = src.width,
-    sh = src.height,
+  let {
+    dx = 0, dy = 0,
+    sx = 0, sy = 0,
+    sw = src.width, sh = src.height,
     blendMode = blendOverwrite,
     mask,
   } = opts
 
-  // --- FAST PATH: 32-bit Memory Copy ---
-  // If we are overwriting without a mask, use TypedArray.set() which is significantly faster.
-  if (blendMode === blendOverwrite && !mask) {
-    const src32 = new Uint32Array(src.data.buffer)
-    const dst32 = new Uint32Array(dst.data.buffer)
-    const srcW = src.width
-    const dstW = dst.width
+  // 1. Clip Source Area against the actual Source Image dimensions
+  if (sx < 0) { dx -= sx; sw += sx; sx = 0; }
+  if (sy < 0) { dy -= sy; sh += sy; sy = 0; }
+  sw = Math.min(sw, src.width - sx);
+  sh = Math.min(sh, src.height - sy);
 
-    const actualW = Math.min(sw, dst.width - dx)
-    const actualH = Math.min(sh, dst.height - dy)
+  // 2. Clip against Destination dimensions
+  if (dx < 0) { sx -= dx; sw += dx; dx = 0; }
+  if (dy < 0) { sy -= dy; sh += dy; dy = 0; }
+  const actualW = Math.min(sw, dst.width - dx);
+  const actualH = Math.min(sh, dst.height - dy);
+
+  // Early exit if there's nothing to draw
+  if (actualW <= 0 || actualH <= 0) return;
+
+  // --- FAST PATH: 32-bit Memory Copy ---
+  if (blendMode === blendOverwrite && !mask) {
+    const src32 = new Uint32Array(src.data.buffer);
+    const dst32 = new Uint32Array(dst.data.buffer);
 
     for (let iy = 0; iy < actualH; iy++) {
-      const sIndex = (iy + sy) * srcW + sx
-      const dIndex = (iy + dy) * dstW + dx
-      dst32.set(src32.subarray(sIndex, sIndex + actualW), dIndex)
+      const sIndex = (iy + sy) * src.width + sx;
+      const dIndex = (iy + dy) * dst.width + dx;
+      dst32.set(src32.subarray(sIndex, sIndex + actualW), dIndex);
     }
-    return
+    return;
   }
 
   // --- STANDARD PATH: Pixel-by-pixel blending ---
-  const byteBlend = getBlendAdapter(blendMode)
-  const dstData = dst.data
-  const srcData = src.data
-  const dstW = dst.width
-  const srcW = src.width
-  const useMask = !!mask
+  const byteBlend = getBlendAdapter(blendMode);
+  const dstData = dst.data;
+  const srcData = src.data;
+  const useMask = !!mask;
 
-  const maxW = Math.min(sw, dst.width - dx)
-  const maxH = Math.min(sh, dst.height - dy)
-  if (maxW <= 0 || maxH <= 0) return
+  for (let iy = 0; iy < actualH; iy++) {
+    const dstRow = (iy + dy) * dst.width;
+    const srcRow = (iy + sy) * src.width;
+    const maskRow = iy * sw; // Mask is usually sized to the requested 'sw'
 
-  for (let iy = 0; iy < maxH; iy++) {
-    const dstRow = (iy + dy) * dstW
-    const srcRow = (iy + sy) * srcW
-    const maskRow = iy * sw
+    for (let ix = 0; ix < actualW; ix++) {
+      if (useMask && mask![maskRow + ix] === 0) continue;
 
-    for (let ix = 0; ix < maxW; ix++) {
-      if (useMask && mask![maskRow + ix] === 0) continue
+      const di = (dstRow + (ix + dx)) << 2;
+      const si = (srcRow + (ix + sx)) << 2;
 
-      const di = (dstRow + (ix + dx)) << 2 // Bitwise shift by 2 is same as * 4
-      const si = (srcRow + (ix + sx)) << 2
-
-      byteBlend(srcData, dstData, si, di)
+      byteBlend(srcData, dstData, si, di);
     }
   }
 }
