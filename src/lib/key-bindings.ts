@@ -33,7 +33,7 @@ export function bindInputKeys(history: VueHistory) {
   }
 
   const unbinds = [
-    bindModifierKeysUpDown((e) => e.metaKey || e.ctrlKey, {
+    bindModifierKeysUpDown((e) => e.key === 'Meta' || e.key === 'Control', {
       up: () => toolStore.selectionMoveMode = SelectMoveMode.SELECTION,
       down: () => toolStore.selectionMoveMode = SelectMoveMode.CONTENT,
     }),
