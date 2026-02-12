@@ -33,6 +33,15 @@ export function makeCanvasPaintSelectTool(
     onSubToolChanged() {
       toolState.draw()
     },
+    onCut() {
+      toolState.cutSelection()
+    },
+    onCopy() {
+      toolState.copySelection()
+    },
+    onPaste(e) {
+      toolState.pasteSelection(e)
+    },
     onClick(x, y) {
       const ts = toolState
       const sel = ts.selection

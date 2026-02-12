@@ -1,4 +1,5 @@
-import type { RGBAFloat } from './ImageData.ts'
+import { type RGBAFloat } from './ImageData.ts'
+import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
 export type BlendFn = {
   alwaysClearFirst?: boolean,
@@ -175,4 +176,45 @@ function makeVariant(blendMode: BlendFn) {
     src: ImageData,
     opts: BlendImageDataOptions,
   ) => blendImageData(dst, src, { ...opts, blendMode })
+}
+
+export function applyMask(source: ImageData, mask: Uint8Array): ImageData {
+  const { width, height } = source
+  // Create a copy to avoid mutating the original source pixels
+  const destination = new ImageData(
+    new Uint8ClampedArray(source.data),
+    width,
+    height,
+  )
+
+  const data32 = new Uint32Array(destination.data.buffer)
+
+  for (let i = 0; i < data32.length; i++) {
+    // If mask is 0 (transparent), wipe the pixel data
+    if (mask[i] === 0) {
+      data32[i] = 0
+    }
+  }
+
+  return destination
+}
+
+const imageDataToPngBlob_pixelCanvas = makeReusablePixelCanvas()
+
+export async function imageDataToPngBlob(
+  imageData: ImageData,
+  mask: Uint8Array | null = null,
+): Promise<Blob> {
+  const { canvas, ctx } = imageDataToPngBlob_pixelCanvas(imageData.width, imageData.height)
+
+  const finalData = mask ? applyMask(imageData, mask) : imageData
+
+  ctx.putImageData(finalData, 0, 0)
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(new Error('Failed to generate PNG blob'))
+    }, 'image/png')
+  })
 }

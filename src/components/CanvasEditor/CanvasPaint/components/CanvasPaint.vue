@@ -15,7 +15,12 @@ const {
   handleMouseDown,
   handleMouseMove,
   handleMouseLeave,
-  currentCursorCssClass
+
+  handleCopy,
+  handlePaste,
+  handleCut,
+
+  currentCursorCssClass,
 } = toolController.getInputHandlers(canvasRef)
 
 onMounted(() => {
@@ -26,6 +31,7 @@ const dataAttr = DATA_LOCAL_TOOL_ID
 </script>
 <template>
   <canvas
+    tabindex="0"
     ref="canvasRef"
     class="canvas-pixel-draw"
     :class="currentCursorCssClass"
@@ -33,6 +39,10 @@ const dataAttr = DATA_LOCAL_TOOL_ID
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
     @mouseleave="handleMouseLeave"
+
+    @cut="handleCut"
+    @copy="handleCopy"
+    @paste="handlePaste"
   ></canvas>
 </template>
 <style lang="scss">

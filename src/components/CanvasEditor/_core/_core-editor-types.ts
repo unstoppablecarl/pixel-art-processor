@@ -77,6 +77,10 @@ export type ToolInputHandlers = {
   handleMouseMove: (e: MouseEvent) => void,
   handleMouseLeave: (e: MouseEvent) => void,
   handleMouseEnter: (e: MouseEvent) => void,
+
+  handleCut: (e: ClipboardEvent) => void,
+  handleCopy: (e: ClipboardEvent) => void,
+  handlePaste: (e: ClipboardEvent) => void,
 }
 
 export type BaseToolController<TArgs extends any[] = []> = {
@@ -96,8 +100,9 @@ export type InputTarget = {
   onHoverStart?(e: MouseEvent): void
   onHoverEnd?(e: MouseEvent): void,
 
-  onCopy?(): void,
-  onPaste?(): void,
+  onCut?(e: ClipboardEvent): void,
+  onCopy?(e: ClipboardEvent): void,
+  onPaste?(e: ClipboardEvent): void,
 }
 
 export type BaseToolHandler<S, TArgs extends any[] = []> = {
@@ -118,8 +123,9 @@ export type BaseToolHandler<S, TArgs extends any[] = []> = {
 
   cursorCssClass?: (() => string | null) | string,
 
-  onCopy?: () => void,
-  onPaste?: () => void
+  onCut?: (e: ClipboardEvent) => void,
+  onCopy?: (e: ClipboardEvent) => void,
+  onPaste?: (e: ClipboardEvent) => void,
 }
 
 export type ToolHandlerSubToolChanged<T extends string> = {
@@ -138,11 +144,11 @@ export type BaseToolManagerSettings = {
   id: string,
   scale?: Ref<number>,
   gridColor: Ref<string>,
-  gridDraw: Ref<boolean>
+  gridDraw: Ref<boolean>,
 }
 
 export type BaseSelectToolState = {
-  clearSelection(): void
+  clearSelection(): void,
 }
 
 export type BaseSelectToolHandler<S extends BaseSelectToolState, TArgs extends any[] = []> =

@@ -1,7 +1,5 @@
-import hotkeys from 'hotkeys-js'
 import { ref, type Ref, type ShallowRef } from 'vue'
 import type { Optional } from '../../../lib/_helpers.ts'
-import { COPY_KEYS, PASTE_KEYS } from '../../../lib/key-bindings.ts'
 import type { Position } from '../../../lib/pipeline/_types.ts'
 import type { InputTarget, ToolInputHandlers } from './_core-editor-types.ts'
 import { makeGetCurrentCursorCssClass } from './controller/CurrentCursorCssClass.ts'
@@ -9,15 +7,6 @@ import type { Toolset } from './Toolset.ts'
 
 export function makeGlobalInputManager() {
   let activeTarget: InputTarget | null = null
-  let lastTarget: InputTarget | null = null
-
-  // unbind in case of hmr
-  hotkeys.unbind(COPY_KEYS, handleCopy)
-  hotkeys.unbind(PASTE_KEYS, handlePaste)
-  detachGlobal()
-
-  hotkeys(COPY_KEYS, handleCopy)
-  hotkeys(PASTE_KEYS, handlePaste)
 
   function attachGlobal() {
     window.addEventListener('mousemove', handleGlobalMove)
@@ -39,19 +28,8 @@ export function makeGlobalInputManager() {
     if (!activeTarget) return
     const { x, y } = activeTarget.getCoordsFromEvent(e)
     activeTarget.onMouseUp(x, y, e)
-    lastTarget = activeTarget
     activeTarget = null
     detachGlobal()
-  }
-
-  function handleCopy() {
-    const target = activeTarget ?? lastTarget
-    target?.onCopy?.()
-  }
-
-  function handlePaste() {
-    const target = activeTarget ?? lastTarget
-    target?.onPaste?.()
   }
 
   return {
@@ -78,6 +56,15 @@ export function makeGlobalInputManager() {
       target.onHoverEnd?.(e)
       target.onMouseLeave?.(e)
     },
+    cut(target: InputTarget, e: ClipboardEvent) {
+      target?.onCut?.(e)
+    },
+    copy(target: InputTarget, e: ClipboardEvent) {
+      target?.onCopy?.(e)
+    },
+    paste(target: InputTarget, e: ClipboardEvent) {
+      target?.onPaste?.(e)
+    },
   }
 }
 
@@ -89,6 +76,9 @@ export function useGlobalInput(target: InputTarget): ToolInputHandlers {
     handleMouseMove: (e: MouseEvent) => globalInputManager.hover(target, e),
     handleMouseLeave: (e: MouseEvent) => globalInputManager.leave(target, e),
     handleMouseEnter: (e: MouseEvent) => globalInputManager.enter(target, e),
+    handleCut: (e: ClipboardEvent) => globalInputManager.cut(target, e),
+    handleCopy: (e: ClipboardEvent) => globalInputManager.copy(target, e),
+    handlePaste: (e: ClipboardEvent) => globalInputManager.paste(target, e),
   }
 }
 
@@ -127,11 +117,14 @@ export function makeBaseInputHandlers(
     onHoverEnd() {
       currentCursorCssClass.value = null
     },
-    onCopy() {
-      toolset.currentToolHandler?.onCopy?.()
+    onCut(e) {
+      toolset.currentToolHandler?.onCopy?.(e)
     },
-    onPaste() {
-      toolset.currentToolHandler?.onPaste?.()
+    onCopy(e) {
+      toolset.currentToolHandler?.onCopy?.(e)
+    },
+    onPaste(e) {
+      toolset.currentToolHandler?.onPaste?.(e)
     },
     ...input,
   })

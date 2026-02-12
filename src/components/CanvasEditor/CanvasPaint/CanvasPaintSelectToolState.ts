@@ -1,5 +1,7 @@
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect, trimRectBounds } from '../../../lib/util/data/Rect.ts'
+import { imageDataToPngBlob } from '../../../lib/util/html-dom/blit.ts'
+import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../lib/util/html-dom/clipboard.ts'
 import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
 import { BlendMode, SelectSubTool } from '../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlendFn } from '../_core/tools/selection-helpers.ts'
@@ -29,7 +31,8 @@ export function makeCanvasPaintSelectToolState(
     current: Rect
     dragStartX: number | null
     dragStartY: number | null
-    dragStartRect: Rect | null
+    dragStartRect: Rect | null,
+    isPasted: boolean
   }
 
   let selection: LocalSelection | null = null
@@ -88,6 +91,7 @@ export function makeCanvasPaintSelectToolState(
       dragStartX: null,
       dragStartY: null,
       dragStartRect: null,
+      isPasted: false,
     }
 
     selecting = false
@@ -117,6 +121,7 @@ export function makeCanvasPaintSelectToolState(
       dragStartX: null,
       dragStartY: null,
       dragStartRect: null,
+      isPasted: false,
     }
 
     selecting = false
@@ -161,14 +166,65 @@ export function makeCanvasPaintSelectToolState(
     dragging = false
   }
 
+  function copySelection() {
+    if (!selection) return
+    if (selectionHasMoved()) return
+    if (selection.isPasted) return
+
+    const { pixels, mask } = selection
+    imageDataToPngBlob(pixels, mask)
+      .then((blob) => writePngBlobToClipboard(blob))
+  }
+
+  function cutSelection() {
+    if (!selection) return
+    if (selectionHasMoved()) return
+    if (selection.isPasted) return
+
+    canvasWriter.withHistory((mutator) => {
+      if (!selection) return
+      const o = selection.current
+      mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+    })
+
+    const { pixels, mask } = selection
+    imageDataToPngBlob(pixels, mask)
+      .then((blob) => writePngBlobToClipboard(blob))
+  }
+
+  function pasteSelection(e: ClipboardEvent) {
+    getImageDataFromClipboard(e)
+      .then(imageData => {
+        if (!imageData) return
+        clearSelection()
+
+        const original = { x: 5, y: 5, w: imageData.width, h: imageData.height }
+        selection = {
+          pixels: imageData,
+          original,
+          current: { ...original },
+          dragStartX: null,
+          dragStartY: null,
+          dragStartRect: null,
+          isPasted: true,
+          mask: null,
+        }
+
+        selecting = false
+        canvasRenderer.queueRender()
+      })
+  }
+
   function commit(mode: BlendMode) {
     if (!selection) return
 
     canvasWriter.withHistory((mutator) => {
       if (!selection) return
 
-      const o = selection.original
-      mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+      if (!selection.isPasted) {
+        const o = selection.original
+        mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+      }
 
       const c = selection.current
       const modeFn = selectMoveBlendModeToBlendFn[mode]
@@ -178,10 +234,9 @@ export function makeCanvasPaintSelectToolState(
         {
           dx: c.x,
           dy: c.y,
-          mask: selection.mask ?? undefined,
+          mask: selection.mask,
         },
       )
-
     })
 
     state.imageDataDirty = true
@@ -266,6 +321,9 @@ export function makeCanvasPaintSelectToolState(
     clearSelection,
     pointInSelection,
     selectionHasMoved,
+    cutSelection,
+    copySelection,
+    pasteSelection,
     draw,
   }
 }
