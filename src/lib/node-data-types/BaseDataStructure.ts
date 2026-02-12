@@ -1,7 +1,6 @@
 import type { Direction } from '../pipeline/_types.ts'
-import type { RGBA } from '../util/color.ts'
+import { packColor, type RGBA } from '../util/color.ts'
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
-import { setImageDataPixelColor } from '../util/html-dom/ImageData.ts'
 import { readonlyTypedArray } from '../util/misc.ts'
 
 export type Point = {
@@ -123,8 +122,12 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   generateImageData(valueToColor: (value: T) => RGBA): ImageData {
     const result = new ImageData(this.width, this.height)
-    this.each((x, y, v) => {
-      setImageDataPixelColor(result, x, y, valueToColor(v))
+    const data32 = new Uint32Array(result.data.buffer)
+
+    let i = 0
+    this.each((_x, _y, v) => {
+      const { r, g, b, a } = valueToColor(v)
+      data32[i++] = packColor(r, g, b, a)
     })
     return result
   }

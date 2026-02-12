@@ -94,7 +94,6 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
       a: 0,
     },
   ): ImageData {
-
     if (typeof valueToColor === 'function') {
       return this.generateImageData(valueToColor)
     }
