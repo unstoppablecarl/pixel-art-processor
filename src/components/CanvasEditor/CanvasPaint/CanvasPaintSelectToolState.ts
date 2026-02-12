@@ -3,11 +3,12 @@ import { type Rect, trimRectBounds } from '../../../lib/util/data/Rect.ts'
 import { imageDataToPngBlob } from '../../../lib/util/html-dom/blit.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../lib/util/html-dom/clipboard.ts'
 import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
-import { BlendMode, SelectSubTool } from '../_core/_core-editor-types.ts'
+import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlendFn } from '../_core/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from './CanvasRenderer.ts'
 import type { CanvasPaintWriter } from './data/CanvasPaintWriter.ts'
+import { type CanvasPaintSelection, makeCanvasPaintSelection } from './lib/CanvasPaintSelection.ts'
 
 export type CanvasPaintSelectToolState = ReturnType<typeof makeCanvasPaintSelectToolState>
 
@@ -24,18 +25,8 @@ export function makeCanvasPaintSelectToolState(
     store?: CanvasEditToolStore,
   },
 ) {
-  type LocalSelection = {
-    pixels: ImageData
-    mask: Uint8Array | null
-    original: Rect
-    current: Rect
-    dragStartX: number | null
-    dragStartY: number | null
-    dragStartRect: Rect | null,
-    isPasted: boolean
-  }
 
-  let selection: LocalSelection | null = null
+  let selection: CanvasPaintSelection | null = null
   let dragging = false
   let selecting = false
 
@@ -58,6 +49,12 @@ export function makeCanvasPaintSelectToolState(
     return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 }
   }
 
+  function getPixels(r: Rect) {
+    const img = state.imageDataRef.get()!
+    trimRectBounds(r, { x: 0, y: 0, w: img.width, h: img.height })
+    return extractImageData(img, r.x, r.y, r.w, r.h)
+  }
+
   function startRectSelection(x: number, y: number) {
     selecting = true
     dragging = false
@@ -67,39 +64,25 @@ export function makeCanvasPaintSelectToolState(
     dragCurrentNewSelectionY = y
   }
 
-  function updateRect(x: number, y: number) {
+  function resizeRectSelection(x: number, y: number) {
+    if (store.currentSubTool !== SelectSubTool.RECT) return
+
     dragCurrentNewSelectionX = x
     dragCurrentNewSelectionY = y
-    canvasRenderer.queueRender()
   }
 
-  function finalizeRectSelection() {
-    const img = state.imageDataRef.get()
-    if (!img) return
+  function endRectSelection() {
+    const rect = selectionRect()
+    if (!rect) return
 
-    const r = selectionRect()
-    if (!r) return
-
-    trimRectBounds(r, { x: 0, y: 0, w: state.width, h: state.height })
-    const pixels = extractImageData(img, r.x, r.y, r.w, r.h)
-
-    selection = {
-      pixels,
-      mask: null,
-      original: { ...r },
-      current: { ...r },
-      dragStartX: null,
-      dragStartY: null,
-      dragStartRect: null,
-      isPasted: false,
-    }
+    selection = makeCanvasPaintSelection({
+      rect,
+    })
 
     selecting = false
-    dragStartNewSelectionX = dragStartNewSelectionY = dragCurrentNewSelectionX = dragCurrentNewSelectionY = null
-    canvasRenderer.queueRender()
   }
 
-  function finalizeFloodSelection(x: number, y: number) {
+  function createFloodSelection(x: number, y: number) {
     const img = state.imageDataRef.get()
     if (!img) return
 
@@ -113,113 +96,133 @@ export function makeCanvasPaintSelectToolState(
 
     if (!result) return
 
-    selection = {
-      pixels: result.pixels,
+    selection = makeCanvasPaintSelection({
+      rect: result.selectionRect,
       mask: result.selectionRect.mask,
-      original: { ...result.selectionRect },
-      current: { ...result.selectionRect },
-      dragStartX: null,
-      dragStartY: null,
-      dragStartRect: null,
-      isPasted: false,
-    }
+    })
 
     selecting = false
     dragging = false
-    canvasRenderer.queueRender()
   }
 
-  function dragStart(mouseX: number, mouseY: number) {
+  function startMovingSelection(mouseX: number, mouseY: number) {
     if (!selection) return
 
-    const r = selection.current
-    if (
-      mouseX < r.x || mouseX >= r.x + r.w ||
-      mouseY < r.y || mouseY >= r.y + r.h
-    ) return
+    if (selection.pixels) {
+      const rect = selection.current
+      const mask = selection.mask
 
-    dragging = true
-    selection.dragStartX = mouseX
-    selection.dragStartY = mouseY
-    selection.dragStartRect = { ...selection.current }
-  }
-
-  function moveSelection(mouseX: number, mouseY: number) {
-    if (!selection || !dragging) return
-    if (selection.dragStartX == null || selection.dragStartY == null) return
-    if (!selection.dragStartRect) return
-
-    const dx = mouseX - selection.dragStartX
-    const dy = mouseY - selection.dragStartY
-
-    selection.current = {
-      x: selection.dragStartRect.x + dx,
-      y: selection.dragStartRect.y + dy,
-      w: selection.dragStartRect.w,
-      h: selection.dragStartRect.h,
+      commit()
+      selection = makeCanvasPaintSelection({
+        rect,
+        mask,
+      })
     }
 
-    canvasRenderer.queueRender()
+    dragging = true
+    selection.startMoving(mouseX, mouseY)
   }
 
-  function dragEnd() {
+  function startMovingContent(mouseX: number, mouseY: number) {
+    if (!selection || dragging) return
+
+    // promotion marquee -> content
+    if (!selection.pixels) {
+      const pixels = getPixels(selection.original)
+      selection.lift(pixels)
+    }
+
+    selection.startMoving(mouseX, mouseY)
+    dragging = true
+  }
+
+  function move(mouseX: number, mouseY: number) {
+    if (!selection || !dragging) return
+    selection.move(mouseX, mouseY)
+  }
+
+  function endMoving() {
+    if (!selection) return
+
+    // only moving marquee so reset to new selection
+    if (!selection.pixels) {
+      selection = makeCanvasPaintSelection({
+        rect: selection.current,
+        mask: selection.mask,
+      })
+    }
     dragging = false
   }
 
-  function copySelection() {
+  async function copySelection() {
     if (!selection) return
-    if (selectionHasMoved()) return
-    if (selection.isPasted) return
 
-    const { pixels, mask } = selection
-    imageDataToPngBlob(pixels, mask)
+    // if we have selection pixels already copy those
+    // otherwise we are in marquee selection so grab pixels from current
+    const pixels = selection.pixels ?? getPixels(selection.current)
+    await imageDataToPngBlob(pixels, selection.mask)
       .then((blob) => writePngBlobToClipboard(blob))
   }
 
-  function cutSelection() {
+  async function cutSelection() {
     if (!selection) return
-    if (selectionHasMoved()) return
-    if (selection.isPasted) return
 
+    if (selection.isPasted) {
+      await copySelection()
+      clearSelection()
+      return
+    }
+
+    // un-commited possibly moved pixels
+    if (selection.pixels) {
+      await copySelection()
+
+      canvasWriter.withHistory((mutator) => {
+        if (!selection) return
+        const o = selection.original
+        mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+      })
+
+      clearSelection()
+      return
+    }
+
+    await copySelection()
+
+    // marquee selection grab current pixels
     canvasWriter.withHistory((mutator) => {
       if (!selection) return
       const o = selection.current
       mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
     })
-
-    const { pixels, mask } = selection
-    imageDataToPngBlob(pixels, mask)
-      .then((blob) => writePngBlobToClipboard(blob))
   }
 
-  function pasteSelection(e: ClipboardEvent) {
-    getImageDataFromClipboard(e)
+  async function pasteSelection(e: ClipboardEvent) {
+    await getImageDataFromClipboard(e)
       .then(imageData => {
         if (!imageData) return
         clearSelection()
 
-        const original = { x: 5, y: 5, w: imageData.width, h: imageData.height }
-        selection = {
-          pixels: imageData,
-          original,
-          current: { ...original },
-          dragStartX: null,
-          dragStartY: null,
-          dragStartRect: null,
-          isPasted: true,
-          mask: null,
+        // @TODO place rect as position always visible to user window
+        const rect = {
+          x: Math.floor((state.width / 2) - (imageData.width / 2)),
+          y: Math.floor((state.height / 2) - (imageData.height / 2)),
+          w: imageData.width,
+          h: imageData.height,
         }
 
+        selection = makeCanvasPaintSelection({ pastedPixels: imageData, rect })
+
         selecting = false
-        canvasRenderer.queueRender()
       })
   }
 
-  function commit(mode: BlendMode) {
+  function commit() {
     if (!selection) return
+    const mode = store.selectMoveBlendMode
 
     canvasWriter.withHistory((mutator) => {
-      if (!selection) return
+      if (!selection?.pixels) return
 
       if (!selection.isPasted) {
         const o = selection.original
@@ -228,6 +231,7 @@ export function makeCanvasPaintSelectToolState(
 
       const c = selection.current
       const modeFn = selectMoveBlendModeToBlendFn[mode]
+
       mutator.blendImageData(
         selection.pixels,
         modeFn,
@@ -240,10 +244,7 @@ export function makeCanvasPaintSelectToolState(
     })
 
     state.imageDataDirty = true
-    selection = null
-    dragging = false
-    selecting = false
-    canvasRenderer.queueRender()
+    clearSelection()
   }
 
   function clearSelection() {
@@ -251,47 +252,14 @@ export function makeCanvasPaintSelectToolState(
     dragging = false
     selecting = false
     dragStartNewSelectionX = dragStartNewSelectionY = dragCurrentNewSelectionX = dragCurrentNewSelectionY = null
-    canvasRenderer.queueRender()
-  }
-
-  function pointInSelection(px: number, py: number) {
-    if (!selection) return false
-
-    const r = selection.current
-
-    if (selection.mask) {
-      const lx = px - r.x
-      const ly = py - r.y
-
-      if (lx < 0 || ly < 0 || lx >= r.w || ly >= r.h) return false
-
-      return selection.mask[ly * r.w + lx] !== 0
-    }
-
-    return (
-      px >= r.x && px < r.x + r.w &&
-      py >= r.y && py < r.y + r.h
-    )
   }
 
   function selectionHasMoved() {
     if (!selection) return false
-    const o = selection.original
-    const c = selection.current
-    return o.x !== c.x || o.y !== c.y
-  }
-
-  function draw() {
-    canvasRenderer.queueRender()
+    return selection.hasMoved()
   }
 
   return {
-    get pixels() {
-      return selection?.pixels ?? null
-    },
-    get mask() {
-      return selection?.mask ?? null
-    },
     get currentDraggedRect() {
       return selectionRect()
     },
@@ -304,26 +272,25 @@ export function makeCanvasPaintSelectToolState(
     get selecting() {
       return selecting
     },
-    startRectSelection,
-    finalizeFloodSelection,
     inFloodMode() {
       return store.currentSubTool === SelectSubTool.FLOOD
     },
-    updateSelection(x: number, y: number) {
-      if (store.currentSubTool === SelectSubTool.RECT) updateRect(x, y)
-    },
-    finalizeRectSelection,
+    createFloodSelection,
+    startRectSelection,
+    resizeRectSelection,
+    endRectSelection,
 
-    dragStart,
-    moveSelection,
-    dragEnd,
+    startMovingSelection,
+    move,
+    startMovingContent,
+    endMoving,
+
     commit,
     clearSelection,
-    pointInSelection,
+    pointInSelection: (x: number, y: number) => selection?.pointInSelection(x, y) ?? false,
     selectionHasMoved,
     cutSelection,
     copySelection,
     pasteSelection,
-    draw,
   }
 }

@@ -1,3 +1,4 @@
+import { moveSelectionContentButtonIsDown } from '../../../../lib/key-bindings.ts'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseToolHandler, SelectSubTool, type ToolHandlerSubToolChanged } from '../../_core/_core-editor-types.ts'
@@ -31,49 +32,65 @@ export function makeCanvasPaintSelectTool(
       toolState.clearSelection()
     },
     onSubToolChanged() {
-      toolState.draw()
+      canvasRenderer.queueRender()
     },
     onCut() {
-      toolState.cutSelection()
+      toolState.cutSelection().then(() => {
+        canvasRenderer.queueRender()
+      })
     },
     onCopy() {
       toolState.copySelection()
+      canvasRenderer.queueRender()
     },
     onPaste(e) {
-      toolState.pasteSelection(e)
+      toolState.pasteSelection(e).then(() => {
+        canvasRenderer.queueRender()
+      })
     },
     onClick(x, y) {
       const ts = toolState
       const sel = ts.selection
       if (!sel) {
         if (ts.inFloodMode()) {
-          ts.finalizeFloodSelection(x, y)
+          ts.createFloodSelection(x, y)
         }
+        canvasRenderer.queueRender()
         return
       }
 
       if (!ts.pointInSelection(x, y)) {
         if (ts.selectionHasMoved()) {
-          ts.commit(store.selectMoveBlendMode)
+          ts.commit()
         } else {
           ts.clearSelection()
-          canvasRenderer.queueRender()
         }
+        canvasRenderer.queueRender()
+        return
       }
+
       if (ts.inFloodMode()) {
-        ts.finalizeFloodSelection(x, y)
+        ts.createFloodSelection(x, y)
       }
+      canvasRenderer.queueRender()
     },
     onDragStart(x, y) {
       const ts = toolState
       const sel = ts.selection
       if (!sel && !ts.inFloodMode()) {
         ts.startRectSelection(x, y)
+        canvasRenderer.queueRender()
         return
       }
 
       if (ts.pointInSelection(x, y)) {
-        ts.dragStart(x, y)
+        if (moveSelectionContentButtonIsDown()) {
+          console.log('smc')
+          ts.startMovingContent(x, y)
+        } else {
+          ts.startMovingSelection(x, y)
+        }
+        canvasRenderer.queueRender()
         return
       }
 
@@ -85,33 +102,33 @@ export function makeCanvasPaintSelectTool(
     onDragMove(x, y) {
       const ts = toolState
       if (ts.dragging) {
-        ts.moveSelection(x, y)
+        ts.move(x, y)
       } else if (ts.selecting) {
-        ts.updateSelection(x, y)
+        ts.resizeRectSelection(x, y)
       }
       canvasRenderer.queueRender()
     },
     onDragEnd(_x, _y) {
       const ts = toolState
       if (ts.selecting) {
-        ts.finalizeRectSelection()
+        ts.endRectSelection()
       }
 
       if (ts.dragging) {
-        ts.dragEnd()
+        ts.endMoving()
       }
       canvasRenderer.queueRender()
     },
     pixelOverlayDraw(ctx) {
       const sel = toolState.selection
-      if (!sel) return
+      if (!sel?.pixels) return
 
       const mode = store.selectMoveBlendMode
       const writer = selectMoveBlendModeToWriter[mode]!
       const preview = state.imageDataRef.copy()!
 
-      // Clear original region
-      if (toolState.selectionHasMoved()) {
+      if (!sel.isPasted && toolState.selectionHasMoved()) {
+        // Clear original region
         clearImageData(preview, sel.original.x, sel.original.y, sel.original.w, sel.original.h, sel.mask)
       }
 
@@ -137,3 +154,4 @@ export function makeCanvasPaintSelectTool(
     },
   }
 }
+

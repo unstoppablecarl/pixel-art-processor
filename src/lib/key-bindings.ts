@@ -5,6 +5,9 @@ import type { VueHistory } from './util/history/history.ts'
 
 export const COPY_KEYS = 'command+c, ctrl+c'
 export const PASTE_KEYS = 'command+v, ctrl+v'
+
+export const moveSelectionContentButtonIsDown = () => hotkeys.command || hotkeys.ctrl
+
 export function bindInputKeys(history: VueHistory) {
 
   const toolStore = useCanvasEditToolStore()
