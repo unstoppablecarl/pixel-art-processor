@@ -445,15 +445,6 @@ export function extractImageData(
   return new ImageData(out, w, h)
 }
 
-export function clearImageDataRect(
-  target: ImageData,
-  rect: Rect,
-  mask?: Uint8Array | null,
-) {
-  const { x, y, w, h } = rect
-  fillImageData(target, RGBA_ERASE, x, y, w, h, mask)
-}
-
 export function clearImageData(
   target: ImageData,
   x: number,
@@ -639,6 +630,3 @@ export function floodFillImageDataSelection(
 // array of 1 | 0 values. 1 is selected in the mask
 // mask uses normal pixel indexing i = y * width + x
 // export type PixelMask = Uint8Array
-
-// export class PixelMask extends Uint8Array {
-// }

@@ -1,6 +1,6 @@
 import { type Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import {
-  applyBufferToImageData, extractImageDataRect,
+  applyBufferToImageData, extractPixelData,
   growBufferIfNeeded,
   type PixelBuffer,
   pixelBufferToRect,
@@ -121,7 +121,7 @@ export function makeTileSheetPixelAccumulator() {
       const sy = offset.y + r.y
 
       // Use the generic extractor
-      const before = extractImageDataRect(img, { x: sx, y: sy, w: r.w, h: r.h })
+      const before = extractPixelData(img, { x: sx, y: sy, w: r.w, h: r.h })
 
       patches.push({
         tileId: r.tileId,

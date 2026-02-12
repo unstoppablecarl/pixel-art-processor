@@ -95,7 +95,6 @@ export type BlendImageDataOptions = {
   mask?: Uint8Array | null,
   blendMode?: BlendFn,
 }
-
 export function blendImageData(
   dst: ImageData,
   src: ImageData,
@@ -109,47 +108,46 @@ export function blendImageData(
     mask,
   } = opts
 
-  // 1. Clip Source Area against the actual Source Image dimensions
+  // Store the original sx/sy before clipping to calculate mask offset
+  const originalSx = sx;
+  const originalSy = sy;
+
+  // 1. Clip Source Area
   if (sx < 0) { dx -= sx; sw += sx; sx = 0; }
   if (sy < 0) { dy -= sy; sh += sy; sy = 0; }
   sw = Math.min(sw, src.width - sx);
   sh = Math.min(sh, src.height - sy);
 
-  // 2. Clip against Destination dimensions
+  // 2. Clip Destination Area
   if (dx < 0) { sx -= dx; sw += dx; dx = 0; }
   if (dy < 0) { sy -= dy; sh += dy; dy = 0; }
   const actualW = Math.min(sw, dst.width - dx);
   const actualH = Math.min(sh, dst.height - dy);
 
-  // Early exit if there's nothing to draw
   if (actualW <= 0 || actualH <= 0) return;
 
-  // --- FAST PATH: 32-bit Memory Copy ---
-  if (blendMode === blendOverwrite && !mask) {
-    const src32 = new Uint32Array(src.data.buffer);
-    const dst32 = new Uint32Array(dst.data.buffer);
-
-    for (let iy = 0; iy < actualH; iy++) {
-      const sIndex = (iy + sy) * src.width + sx;
-      const dIndex = (iy + dy) * dst.width + dx;
-      dst32.set(src32.subarray(sIndex, sIndex + actualW), dIndex);
-    }
-    return;
-  }
-
-  // --- STANDARD PATH: Pixel-by-pixel blending ---
+  // --- STANDARD PATH ---
   const byteBlend = getBlendAdapter(blendMode);
   const dstData = dst.data;
   const srcData = src.data;
   const useMask = !!mask;
 
+  // If the mask corresponds to the original requested sw/sh:
+  // We need to know how far into the mask we have shifted due to clipping.
+  const maskOffsetX = sx - originalSx;
+  const maskOffsetY = sy - originalSy;
+  const maskStride = opts.sw || src.width; // The width of the mask array
+
   for (let iy = 0; iy < actualH; iy++) {
     const dstRow = (iy + dy) * dst.width;
     const srcRow = (iy + sy) * src.width;
-    const maskRow = iy * sw; // Mask is usually sized to the requested 'sw'
+
+    // The mask row must account for the vertical clipping offset
+    const maskRow = (iy + maskOffsetY) * maskStride;
 
     for (let ix = 0; ix < actualW; ix++) {
-      if (useMask && mask![maskRow + ix] === 0) continue;
+      // The mask index must account for the horizontal clipping offset
+      if (useMask && mask![(maskRow + (ix + maskOffsetX))] === 0) continue;
 
       const di = (dstRow + (ix + dx)) << 2;
       const si = (srcRow + (ix + sx)) << 2;

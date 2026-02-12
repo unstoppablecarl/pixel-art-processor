@@ -1,6 +1,6 @@
 import {
   applyBufferToImageData,
-  extractImageDataRect,
+  extractPixelData,
   growBufferIfNeeded,
   type PixelBuffer,
   pixelBufferToRect,
@@ -41,6 +41,7 @@ export function makeCanvasPixelAccumulator() {
    * [2] : Blend Function Index
    */
   function addPixelPacked(x: number, y: number, packedColor: number, blend = blendOverwrite) {
+    if (x < 0 || x > 0xFFFF || y < 0 || y > 0xFFFF) return;
     growBufferIfNeeded(buf, STRIDE)
     const offset = buf.count * STRIDE
     buf.data[offset] = (x << 16) | (y & 0xFFFF)
@@ -54,7 +55,7 @@ export function makeCanvasPixelAccumulator() {
     if (!region) return []
 
     // Use the generic extractor for consistency and brevity
-    const before = extractImageDataRect(img, region)
+    const before = extractPixelData(img, region)
 
     return [{
       x: region.x,
