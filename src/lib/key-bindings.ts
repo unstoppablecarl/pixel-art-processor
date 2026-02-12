@@ -1,12 +1,15 @@
 import hotkeys from 'hotkeys-js'
-import { BrushSubTool, SelectSubTool, Tool } from '../components/CanvasEditor/_core/_core-editor-types.ts'
+import {
+  BrushSubTool,
+  SelectMoveMode,
+  SelectSubTool,
+  Tool,
+} from '../components/CanvasEditor/_core/_core-editor-types.ts'
 import { useCanvasEditToolStore } from './store/canvas-edit-tool-store.ts'
 import type { VueHistory } from './util/history/history.ts'
 
 export const COPY_KEYS = 'command+c, ctrl+c'
 export const PASTE_KEYS = 'command+v, ctrl+v'
-
-export const moveSelectionContentButtonIsDown = () => hotkeys.command || hotkeys.ctrl
 
 export function bindInputKeys(history: VueHistory) {
 
@@ -29,7 +32,36 @@ export function bindInputKeys(history: VueHistory) {
     hotkeys(k, v)
   }
 
+  const unbinds = [
+    bindModifierKeysUpDown((e) => e.metaKey || e.ctrlKey, {
+      up: () => toolStore.selectionMoveMode = SelectMoveMode.SELECTION,
+      down: () => toolStore.selectionMoveMode = SelectMoveMode.CONTENT,
+    }),
+  ]
+
   return () => {
     hotkeys.unbind()
+    unbinds.forEach(u => u())
+  }
+}
+
+export type KeyboardEventFilter = (e: KeyboardEvent) => boolean
+
+export function bindModifierKeysUpDown(filter: KeyboardEventFilter, { up, down }: {
+  up: () => void,
+  down: () => void
+}) {
+  const handleEvent = (e: KeyboardEvent) => {
+    if (!filter(e)) return
+    if (e.type === 'keydown') down()
+    if (e.type === 'keyup') up()
+  }
+
+  window.addEventListener('keydown', handleEvent)
+  window.addEventListener('keyup', handleEvent)
+
+  return () => {
+    window.removeEventListener('keydown', handleEvent)
+    window.removeEventListener('keyup', handleEvent)
   }
 }

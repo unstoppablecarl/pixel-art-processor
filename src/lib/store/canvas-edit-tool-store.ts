@@ -5,6 +5,7 @@ import {
   BlendMode,
   BrushShape,
   BrushSubTool,
+  SelectMoveMode,
   type SubToolOf,
   SubTools,
   Tool,
@@ -51,6 +52,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
   const duplicateTileEdges = ref(true)
   const duplicateTileEdgesBorderThickness = ref(1)
+
+  // transient non-serialized state
+  const selectionMoveMode = ref<SelectMoveMode>(SelectMoveMode.SELECTION)
 
   const mapper = makeStateMapper<SerializedData>(
     {
@@ -149,6 +153,8 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     increaseBrushSize() {
       brushSize.value++
     },
+
+    selectionMoveMode,
   }
 }, {
   persist: true,

@@ -1,7 +1,11 @@
-import { moveSelectionContentButtonIsDown } from '../../../../lib/key-bindings.ts'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
-import { type BaseToolHandler, SelectSubTool, type ToolHandlerSubToolChanged } from '../../_core/_core-editor-types.ts'
+import {
+  type BaseToolHandler,
+  SelectMoveMode,
+  SelectSubTool,
+  type ToolHandlerSubToolChanged,
+} from '../../_core/_core-editor-types.ts'
 import {
   drawSelectOutline,
   makeBaseSelectHandler,
@@ -84,8 +88,7 @@ export function makeCanvasPaintSelectTool(
       }
 
       if (ts.pointInSelection(x, y)) {
-        if (moveSelectionContentButtonIsDown()) {
-          console.log('smc')
+        if (store.selectionMoveMode === SelectMoveMode.CONTENT) {
           ts.startMovingContent(x, y)
         } else {
           ts.startMovingSelection(x, y)

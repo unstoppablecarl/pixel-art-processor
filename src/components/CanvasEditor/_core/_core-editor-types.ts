@@ -21,6 +21,11 @@ export enum SelectSubTool {
   FLOOD = 'FLOOD'
 }
 
+export enum SelectMoveMode {
+  SELECTION = 'SELECTION',
+  CONTENT = 'CONTENT',
+}
+
 type SubToolMap = {
   [Tool.SELECT]: SelectSubTool,
   [Tool.BRUSH]: BrushSubTool,
