@@ -2,7 +2,7 @@ import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { Direction } from '../pipeline/_types.ts'
-import type { RGBA } from '../util/html-dom/ImageData.ts'
+import type { RGBA } from '../util/color.ts'
 import { makePrng } from '../util/prng.ts'
 import { type BinaryArray, generateChunkedArray } from '../util/prng/binary-array-chunks.ts'
 import { type WangTile } from './WangTileset.ts'

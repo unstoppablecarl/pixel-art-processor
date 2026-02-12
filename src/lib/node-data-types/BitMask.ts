@@ -1,4 +1,5 @@
-import { eachImageDataPixel, type RGBA, updateImageData } from '../util/html-dom/ImageData.ts'
+import type { RGBA } from '../util/color.ts'
+import { eachImageDataPixel, updateImageData } from '../util/html-dom/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 import { PixelMap } from './PixelMap.ts'
 

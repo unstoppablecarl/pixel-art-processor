@@ -1,7 +1,7 @@
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
+import type { RGBA } from '../../../../lib/util/color.ts'
 import { type BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import { type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
 import { useDirtyBatching } from '../../../../lib/vue/batching.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { BlendMode } from '../../_core/_core-editor-types.ts'

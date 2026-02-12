@@ -1,4 +1,4 @@
-import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/html-dom/ImageData.ts'
+import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/color.ts'
 
 import { validateSizes } from './_helpers/_data-type-helpers.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'

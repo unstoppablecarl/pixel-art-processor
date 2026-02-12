@@ -6,27 +6,10 @@ import { type Rect, trimRectBounds } from '../data/Rect.ts'
 import { type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
-// ALL values are 0-255 (including alpha which in CSS is 0-1)
-export type RGBA = { r: number, g: number, b: number, a: number }
-// ALL values are 0-1
-export type RGBAFloat = { r: number, g: number, b: number, a: number, readonly __brandRGBAFloat: unique symbol }
-export type SerializedRGBA = string
-
-export type PixelColor = Point & { color: RGBA }
-export type PixelBlend = PixelColor & { blend: BlendFn }
-
 export type ReadonlyImageData = {
   readonly width: number
   readonly height: number
   readonly data: Uint8ClampedArray
-}
-
-export const RGBA_ERASE = { r: 0, g: 0, b: 0, a: 0 } as Readonly<RGBA>
-export const RGBA_WHITE = { r: 255, g: 255, b: 255, a: 255 } as Readonly<RGBA>
-export const RGBA_RED = { r: 255, g: 0, b: 0, a: 255 } as Readonly<RGBA>
-
-export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
-  return `${r},${g},${b},${a}`
 }
 
 export function imageElementToImageData(img: HTMLImageElement): ImageData {
@@ -36,11 +19,6 @@ export function imageElementToImageData(img: HTMLImageElement): ImageData {
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
 
   ctx.drawImage(img, 0, 0)
-  return {
-    canvas,
-    ctx,
-    imageData: ctx.getImageData(0, 0, canvas.width, canvas.height),
-  }
 
   return ctx.getImageData(0, 0, canvas.width, canvas.height)
 }

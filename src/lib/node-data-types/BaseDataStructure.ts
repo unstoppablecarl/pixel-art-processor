@@ -1,6 +1,7 @@
 import type { Direction } from '../pipeline/_types.ts'
+import type { RGBA } from '../util/color.ts'
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
-import { type RGBA, setImageDataPixelColor } from '../util/html-dom/ImageData.ts'
+import { setImageDataPixelColor } from '../util/html-dom/ImageData.ts'
 import { readonlyTypedArray } from '../util/misc.ts'
 
 export type Point = {

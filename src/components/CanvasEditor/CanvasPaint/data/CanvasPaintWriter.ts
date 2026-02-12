@@ -1,6 +1,6 @@
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
+import type { PixelColor, RGBA } from '../../../../lib/util/color.ts'
 import type { BlendFn, BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import { type PixelColor, type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { ImageDataRef } from '../../../../lib/vue/vue-image-data.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'

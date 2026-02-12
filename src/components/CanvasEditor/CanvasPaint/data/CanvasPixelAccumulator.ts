@@ -1,3 +1,4 @@
+import { packRGBA, type RGBA } from '../../../../lib/util/color.ts'
 import {
   applyBufferToImageData,
   extractPixelData,
@@ -6,7 +7,6 @@ import {
   pixelBufferToRect,
 } from '../../../../lib/util/data/pixel-buffer.ts'
 import { type BlendFn, blendOverwrite } from '../../../../lib/util/html-dom/blit.ts'
-import { type RGBA } from '../../../../lib/util/html-dom/ImageData.ts'
 import { extractHistoryPixels } from '../../_core/data/_history-helpers.ts'
 import { type CanvasPatch, type ProtoCanvasPatch } from './CanvasPaintHistory.ts'
 
@@ -29,8 +29,7 @@ export function makeCanvasPixelAccumulator() {
   }
 
   function addPixel(x: number, y: number, color: RGBA, blend: BlendFn = blendOverwrite) {
-    // Pack RGBA into a single 32-bit integer (ABGR or RGBA depending on endianness)
-    const packed = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
+    const packed = packRGBA(color)
     addPixelPacked(x, y, packed, blend)
   }
 
