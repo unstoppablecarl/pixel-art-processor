@@ -43,6 +43,8 @@ export function packRGBA({ r, g, b, a }: RGBA): Color32 {
   return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
 }
 
+const SCRATCH_RGBA: RGBA = { r: 0, g: 0, b: 0, a: 0 }
+
 export function unpackColor(packed: number): RGBA {
   return {
     r: (packed >>> 0) & 0xFF,
@@ -50,6 +52,14 @@ export function unpackColor(packed: number): RGBA {
     b: (packed >>> 16) & 0xFF,
     a: (packed >>> 24) & 0xFF,
   }
+}
+
+export function unpackColorTo(packed: number, target = SCRATCH_RGBA): RGBA {
+  target.r = (packed >>> 0) & 0xFF
+  target.g = (packed >>> 8) & 0xFF
+  target.b = (packed >>> 16) & 0xFF
+  target.a = (packed >>> 24) & 0xFF
+  return target
 }
 
 export function RGBAToCssColor(color: RGBA) {

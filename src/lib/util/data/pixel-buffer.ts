@@ -1,4 +1,5 @@
 import type { ImageData } from '@napi-rs/canvas'
+import { unpackColorTo } from '../color.ts'
 import { type BlendFn, getBlendAdapter } from '../html-dom/blit.ts'
 import type { Rect } from './Rect.ts'
 
@@ -129,11 +130,11 @@ export function applyBufferToImageData(
     if (dx < 0 || dx >= width || dy < 0 || dy >= (data.length / 4 / width)) continue
 
     const di = (dy * width + dx) * 4
-
-    scratchSrc[0] = (rgba >> 24) & 0xFF
-    scratchSrc[1] = (rgba >> 16) & 0xFF
-    scratchSrc[2] = (rgba >> 8) & 0xFF
-    scratchSrc[3] = rgba & 0xFF
+    const color = unpackColorTo(rgba)
+    scratchSrc[0] = color.r
+    scratchSrc[1] = color.g
+    scratchSrc[2] = color.b
+    scratchSrc[3] = color.a
 
     const blendFn = blendRegistry[d[ptr + 2]]
     getBlendAdapter(blendFn)(scratchSrc, data, 0, di)
