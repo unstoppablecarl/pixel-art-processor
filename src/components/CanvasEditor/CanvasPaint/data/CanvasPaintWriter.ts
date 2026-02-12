@@ -24,7 +24,7 @@ export function makeCanvasPaintWriter(
   return {
     withHistory(cb: (mutator: CanvasPaintMutator) => void) {
       cb(mutator)
-      const finalPatches = applyCanvasPaintAccumulator(imageDataRef.get()!, accumulator)
+      const finalPatches = applyCanvasPaintAccumulator(state, accumulator, canvasRenderer)
       state.imageDataDirty = true
       canvasRenderer.queueRender()
 
