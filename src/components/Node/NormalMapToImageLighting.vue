@@ -98,6 +98,7 @@ function handleError(errors: StepValidationError[]) {
     :node="node"
     :images="images"
     :show-dimensions="true"
+    :img-columns="2"
   >
     <template #footer>
       <div class="section">
