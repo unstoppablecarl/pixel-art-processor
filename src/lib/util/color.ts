@@ -29,23 +29,21 @@ export const parseColor = (color: string): RGBA => {
   }
 }
 
-export type Color32 = number;
+export type Color32 = number & { __brand: 'Color32' };
 
 /**
  * Packs RGBA into a 32-bit integer compatible with
  * Little-Endian Uint32Array views on ImageData.
  */
 export function packColor(r: number, g: number, b: number, a: number): Color32 {
-  return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
+  return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0 as Color32
 }
 
 export function packRGBA({ r, g, b, a }: RGBA): Color32 {
-  return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0
+  return ((a << 24) | (b << 16) | (g << 8) | r) >>> 0 as Color32
 }
 
-const SCRATCH_RGBA: RGBA = { r: 0, g: 0, b: 0, a: 0 }
-
-export function unpackColor(packed: number): RGBA {
+export function unpackColor(packed: Color32): RGBA {
   return {
     r: (packed >>> 0) & 0xFF,
     g: (packed >>> 8) & 0xFF,
@@ -54,7 +52,13 @@ export function unpackColor(packed: number): RGBA {
   }
 }
 
-export function unpackColorTo(packed: number, target = SCRATCH_RGBA): RGBA {
+export function unpackAlpha(packed: Color32): number {
+  return (packed >>> 24) & 0xFF
+}
+
+const SCRATCH_RGBA: RGBA = { r: 0, g: 0, b: 0, a: 0 }
+
+export function unpackColorTo(packed: Color32, target = SCRATCH_RGBA): RGBA {
   target.r = (packed >>> 0) & 0xFF
   target.g = (packed >>> 8) & 0xFF
   target.b = (packed >>> 16) & 0xFF

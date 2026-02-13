@@ -1,9 +1,16 @@
-import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/color.ts'
+import {
+  type Color32,
+  type RGBA,
+  type SerializedRGBA,
+  serializeRGBA,
+  unpackAlpha,
+  unpackColorTo,
+} from '../util/color.ts'
 
 import { validateSizes } from './_helpers/_data-type-helpers.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
-export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, SerializedRGBA> {
+export class PixelMap extends BaseDataStructure<RGBA, Color32, Uint8ClampedArray, SerializedRGBA> {
   readonly __brand = 'PixelMap'
   static displayName = 'PixelMap'
 
@@ -11,12 +18,20 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, Seriali
     return new Uint8ClampedArray(width * height * 4)
   }
 
-  getPacked(x: number, y: number): number {
-    return this._data32![y * this.width + x];
+  protected getRaw(idx: number): Color32 {
+    return this._data32![idx] as Color32
   }
 
-  setPacked(x: number, y: number, color32: number): void {
-    this._data32![y * this.width + x] = color32;
+  protected setRaw(idx: number, value: Color32): void {
+    this._data32![idx] = value
+  }
+
+  getPacked(x: number, y: number): Color32 {
+    return this._data32![y * this.width + x] as Color32
+  }
+
+  setPacked(x: number, y: number, color: Color32): void {
+    this._data32![y * this.width + x] = color
   }
 
   get(x: number, y: number): RGBA {
@@ -47,15 +62,18 @@ export class PixelMap extends BaseDataStructure<RGBA, Uint8ClampedArray, Seriali
     return new PixelMap(imageData.width, imageData.height, imageData.data)
   }
 
-  protected serializeValue(value: RGBA): SerializedRGBA {
-    return serializeRGBA(value)
+  protected serializeValue(value: Color32): SerializedRGBA {
+    return serializeRGBA(unpackColorTo(value))
   }
 
   merge(other: PixelMap, minAlpha = 0) {
     validateSizes(this, other)
     other.each((x, y, v) => {
-      if (v.a > minAlpha) {
-        this.set(x, y, v)
+
+      const alpha = unpackAlpha(v)
+      if (alpha > minAlpha) {
+        const idx = y * this.width + x
+        this.setRaw(idx, v)
       }
     })
 

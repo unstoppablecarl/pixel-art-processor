@@ -1,118 +1,62 @@
-import type { RGBA } from '../util/color.ts'
-import { eachImageDataPixel, updateImageData } from '../util/html-dom/ImageData.ts'
+import { packRGBA, type RGBA } from '../util/color.ts'
+import { eachImageDataPixel } from '../util/html-dom/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
-import { PixelMap } from './PixelMap.ts'
 
 export type Bit = 0 | 1
 
-export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>> {
+export class BitMask extends BaseDataStructure<Bit, Bit, Uint8Array> {
   readonly __brand = 'BitMask'
   static displayName = 'BitMask'
 
-  protected readonly canUseDirectAccess = false
-
-  constructor(width: number, height: number, data?: Uint8Array) {
-    super(width, height, data)
-  }
-
   protected initData(width: number, height: number): Uint8Array {
-    const totalBits = width * height
-    const byteCount = Math.ceil(totalBits / 8)
-
-    return new Uint8Array(byteCount)
+    return new Uint8Array(width * height)
   }
+
 
   get(x: number, y: number): Bit {
-    const i = y * this.width + x
-
-    const byteIndex = i >> 3
-    const mask = 1 << (i & 7)
-    return (this._data[byteIndex]! & mask) !== 0 ? 1 : 0
+    return this._data[y * this.width + x] as Bit
   }
 
-  set(x: number, y: number, value: Bit): void {
-    const i = y * this.width + x
-    const byteIndex = i >> 3
-    const mask = 1 << (i & 7)
-    if (value) {
-      this._data[byteIndex]! |= mask
-    } else {
-      this._data[byteIndex]! &= ~mask
-    }
+  set(x: number, y: number, value: Bit | number): void {
+    const idx = y * this.width + x
+    this._data[idx] = value
+    this.invalidate()
   }
 
-  protected getRaw(idx: number): Bit {
-    const byteIndex = idx >> 3
-    const mask = 1 << (idx & 7)
-    return (this._data[byteIndex]! & mask) !== 0 ? 1 : 0
-  }
-
-  protected setRaw(idx: number, value: Bit): void {
-    const byteIndex = idx >> 3
-    const mask = 1 << (idx & 7)
-    if (value) {
-      this._data[byteIndex]! |= mask
-    } else {
-      this._data[byteIndex]! &= ~mask
-    }
-  }
-
-  toPixelMap(valueToColor?: ((value: Bit) => RGBA)): PixelMap;
-  toPixelMap(color1?: RGBA, color0?: RGBA): PixelMap;
-
-  toPixelMap(
-    valueToColor: ((value: Bit) => RGBA) | RGBA = {
-      r: 255,
-      g: 255,
-      b: 255,
-      a: 255,
-    },
-    colorB: RGBA = {
-      r: 0,
-      g: 0,
-      b: 0,
-      a: 0,
-    },
-  ): PixelMap {
-    return PixelMap.fromImageData(this.toImageData(...arguments as any))
-  }
-
+  /**
+   * Performance: Converts the mask to an ImageData by packing colors
+   * into a 32-bit buffer.
+   */
   toImageData(valueToColor?: ((value: Bit) => RGBA)): ImageData;
   toImageData(color1?: RGBA, color0?: RGBA): ImageData;
-
   toImageData(
-    valueToColor: ((value: Bit) => RGBA) | RGBA = {
-      r: 255,
-      g: 255,
-      b: 255,
-      a: 255,
-    },
-    colorB: RGBA = {
-      r: 0,
-      g: 0,
-      b: 0,
-      a: 0,
-    },
+    valueToColor: ((value: Bit) => RGBA) | RGBA = { r: 255, g: 255, b: 255, a: 255 },
+    colorB: RGBA = { r: 0, g: 0, b: 0, a: 0 },
   ): ImageData {
-    if (typeof valueToColor === 'function') {
-      return this.generateImageData(valueToColor)
-    }
-    const colorA = valueToColor
+    const { width, height, _data } = this
+    const result = new ImageData(width, height)
+    const data32 = new Uint32Array(result.data.buffer)
 
-    const result = new ImageData(this.width, this.height)
-    updateImageData(result, (x, y) => {
-      if (this.get(x, y)) {
-        return colorA
-      } else {
-        return colorB
+    if (typeof valueToColor === 'function') {
+      for (let i = 0; i < _data.length; i++) {
+        data32[i] = packRGBA(valueToColor(_data[i] as Bit))
       }
-    })
+    } else {
+      const packedA = packRGBA(valueToColor) as number
+      const packedB = packRGBA(colorB) as number
+
+      for (let i = 0; i < _data.length; i++) {
+        // High speed branchless-style toggle
+        data32[i] = _data[i] === 1 ? packedA : packedB
+      }
+    }
 
     return result
   }
 
   static fromImageData(imageData: ImageData) {
     const result = new BitMask(imageData.width, imageData.height)
+    // Using a fast alpha check to determine bits
     eachImageDataPixel(imageData, (x, y, color) => {
       if (color.a > 0) {
         result.set(x, y, 1)
@@ -124,28 +68,16 @@ export class BitMask extends BaseDataStructure<Bit, Uint8Array<ArrayBufferLike>>
 
   adjacentSum(x: number, y: number): number {
     let total = 0
-    this.eachAdjacent(x, y, (x, y, v) => total += v)
+    // eachAdjacent is now highly efficient because it uses internal numeric logic
+    this.eachAdjacent(x, y, (val) => total += val)
     return total
   }
 
-  invert() {
-    this._data.set(this.invertData(this._data))
-  }
-
-  protected invertData(data: Uint8Array): Uint8Array {
+  invert(): void {
+    const data = this._data
     for (let i = 0; i < data.length; i++) {
-      // js handles bitwise operations on 32-bit signed integers
-      // you need to use a mask (& 0xFF)
-      // to ensure the result stays within the 0–255 range of a Uint8.
-      // ~ flips the bits, & 0xFF keeps it as a valid byte
-      data[i] = ~data[i] & 0xFF
+      data[i] = data[i] === 0 ? 1 : 0
     }
-    const remainingBits = (this.width * this.height) % 8
-    if (remainingBits !== 0) {
-      const mask = (0xFF << (8 - remainingBits)) & 0xFF
-      data[data.length - 1] &= mask // Forces trailing bits back to 0
-    }
-    return data
+    this.invalidate()
   }
 }
-

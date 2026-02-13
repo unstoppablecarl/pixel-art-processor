@@ -43,7 +43,7 @@ export type ExtractNodeDataBaseType<T extends NodeDataTypeInstance> = T extends 
 /* NodeDataType and NodeDataTypeInstance validation */
 type InstanceOf<T> = T extends new (...args: any[]) => infer R ? R : never;
 type InstancesFromConstructors = InstanceOf<NodeDataType>;
-type CheckExtendsBase<T> = T extends BaseDataStructure<any> ? T : never;
+type CheckExtendsBase<T> = T extends BaseDataStructure<any, any, any> ? T : never;
 
 type CheckInstancesMatch =
   [NodeDataTypeInstance] extends [InstancesFromConstructors]

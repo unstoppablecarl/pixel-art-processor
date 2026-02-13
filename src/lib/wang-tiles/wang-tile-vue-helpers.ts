@@ -1,4 +1,4 @@
-import type { ExtractNodeDataBaseType, NodeDataTypeInstance } from '../node-data-types/_node-data-types.ts'
+import type { BaseDataStructure } from '../node-data-types/BaseDataStructure.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { PixelMap } from '../node-data-types/PixelMap.ts'
 import type { Direction } from '../pipeline/_types.ts'
@@ -62,11 +62,14 @@ export function makeBitMaskFromWangTile(size: number, tile: WangTile<BinaryArray
   return mask
 }
 
-export function renderImageEdgeChunks<T extends NodeDataTypeInstance>(
-  target: T,
+export function renderImageEdgeChunks<
+  E,
+  B extends BaseDataStructure<E, any, any>
+>(
+  target: B,
   edge: Direction,
   chunks: BinaryArray,
-  value: ExtractNodeDataBaseType<T>,
+  value: E,
 ) {
   const size = chunks.length
 

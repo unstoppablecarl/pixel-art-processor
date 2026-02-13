@@ -1,7 +1,7 @@
 import type { RGBA } from '../util/color.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
-export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
+export class HeightMap extends BaseDataStructure<number, number, Uint8ClampedArray, string> {
   readonly __brand = 'HeightMap'
   static displayName = 'HeightMap'
 
@@ -15,23 +15,25 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
 
   set(x: number, y: number, value: number): void {
     this._data[y * this.width + x] = value
+    this.invalidate()
   }
 
-  static fromImageData(imageData: ImageData, toGrayscaleValue: (color: RGBA) => number = standardLuminanceFormula): HeightMap {
-    const heightmap = new HeightMap(imageData.width, imageData.height)
-    const pixels = imageData.data
-    const data = heightmap._data
+  static fromImageData(
+    imageData: ImageData,
+    toGrayscaleValue: (color: RGBA) => number = standardLuminanceFormula,
+  ): HeightMap {
+    const { width, height, data: pixels } = imageData
+    const heightmap = new HeightMap(width, height)
+    const dest = heightmap._data
 
-    let heightIdx = 0
-    let pixelIdx = 0
-    const len = data.length
-
-    for (let i = 0; i < len; i++) {
-      const r = pixels[pixelIdx++]!
-      const g = pixels[pixelIdx++]!
-      const b = pixels[pixelIdx++]!
-      const a = pixels[pixelIdx++]!
-      data[heightIdx++] = toGrayscaleValue({ r, g, b, a })
+    for (let i = 0; i < dest.length; i++) {
+      const p = i * 4
+      dest[i] = toGrayscaleValue({
+        r: pixels[p]!,
+        g: pixels[p + 1]!,
+        b: pixels[p + 2]!,
+        a: pixels[p + 3]!,
+      })
     }
 
     return heightmap
@@ -43,11 +45,15 @@ export class HeightMap extends BaseDataStructure<number, Uint8ClampedArray> {
     const src = this._data
 
     for (let i = 0; i < src.length; i++) {
-      const v = src[i]
-      // Blit grayscale directly into 32-bit slot (A=255, B=v, G=v, R=v)
+      const v = src[i]!
+      // Pack as 0xAABBGGRR. Since it's grayscale, R=G=B=v.
       out32[i] = (255 << 24) | (v << 16) | (v << 8) | v
     }
     return img
+  }
+
+  protected serializeValue(v: number): string {
+    return v.toString()
   }
 }
 

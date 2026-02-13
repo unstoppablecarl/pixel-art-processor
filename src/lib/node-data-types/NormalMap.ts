@@ -1,123 +1,116 @@
-import { copyImageData } from '../util/html-dom/ImageData.ts'
+import { type Normal, type Normal32, packNormal, unpackNormal, unpackNormalTo } from '../util/data/normal.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 import { type HeightMap } from './HeightMap.ts'
 import { PixelMap } from './PixelMap.ts'
 
-export type Normal = {
-  x: number,
-  y: number,
-  z: number
-}
-
-export class NormalMap extends BaseDataStructure<Normal, Uint8ClampedArray, string> {
+/**
+ * NormalMap: Stores geometric surface vectors as packed 32-bit integers.
+ * Uses the "Normal-as-Color" technique (8-bit per channel) for compatibility.
+ */
+export class NormalMap extends BaseDataStructure<Normal, Normal32, Uint8ClampedArray, string> {
   readonly __brand = 'NormalMap'
   static displayName = 'NormalMap'
-  canUseDirectAccess = false
 
   protected initData(width: number, height: number): Uint8ClampedArray {
+    // 4 bytes per pixel (standard RGBA layout)
     return new Uint8ClampedArray(width * height * 4)
   }
 
+  protected getRaw(idx: number): Normal32 {
+    return this._data32![idx] as Normal32
+  }
+
+  protected setRaw(idx: number, value: Normal32): void {
+    this._data32![idx] = value
+  }
+
   get(x: number, y: number): Normal {
-    const index = (y * this.width + x) * 4
-    return {
-      x: (this._data[index]! / 255) * 2 - 1,
-      y: (this._data[index + 1]! / 255) * 2 - 1,
-      z: (this._data[index + 2]! / 255) * 2 - 1,
-    }
+    // We return a new object here for public API safety,
+    // but internal loops should use getRaw + unpackNormalTo
+    const packed = this.getRaw(this.idx(x, y))
+    return unpackNormal(packed)
   }
 
-  // Encode normal to pixel
   set(x: number, y: number, normal: Normal): void {
-    const index = (y * this.width + x) * 4
-    this._data[index] = ((normal.x + 1) * 0.5 * 255) | 0
-    this._data[index + 1] = ((normal.y + 1) * 0.5 * 255) | 0
-    this._data[index + 2] = ((normal.z + 1) * 0.5 * 255) | 0
-    this._data[index + 3] = 255
+    this.setRaw(this.idx(x, y), packNormal(normal.x, normal.y, normal.z))
+    this.invalidate()
   }
 
+  /**
+   * Generates a NormalMap from a HeightMap using a Sobel-like filter.
+   */
   static fromHeightmap(heightMap: HeightMap, strength: number): NormalMap {
-    const { width, height, data } = heightMap
-    const normalData = new Uint8ClampedArray(width * height * 4)
-
-    const getHeight = (px: number, py: number): number => {
-      return data[py * width + px]! / 255
-    }
+    const { width, height } = heightMap
+    const map = new NormalMap(width, height)
 
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        const idx = (y * width + x) * 4
+        // Sample surrounding pixels for gradient calculation
+        const left = heightMap.get(Math.max(0, x - 1), y) / 255
+        const right = heightMap.get(Math.min(width - 1, x + 1), y) / 255
+        const top = heightMap.get(x, Math.max(0, y - 1)) / 255
+        const bottom = heightMap.get(x, Math.min(height - 1, y + 1)) / 255
 
-        const centerHeight = getHeight(x, y)
-        const left = (x > 0) ? getHeight(x - 1, y) : centerHeight
-        const right = (x < width - 1) ? getHeight(x + 1, y) : centerHeight
-        const top = (y > 0) ? getHeight(x, y - 1) : centerHeight
-        const bottom = (y < height - 1) ? getHeight(x, y + 1) : centerHeight
-        const dx = ((right - left) / 2) * strength
-        const dy = ((bottom - top) / 2) * strength
-        const nx = -dx
-        const ny = -dy
-        const nz = 1
+        const nx = -(right - left) * strength
+        const ny = -(bottom - top) * strength
+        const nz = 1.0 // Up vector
+
         const len = Math.sqrt(nx * nx + ny * ny + nz * nz)
-        const nnx = nx / len
-        const nny = ny / len
-        const nnz = nz / len
-        normalData[idx] = ((nnx + 1) * 0.5 * 255) | 0
-        normalData[idx + 1] = ((nny + 1) * 0.5 * 255) | 0
-        normalData[idx + 2] = ((nnz + 1) * 0.5 * 255) | 0
-        normalData[idx + 3] = 255
+
+        // Pack directly into the buffer
+        map.setRaw(y * width + x, packNormal(nx / len, ny / len, nz / len))
       }
     }
-    return new NormalMap(width, height, normalData)
+    return map.invalidate()
   }
 
   applyLighting(
-    textureImageData: ImageData,
+    source: ImageData,
     lx: number,
     ly: number,
     lz: number,
-  ) {
+  ): PixelMap {
+    const { width, height } = source
+    const result = new PixelMap(width, height)
+    const count = width * height
 
-    const baseData = textureImageData.data
-    const normalData = this._data
-    const imgData = copyImageData(textureImageData)
-
-    const data = imgData.data
+    // Normalize light vector
     const llen = Math.sqrt(lx * lx + ly * ly + lz * lz)
-    const nlx = lx / llen
-    const nly = ly / llen
-    const nlz = lz / llen
-    for (let i = 0; i < data.length; i += 4) {
-      const nx = (normalData[i]! / 255) * 2 - 1
-      const ny = (normalData[i + 1]! / 255) * 2 - 1
-      const nz = (normalData[i + 2]! / 255) * 2 - 1
-      const dotProduct = Math.max(0, nx * nlx + ny * nly + nz * nlz)
-      const ambient = 0.4
-      const brightness = ambient + (1 - ambient) * dotProduct
-      const R = baseData[i]! * brightness
-      const G = baseData[i + 1]! * brightness
-      const B = baseData[i + 2]! * brightness
-      const A = baseData[i + 3]!
+    const nlx = lx / llen, nly = ly / llen, nlz = lz / llen
 
-      data[i] = R
-      data[i + 1] = G
-      data[i + 2] = B
-      data[i + 3] = A
+    // Get 32-bit views for all buffers
+    // This allows us to process 4 bytes at a time
+    const nData = this._data32!
+    const sData = new Uint32Array(source.data.buffer)
+    const rData = result.data32! // Using the public data32 getter we added
+
+    for (let i = 0; i < count; i++) {
+      // 1. Unpack normal
+      const { x, y, z } = unpackNormalTo(nData[i] as Normal32)
+
+      // 2. Compute lighting (Ambient 0.3 + Diffuse 0.7)
+      const dot = Math.max(0, x * nlx + y * nly + z * nlz)
+      const brightness = 0.3 + 0.7 * dot
+
+      // 3. Apply to source pixel
+      const packedCol = sData[i]!
+      const r = ((packedCol & 0xFF) * brightness) | 0
+      const g = (((packedCol >>> 8) & 0xFF) * brightness) | 0
+      const b = (((packedCol >>> 16) & 0xFF) * brightness) | 0
+      const a = (packedCol >>> 24) & 0xFF
+
+      rData[i] = (r | (g << 8) | (b << 16) | (a << 24))
     }
 
-    return new PixelMap(this.width, this.height, imgData.data)
-  }
-
-  static fromImageData(imageData: ImageData) {
-    return new PixelMap(imageData.width, imageData.height, imageData.data)
+    return result.invalidate()
   }
 
   toImageData(): ImageData {
-    const dataCopy = new Uint8ClampedArray(this._data)
-    return new ImageData(dataCopy, this.width, this.height)
+    return new ImageData(new Uint8ClampedArray(this._data), this.width, this.height)
   }
 
-  protected serializeValue({ x, y, z }: Normal): string {
-    return `${x},${y},${z}`
+  protected serializeValue(v: Normal32): string {
+    const { x, y, z } = unpackNormalTo(v)
+    return `${x.toFixed(2)},${y.toFixed(2)},${z.toFixed(2)}`
   }
 }

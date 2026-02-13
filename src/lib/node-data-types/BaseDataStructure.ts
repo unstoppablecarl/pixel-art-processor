@@ -38,7 +38,12 @@ export type ArrayTypeConstructors = typeof Uint8Array<ArrayBufferLike> |
 
 export type ArrayTypeInstance = InstanceType<ArrayTypeConstructors>;
 
-export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>, SerializedT = T> {
+export abstract class BaseDataStructure<
+  E = any,
+  T extends number = number,
+  D extends ArrayTypeInstance = Uint8ClampedArray<ArrayBufferLike>,
+  SerializedT = T
+> {
   readonly bounds: Readonly<Bounds>
   cacheBust: number
 
@@ -47,6 +52,10 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 
   get data() {
     return this._data
+  }
+
+  get data32(): Uint32Array | undefined {
+    return this._data32
   }
 
   constructor(
@@ -108,9 +117,9 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return result
   }
 
-  abstract get(x: number, y: number): T;
+  abstract get(x: number, y: number): E;
 
-  abstract set(x: number, y: number, value: T): void;
+  abstract set(x: number, y: number, value: E): void;
 
   copy(): this {
     const constructor = this.constructor as new (width: number, height: number, data?: D) => this
@@ -153,7 +162,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
   }
 
   protected setRaw(idx: number, value: T): void {
-    this._data[idx] = value as any
+    this._data[idx] = value
   }
 
   each(cb: PointValueInspector<T>): void {
@@ -516,31 +525,31 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     return value as unknown as SerializedT
   }
 
-  setEdgeNPadded(value: T, padding: number) {
+  setEdgeNPadded(value: E, padding: number) {
     for (let i = padding; i < this.width - padding; i++) {
       this.set(i, 0, value)
     }
   }
 
-  setEdgeSPadded(value: T, padding: number) {
+  setEdgeSPadded(value: E, padding: number) {
     for (let i = padding; i < this.width - padding; i++) {
       this.set(i, this.height - 1, value)
     }
   }
 
-  setEdgeWPadded(value: T, padding: number) {
+  setEdgeWPadded(value: E, padding: number) {
     for (let i = padding; i < this.height - padding; i++) {
       this.set(0, i, value)
     }
   }
 
-  setEdgeEPadded(value: T, padding: number) {
+  setEdgeEPadded(value: E, padding: number) {
     for (let i = padding; i < this.height - padding; i++) {
       this.set(this.width - 1, i, value)
     }
   }
 
-  setEdgePadded(edge: Direction, value: T, padding: number) {
+  setEdgePadded(edge: Direction, value: E, padding: number) {
     if (edge === 'N') return this.setEdgeNPadded(value, padding)
     if (edge === 'E') return this.setEdgeEPadded(value, padding)
     if (edge === 'S') return this.setEdgeSPadded(value, padding)
@@ -548,7 +557,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     throw new Error('invalid edge: ' + edge)
   }
 
-  setEdgeN(value: T, index?: number) {
+  setEdgeN(value: E, index?: number) {
     if (index !== undefined) {
       this.set(index, 0, value)
       return
@@ -559,7 +568,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  setEdgeS(value: T, index?: number) {
+  setEdgeS(value: E, index?: number) {
     if (index !== undefined) {
       this.set(index, this.height - 1, value)
       return
@@ -570,7 +579,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  setEdgeW(value: T, index?: number) {
+  setEdgeW(value: E, index?: number) {
     if (index !== undefined) {
       this.set(0, index, value)
       return
@@ -580,7 +589,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  setEdgeE(value: T, index?: number) {
+  setEdgeE(value: E, index?: number) {
     if (index !== undefined) {
       this.set(this.width - 1, index, value)
       return
@@ -590,7 +599,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
     }
   }
 
-  setEdge(edge: Direction, value: T, index?: number) {
+  setEdge(edge: Direction, value: E, index?: number) {
     if (edge === 'N') return this.setEdgeN(value, index)
     if (edge === 'E') return this.setEdgeE(value, index)
     if (edge === 'S') return this.setEdgeS(value, index)
@@ -600,7 +609,7 @@ export abstract class BaseDataStructure<T = any, D extends ArrayTypeInstance = U
 }
 
 export interface DataStructureConstructor<
-  T extends BaseDataStructure<any, any> = BaseDataStructure<any, any>
+  T extends BaseDataStructure<any, any, any, any> = BaseDataStructure<any, any, any, any>
 > {
   new(width: number, height: number, ...args: any[]): T
 }
