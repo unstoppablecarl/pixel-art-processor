@@ -3,7 +3,7 @@ import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdi
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
 import { colorDistance, packColor, type PixelColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
-import { type BlendFn, getBlendAdapter } from './blit.ts'
+import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
 export type ReadonlyImageData = {
@@ -624,6 +624,24 @@ export function floodFillImageDataSelection(
   return { startX, startY, selectionRect: { ...rect, mask }, pixels }
 }
 
+const imageDataToPngBlob_pixelCanvas = makeReusablePixelCanvas()
 // array of 1 | 0 values. 1 is selected in the mask
 // mask uses normal pixel indexing i = y * width + x
 // export type PixelMask = Uint8Array
+export async function imageDataToPngBlob(
+  imageData: ImageData,
+  mask: Uint8Array | null = null,
+): Promise<Blob> {
+  const { canvas, ctx } = imageDataToPngBlob_pixelCanvas(imageData.width, imageData.height)
+
+  const finalData = mask ? applyMask(imageData, mask) : imageData
+
+  ctx.putImageData(finalData, 0, 0)
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob)
+      else reject(new Error('Failed to generate PNG blob'))
+    }, 'image/png')
+  })
+}

@@ -1,5 +1,4 @@
 import type { RGBAFloat } from '../data/color.ts'
-import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
 export type BlendFn = {
   alwaysClearFirst?: boolean,
@@ -214,22 +213,3 @@ export function applyMask(source: ImageData, mask: Uint8Array): ImageData {
   return destination
 }
 
-const imageDataToPngBlob_pixelCanvas = makeReusablePixelCanvas()
-
-export async function imageDataToPngBlob(
-  imageData: ImageData,
-  mask: Uint8Array | null = null,
-): Promise<Blob> {
-  const { canvas, ctx } = imageDataToPngBlob_pixelCanvas(imageData.width, imageData.height)
-
-  const finalData = mask ? applyMask(imageData, mask) : imageData
-
-  ctx.putImageData(finalData, 0, 0)
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob)
-      else reject(new Error('Failed to generate PNG blob'))
-    }, 'image/png')
-  })
-}

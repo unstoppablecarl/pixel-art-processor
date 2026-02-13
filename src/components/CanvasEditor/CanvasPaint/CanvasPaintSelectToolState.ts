@@ -1,8 +1,11 @@
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect, trimRectBounds } from '../../../lib/util/data/Rect.ts'
-import { imageDataToPngBlob } from '../../../lib/util/html-dom/blit.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../lib/util/html-dom/clipboard.ts'
-import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
+import {
+  extractImageData,
+  floodFillImageDataSelection,
+  imageDataToPngBlob,
+} from '../../../lib/util/html-dom/ImageData.ts'
 import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlendFn } from '../_core/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
