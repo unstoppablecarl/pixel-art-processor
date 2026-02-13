@@ -24,7 +24,7 @@ import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineForkHandler, useForkHandler } from '../../../lib/pipeline/NodeHandler/ForkHandler.ts'
 import { PixelMap } from '../../../lib/node-data-types/PixelMap.ts'
 import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
-import { arrayIndexToColor } from '../../../lib/util/color.ts'
+import { arrayIndexToColor } from '../../../lib/util/data/color.ts'
 import type { BinaryArray } from '../../../lib/util/prng/binary-array-chunks.ts'
 import { deepUnwrap, shallowArrayItemsRef } from '../../../lib/util/vue-util.ts'
 import {

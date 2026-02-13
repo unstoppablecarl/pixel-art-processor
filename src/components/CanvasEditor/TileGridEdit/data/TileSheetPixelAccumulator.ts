@@ -1,5 +1,5 @@
 import { type Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { PixelColor, RGBA } from '../../../../lib/util/color.ts'
+import type { PixelColor, RGBA } from '../../../../lib/util/data/color.ts'
 import {
   applyBufferToImageData, extractPixelData,
   growBufferIfNeeded,

@@ -1,4 +1,4 @@
-import type { Color32 } from '../color.ts'
+import type { Color32 } from './color.ts'
 
 // x,y,z are vectors [-1, 1]
 export type Normal = {

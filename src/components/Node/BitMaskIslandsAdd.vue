@@ -20,7 +20,7 @@ import {
 } from '../../lib/vue/island-ui.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import { parseColor } from '../../lib/util/color.ts'
+import { parseColor } from '../../lib/util/data/color.ts'
 import { prng } from '../../lib/util/prng.ts'
 import { Sketch } from '../../lib/util/html-dom/Sketch.ts'
 import NodeCard from '../Card/NodeCard.vue'

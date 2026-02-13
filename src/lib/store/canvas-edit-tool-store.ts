@@ -10,7 +10,7 @@ import {
   SubTools,
   Tool,
 } from '../../components/CanvasEditor/_core/_core-editor-types.ts'
-import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/color.ts'
+import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
 import { makeStateMapper } from './_store-helpers.ts'
 
 type SerializedData = {

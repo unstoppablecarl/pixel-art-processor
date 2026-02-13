@@ -1,7 +1,7 @@
 import { markRaw, type Raw } from 'vue'
 import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
-import { colorDistance, packColor, type PixelColor, type RGBA, RGBA_ERASE } from '../color.ts'
+import { colorDistance, packColor, type PixelColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
 import { type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'

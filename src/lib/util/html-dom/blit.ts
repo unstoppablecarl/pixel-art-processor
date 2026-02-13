@@ -1,4 +1,4 @@
-import type { RGBAFloat } from '../color.ts'
+import type { RGBAFloat } from '../data/color.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
 export type BlendFn = {

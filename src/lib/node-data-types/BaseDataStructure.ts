@@ -1,5 +1,5 @@
 import type { Direction } from '../pipeline/_types.ts'
-import { packColor, type RGBA } from '../util/color.ts'
+import { packColor, type RGBA } from '../util/data/color.ts'
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
 import { readonlyTypedArray } from '../util/misc.ts'
 

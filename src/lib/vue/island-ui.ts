@@ -1,7 +1,7 @@
 import type { Point } from '../node-data-types/BaseDataStructure.ts'
 import { BitMask } from '../node-data-types/BitMask.ts'
 import { type Island, IslandType } from '../node-data-types/BitMask/Island.ts'
-import { parseColor } from '../util/color.ts'
+import { parseColor } from '../util/data/color.ts'
 import { Sketch } from '../util/html-dom/Sketch.ts'
 import { makeCheckboxColorConfig } from './CheckboxColorConfig.ts'
 

@@ -1,4 +1,4 @@
-import { packRGBA, type RGBA } from '../../../../lib/util/color.ts'
+import { packRGBA, type RGBA } from '../../../../lib/util/data/color.ts'
 import {
   applyBufferToImageData,
   extractPixelData,

@@ -1,5 +1,5 @@
 import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
-import { arrayIndexToColor } from '../../../../lib/util/color.ts'
+import { arrayIndexToColor } from '../../../../lib/util/data/color.ts'
 import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { Sketch } from '../../../../lib/util/html-dom/Sketch.ts'
 import { makeWangTileEdgesPixelMap } from '../../../../lib/wang-tiles/wang-tile-vue-helpers.ts'

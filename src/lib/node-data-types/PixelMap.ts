@@ -5,7 +5,7 @@ import {
   serializeRGBA,
   unpackAlpha,
   unpackColorTo,
-} from '../util/color.ts'
+} from '../util/data/color.ts'
 
 import { validateSizes } from './_helpers/_data-type-helpers.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'

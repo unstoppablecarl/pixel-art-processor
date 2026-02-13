@@ -1,6 +1,6 @@
 import tinycolor from 'tinycolor2'
-import type { Point } from '../node-data-types/BaseDataStructure.ts'
-import type { BlendFn } from './html-dom/blit.ts'
+import type { Point } from '../../node-data-types/BaseDataStructure.ts'
+import type { BlendFn } from '../html-dom/blit.ts'
 
 // ALL values are 0-255 (including alpha which in CSS is 0-1)
 export type RGBA = { r: number, g: number, b: number, a: number }

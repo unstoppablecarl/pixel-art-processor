@@ -1,4 +1,4 @@
-import { packRGBA, type RGBA } from '../util/color.ts'
+import { packRGBA, type RGBA } from '../util/data/color.ts'
 import { eachImageDataPixel } from '../util/html-dom/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
