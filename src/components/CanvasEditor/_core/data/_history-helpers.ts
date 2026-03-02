@@ -1,4 +1,3 @@
-import type { ImageData } from '@napi-rs/canvas'
 import { extractPixelData } from '../../../../lib/util/data/pixel-buffer.ts'
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 

@@ -1,4 +1,3 @@
-import { ImageData } from '@napi-rs/canvas'
 import { enableAutoUnmount } from '@vue/test-utils'
 import { setActivePinia } from 'pinia'
 import { afterEach, beforeEach } from 'vitest'

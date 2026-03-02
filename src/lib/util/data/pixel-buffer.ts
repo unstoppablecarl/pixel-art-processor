@@ -1,4 +1,3 @@
-import type { ImageData } from '@napi-rs/canvas'
 import { type Color32, unpackColorTo } from './color.ts'
 import { type BlendFn, getBlendAdapter } from '../html-dom/blit.ts'
 import type { Rect } from './Rect.ts'

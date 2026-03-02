@@ -101,7 +101,6 @@ export function serializeImageData<T extends ImageData | null>(imageData: T): T 
 export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : Raw<ImageData> {
   if (!obj) return null as any
 
-  // Decode Base64 back to a Uint8ClampedArray
   const binary = atob(obj.data as string)
   const bytes = new Uint8ClampedArray(binary.length)
   for (let i = 0; i < binary.length; i++) {
@@ -185,6 +184,27 @@ export function setImageDataPixelColors(imageData: ImageData, pixels: PixelColor
   }
 }
 
+/**
+ * Non-destructively resizes an ImageData object by padding or cropping.
+ * This function creates a new ImageData object of the specified dimensions and
+ * copies the source data into it based on the provided offsets. It uses
+ * optimized row-based memory transfers via `Uint8ClampedArray.prototype.set`.
+ *
+ * @param current - The source ImageData to resize.
+ * @param newWidth - The width of the resulting ImageData.
+ * @param newHeight - The height of the resulting ImageData.
+ * @param offsetX - The horizontal placement of the source image within the
+ * new bounds (can be negative for cropping). Defaults to 0.
+ * @param offsetY - The vertical placement of the source image within the
+ * new bounds (can be negative for cropping). Defaults to 0.
+ * @returns A new ImageData instance containing the resized/repositioned image.
+ * @example
+ * // Pad a 10x10 image to 20x20, centered at (5, 5)
+ * const padded = resizeImageData(original, 20, 20, 5, 5);
+ * @example
+ * // Crop the top-left 5x5 pixels of an image
+ * const cropped = resizeImageData(original, 5, 5, 0, 0);
+ */
 export function resizeImageData(
   current: ImageData,
   newWidth: number,
