@@ -1,3 +1,4 @@
+import { deserializeNullableImageData, serializeNullableImageData } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
 import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
 import type { Point } from '../../node-data-types/BaseDataStructure.ts'
@@ -5,12 +6,6 @@ import { colorDistance, packColor, type PixelColor, type RGBA, RGBA_ERASE } from
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
 import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
-
-export type ReadonlyImageData = {
-  readonly width: number
-  readonly height: number
-  readonly data: Uint8ClampedArray
-}
 
 export function imageElementToImageData(img: HTMLImageElement): ImageData {
   const canvas = document.createElement('canvas')
@@ -84,30 +79,12 @@ export type SerializedImageData = {
   data: string,
 }
 
-export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
-  if (!imageData) return null as any
-
-  // Convert Uint8ClampedArray to a binary string, then to Base64
-  const binary = String.fromCharCode(...new Uint8Array(imageData.data.buffer))
-  const base64 = btoa(binary)
-
-  return markRaw({
-    width: imageData.width,
-    height: imageData.height,
-    data: base64,
-  }) as any
-}
+export const serializeImageData = serializeNullableImageData
 
 export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : Raw<ImageData> {
   if (!obj) return null as any
 
-  const binary = atob(obj.data as string)
-  const bytes = new Uint8ClampedArray(binary.length)
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i)
-  }
-
-  return markRaw(new ImageData(bytes, obj.width, obj.height)) as any
+  return markRaw(deserializeNullableImageData(obj)) as any
 }
 
 export function eachImageDataPixel(

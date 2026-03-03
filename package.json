@@ -24,6 +24,8 @@
     "bootstrap-vue-next": "^0.42.0",
     "hotkeys-js": "^4.0.0",
     "pinia": "^3.0.4",
+    "pinia-simple-persist": "^0.0.9",
+    "pixel-data-js": "^0.11.1",
     "poisson-disk-sampling": "^2.3.1",
     "simplex-noise": "^4.0.3",
     "tinycolor2": "^1.6.0",

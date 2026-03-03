@@ -598,6 +598,15 @@ export const usePipelineStore = defineStore('pipeline', () => {
     }
   },
   {
-    persist: true,
+    persist: {
+      // storage: {
+      //   getItem(key) {
+      //
+      //   },
+      //   setItem(key) {
+      //
+      //   },
+      // },
+    },
   },
 )
