@@ -1,8 +1,8 @@
-import { deserializeNullableImageData, MaskType, serializeNullableImageData } from 'pixel-data-js'
+import { deserializeNullableImageData, MaskType, serializeNullableImageData, trimRectBounds } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
 import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
 import { colorDistance, packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
-import { type Rect, trimRectBounds } from '../data/Rect.ts'
+import { type Rect } from '../data/Rect.ts'
 import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 

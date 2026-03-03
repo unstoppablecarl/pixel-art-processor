@@ -1,8 +1,6 @@
-import { type Rect as R, trimRectBounds as trb } from 'pixel-data-js'
+import { type Rect as R } from 'pixel-data-js'
 
 export type Rect = R
-
-export const trimRectBounds = trb
 
 export function getRectsBounds(rects: Rect[]): Rect {
   if (rects.length === 1) return { ...rects[0] }
