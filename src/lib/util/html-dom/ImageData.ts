@@ -1,7 +1,6 @@
-import { deserializeNullableImageData, MaskType, serializeNullableImageData, trimRectBounds } from 'pixel-data-js'
+import { deserializeNullableImageData, serializeNullableImageData } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
-import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
-import { colorDistance, packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
+import { packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect } from '../data/Rect.ts'
 import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
@@ -449,116 +448,6 @@ export function makeReusableImageData() {
     // Caller can clear or overwrite only what they need.
     return imageData!
   }
-}
-
-export type FloodFillResult = {
-  startX: number,
-  startY: number,
-  selectionRect: SelectionRect
-  pixels: ImageData
-}
-
-export function floodFillImageDataSelection(
-  img: ImageData,
-  startX: number,
-  startY: number,
-  contiguous = true,
-  tolerance = 0,
-  bounds?: Rect,
-): FloodFillResult | null {
-  if (!img) return null
-
-  const w = img.width
-  const h = img.height
-
-  // Define the effective search area
-  const limit = bounds || { x: 0, y: 0, w, h }
-  const xMinLimit = Math.max(0, limit.x)
-  const xMaxLimit = Math.min(w - 1, limit.x + limit.w - 1)
-  const yMinLimit = Math.max(0, limit.y)
-  const yMaxLimit = Math.min(h - 1, limit.y + limit.h - 1)
-
-  // Early exit if start point is outside the provided bounds
-  if (startX < xMinLimit || startX > xMaxLimit || startY < yMinLimit || startY > yMaxLimit) {
-    return null
-  }
-
-  const visited = new Uint8Array(w * h)
-  const queue: [number, number][] = []
-  const baseColor = getImageDataPixelColor(img, startX, startY)
-
-  queue.push([startX, startY])
-  visited[startY * w + startX] = 1
-
-  let minX = startX, maxX = startX
-  let minY = startY, maxY = startY
-
-  const matches: [number, number][] = []
-
-  if (contiguous) {
-    while (queue.length) {
-      const [x, y] = queue.pop()!
-      matches.push([x, y])
-
-      if (x < minX) minX = x
-      if (x > maxX) maxX = x
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
-
-      const neighbors = [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]
-
-      for (const [nx, ny] of neighbors) {
-        // Check against the calculated limits instead of just image dimensions
-        if (nx < xMinLimit || ny < yMinLimit || nx > xMaxLimit || ny > yMaxLimit) continue
-
-        const idx = ny * w + nx
-        if (visited[idx]) continue
-
-        const c = getImageDataPixelColor(img, nx, ny)
-        if (colorDistance(c, baseColor) <= tolerance) {
-          visited[idx] = 1
-          queue.push([nx, ny])
-        }
-      }
-    }
-  } else {
-    // Non-contiguous mode: scan only within the limits
-    for (let y = yMinLimit; y <= yMaxLimit; y++) {
-      for (let x = xMinLimit; x <= xMaxLimit; x++) {
-        const c = getImageDataPixelColor(img, x, y)
-        if (colorDistance(c, baseColor) <= tolerance) {
-          matches.push([x, y])
-          if (x < minX) minX = x
-          if (x > maxX) maxX = x
-          if (y < minY) minY = y
-          if (y > maxY) maxY = y
-        }
-      }
-    }
-  }
-
-  if (matches.length === 0) return null
-
-  const rect: Rect = {
-    x: minX,
-    y: minY,
-    w: maxX - minX + 1,
-    h: maxY - minY + 1,
-  }
-
-  // Final safety trim against image dimensions
-  trimRectBounds(rect, { x: 0, y: 0, w, h })
-
-  const pixels = extractImageData(img, rect.x, rect.y, rect.w, rect.h)
-  const mask = new Uint8Array(rect.w * rect.h)
-
-  for (const [x, y] of matches) {
-    const mx = x - rect.x
-    const my = y - rect.y
-    mask[my * rect.w + mx] = 1
-  }
-
-  return { startX, startY, selectionRect: { ...rect, mask, maskType: MaskType.BINARY }, pixels }
 }
 
 const imageDataToPngBlob_pixelCanvas = makeReusablePixelCanvas()

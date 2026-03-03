@@ -1,12 +1,8 @@
-import { trimRectBounds } from 'pixel-data-js'
+import { floodFillSelection, trimRectBounds } from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect } from '../../../lib/util/data/Rect.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../lib/util/html-dom/clipboard.ts'
-import {
-  extractImageData,
-  floodFillImageDataSelection,
-  imageDataToPngBlob,
-} from '../../../lib/util/html-dom/ImageData.ts'
+import { extractImageData, imageDataToPngBlob } from '../../../lib/util/html-dom/ImageData.ts'
 import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlendFn } from '../_core/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
@@ -90,12 +86,14 @@ export function makeCanvasPaintSelectToolState(
     const img = state.imageDataRef.get()
     if (!img) return
 
-    const result = floodFillImageDataSelection(
+    const result = floodFillSelection(
       img,
       x,
       y,
-      store.selectFloodContiguous,
-      store.selectFloodTolerance,
+      {
+        contiguous: store.selectFloodContiguous,
+        tolerance: store.selectFloodTolerance,
+      },
     )
 
     if (!result) return
