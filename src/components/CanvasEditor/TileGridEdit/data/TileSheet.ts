@@ -3,7 +3,6 @@ import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts
 
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import {
-  clearImageData,
   deserializeImageData,
   extractImageData,
   resizeImageData,
@@ -131,17 +130,6 @@ export function makeTileSheet(
       w,
       h,
     )
-  }
-
-  function clear(
-    x = 0,
-    y = 0,
-    w = imgData.width,
-    h = imgData.height,
-    mask: Uint8Array | null = null,
-  ) {
-    clearImageData(imgData, x, y, w, h, mask)
-    markAllTilesDirty()
   }
 
   function resizeTileSize(newTileSize: number) {
@@ -314,7 +302,6 @@ export function makeTileSheet(
 
   return {
     tileset,
-    clear,
     getTileSheetOffset,
     getTileVersion: (tileId: TileId) => {
       const index = tileset.byId.get(tileId)?.index

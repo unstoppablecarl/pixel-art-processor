@@ -1,4 +1,4 @@
-import { deserializeNullableImageData, serializeNullableImageData } from 'pixel-data-js'
+import { deserializeNullableImageData, imageDataToImgBlob, serializeNullableImageData } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
 import { packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect } from '../data/Rect.ts'
@@ -450,7 +450,6 @@ export function makeReusableImageData() {
   }
 }
 
-const imageDataToPngBlob_pixelCanvas = makeReusablePixelCanvas()
 // array of 1 | 0 values. 1 is selected in the mask
 // mask uses normal pixel indexing i = y * width + x
 // export type PixelMask = Uint8Array
@@ -458,16 +457,8 @@ export async function imageDataToPngBlob(
   imageData: ImageData,
   mask: Uint8Array | null = null,
 ): Promise<Blob> {
-  const { canvas, ctx } = imageDataToPngBlob_pixelCanvas(imageData.width, imageData.height)
 
-  const finalData = mask ? applyMask(imageData, mask) : imageData
+  const img = mask ? applyMask(imageData, mask) : imageData
 
-  ctx.putImageData(finalData, 0, 0)
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (blob) resolve(blob)
-      else reject(new Error('Failed to generate PNG blob'))
-    }, 'image/png')
-  })
+  return imageDataToImgBlob(img)
 }
