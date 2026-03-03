@@ -18,15 +18,6 @@ export function imageElementToImageData(img: HTMLImageElement): ImageData {
   return ctx.getImageData(0, 0, canvas.width, canvas.height)
 }
 
-export function imageDataToUrlImage(imgData: ImageData): string {
-  const canvas = document.createElement('canvas')
-  canvas.width = imgData.width
-  canvas.height = imgData.height
-  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
-  ctx.putImageData(imgData, 0, 0)
-  return canvas.toDataURL()
-}
-
 export function fillNonTransparentPixels(imageData: ImageData, grayScale: number = 0): ImageData {
   for (let i = 0; i < imageData.data.length; i += 4) {
     let currentAlpha = imageData.data[i + 3]!
@@ -98,34 +89,6 @@ export function eachImageDataPixel(
       cb(x, y, getImageDataPixelColor(imageData, x, y))
     }
   }
-}
-
-export function updateImageData(
-  imageData: ImageData,
-  cb: (x: number, y: number, color: RGBA) => RGBA,
-): ImageData {
-  const { width, height, data } = imageData
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-
-      const index = (y * width + x) * 4
-
-      const color = cb(x, y, getImageDataPixelColor(imageData, x, y))
-
-      color.r ??= 0
-      color.g ??= 0
-      color.b ??= 0
-      color.a ??= 255
-
-      data[index] = color.r
-      data[index + 1] = color.g
-      data[index + 2] = color.b
-      data[index + 3] = color.a
-    }
-  }
-
-  return imageData
 }
 
 export function getImageDataPixelColor(imageData: ImageData, x: number, y: number): RGBA {

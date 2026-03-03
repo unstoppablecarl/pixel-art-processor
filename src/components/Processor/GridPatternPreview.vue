@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
+import { imageDataToDataUrl } from 'pixel-data-js'
 import { computed } from 'vue'
 import { type AnyNode, isBranch, isStep } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
-import { imageDataToUrlImage } from '../../lib/util/html-dom/ImageData.ts'
 import { normalizeValueToArray } from '../../lib/util/misc.ts'
 import { makePrng } from '../../lib/util/prng.ts'
 
@@ -23,7 +23,7 @@ type ImageOutput = {
 
 function make(node: AnyNode, outputIndex: number, outputPreview: ImageData): ImageOutput {
   const key = makeImgVar(node, outputIndex)
-  const encoded = imageDataToUrlImage(outputPreview)
+  const encoded = imageDataToDataUrl(outputPreview)
   return {
     node,
     key,
@@ -69,7 +69,7 @@ const IMAGE_VAR_PREFIX = `--preview-img-list-`
 const makeImgVar = (node: AnyNode, index: number) => IMAGE_VAR_PREFIX + node.id + index
 
 const cssImageVars = computed(() => stepOutputImages.value.map(({ node, image }, i) => {
-    const encoded = imageDataToUrlImage(image)
+    const encoded = imageDataToDataUrl(image)
     const key = makeImgVar(node, i)
     return `${key}: url(${encoded});`
   },

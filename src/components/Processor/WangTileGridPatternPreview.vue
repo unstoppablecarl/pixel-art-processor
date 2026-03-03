@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { BFormFloatingLabel, BFormInput } from 'bootstrap-vue-next'
+import { imageDataToDataUrl } from 'pixel-data-js'
 import { computed } from 'vue'
 import { type AnyNode, isFork } from '../../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
-import { imageDataToUrlImage } from '../../lib/util/html-dom/ImageData.ts'
 import { makeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
 
@@ -22,7 +22,7 @@ type ImageOutput = {
 
 function make(node: AnyNode, outputIndex: number): ImageOutput {
   const key = makeImgVar(node, outputIndex)
-  const encoded = imageDataToUrlImage(node.outputPreview)
+  const encoded = imageDataToDataUrl(node.outputPreview)
   return {
     node,
     key,
@@ -69,7 +69,7 @@ const cssImageVars = computed(() => {
   if (!stepOutputNodes.value.length) return []
 
   return stepOutputNodes.value.map(({ node, image }, i) => {
-      const encoded = imageDataToUrlImage(image)
+      const encoded = imageDataToDataUrl(image)
       const key = makeImgVar(node, i)
       return `${key}: url(${encoded});`
     },
