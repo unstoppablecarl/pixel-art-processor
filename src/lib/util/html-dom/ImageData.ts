@@ -100,61 +100,6 @@ export function setImageDataPixelColor(imageData: ImageData, x: number, y: numbe
   imageData.data[index + 3] = a
 }
 
-/**
- * Non-destructively resizes an ImageData object by padding or cropping.
- * This function creates a new ImageData object of the specified dimensions and
- * copies the source data into it based on the provided offsets. It uses
- * optimized row-based memory transfers via `Uint8ClampedArray.prototype.set`.
- *
- * @param current - The source ImageData to resize.
- * @param newWidth - The width of the resulting ImageData.
- * @param newHeight - The height of the resulting ImageData.
- * @param offsetX - The horizontal placement of the source image within the
- * new bounds (can be negative for cropping). Defaults to 0.
- * @param offsetY - The vertical placement of the source image within the
- * new bounds (can be negative for cropping). Defaults to 0.
- * @returns A new ImageData instance containing the resized/repositioned image.
- * @example
- * // Pad a 10x10 image to 20x20, centered at (5, 5)
- * const padded = resizeImageData(original, 20, 20, 5, 5);
- * @example
- * // Crop the top-left 5x5 pixels of an image
- * const cropped = resizeImageData(original, 5, 5, 0, 0);
- */
-export function resizeImageData(
-  current: ImageData,
-  newWidth: number,
-  newHeight: number,
-  offsetX = 0,
-  offsetY = 0,
-): ImageData {
-  const result = new ImageData(newWidth, newHeight)
-  const { width: oldW, height: oldH, data: oldData } = current
-  const newData = result.data
-
-  // Determine intersection of the old image (at offset) and new canvas bounds
-  const x0 = Math.max(0, offsetX)
-  const y0 = Math.max(0, offsetY)
-  const x1 = Math.min(newWidth, offsetX + oldW)
-  const y1 = Math.min(newHeight, offsetY + oldH)
-
-  if (x1 <= x0 || y1 <= y0) return result
-
-  for (let row = 0; row < (y1 - y0); row++) {
-    const dstY = y0 + row
-    const srcY = dstY - offsetY
-    const srcX = x0 - offsetX
-
-    const dstStart = (dstY * newWidth + x0) * 4
-    const srcStart = (srcY * oldW + srcX) * 4
-    const rowLen = (x1 - x0) * 4
-
-    newData.set(oldData.subarray(srcStart, srcStart + rowLen), dstStart)
-  }
-
-  return result
-}
-
 export function imageDataEqual(
   a: ImageData | SerializedImageData | null,
   b: ImageData | SerializedImageData | null,

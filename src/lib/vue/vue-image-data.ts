@@ -1,8 +1,8 @@
+import { resizeImageData } from 'pixel-data-js'
 import { markRaw, type Raw, reactive, type Ref, shallowReactive, type ShallowReactive, watch } from 'vue'
 import {
   copyImageData,
   deserializeImageData,
-  resizeImageData,
   type SerializedImageData,
   serializeImageData,
 } from '../util/html-dom/ImageData.ts'

@@ -1,3 +1,4 @@
+import { resizeImageData } from 'pixel-data-js'
 import { markRaw } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 
@@ -5,7 +6,6 @@ import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import {
   deserializeImageData,
   extractImageData,
-  resizeImageData,
   type SerializedImageData,
   serializeImageData,
   writeImageData,
