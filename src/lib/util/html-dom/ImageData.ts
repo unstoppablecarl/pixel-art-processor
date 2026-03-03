@@ -118,55 +118,6 @@ export function imageDataEqual(
   return true
 }
 
-export function writeImageData(
-  target: ImageData,
-  source: ImageData,
-  x: number,
-  y: number,
-  sx: number = 0,
-  sy: number = 0,
-  sw: number = source.width,
-  sh: number = source.height,
-  mask?: Uint8Array | null,
-) {
-  const { width: dstW, height: dstH, data: dstData } = target
-  const { width: srcW, data: srcData } = source
-
-  // Calculate intersection between target and source-rect
-  const x0 = Math.max(0, x, 0)
-  const y0 = Math.max(0, y, 0)
-  const x1 = Math.min(dstW, x + sw)
-  const y1 = Math.min(dstH, y + sh)
-
-  if (x1 <= x0 || y1 <= y0) return
-
-  const useMask = !!mask
-
-  for (let row = 0; row < (y1 - y0); row++) {
-    const dstY = y0 + row
-    const srcY = sy + (dstY - y)
-    const srcX = sx + (x0 - x)
-
-    const rowLenPixels = (x1 - x0)
-    const dstStart = (dstY * dstW + x0) * 4
-    const srcStart = (srcY * srcW + srcX) * 4
-
-    if (useMask) {
-      for (let ix = 0; ix < rowLenPixels; ix++) {
-        const mi = (srcY * srcW + (srcX + ix))
-        if (mask[mi] === 0) continue
-
-        const di = dstStart + (ix * 4)
-        const si = srcStart + (ix * 4)
-        dstData.set(srcData.subarray(si, si + 4), di)
-      }
-    } else {
-      // High-speed bulk copy
-      dstData.set(srcData.subarray(srcStart, srcStart + (rowLenPixels * 4)), dstStart)
-    }
-  }
-}
-
 export interface PutImageDataOptions {
   dx?: number
   dy?: number

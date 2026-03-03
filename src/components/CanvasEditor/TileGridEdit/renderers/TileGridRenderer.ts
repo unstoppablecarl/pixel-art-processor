@@ -1,4 +1,4 @@
-import { writeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { writeImageData } from 'pixel-data-js'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import { imageDataRef } from '../../../../lib/vue/vue-image-data.ts'

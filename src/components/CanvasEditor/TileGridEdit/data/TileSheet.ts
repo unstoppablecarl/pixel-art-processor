@@ -1,4 +1,4 @@
-import { resizeImageData, type SerializedImageData } from 'pixel-data-js'
+import { resizeImageData, type SerializedImageData, writeImageData } from 'pixel-data-js'
 import { markRaw } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 
@@ -7,7 +7,6 @@ import {
   deserializeImageData,
   extractImageData,
   serializeImageData,
-  writeImageData,
 } from '../../../../lib/util/html-dom/ImageData.ts'
 import {
   AxialEdgeWangTileset,
