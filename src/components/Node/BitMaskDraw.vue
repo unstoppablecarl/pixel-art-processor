@@ -12,11 +12,11 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
+import type { SerializedImageData } from 'pixel-data-js'
 import { computed, reactive, toRef } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import {
-  type SerializedImageData,
 } from '../../lib/util/html-dom/ImageData.ts'
 import { handleNodeConfigHMR } from '../../lib/util/vite.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'

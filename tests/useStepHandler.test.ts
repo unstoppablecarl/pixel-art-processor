@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
 import { createPiniaSimplePersist } from 'pinia-simple-persist'
+import type { SerializedImageData } from 'pixel-data-js'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { Component, type Raw, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
@@ -21,7 +22,7 @@ import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/l
 import type { NormalRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyNodeDefinition, defineStep } from '../src/lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
-import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/html-dom/ImageData.ts'
+import { deserializeImageData, serializeImageData } from '../src/lib/util/html-dom/ImageData.ts'
 
 function makeAppContext(cb: () => void) {
   installNodeRegistry(makeNodeRegistry())

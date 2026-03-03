@@ -1,4 +1,9 @@
-import { deserializeNullableImageData, imageDataToImgBlob, serializeNullableImageData } from 'pixel-data-js'
+import {
+  deserializeNullableImageData,
+  imageDataToImgBlob,
+  type SerializedImageData,
+  serializeNullableImageData,
+} from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
 import { packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect } from '../data/Rect.ts'
@@ -60,12 +65,6 @@ export function invertImageData(imageData: ImageData) {
     data[i + 2] = 255 - data[i + 2]!
   }
   return imageData
-}
-
-export type SerializedImageData = {
-  width: number,
-  height: number,
-  data: string,
 }
 
 export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {

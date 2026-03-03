@@ -1,9 +1,8 @@
-import { resizeImageData } from 'pixel-data-js'
+import { resizeImageData, type SerializedImageData } from 'pixel-data-js'
 import { markRaw, type Raw, reactive, type Ref, shallowReactive, type ShallowReactive, watch } from 'vue'
 import {
   copyImageData,
   deserializeImageData,
-  type SerializedImageData,
   serializeImageData,
 } from '../util/html-dom/ImageData.ts'
 import { type TileId, WangTileset } from '../wang-tiles/WangTileset.ts'
