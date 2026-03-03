@@ -206,8 +206,8 @@ export function makeTileSheet(
         y: o.tileOverlap.y,
         w: o.tileOverlap.w,
         h: o.tileOverlap.h,
-        srcX: rect.srcX ?? 0 + o.srcX,
-        srcY: rect.srcY ?? 0 + o.srcY,
+        srcX: (rect.srcX ?? 0) + o.srcX,
+        srcY: (rect.srcY ?? 0) + o.srcY,
       })
     }
 
