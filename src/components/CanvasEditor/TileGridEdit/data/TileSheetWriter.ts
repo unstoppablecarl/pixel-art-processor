@@ -140,17 +140,12 @@ function makeTileSheetMutator(
       const tileId = r.tileId
 
       for (let ty = 0; ty < r.h; ty++) {
-        const destY = r.y + ty
-        // Calculate mask row start once per row
-        let maskIdx = (r.srcY + ty) * sheetRect.w + r.srcX
-
+        const srcY = r.srcY + ty
+        const srcYBase = srcY * sheetRect.w
         for (let tx = 0; tx < r.w; tx++) {
-          if (mask && !mask[maskIdx++]) continue
-
-          // Use addTilePacked directly with our constant
-          accumulator.addTilePacked(tileId, r.x + tx, destY, PACKED_ERASE)
-
-          if (!mask) maskIdx++ // keep incrementing if we are manually tracking even without mask
+          const srcX = r.srcX + tx
+          if (mask && mask[srcYBase + srcX] === 0) continue
+          accumulator.addTilePacked(tileId, r.x + tx, r.y + ty, PACKED_ERASE)
         }
       }
     }
