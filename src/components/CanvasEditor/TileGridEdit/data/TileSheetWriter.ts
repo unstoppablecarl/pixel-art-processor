@@ -108,10 +108,16 @@ function makeTileSheetMutator(
         for (let x = 0; x < r.w; x++) {
           const srcX = r.srcX + x
 
-          // 1. Check Mask: The mask index corresponds to the source image pixel index
           if (mask) {
-            const maskIdx = srcYBase + srcX
-            if (mask[maskIdx] === 0) continue
+            // Calculate coordinates relative to the start of this specific mask slice
+            const maskX = srcX - (opts.sx ?? 0)
+            const maskY = srcY - (opts.sy ?? 0)
+            const maskStride = opts.sw ?? imageData.width
+            const maskIdx = maskY * maskStride + maskX
+
+            if (mask[maskIdx] === 0) {
+              continue
+            }
           }
 
           // 2. Read the pixel
