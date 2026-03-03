@@ -1,5 +1,4 @@
 import { packRGBA, type RGBA } from '../util/data/color.ts'
-import { eachImageDataPixel } from '../util/html-dom/ImageData.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
 
 export type Bit = 0 | 1
@@ -11,7 +10,6 @@ export class BitMask extends BaseDataStructure<Bit, Bit, Uint8Array> {
   protected initData(width: number, height: number): Uint8Array {
     return new Uint8Array(width * height)
   }
-
 
   get(x: number, y: number): Bit {
     return this._data[y * this.width + x] as Bit
@@ -54,21 +52,23 @@ export class BitMask extends BaseDataStructure<Bit, Bit, Uint8Array> {
     return result
   }
 
-  static fromImageData(imageData: ImageData) {
-    const result = new BitMask(imageData.width, imageData.height)
-    // Using a fast alpha check to determine bits
-    eachImageDataPixel(imageData, (x, y, color) => {
-      if (color.a > 0) {
-        result.set(x, y, 1)
-      }
-    })
+  static fromImageData(imageData: ImageData): BitMask {
+    const { width, height } = imageData
+    const result = new BitMask(width, height)
+    const maskData = result.data
+    const input32 = new Uint32Array(imageData.data.buffer)
 
-    return result
+    for (let i = 0; i < input32.length; i++) {
+      // Check alpha channel (top 8 bits of a 32-bit pixel: 0xAABBGGRR or 0xRRGGBBAA depending on endianness)
+      // A non-zero check on the 32-bit integer is the fastest way to detect "any" color/alpha.
+      maskData[i] = input32[i] !== 0 ? 1 : 0
+    }
+
+    return result.invalidate()
   }
 
   adjacentSum(x: number, y: number): number {
     let total = 0
-    // eachAdjacent is now highly efficient because it uses internal numeric logic
     this.eachAdjacent(x, y, (val) => total += val)
     return total
   }

@@ -1,8 +1,7 @@
 import { deserializeNullableImageData, serializeNullableImageData } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
 import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
-import type { Point } from '../../node-data-types/BaseDataStructure.ts'
-import { colorDistance, packColor, type PixelColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
+import { colorDistance, packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect, trimRectBounds } from '../data/Rect.ts'
 import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
 import { makeReusablePixelCanvas } from './PixelCanvas.ts'
@@ -78,19 +77,6 @@ export function deserializeImageData<T extends SerializedImageData | null>(obj: 
   return markRaw(deserializeNullableImageData(obj)) as any
 }
 
-export function eachImageDataPixel(
-  imageData: ImageData,
-  cb: (x: number, y: number, color: RGBA) => void,
-) {
-  const { width, height } = imageData
-
-  for (let y = 0; y < height; y++) {
-    for (let x = 0; x < width; x++) {
-      cb(x, y, getImageDataPixelColor(imageData, x, y))
-    }
-  }
-}
-
 export function getImageDataPixelColor(imageData: ImageData, x: number, y: number): RGBA {
   const index = (y * imageData.width + x) * 4
 
@@ -108,20 +94,6 @@ export function setImageDataPixelColor(imageData: ImageData, x: number, y: numbe
   imageData.data[index + 1] = g
   imageData.data[index + 2] = b
   imageData.data[index + 3] = a
-}
-
-export function setImageDataPixelsColor(imageData: ImageData, points: Point[], color: RGBA) {
-  for (let i = 0; i < points.length; i++) {
-    const { x, y } = points[i]
-    setImageDataPixelColor(imageData, x, y, color)
-  }
-}
-
-export function setImageDataPixelColors(imageData: ImageData, pixels: PixelColor[]) {
-  for (let i = 0; i < pixels.length; i++) {
-    const { x, y, color } = pixels[i]
-    setImageDataPixelColor(imageData, x, y, color)
-  }
 }
 
 /**
