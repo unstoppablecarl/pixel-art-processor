@@ -30,7 +30,6 @@ export function makeTileSheetPixelAccumulator() {
   function ensureBuffer(tileId: TileId): PixelBuffer {
     let buf = tileBuffers.get(tileId)
     if (!buf) {
-      // Keep initial allocation but remove the growth check here
       buf = { data: new Uint32Array(256 * STRIDE), count: 0 }
       tileBuffers.set(tileId, buf)
     }
