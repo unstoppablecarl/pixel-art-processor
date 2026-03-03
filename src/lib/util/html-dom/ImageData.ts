@@ -1,4 +1,4 @@
-import { deserializeNullableImageData, serializeNullableImageData } from 'pixel-data-js'
+import { deserializeNullableImageData, MaskType, serializeNullableImageData } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
 import type { SelectionRect } from '../../../components/CanvasEditor/TileGridEdit/lib/ISelection.ts'
 import { colorDistance, packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
@@ -69,7 +69,12 @@ export type SerializedImageData = {
   data: string,
 }
 
-export const serializeImageData = serializeNullableImageData
+export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
+  if (!imageData) return null as any
+
+  const serialized = serializeNullableImageData(imageData)
+  return markRaw(serialized) as any
+}
 
 export function deserializeImageData<T extends SerializedImageData | null>(obj: T): T extends null ? null : Raw<ImageData> {
   if (!obj) return null as any
@@ -553,7 +558,7 @@ export function floodFillImageDataSelection(
     mask[my * rect.w + mx] = 1
   }
 
-  return { startX, startY, selectionRect: { ...rect, mask }, pixels }
+  return { startX, startY, selectionRect: { ...rect, mask, maskType: MaskType.BINARY }, pixels }
 }
 
 const imageDataToPngBlob_pixelCanvas = makeReusablePixelCanvas()

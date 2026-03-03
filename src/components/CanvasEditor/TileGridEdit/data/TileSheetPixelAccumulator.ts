@@ -1,7 +1,8 @@
 import { type Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { PixelColor, RGBA } from '../../../../lib/util/data/color.ts'
+import { packRGBA, type PixelColor, type RGBA } from '../../../../lib/util/data/color.ts'
 import {
-  applyBufferToImageData, extractPixelData,
+  applyBufferToImageData,
+  extractPixelData,
   growBufferIfNeeded,
   type PixelBuffer,
   pixelBufferToRect,
@@ -37,7 +38,7 @@ export function makeTileSheetPixelAccumulator() {
   }
 
   function addTile(tileId: TileId, tx: number, ty: number, color: RGBA, blend = blendOverwrite, isPropagated = false) {
-    const packed = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
+    const packed = packRGBA(color)
     addTilePacked(tileId, tx, ty, packed, blend, isPropagated)
   }
 
@@ -126,7 +127,7 @@ export function makeTileSheetPixelAccumulator() {
         tileId: r.tileId,
         x: r.x, y: r.y, w: r.w, h: r.h,
         before,
-        after: null
+        after: null,
       })
     }
     return patches

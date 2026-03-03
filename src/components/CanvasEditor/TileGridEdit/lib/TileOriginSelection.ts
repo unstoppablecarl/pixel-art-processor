@@ -1,3 +1,4 @@
+import { MaskType } from 'pixel-data-js'
 import { getRectsBounds, type Rect, trimRectBounds } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'
@@ -30,13 +31,26 @@ export class TileOriginSelection implements ISelection {
 
     const pixels = this.geometry.tileSheet.extractImageData(sheetBounds)
 
-    this.originalRects = tileAlignedRects.map(r => ({
-      x: r.tileSelectionX,
-      y: r.tileSelectionY,
-      w: r.w,
-      h: r.h,
-      mask: r.mask,
-    }))
+    this.originalRects = tileAlignedRects.map(r => {
+      if (r.mask) {
+        return {
+          x: r.tileSelectionX,
+          y: r.tileSelectionY,
+          w: r.w,
+          h: r.h,
+          mask: r.mask,
+          maskType: MaskType.BINARY,
+        }
+      }
+
+      return {
+        x: r.tileSelectionX,
+        y: r.tileSelectionY,
+        w: r.w,
+        h: r.h,
+      }
+    })
+
     this.currentRects = rects.map(r => ({ ...r }))
     this.originalRectsBounds = getRectsBounds(rects)
     this.pixels = pixels
@@ -54,7 +68,6 @@ export class TileOriginSelection implements ISelection {
     throw new Error('not implemented')
   }
 
-  // --- Tile Aligned Rects ---
   // --- Tile Aligned Rects ---
   private tileAlignedFrom(
     trimmedRects: SelectionRect[],
@@ -87,17 +100,17 @@ export class TileOriginSelection implements ISelection {
         bufferX: (this.originalRects[i].x - originX) + pushX,
         bufferY: (this.originalRects[i].y - originY) + pushY,
         mask: clipped.mask,
-      }
+        maskType: clipped.maskType
+      } as TileOriginTileAlignedRect
     })
   }
-
 
   getOriginalTileAlignedRects(): TileOriginTileAlignedRect[] {
     return this.tileAlignedFrom(
       this.originalRects,
       this.originalRects,
       this.originalRectsBounds.x,
-      this.originalRectsBounds.y
+      this.originalRectsBounds.y,
     )
   }
 
@@ -111,7 +124,7 @@ export class TileOriginSelection implements ISelection {
       trimmedRects,
       rawRects,
       this.originalRectsBounds.x,
-      this.originalRectsBounds.y
+      this.originalRectsBounds.y,
     )
   }
 
@@ -174,7 +187,11 @@ export class TileOriginSelection implements ISelection {
     }
 
     return this.currentRects.map(r => {
-      return trimRectBounds({ ...r }, bounds)
+      const result = { ...r }
+
+      trimRectBounds(result, bounds)
+
+      return result
     })
   }
 

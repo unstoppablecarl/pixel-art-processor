@@ -1,13 +1,15 @@
+import { MaskType, type SelectionRect as SR } from 'pixel-data-js'
 import { getRectsBounds } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { sliceMask } from '../data/TileGridGeometry.ts'
 
-export type SelectionRect = {
-  x: number
-  y: number
-  w: number
-  h: number
-  mask: Uint8Array | null
+export type SelectionRect = SR
+export type NullableMask = {
+  mask: Uint8Array;
+  maskType: MaskType;
+} | {
+  mask?: null;
+  maskType?: null;
 }
 
 export type TileAlignedRect = {
@@ -24,8 +26,7 @@ export type TileAlignedRect = {
   // pixel space
   bufferX: number
   bufferY: number
-  mask: Uint8Array | null
-}
+} & NullableMask
 
 export type TileOriginTileAlignedRect = TileAlignedRect & {
   tileSelectionX: number
@@ -147,43 +148,59 @@ export function subtractSelectionRects(current: SelectionRect[], subtracting: Se
       const pieces: SelectionRect[] = []
 
       if (r.y < iy) {
-        pieces.push({
-          x: r.x,
-          y: r.y,
-          w: r.w,
-          h: iy - r.y,
-          mask: sliceMaskRegion(newMask, r, r.x, r.y, r.w, iy - r.y),
-        })
+        const mask = sliceMaskRegion(newMask, r, r.x, r.y, r.w, iy - r.y)
+        if (mask) {
+          pieces.push({
+            x: r.x,
+            y: r.y,
+            w: r.w,
+            h: iy - r.y,
+            mask: mask,
+            maskType: MaskType.BINARY,
+          })
+        }
       }
 
       if (iy2 < r.y + r.h) {
-        pieces.push({
-          x: r.x,
-          y: iy2,
-          w: r.w,
-          h: r.y + r.h - iy2,
-          mask: sliceMaskRegion(newMask, r, r.x, iy2, r.w, r.y + r.h - iy2),
-        })
+        const mask1 = sliceMaskRegion(newMask, r, r.x, iy2, r.w, r.y + r.h - iy2)
+        if (mask1) {
+          pieces.push({
+            x: r.x,
+            y: iy2,
+            w: r.w,
+            h: r.y + r.h - iy2,
+            mask: mask1,
+            maskType: MaskType.BINARY,
+          })
+        }
       }
 
       if (r.x < ix) {
-        pieces.push({
-          x: r.x,
-          y: iy,
-          w: ix - r.x,
-          h: iy2 - iy,
-          mask: sliceMaskRegion(newMask, r, r.x, iy, ix - r.x, iy2 - iy),
-        })
+        const mask2 = sliceMaskRegion(newMask, r, r.x, iy, ix - r.x, iy2 - iy)
+        if (mask2) {
+          pieces.push({
+            x: r.x,
+            y: iy,
+            w: ix - r.x,
+            h: iy2 - iy,
+            mask: mask2,
+            maskType: MaskType.BINARY,
+          })
+        }
       }
 
       if (ix2 < r.x + r.w) {
-        pieces.push({
-          x: ix2,
-          y: iy,
-          w: r.x + r.w - ix2,
-          h: iy2 - iy,
-          mask: sliceMaskRegion(newMask, r, ix2, iy, r.x + r.w - ix2, iy2 - iy),
-        })
+        const mask3 = sliceMaskRegion(newMask, r, ix2, iy, r.x + r.w - ix2, iy2 - iy)
+        if (mask3) {
+          pieces.push({
+            x: ix2,
+            y: iy,
+            w: r.x + r.w - ix2,
+            h: iy2 - iy,
+            mask: mask3,
+            maskType: MaskType.BINARY,
+          })
+        }
       }
 
       next.push(...pieces)
@@ -220,12 +237,12 @@ function mergeTwoRects(a: SelectionRect, b: SelectionRect): SelectionRect {
         gy >= b.y && gy < b.y + b.h
 
       const aVal =
-        a.mask === null
+        !a.mask
           ? (insideA ? 1 : 0)
           : (insideA ? a.mask[(gy - a.y) * a.w + (gx - a.x)] : 0)
 
       const bVal =
-        b.mask === null
+        !b.mask
           ? (insideB ? 1 : 0)
           : (insideB ? b.mask[(gy - b.y) * b.w + (gx - b.x)] : 0)
 
@@ -233,7 +250,7 @@ function mergeTwoRects(a: SelectionRect, b: SelectionRect): SelectionRect {
     }
   }
 
-  return { ...bounds, mask }
+  return { ...bounds, mask, maskType: MaskType.BINARY }
 }
 
 function sliceMaskRegion(

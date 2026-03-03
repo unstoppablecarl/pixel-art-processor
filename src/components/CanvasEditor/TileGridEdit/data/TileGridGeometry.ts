@@ -1,5 +1,6 @@
 // TileGridGeometry.ts
-import type { Rect } from '../../../../lib/util/data/Rect.ts'
+import { extractMask, MaskType } from 'pixel-data-js'
+import { type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type {
@@ -67,14 +68,17 @@ export function makeTileGridGeometry(
         const { x: tx, y: ty, w, h } = tileOverlap
         if (w <= 0 || h <= 0) continue
 
-        const mask = sliceMask(r.mask, o.sourceX, o.sourceY, w, h, r.w)
+        let mask: Uint8Array | null = null
+        if (r.mask) {
+          mask = extractMask(r.mask, r.w, o.sourceX, o.sourceY, w, h)
+        }
 
         const { x: tsx, y: tsy } = tileSheet.getTileRect(tile.id)
 
         const gridPixelX = r.x + o.sourceX
         const gridPixelY = r.y + o.sourceY
 
-        out.push({
+        const base = {
           tileId: tile.id,
 
           // sheet space
@@ -92,8 +96,17 @@ export function makeTileGridGeometry(
           // pixel buffer space
           bufferX: o.sourceX,
           bufferY: o.sourceY,
-          mask,
-        })
+        }
+
+        if (mask) {
+          out.push({
+            ...base,
+            mask,
+            maskType: MaskType.BINARY,
+          })
+        } else {
+          out.push(base)
+        }
       }
     }
 
@@ -181,7 +194,7 @@ export function makeTileGridGeometry(
       const bufferX = x1 - originX
       const bufferY = y1 - originY
 
-      out.push({
+      const base = {
         tileId,
 
         // sheet space
@@ -199,8 +212,17 @@ export function makeTileGridGeometry(
         // pixel buffer space
         bufferX,
         bufferY,
-        mask: clippedMask,
-      })
+      }
+
+      if (clippedMask) {
+        out.push({
+          ...base,
+          mask: clippedMask,
+          maskType: MaskType.BINARY,
+        })
+      } else {
+        out.push(base)
+      }
     }
 
     return out
@@ -213,14 +235,20 @@ export function makeTileGridGeometry(
     tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
       const x = gTileX * tileSize + tileSelectionX
       const y = gTileY * tileSize + tileSelectionY
-
-      results.push({
-        x,
-        y,
-        w,
-        h,
-        mask,
-      })
+      const rect = { x, y, w, h }
+      if (mask) {
+        results.push({
+          ...rect,
+          mask,
+          maskType: MaskType.BINARY,
+        })
+      } else {
+        results.push({
+          ...rect,
+          mask: null,
+          maskType: null,
+        })
+      }
     })
 
     return results
@@ -240,13 +268,20 @@ export function makeTileGridGeometry(
       const x = gTileX * tileSize + t.tx + originX
       const y = gTileY * tileSize + t.ty + originY
 
-      results.push({
-        x,
-        y,
-        w,
-        h,
-        mask,
-      })
+      const rect = { x, y, w, h }
+      if (mask) {
+        results.push({
+          ...rect,
+          mask,
+          maskType: MaskType.BINARY,
+        })
+      } else {
+        results.push({
+          ...rect,
+          mask: null,
+          maskType: null,
+        })
+      }
     })
 
     return results

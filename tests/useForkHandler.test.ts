@@ -1,5 +1,6 @@
 import { mount } from '@vue/test-utils'
 import { createPinia, setActivePinia } from 'pinia'
+import { createPiniaSimplePersist } from 'pinia-simple-persist'
 import { describe, expect, expectTypeOf, it } from 'vitest'
 import { type Component, type Raw, type ShallowReactive, shallowReactive } from 'vue'
 import type { StepInputTypesToInstances } from '../src/lib/node-data-types/_node-data-types.ts'
@@ -19,7 +20,6 @@ import { defineForkHandler, type ForkHandler, useForkHandler } from '../src/lib/
 import { getNodeRegistry, installNodeRegistry, makeNodeRegistry } from '../src/lib/pipeline/NodeRegistry.ts'
 import type { ForkRunner, SingleRunnerOutput } from '../src/lib/pipeline/NodeRunner.ts'
 import { type AnyNodeDefinition, defineFork } from '../src/lib/pipeline/types/definitions.ts'
-import { createPersistedState } from '../src/lib/store/_pinia-persist-plugin'
 import { usePipelineStore } from '../src/lib/store/pipeline-store.ts'
 import { deserializeImageData, type SerializedImageData, serializeImageData } from '../src/lib/util/html-dom/ImageData.ts'
 
@@ -35,7 +35,7 @@ function makeAppContext(cb: () => void) {
   }
 
   let pinia = createPinia()
-  pinia.use(createPersistedState())
+  pinia.use(createPiniaSimplePersist())
 
   const wrapper = mount(App, {
     global: {

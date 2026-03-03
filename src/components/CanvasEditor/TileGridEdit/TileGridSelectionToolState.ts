@@ -1,6 +1,7 @@
+import { floodFillSelection } from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
-import { extractImageData, floodFillImageDataSelection } from '../../../lib/util/html-dom/ImageData.ts'
+import { extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
@@ -245,13 +246,11 @@ export function makeTileGridSelectionToolState(
 
     if (canvasType === CanvasType.GRID) {
       const imageData = gridRenderer.tileGridImageDataRef.get()!
-      const result = floodFillImageDataSelection(
-        imageData,
-        x,
-        y,
-        store.selectFloodContiguous,
-        store.selectFloodTolerance,
-      )
+
+      const result = floodFillSelection(imageData, x, y, {
+        contiguous: store.selectFloodContiguous,
+        tolerance: store.selectFloodTolerance,
+      })
 
       if (!result) return
       selection = makeGridOriginSelection([result.selectionRect])
@@ -259,13 +258,11 @@ export function makeTileGridSelectionToolState(
 
     if (canvasType === CanvasType.TILE) {
       const imageData = state.tileSheet.extractTile(tileId!)
-      const result = floodFillImageDataSelection(
-        imageData,
-        x,
-        y,
-        store.selectFloodContiguous,
-        store.selectFloodTolerance,
-      )
+      const result = floodFillSelection(imageData, x, y, {
+        contiguous: store.selectFloodContiguous,
+        tolerance: store.selectFloodTolerance,
+      })
+
       if (!result) return
 
       selection = new TileOriginSelection(

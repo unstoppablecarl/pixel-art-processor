@@ -1,3 +1,4 @@
+import { MaskType } from 'pixel-data-js'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { SelectionRect } from './ISelection.ts'
 
@@ -89,6 +90,15 @@ function mergeIslandWithMask(rects: SelectionRect[]): SelectionRect {
         }
       }
     }
+
+    return {
+      x: bounds.x,
+      y: bounds.y,
+      w: bounds.w,
+      h: bounds.h,
+      mask: mergedMask,
+      maskType: MaskType.BINARY,
+    }
   }
 
   return {
@@ -96,7 +106,6 @@ function mergeIslandWithMask(rects: SelectionRect[]): SelectionRect {
     y: bounds.y,
     w: bounds.w,
     h: bounds.h,
-    mask: mergedMask,
   }
 }
 
