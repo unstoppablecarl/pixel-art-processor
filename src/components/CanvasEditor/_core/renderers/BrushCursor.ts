@@ -1,11 +1,11 @@
+import { makeReusableCanvas } from 'pixel-data-js'
 import { readonly, ref, watchEffect } from 'vue'
 import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../../lib/store/ui-store.ts'
 import { getRectFromCenter, isInsideCircle } from '../../../../lib/util/data/Grid.ts'
-import { makeReusablePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { BrushShape } from '../_core-editor-types.ts'
 
-const pixelCanvas = makeReusablePixelCanvas()
+const pixelCanvas = makeReusableCanvas()
 
 export type BrushSettings = {
   scale: number,

@@ -1,11 +1,11 @@
-import { makeReusablePixelCanvas } from './PixelCanvas.ts'
+import { makeReusableCanvas } from 'pixel-data-js'
 
 export function writePngBlobToClipboard(blob: Blob) {
   const item = new ClipboardItem({ 'image/png': blob })
   navigator.clipboard.write([item])
 }
 
-const getImageDataFromClipboard_pixelCanvas = makeReusablePixelCanvas()
+const getImageDataFromClipboard_pixelCanvas = makeReusableCanvas()
 
 export async function getImageDataFromClipboard(clipboardEvent: ClipboardEvent) {
   const items = clipboardEvent?.clipboardData?.items

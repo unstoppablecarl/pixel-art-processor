@@ -1,9 +1,10 @@
+import { makeReusableCanvas } from 'pixel-data-js'
 import type { DrawLayer } from '../../../components/CanvasEditor/_core/_core-editor-types.ts'
 import { putImageData } from './ImageData.ts'
-import { makeReusablePixelCanvas, type PixelCanvas } from './PixelCanvas.ts'
+import { type PixelCanvas } from './PixelCanvas.ts'
 
 export function makeCanvasFrameRenderer() {
-  const bufferCanvas = makeReusablePixelCanvas()
+  const bufferCanvas = makeReusableCanvas()
 
   return function renderCanvasFrame(
     pixelCanvas: PixelCanvas,
@@ -13,7 +14,7 @@ export function makeCanvasFrameRenderer() {
     drawScreenLayer?: DrawLayer,
   ) {
     const { canvas, ctx } = pixelCanvas
-    const {ctx: pxCtx, canvas: pxCanvas} = bufferCanvas(canvas.width, canvas.height)
+    const { ctx: pxCtx, canvas: pxCanvas } = bufferCanvas(canvas.width, canvas.height)
 
     // 1. Clear pixel buffer (unscaled)
     pxCtx.setTransform(1, 0, 0, 1, 0, 0)

@@ -1,6 +1,7 @@
 import {
   deserializeNullableImageData,
   imageDataToImgBlob,
+  makeReusableCanvas,
   type SerializedImageData,
   serializeNullableImageData,
 } from 'pixel-data-js'
@@ -8,7 +9,6 @@ import { markRaw, type Raw } from 'vue'
 import { packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
 import { type Rect } from '../data/Rect.ts'
 import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
-import { makeReusablePixelCanvas } from './PixelCanvas.ts'
 
 export function imageElementToImageData(img: HTMLImageElement): ImageData {
   const canvas = document.createElement('canvas')
@@ -134,7 +134,7 @@ export interface PutImageDataOptions {
   mask?: Uint8Array | null
 }
 
-const pixelCanvas = makeReusablePixelCanvas()
+const pixelCanvas = makeReusableCanvas()
 const getTmpImageData = makeReusableImageData()
 
 export function putImageData(
