@@ -1,17 +1,17 @@
-import { MaskType, trimRectBounds } from 'pixel-data-js'
+import { type NullableMaskRect, type PixelData, trimRectBounds } from 'pixel-data-js'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'
-import type { DrawRect, ISelection, SelectionRect, TileOriginTileAlignedRect } from './ISelection.ts'
+import type { DrawRect, ISelection, TileOriginTileAlignedRect } from './ISelection.ts'
 
 export class TileOriginSelection implements ISelection {
-  private originalRects: SelectionRect[]
-  private currentRects: SelectionRect[]
+  private originalRects: NullableMaskRect[]
+  private currentRects: NullableMaskRect[]
   private originalRectsBounds: Rect
   private moved = false
-  pixels: ImageData
+  pixels: PixelData
 
-  constructor(rects: SelectionRect[], private tileId: TileId, private geometry: TileGridGeometry) {
+  constructor(rects: NullableMaskRect[], private tileId: TileId, private geometry: TileGridGeometry) {
 
     const tileAlignedRects = this.geometry.tileRectsToTileAlignedRects(
       tileId,
@@ -29,17 +29,17 @@ export class TileOriginSelection implements ISelection {
       })),
     )
 
-    const pixels = this.geometry.tileSheet.extractImageData(sheetBounds)
+    const pixels = this.geometry.tileSheet.extractPixelData(sheetBounds)
 
     this.originalRects = tileAlignedRects.map(r => {
-      if (r.mask) {
+      if (r.data) {
         return {
           x: r.tileSelectionX,
           y: r.tileSelectionY,
           w: r.w,
           h: r.h,
-          mask: r.mask,
-          maskType: MaskType.BINARY,
+          data: r.data,
+          type: r.type,
         }
       }
 
@@ -60,18 +60,18 @@ export class TileOriginSelection implements ISelection {
     return this.moved
   }
 
-  getOriginalGridRects(): SelectionRect[] {
+  getOriginalGridRects(): NullableMaskRect[] {
     throw new Error('not implemented')
   }
 
-  getCurrentGridRects(): SelectionRect[] {
+  getCurrentGridRects(): NullableMaskRect[] {
     throw new Error('not implemented')
   }
 
   // --- Tile Aligned Rects ---
   private tileAlignedFrom(
-    trimmedRects: SelectionRect[],
-    rawRects: SelectionRect[],
+    trimmedRects: NullableMaskRect[],
+    rawRects: NullableMaskRect[],
     originX: number,
     originY: number,
   ): TileOriginTileAlignedRect[] {
@@ -99,8 +99,8 @@ export class TileOriginSelection implements ISelection {
         // Buffer space: Original local offset + the push delta
         bufferX: (this.originalRects[i].x - originX) + pushX,
         bufferY: (this.originalRects[i].y - originY) + pushY,
-        mask: clipped.mask,
-        maskType: clipped.maskType
+        data: clipped.data,
+        type: clipped.type,
       } as TileOriginTileAlignedRect
     })
   }
@@ -136,9 +136,10 @@ export class TileOriginSelection implements ISelection {
       sy: r.bufferY,
       w: r.w,
       h: r.h,
-      mask: r.mask ?? undefined,
+      data: r.data,
+      type: r.type,
       tileId: r.tileId,
-    }))
+    } as DrawRect))
   }
 
   getOriginalSheetDrawRects(): DrawRect[] {
@@ -159,9 +160,10 @@ export class TileOriginSelection implements ISelection {
         sy: r.bufferY,
         w: gr.w,
         h: gr.h,
-        mask: gr.mask ?? undefined,
+        data: gr.data,
+        type: gr.type,
         tileId: r.tileId,
-      }))
+      } as DrawRect))
     })
   }
 
@@ -174,11 +176,11 @@ export class TileOriginSelection implements ISelection {
   }
 
   // --- Tile Bounds & Rects ---
-  getOriginalTileRects(tileId: TileId): SelectionRect[] {
+  getOriginalTileRects(tileId: TileId): NullableMaskRect[] {
     return tileId === this.tileId ? this.originalRects : []
   }
 
-  getCurrentTileRects(): SelectionRect[] {
+  getCurrentTileRects(): NullableMaskRect[] {
     const bounds = {
       x: 0,
       y: 0,
@@ -197,16 +199,17 @@ export class TileOriginSelection implements ISelection {
 
   // --- Tile Draw Rects ---
   private tileDrawRectsFor(tileRects: TileOriginTileAlignedRect[]): DrawRect[] {
-    return tileRects.map(r => ({
+    return tileRects.map((r) => ({
       dx: r.tileSelectionX,
       dy: r.tileSelectionY,
       sx: r.bufferX,
       sy: r.bufferY,
       w: r.w,
       h: r.h,
-      mask: r.mask ?? undefined,
+      data: r.data,
+      type: r.type,
       tileId: r.tileId,
-    }))
+    } as DrawRect))
   }
 
   getOriginalTileDrawRects(tileId: TileId): DrawRect[] {

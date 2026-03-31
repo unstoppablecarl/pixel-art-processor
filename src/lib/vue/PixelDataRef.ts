@@ -1,30 +1,23 @@
 import { PixelData, resizeImageData, type SerializedImageData } from 'pixel-data-js'
 import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
-import { copyImageData, deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
-import type { PixelDataOrRef } from './PixelDataRef.ts'
+import { deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
 
-export function normalizeImageData(value: ImageDataOrRef | PixelDataOrRef): ImageData | null {
-  if (!value) return null
-  if (value instanceof PixelData) return value.imageData
-  if (value instanceof ImageData) return value
-  if ('__isPixelDataRef' in value && value?.__isPixelDataRef) return value.getImageData()
-  if ('__isImageDataRef' in value && value?.__isImageDataRef) return value.get()
-  return null
-}
+export type PixelDataOrRef = null | PixelData | PixelDataRef;
 
-export type ImageDataOrRef = null | ImageData | ImageDataRef;
-
-export type ImageDataRef = ShallowReactive<{
-  __isImageDataRef: true,
+export type PixelDataRef = ShallowReactive<{
+  __isPixelDataRef: true,
   hasValue: boolean,
   watchTarget: number,
   width: number,
   height: number,
 
-  readonly get: () => ImageData | null,
-  readonly copy: () => ImageData | null,
-  readonly set: (newValue: ImageData | null) => void,
-  readonly setQuiet: (newValue: ImageData | null) => void,
+  readonly get: () => PixelData | null,
+  readonly getImageData: () => ImageData | null,
+  readonly copy: () => PixelData | null,
+  readonly set: (newValue: PixelData | null) => void,
+  readonly setImageData: (newValue: ImageData | null) => void,
+
+  readonly setQuiet: (newValue: PixelData | null) => void,
 
   readonly triggerRef: () => void,
   readonly clear: () => void,
@@ -32,7 +25,6 @@ export type ImageDataRef = ShallowReactive<{
   readonly serialize: () => Raw<SerializedImageData> | null,
   readonly setSerialized: (serialized: SerializedImageData | null) => void
   readonly deserializeConfig: <T extends SerializedImageData | null>(serialized: T) => T extends null ? null : Raw<T>
-  readonly onChange: (value: Sync) => void
   readonly resize: (
     newWidth: number,
     newHeight: number,
@@ -45,21 +37,18 @@ export type ImageDataRef = ShallowReactive<{
   ) => void
 }>
 
-type Sync = (serialized: Raw<SerializedImageData> | null) => void
-
-export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
+export function pixelDataRef(initial: PixelData | null = null): PixelDataRef {
   if (initial) markRaw(initial)
-  let image: ImageData | null = initial
+  let image: PixelData | null = initial
 
-  let sync: Sync | null = null
-  const capsule: ImageDataRef = shallowReactive({
-    __isImageDataRef: true,
+  const capsule: PixelDataRef = shallowReactive({
+    __isPixelDataRef: true,
     hasValue: !!initial,
     width: initial?.width ?? 0,
     height: initial?.height ?? 0,
     watchTarget: 0,
 
-    setQuiet(newValue: ImageData | null) {
+    setQuiet(newValue: PixelData | null) {
       if (image === null && newValue === null) return
       if (!newValue) {
         image = null
@@ -67,7 +56,6 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
         capsule.width = 0
         capsule.height = 0
 
-        sync?.(serializeImageData(image))
         return
       }
 
@@ -75,23 +63,14 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
         image.width === newValue.width &&
         image.height === newValue.height) {
 
-        if (image.data.length !== newValue.data.length) {
-          const msg = 'malformed ImageData object'
-          console.error(msg, newValue)
-          throw new Error(msg)
-        }
-
-        image.data.set(newValue.data)
+        image.data32.set(newValue.data32)
       } else {
-        // Update dimensions immediately
+        image = newValue
+        markRaw(image)
         capsule.hasValue = true
         capsule.width = newValue.width
         capsule.height = newValue.height
-        image = newValue
-        markRaw(image)
       }
-
-      sync?.(serializeImageData(image))
     },
     resize(
       newWidth: number,
@@ -100,25 +79,27 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
       offsetY = 0,
     ) {
       if (!image) {
-        capsule.set(new ImageData(newWidth, newHeight))
+        capsule.set(new PixelData(new ImageData(newWidth, newHeight)))
         return
       }
       if (image.width === newWidth && image.height === newHeight) return
 
-      const newImage = resizeImageData(image, newWidth, newHeight, offsetX, offsetY)
-      capsule.set(newImage)
+      const newImage = resizeImageData(image.imageData as ImageData, newWidth, newHeight, offsetX, offsetY)
+      image.set(newImage)
+      capsule.set(image)
     },
     destructiveResize(
       newWidth: number,
       newHeight: number,
     ) {
       if (!image) {
-        capsule.set(new ImageData(newWidth, newHeight))
+        capsule.set(new PixelData(new ImageData(newWidth, newHeight)))
         return
       }
       if (image.width === newWidth && image.height === newHeight) return
 
-      capsule.set(new ImageData(newWidth, newHeight))
+      image.set(new ImageData(newWidth, newHeight))
+      capsule.set(image)
     },
     clear() {
       if (!image) return
@@ -128,34 +109,49 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
       capsule.width = 0
       capsule.height = 0
       capsule.watchTarget++
-      sync?.(null)
     },
     clearPixels() {
       if (!image) return
-      image.data.fill(0)
+      image.data32.fill(0)
+      capsule.watchTarget++
     },
-    set(newValue: ImageData | null) {
+    set(newValue: PixelData | null) {
       if (image === null && newValue === null) return
       capsule.setQuiet(newValue)
       capsule.watchTarget++
     },
+    setImageData(newValue: ImageData | null) {
+      if (newValue === null) {
+        capsule.set(null)
+        return
+      }
+
+      if (!image) {
+        capsule.set(new PixelData(newValue))
+        return
+      }
+
+      image.set(newValue)
+      capsule.set(image)
+    },
     get() {
       return image
+    },
+    getImageData() {
+      return image?.imageData ?? null
     },
     triggerRef() {
       capsule.watchTarget++
     },
-    onChange(value: Sync) {
-      sync = value
-    },
-    copy: () => image ? copyImageData(image) : null,
-    serialize: () => serializeImageData(image),
+    copy: () => image ? image.copy() : null,
+    serialize: () => serializeImageData(image?.imageData ?? null),
     setSerialized(serialized: SerializedImageData | null) {
-      capsule.set(deserializeImageData(serialized))
+      const imageData = deserializeImageData(serialized)
+      capsule.setImageData(imageData)
     },
     // set the capsule value and mark the serialized obj raw so it can be safely set to the config object
     deserializeConfig<T extends SerializedImageData | null>(serialized: T): T extends null ? null : Raw<T> {
-      capsule.set(deserializeImageData(serialized))
+      capsule.setImageData(deserializeImageData(serialized))
       if (!serialized) return null as any
       return markRaw(serialized) as any
     },

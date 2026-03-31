@@ -55,7 +55,7 @@ export function makeTileSheetSelectionRenderer(
 
         drawDebugRect(ctx, { x: dx, y: dy, w: r.w, h: r.h }, 'rgba(0, 255, 0, 0.25)')
 
-        putImageData(ctx, pixels, {
+        putImageData(ctx, pixels.imageData, {
           dx,
           dy,
           sx: r.bufferX,

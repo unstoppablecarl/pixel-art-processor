@@ -1,18 +1,16 @@
-import { type Rect } from '../../../../lib/util/data/Rect.ts'
+import type { NullableMaskRect, PixelData } from 'pixel-data-js'
 
 export type CanvasPaintSelection = ReturnType<typeof makeCanvasPaintSelection>
 
 export type CanvasPaintSelectionOpts = {
-  rect: Rect,
-  pastedPixels?: ImageData | null,
-  mask?: Uint8Array | null,
+  rect: NullableMaskRect,
+  pastedPixels?: PixelData | null,
 }
 
 export function makeCanvasPaintSelection(
   {
     rect,
     pastedPixels = null,
-    mask = null,
   }: CanvasPaintSelectionOpts) {
 
   let current = { ...rect }
@@ -33,7 +31,7 @@ export function makeCanvasPaintSelection(
   }
 
   // promotes a Marquee to a Floating Layer by providing pixels.
-  function lift(imgData: ImageData) {
+  function lift(imgData: PixelData) {
     pixels = imgData
   }
 
@@ -57,8 +55,8 @@ export function makeCanvasPaintSelection(
 
     if (lx < 0 || ly < 0 || lx >= current.w || ly >= current.h) return false
 
-    if (mask) {
-      return mask[ly * current.w + lx] !== 0
+    if (rect.data) {
+      return rect.data[ly * current.w + lx] !== 0
     }
     return true
   }
@@ -70,9 +68,6 @@ export function makeCanvasPaintSelection(
   return {
     get pixels() {
       return pixels
-    },
-    get mask() {
-      return mask
     },
     get original() {
       return original

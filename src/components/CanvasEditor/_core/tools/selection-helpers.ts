@@ -1,4 +1,4 @@
-import type { Rect } from '../../../../lib/util/data/Rect.ts'
+import { type BlendColor32, type NullableMaskRect, overwriteFast } from 'pixel-data-js'
 import {
   type BlendFn,
   blendIgnoreSolid,
@@ -28,19 +28,30 @@ export const selectMoveBlendModeToWriter: Record<BlendMode, ImageDataBlendFn> = 
   [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
 }
 
+export const selectMoveBlendModeToBlender32: Record<BlendMode, BlendColor32> = {
+  [BlendMode.OVERWRITE]: overwriteFast,
+  [BlendMode.IGNORE_TRANSPARENT]: (src, dst) => {
+    const alpha = (src >>> 24) & 0xFF
+    return alpha === 0 ? dst : src
+  },
+  [BlendMode.IGNORE_SOLID]: (src, dst) => {
+    const alpha = (src >>> 24) & 0xFF
+    return alpha === 1 ? dst : src
+  },
+}
+
 export function drawSelectOutline(
   ctx: CanvasRenderingContext2D,
   scale: number,
-  rect: Rect,
+  rect: NullableMaskRect,
   color: string,
-  mask?: Uint8Array | null,
 ) {
   const { x: rx, y: ry, w, h } = rect
   ctx.fillStyle = color
 
   const dashPeriod = 1
 
-  if (!mask) {
+  if (!rect.data) {
     const x = rx * scale
     const y = ry * scale
     const ww = w * scale
@@ -61,16 +72,18 @@ export function drawSelectOutline(
     return
   }
 
+  const maskData = rect.data
+
   for (let iy = 0; iy < h; iy++) {
     for (let ix = 0; ix < w; ix++) {
       const i = iy * w + ix
-      if (mask[i] === 0) continue
+      if (maskData[i] === 0) continue
       if (((ix + iy) % dashPeriod) !== 0) continue
 
-      const left = ix === 0 || mask[i - 1] === 0
-      const right = ix === w - 1 || mask[i + 1] === 0
-      const top = iy === 0 || mask[i - w] === 0
-      const bottom = iy === h - 1 || mask[i + w] === 0
+      const left = ix === 0 || maskData[i - 1] === 0
+      const right = ix === w - 1 || maskData[i + 1] === 0
+      const top = iy === 0 || maskData[i - w] === 0
+      const bottom = iy === h - 1 || maskData[i + w] === 0
 
       const px = (rx + ix) * scale
       const py = (ry + iy) * scale

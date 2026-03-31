@@ -11,12 +11,12 @@ export type ProtoTileSheetPatch = {
   y: number
   w: number
   h: number
-  before: Uint8ClampedArray
-  after: Uint8ClampedArray | null
+  before: Uint32Array
+  after: Uint32Array | null
 }
 
 export type TileSheetPatch = Omit<ProtoTileSheetPatch, 'after'> & {
-  after: Uint8ClampedArray
+  after: Uint32Array
 }
 
 export type TileRect = Rect & { tileId: TileId }
@@ -54,8 +54,8 @@ export function applyTileSheetAccumulator(
   accumulator.apply(tileSheet)
   const finalPatches = accumulator.finalizePatches(tileSheet, patches)
 
-  getHistory().execute({
-    do: () => {
+  getHistory().commit({
+    redo: () => {
       finalPatches.forEach(p => {
         gridRenderer.queueRenderTile(p.tileId)
         apply(tileSheet, p)

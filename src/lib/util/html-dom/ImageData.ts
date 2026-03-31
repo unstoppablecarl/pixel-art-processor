@@ -1,12 +1,13 @@
 import {
   deserializeNullableImageData,
+  type ImageDataLike,
   imageDataToImgBlob,
   makeReusableCanvas,
   type SerializedImageData,
   serializeNullableImageData,
 } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
-import { packColor, type RGBA, RGBA_ERASE } from '../data/color.ts'
+import { type RGBA } from '../data/color.ts'
 import { type Rect } from '../data/Rect.ts'
 import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
 
@@ -67,7 +68,7 @@ export function invertImageData(imageData: ImageData) {
   return imageData
 }
 
-export function serializeImageData<T extends ImageData | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
+export function serializeImageData<T extends ImageDataLike | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
   if (!imageData) return null as any
 
   const serialized = serializeNullableImageData(imageData)
@@ -271,59 +272,6 @@ export function extractImageData(
   }
 
   return new ImageData(out, w, h)
-}
-
-export function clearImageData(
-  target: ImageData,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-  mask?: Uint8Array | null,
-) {
-  fillImageData(target, RGBA_ERASE, x, y, w, h, mask)
-}
-
-export function fillImageData(
-  target: ImageData,
-  { r, g, b, a }: RGBA,
-  x = 0,
-  y = 0,
-  w = target.width,
-  h = target.height,
-  mask?: Uint8Array | null,
-) {
-  const { width: dstW, height: dstH, data: dstData } = target
-
-  // 1. Clamp to canvas bounds
-  const x0 = Math.max(0, x)
-  const y0 = Math.max(0, y)
-  const x1 = Math.min(dstW, x + w)
-  const y1 = Math.min(dstH, y + h)
-
-  if (x1 <= x0 || y1 <= y0) return
-
-  const packedColor = packColor(r, g, b, a)
-  // Create a 32-bit view of the same underlying memory
-  const data32 = new Uint32Array(dstData.buffer)
-  const useMask = !!mask
-
-  for (let iy = 0; iy < (y1 - y0); iy++) {
-    const dstY = y0 + iy
-    const rowStart = dstY * dstW + x0
-
-    for (let ix = 0; ix < (x1 - x0); ix++) {
-      const idx = rowStart + ix
-
-      if (useMask) {
-        // Mask usually matches the fill-rect dimensions
-        const mi = iy * w + ix
-        if (mask[mi] === 0) continue
-      }
-
-      data32[idx] = packedColor
-    }
-  }
 }
 
 export function makeReusableImageData() {

@@ -1,20 +1,19 @@
-import { floodFillSelection } from 'pixel-data-js'
+import {
+  extractPixelData,
+  floodFillSelection,
+  mergeBinaryMaskRects,
+  type NullableBinaryMaskRect, type NullableMaskRect,
+  subtractBinaryMaskRects,
+} from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
-import { extractImageData } from '../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { CanvasType } from './_tile-grid-editor-types.ts'
 import type { TileRect } from './data/TileSheetHistory.ts'
 import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 import { GridOriginSelection } from './lib/GridOriginSelection.ts'
-import {
-  type ISelection,
-  mergeSelectionRects,
-  type SelectionRect,
-  subtractSelectionRects,
-  type TileOriginTileAlignedRect,
-} from './lib/ISelection.ts'
+import { type ISelection, type TileOriginTileAlignedRect } from './lib/ISelection.ts'
 import { TileOriginSelection } from './lib/TileOriginSelection.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
@@ -67,9 +66,9 @@ export function makeTileGridSelectionToolState(
     return result
   }
 
-  function makeGridOriginSelection(selectionRects: SelectionRect[]): ISelection {
+  function makeGridOriginSelection(selectionRects: NullableMaskRect[]): ISelection {
     const bounds = getRectsBounds(selectionRects)
-    const pixels = extractImageData(gridRenderer.tileGridImageDataRef.get()!, bounds)
+    const pixels = extractPixelData(gridRenderer.tileGridPixelDataRef.get()!, bounds)
 
     return new GridOriginSelection(selectionRects, pixels, state.tileGridGeometry)
   }
@@ -79,7 +78,7 @@ export function makeTileGridSelectionToolState(
     const selectRect = currentNormalizedRect()
     if (!selectRect) return null
 
-    const rects = [selectRect as SelectionRect]
+    const rects = [selectRect as NullableMaskRect]
     if (inputSpace === CanvasType.TILE) {
       return new TileOriginSelection(
         rects,
@@ -191,11 +190,11 @@ export function makeTileGridSelectionToolState(
 
     tileSheetWriter.withHistory((mutator) => {
       for (const r of originalSheetDrawRects) {
-        mutator.clear(r.dx, r.dy, r.w, r.h, r.mask)
+        mutator.clear(r.dx, r.dy, r.w, r.h, r.data)
       }
 
       for (const r of currentSheetDrawRects) {
-        mutator.blendImageData(
+        mutator.blendPixelData(
           pixels,
           mode,
           {
@@ -205,7 +204,7 @@ export function makeTileGridSelectionToolState(
             sy: r.sy,
             sw: r.w,
             sh: r.h,
-            mask: r.mask ?? undefined,
+            mask: r.data ?? undefined,
           },
         )
       }
@@ -245,7 +244,7 @@ export function makeTileGridSelectionToolState(
     inputTileId = tileId
 
     if (canvasType === CanvasType.GRID) {
-      const imageData = gridRenderer.tileGridImageDataRef.get()!
+      const imageData = gridRenderer.tileGridPixelDataRef.get()!
 
       const result = floodFillSelection(imageData, x, y, {
         contiguous: store.selectFloodContiguous,
@@ -276,24 +275,24 @@ export function makeTileGridSelectionToolState(
     dragging = false
   }
 
-  function addToSelection(newGridRects: SelectionRect[]) {
+  function addToSelection(newGridRects: NullableBinaryMaskRect[]) {
     const sel = selection
     if (!sel) return
 
     commit()
     const existing = sel.getCurrentGridRects()
-    const all = mergeSelectionRects(existing, newGridRects)
+    const all = mergeBinaryMaskRects(existing as NullableBinaryMaskRect[], newGridRects)
 
     selection = makeGridOriginSelection(all)
   }
 
-  function subtractFromSelection(newGridRects: SelectionRect[]) {
+  function subtractFromSelection(newGridRects: NullableBinaryMaskRect[]) {
     const sel = selection
     if (!sel) return
 
     commit()
     const existing = sel.getCurrentGridRects()
-    const all = subtractSelectionRects(existing, newGridRects)
+    const all = subtractBinaryMaskRects(existing as NullableBinaryMaskRect[], newGridRects)
 
     selection = makeGridOriginSelection(all)
   }

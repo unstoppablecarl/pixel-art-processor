@@ -1,11 +1,5 @@
-import {
-  type Color32,
-  type RGBA,
-  type SerializedRGBA,
-  serializeRGBA,
-  unpackAlpha,
-  unpackColorTo,
-} from '../util/data/color.ts'
+import type { Color32 } from 'pixel-data-js'
+import { type RGBA, type SerializedRGBA, serializeRGBA, unpackColorTo } from '../util/data/color.ts'
 
 import { validateSizes } from './_helpers/_data-type-helpers.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'
@@ -70,7 +64,7 @@ export class PixelMap extends BaseDataStructure<RGBA, Color32, Uint8ClampedArray
     validateSizes(this, other)
     other.each((x, y, v) => {
 
-      const alpha = unpackAlpha(v)
+      const alpha = (v >>> 24) & 0xFF
       if (alpha > minAlpha) {
         const idx = y * this.width + x
         this.setRaw(idx, v)

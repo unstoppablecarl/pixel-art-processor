@@ -1,8 +1,8 @@
-import { floodFillSelection, trimRectBounds } from 'pixel-data-js'
+import { extractPixelData, floodFillSelection, PixelData, trimRectBounds } from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect } from '../../../lib/util/data/Rect.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../lib/util/html-dom/clipboard.ts'
-import { extractImageData, imageDataToPngBlob } from '../../../lib/util/html-dom/ImageData.ts'
+import { imageDataToPngBlob } from '../../../lib/util/html-dom/ImageData.ts'
 import { SelectSubTool } from '../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlendFn } from '../_core/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
@@ -50,9 +50,9 @@ export function makeCanvasPaintSelectToolState(
   }
 
   function getPixels(r: Rect) {
-    const img = state.imageDataRef.get()!
+    const img = state.pixelDataRef.get()!
     trimRectBounds(r, { x: 0, y: 0, w: img.width, h: img.height })
-    return extractImageData(img, r.x, r.y, r.w, r.h)
+    return extractPixelData(img, r.x, r.y, r.w, r.h)
   }
 
   function startRectSelection(x: number, y: number) {
@@ -83,7 +83,7 @@ export function makeCanvasPaintSelectToolState(
   }
 
   function createFloodSelection(x: number, y: number) {
-    const img = state.imageDataRef.get()
+    const img = state.pixelDataRef.get()
     if (!img) return
 
     const result = floodFillSelection(
@@ -100,7 +100,6 @@ export function makeCanvasPaintSelectToolState(
 
     selection = makeCanvasPaintSelection({
       rect: result.selectionRect,
-      mask: result.selectionRect.mask,
     })
 
     selecting = false
@@ -112,12 +111,10 @@ export function makeCanvasPaintSelectToolState(
 
     if (selection.pixels) {
       const rect = selection.current
-      const mask = selection.mask
 
       commit()
       selection = makeCanvasPaintSelection({
         rect,
-        mask,
       })
     }
 
@@ -150,7 +147,6 @@ export function makeCanvasPaintSelectToolState(
     if (!selection.pixels) {
       selection = makeCanvasPaintSelection({
         rect: selection.current,
-        mask: selection.mask,
       })
     }
     dragging = false
@@ -162,7 +158,7 @@ export function makeCanvasPaintSelectToolState(
     // if we have selection pixels already copy those
     // otherwise we are in marquee selection so grab pixels from current
     const pixels = selection.pixels ?? getPixels(selection.current)
-    await imageDataToPngBlob(pixels, selection.mask)
+    await imageDataToPngBlob(pixels.imageData, selection.current.data)
       .then((blob) => writePngBlobToClipboard(blob))
   }
 
@@ -182,7 +178,7 @@ export function makeCanvasPaintSelectToolState(
       canvasWriter.withHistory((mutator) => {
         if (!selection) return
         const o = selection.original
-        mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+        mutator.clear(o.x, o.y, o.w, o.h, o.data)
       })
 
       clearSelection()
@@ -194,8 +190,8 @@ export function makeCanvasPaintSelectToolState(
     // marquee selection grab current pixels
     canvasWriter.withHistory((mutator) => {
       if (!selection) return
-      const o = selection.current
-      mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+      const c = selection.current
+      mutator.clear(c.x, c.y, c.w, c.h, c.data)
     })
   }
 
@@ -213,7 +209,7 @@ export function makeCanvasPaintSelectToolState(
           h: imageData.height,
         }
 
-        selection = makeCanvasPaintSelection({ pastedPixels: imageData, rect })
+        selection = makeCanvasPaintSelection({ pastedPixels: new PixelData(imageData), rect })
 
         selecting = false
       })
@@ -228,19 +224,19 @@ export function makeCanvasPaintSelectToolState(
 
       if (!selection.isPasted) {
         const o = selection.original
-        mutator.clear(o.x, o.y, o.w, o.h, selection.mask)
+        mutator.clear(o.x, o.y, o.w, o.h, o.data)
       }
 
       const c = selection.current
       const modeFn = selectMoveBlendModeToBlendFn[mode]
 
-      mutator.blendImageData(
+      mutator.blendPixelData(
         selection.pixels,
         modeFn,
         {
           dx: c.x,
           dy: c.y,
-          mask: selection.mask,
+          mask: selection.current.data,
         },
       )
     })

@@ -1,6 +1,7 @@
+import { packColor } from 'pixel-data-js'
 import type { Direction } from '../pipeline/_types.ts'
-import { packColor, type RGBA } from '../util/data/color.ts'
 import { Bounds, type BoundsLike } from '../util/data/Bounds.ts'
+import { type RGBA } from '../util/data/color.ts'
 import { readonlyTypedArray } from '../util/misc.ts'
 
 export type Point = {
