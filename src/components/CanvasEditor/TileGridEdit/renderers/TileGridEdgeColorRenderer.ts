@@ -1,6 +1,5 @@
 import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
 import { arrayIndexToColor } from '../../../../lib/util/data/color.ts'
-import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { Sketch } from '../../../../lib/util/html-dom/Sketch.ts'
 import { makeWangTileEdgesPixelMap } from '../../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import { type AxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
@@ -63,7 +62,7 @@ export function makeTileGridEdgeColorRenderer(
   ) {
     const imageData = cachedWangTileEdgeColorImageData.value[tileId]
     ctx.globalAlpha = 0.5
-    putImageData(ctx, imageData, { dx: x, dy: y })
+    ctx.putImageData(imageData, x, y)
     ctx.globalAlpha = 1
   }
 
