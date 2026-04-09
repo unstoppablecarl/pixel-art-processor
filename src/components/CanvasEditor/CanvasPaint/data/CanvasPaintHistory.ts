@@ -1,5 +1,6 @@
+import { writePixelDataBuffer } from 'pixel-data-js'
 import { getHistory } from '../../../../lib/util/history/history.ts'
-import { applyHistoryToPixelData, type Patch, type ProtoPatch } from '../../_core/data/_history-helpers.ts'
+import { type Patch, type ProtoPatch } from '../../_core/data/_history-helpers.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'
 import type { CanvasPixelAccumulator } from './CanvasPixelAccumulator.ts'
@@ -20,12 +21,12 @@ export function applyCanvasPaintAccumulator(
 
   getHistory().execute({
     do: () => {
-      finalPatches.forEach(p => applyHistoryToPixelData(img, p.after, p))
+      finalPatches.forEach(p => writePixelDataBuffer(img, p.after, p))
       state.imageDataDirty = true
       canvasRenderer.queueRender()
     },
     undo: () => {
-      finalPatches.forEach(p => applyHistoryToPixelData(img, p.before, p))
+      finalPatches.forEach(p => writePixelDataBuffer(img, p.before, p))
       state.imageDataDirty = true
       canvasRenderer.queueRender()
     },

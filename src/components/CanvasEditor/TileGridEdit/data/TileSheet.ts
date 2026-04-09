@@ -6,6 +6,7 @@ import {
   type SerializedImageData,
   setPixelData,
   writeImageData,
+  writePixelDataBuffer,
 } from 'pixel-data-js'
 import { markRaw } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
@@ -19,7 +20,6 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { applyHistoryToPixelData } from '../../_core/data/_history-helpers.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -299,7 +299,7 @@ export function makeTileSheet(
     const tile = tileset.byId.get(tileId)!
     tileVersions[tile.index]++
     currentVersion++
-    return applyHistoryToPixelData(pixelData, data, sx, sy, w, h)
+    return writePixelDataBuffer(pixelData, data, sx, sy, w, h)
   }
 
   return {
