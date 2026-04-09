@@ -14,9 +14,6 @@ importers:
       '@formkit/drag-and-drop':
         specifier: ^0.5.3
         version: 0.5.3
-      '@reddojs/core':
-        specifier: ^0.0.8
-        version: 0.0.8
       bootstrap-vue-next:
         specifier: ^0.42.0
         version: 0.42.0(@floating-ui/vue@1.1.9(vue@3.5.24(typescript@5.9.3)))(@vueuse/core@14.1.0(vue@3.5.24(typescript@5.9.3)))(vue@3.5.24(typescript@5.9.3))
@@ -553,9 +550,6 @@ packages:
 
   '@popperjs/core@2.11.8':
     resolution: {integrity: sha512-P1st0aksCrn9sGZhp8GMYwBnQsbvAWsZAX44oXNNvLHGqAOcoVxmjZiohstwQ7SqKnbR47akdNi+uleWD8+g6A==}
-
-  '@reddojs/core@0.0.8':
-    resolution: {integrity: sha512-AIsEFNfFhUjfdohp0zQMDJDe7zh2DCg9D9ff9mrKLjDpEcLWxUHRO0RHIM1emVM2RrbSPLGA35utBjIWbNiCvQ==}
 
   '@rolldown/pluginutils@1.0.0-beta.50':
     resolution: {integrity: sha512-5e76wQiQVeL1ICOZVUg4LSOVYg9jyhGCin+icYozhsUzM+fHE7kddi1bdiE0jwVqTfkjba3jUFbEkoC9WkdvyA==}
@@ -2322,8 +2316,6 @@ snapshots:
     optional: true
 
   '@popperjs/core@2.11.8': {}
-
-  '@reddojs/core@0.0.8': {}
 
   '@rolldown/pluginutils@1.0.0-beta.50': {}
 

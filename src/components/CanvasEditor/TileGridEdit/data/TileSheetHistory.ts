@@ -54,8 +54,13 @@ export function applyTileSheetAccumulator(
   accumulator.apply(tileSheet)
   const finalPatches = accumulator.finalizePatches(tileSheet, patches)
 
-  getHistory().execute({
-    do: () => {
+  finalPatches.forEach(p => {
+    gridRenderer.queueRenderTile(p.tileId)
+    apply(tileSheet, p)
+  })
+
+  getHistory().commit({
+    redo: () => {
       finalPatches.forEach(p => {
         gridRenderer.queueRenderTile(p.tileId)
         apply(tileSheet, p)

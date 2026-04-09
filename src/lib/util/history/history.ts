@@ -1,11 +1,10 @@
-import { createHistory } from '@reddojs/core'
 import type { ToastOrchestratorCreateParam } from 'bootstrap-vue-next'
+import type { HistoryManager } from 'pixel-data-js'
 import { computed, ref } from 'vue'
 import { useDebouncedToast } from '../../vue/toast.ts'
 
-export type History = ReturnType<typeof createHistory>
 
-let HISTORY: History | undefined
+let HISTORY: HistoryManager | undefined
 let VUE_HISTORY: VueHistory | undefined
 let historyUnsub: (() => void) | undefined
 
@@ -15,7 +14,7 @@ const canRedoRef = ref(false)
 const canUndo = computed(() => canUndoRef.value)
 const canRedo = computed(() => canRedoRef.value)
 
-export function setHistory(history: History) {
+export function setHistory(history: HistoryManager) {
   HISTORY = history
   canUndoRef.value = HISTORY.canUndo
   canRedoRef.value = HISTORY.canRedo
@@ -40,7 +39,7 @@ const toastDefaults: ToastOrchestratorCreateParam = {
 
 function makeVueHistory(
   toast: (options: ToastOrchestratorCreateParam) => void,
-  history: History,
+  history: HistoryManager,
 ) {
   function undo() {
     if (!history.canUndo) {
@@ -93,7 +92,7 @@ function HMRStore() {
 }
 
 function HMRLoad() {
-  const savedHistory = import.meta.hot?.data?.history as History | undefined
+  const savedHistory = import.meta.hot?.data?.history as HistoryManager | undefined
   if (savedHistory) {
     setHistory(savedHistory)
   }
@@ -119,7 +118,7 @@ export function useHistory(): VueHistory {
   return VUE_HISTORY
 }
 
-export function getHistory(): History {
+export function getHistory(): HistoryManager {
   if (!HISTORY) throw new Error('setHistory() not called in main.js')
   return HISTORY
 }

@@ -19,8 +19,12 @@ export function applyCanvasPaintAccumulator(
   accumulator.apply(img)
   const finalPatches = accumulator.finalizePatches(img, patches)
 
-  getHistory().execute({
-    do: () => {
+  finalPatches.forEach(p => writePixelDataBuffer(img, p.after, p))
+  state.imageDataDirty = true
+  canvasRenderer.queueRender()
+
+  getHistory().commit({
+    redo: () => {
       finalPatches.forEach(p => writePixelDataBuffer(img, p.after, p))
       state.imageDataDirty = true
       canvasRenderer.queueRender()
