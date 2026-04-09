@@ -21,7 +21,7 @@ import type {
 } from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
 import { mergeAdjacentSelectionRects } from '../lib/SelectionRects.ts'
-import { makeTileGridSelectionToolState, type TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
+import { makeTileGridSelectionToolState, type TileGridSelectionToolState } from './states/TileGridSelectionToolState.ts'
 
 export type TileGridSelectToolHandler =
   & BaseSelectToolHandler<TileGridSelectionToolState, TileGridEditorToolHandlerArgs>

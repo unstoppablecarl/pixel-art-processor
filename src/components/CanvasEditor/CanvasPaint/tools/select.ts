@@ -19,7 +19,7 @@ import {
   selectMoveBlendModeToBlender32,
 } from '../../_core/tools/selection-helpers.ts'
 import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
-import { type CanvasPaintSelectToolState, makeCanvasPaintSelectToolState } from '../CanvasPaintSelectToolState.ts'
+import { type CanvasPaintSelectToolState, makeCanvasPaintSelectToolState } from './states/CanvasPaintSelectToolState.ts'
 
 export type CanvasPaintSelectToolHandler =
   BaseToolHandler<CanvasPaintSelectToolState>
