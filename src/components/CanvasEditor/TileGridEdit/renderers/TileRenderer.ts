@@ -1,6 +1,6 @@
-import { makePixelData, setPixelData } from 'pixel-data-js'
+import { makePixelData, makeRenderQueue, setPixelData } from 'pixel-data-js'
 import { drawText, makePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
-import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
+import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import { makeSingleTileSync } from '../data/TileSync.ts'
