@@ -1,5 +1,5 @@
+import { makeCanvasFrameRenderer } from 'pixel-data-js'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
-import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { TileGridToolset } from '../TileGridToolset.ts'

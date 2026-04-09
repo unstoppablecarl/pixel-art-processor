@@ -1,6 +1,6 @@
-import { resizeImageData, type SerializedImageData } from 'pixel-data-js'
+import { copyImageData, resizeImageData, type SerializedImageData } from 'pixel-data-js'
 import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
-import { copyImageData, deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
+import { deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
 import type { PixelDataOrRef } from './PixelDataRef.ts'
 
 export function normalizeImageData(value: ImageDataOrRef | PixelDataOrRef): ImageData | null {

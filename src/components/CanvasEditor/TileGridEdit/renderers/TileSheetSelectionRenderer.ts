@@ -1,6 +1,5 @@
-import { putImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { makeCanvasFrameRenderer } from 'pixel-data-js'
 import { makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
-import { makeCanvasFrameRenderer } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import type { TileGridToolset } from '../TileGridToolset.ts'
@@ -55,14 +54,7 @@ export function makeTileSheetSelectionRenderer(
 
         drawDebugRect(ctx, { x: dx, y: dy, w: r.w, h: r.h }, 'rgba(0, 255, 0, 0.25)')
 
-        putImageData(ctx, pixels.imageData, {
-          dx,
-          dy,
-          sx: r.bufferX,
-          sy: r.bufferY,
-          sw: r.w,
-          sh: r.h,
-        })
+        ctx.putImageData(pixels.imageData, dx, dy, r.bufferX, r.bufferY, r.w, r.h)
       }
     }
 
