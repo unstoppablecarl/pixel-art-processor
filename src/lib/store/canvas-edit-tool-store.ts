@@ -1,5 +1,6 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
+import { type Color32, packRGBA } from 'pixel-data-js'
 import { computed, ref, shallowRef } from 'vue'
 import {
   BlendMode,
@@ -35,6 +36,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const currentSubTool = ref<SubToolOf<Tool> | null>(null)
 
   const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
+  const primaryColor32 = computed(() => {
+    return packRGBA(primaryColor.value)
+  })
 
   const brushShape = ref<BrushShape>(BrushShape.CIRCLE)
   const brushSize = shallowRef<number>(10)
@@ -46,6 +50,8 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
   const brushSizeDebounced = refDebounced(brushSize, 200)
   const brushColor = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor.value : RGBA_ERASE)
+  const brushColor32 = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor32.value : 0 as Color32)
+
   const brushBitMaskColor = computed(() => brushMode.value === BrushSubTool.ADD ? RGBA_WHITE : RGBA_ERASE)
 
   const cursorColor = ref('cyan')
@@ -138,6 +144,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
     brushSizeDebounced,
     brushColor,
+    brushColor32,
     brushBitMaskColor,
 
     selectMoveBlendMode,
