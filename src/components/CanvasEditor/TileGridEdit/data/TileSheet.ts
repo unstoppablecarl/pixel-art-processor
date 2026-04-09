@@ -1,18 +1,19 @@
 import {
   extractPixelData,
   makePixelData,
+  type MutablePixelData32,
   PixelData,
-  resizeImageData,
+  resizePixelData,
   type SerializedImageData,
   setPixelData,
-  writeImageData,
+  writePixelData,
   writePixelDataBuffer,
 } from 'pixel-data-js'
 import { markRaw } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
-import { deserializeImageData, extractImageData, serializeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { deserializeImageData, serializeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import {
   AxialEdgeWangTileset,
   deserializeAxialEdgeWangTileset,
@@ -141,32 +142,31 @@ export function makeTileSheet(
     const tileCount = tileset.tiles.length
 
     // Phase 1: extract
-    const extracted = new Array<ImageData>(tileCount)
+    const extracted = new Array<MutablePixelData32>(tileCount)
     for (let index = 0; index < tileCount; index++) {
       const oldX = (index % tilesPerRow) * oldTileSize
       const oldY = Math.floor(index / tilesPerRow) * oldTileSize
-      extracted[index] = extractImageData(pixelData.imageData, oldX, oldY, oldTileSize, oldTileSize)
+      extracted[index] = extractPixelData(pixelData, oldX, oldY, oldTileSize, oldTileSize)! as MutablePixelData32
     }
 
     // Phase 2: resize
     const resized = extracted.map(tile =>
-      resizeImageData(tile, newTileSize, newTileSize),
+      resizePixelData(tile, newTileSize, newTileSize, 0, 0, tile),
     )
 
     // Phase 3: write into new sheet
     const newWidth = tilesPerRow * newTileSize
     const newHeight = tilesPerCol * newTileSize
-    const newSheet = new ImageData(newWidth, newHeight)
+    setPixelData(pixelData, new ImageData(newWidth, newHeight))
 
     for (let index = 0; index < tileCount; index++) {
       const newX = (index % tilesPerRow) * newTileSize
       const newY = Math.floor(index / tilesPerRow) * newTileSize
-      writeImageData(newSheet, resized[index], newX, newY)
+      writePixelData(pixelData, resized[index], newX, newY)
     }
 
     // Phase 4: commit
     tileSize = newTileSize
-    setPixelData(pixelData, newSheet)
     markAllTilesDirty()
   }
 
