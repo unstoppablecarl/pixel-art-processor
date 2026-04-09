@@ -309,6 +309,7 @@ export function makeTileSheet(
       const index = tileset.byId.get(tileId)?.index
       return index !== undefined ? tileVersions[index] : -1
     },
+    // mark tile as needing to be re-rendered when renderer next looks for changes
     markTileDirty(tileId: TileId) {
       const tile = tileset.byId.get(tileId)!
       tileVersions[tile.index]++
@@ -320,20 +321,20 @@ export function makeTileSheet(
     get tileSize() {
       return tileSize
     },
-    get tilesPerRow() {
-      return tilesPerRow
-    },
-    get tilesPerCol() {
-      return tilesPerCol
-    },
+    // get tilesPerRow() {
+    //   return tilesPerRow
+    // },
+    // get tilesPerCol() {
+    //   return tilesPerCol
+    // },
     get pixelData() {
       return pixelData
     },
     get pixelWidth() {
-      return tilesPerRow * tileSize
+      return pixelData.w
     },
     get pixelHeight() {
-      return tilesPerCol * tileSize
+      return pixelData.h
     },
     getTileRect,
     tileLocalToSheet,
