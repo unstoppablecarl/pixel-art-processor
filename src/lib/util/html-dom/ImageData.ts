@@ -2,20 +2,15 @@ import {
   deserializeNullableImageData,
   type ImageDataLike,
   imageDataToImgBlob,
-  makeReusableCanvas,
   type SerializedImageData,
   serializeNullableImageData,
 } from 'pixel-data-js'
 import { markRaw, type Raw } from 'vue'
-import { type RGBA } from '../data/color.ts'
-import { type Rect } from '../data/Rect.ts'
-import { applyMask, type BlendFn, getBlendAdapter } from './blit.ts'
+import { applyMask } from './blit.ts'
 
 export function imageElementToImageData(img: HTMLImageElement): ImageData {
-  const canvas = document.createElement('canvas')
-  canvas.width = img.width
-  canvas.height = img.height
-  const ctx = canvas.getContext('2d') as CanvasRenderingContext2D
+  const canvas = new OffscreenCanvas(img.width, img.height)
+  const ctx = canvas.getContext('2d')!
 
   ctx.drawImage(img, 0, 0)
 
@@ -48,26 +43,6 @@ export function fillTransparentPixels(imageData: ImageData, grayScale: number = 
   return imageData
 }
 
-export function copyImageData(imageData: ImageData) {
-  if (!(imageData instanceof ImageData)) {
-    throw new Error('imageData must be an ImageData object or null')
-  }
-
-  const dataCopy = new Uint8ClampedArray(imageData.data)
-
-  return new ImageData(dataCopy, imageData.width, imageData.height)
-}
-
-export function invertImageData(imageData: ImageData) {
-  const data = imageData.data
-  for (let i = 0; i < data.length; i += 4) {
-    data[i] = 255 - data[i]!
-    data[i + 1] = 255 - data[i + 1]!
-    data[i + 2] = 255 - data[i + 2]!
-  }
-  return imageData
-}
-
 export function serializeImageData<T extends ImageDataLike | null>(imageData: T): T extends null ? null : Raw<SerializedImageData> {
   if (!imageData) return null as any
 
@@ -81,221 +56,6 @@ export function deserializeImageData<T extends SerializedImageData | null>(obj: 
   return markRaw(deserializeNullableImageData(obj)) as any
 }
 
-export function getImageDataPixelColor(imageData: ImageData, x: number, y: number): RGBA {
-  const index = (y * imageData.width + x) * 4
-
-  return {
-    r: imageData.data[index]!,
-    g: imageData.data[index + 1]!,
-    b: imageData.data[index + 2]!,
-    a: imageData.data[index + 3]!,
-  }
-}
-
-export function setImageDataPixelColor(imageData: ImageData, x: number, y: number, { r, g, b, a }: RGBA) {
-  const index = (y * imageData.width + x) * 4
-  imageData.data[index] = r
-  imageData.data[index + 1] = g
-  imageData.data[index + 2] = b
-  imageData.data[index + 3] = a
-}
-
-export function imageDataEqual(
-  a: ImageData | SerializedImageData | null,
-  b: ImageData | SerializedImageData | null,
-): boolean {
-  if (a === null || b === null) return a === b
-  if (a.width !== b.width || a.height !== b.height) return false
-
-  const ad = a.data
-  const bd = b.data
-
-  if (ad.length !== bd.length) return false
-
-  for (let i = 0; i < ad.length; i++) {
-    if (ad[i] !== bd[i]) return false
-  }
-
-  return true
-}
-
-export interface PutImageDataOptions {
-  dx?: number
-  dy?: number
-
-  // source cropping
-  sx?: number
-  sy?: number
-  sw?: number
-  sh?: number
-
-  blendMode?: BlendFn
-
-  // mask (1 = write, 0 = skip)
-  mask?: Uint8Array | null
-}
-
-const pixelCanvas = makeReusableCanvas()
-const getTmpImageData = makeReusableImageData()
-
-export function putImageData(
-  target: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
-  imageData: ImageData,
-  opts: PutImageDataOptions = {},
-) {
-  const {
-    dx = 0,
-    dy = 0,
-    blendMode,
-    sx = 0,
-    sy = 0,
-    sw = imageData.width,
-    sh = imageData.height,
-    mask,
-  } = opts
-
-  const fullWidth = sw === imageData.width
-  const fullHeight = sh === imageData.height
-  const atOrigin = sx === 0 && sy === 0
-
-  // Extract region if needed
-  const src = (fullWidth && fullHeight && atOrigin)
-    ? imageData
-    : extractImageData(imageData, sx, sy, sw, sh)
-
-  const { width, height } = src
-
-  if (blendMode?.alwaysClearFirst) {
-    if (!mask) {
-      // Fast path: clear entire destination rect
-      target.clearRect(dx, dy, width, height)
-    } else {
-      // Masked clear: clear only pixels where mask = 1
-      const clearImg = target.getImageData(dx, dy, width, height)
-      const cdata = clearImg.data
-
-      for (let iy = 0; iy < height; iy++) {
-        for (let ix = 0; ix < width; ix++) {
-          const mi = iy * width + ix   // rect-local mask index
-          if (mask[mi] === 0) continue
-
-          const idx = (iy * width + ix) * 4
-          cdata[idx] = 0
-          cdata[idx + 1] = 0
-          cdata[idx + 2] = 0
-          cdata[idx + 3] = 0
-        }
-      }
-
-      target.putImageData(clearImg, dx, dy)
-    }
-  }
-
-  const { canvas, ctx } = pixelCanvas(width, height)
-
-  if (!blendMode && !mask) {
-    ctx.putImageData(src, 0, 0)
-    target.drawImage(canvas, dx, dy)
-    return
-  }
-
-  const tmp = getTmpImageData(width, height)
-  const dst = tmp.data
-  const sdata = src.data
-  const byteBlend = blendMode ? getBlendAdapter(blendMode) : null
-
-  for (let iy = 0; iy < height; iy++) {
-    for (let ix = 0; ix < width; ix++) {
-      const mi = iy * width + ix   // rect-local mask index
-      if (mask && mask[mi] === 0) continue
-
-      const i = (iy * width + ix) * 4
-
-      if (!byteBlend) {
-        dst[i] = sdata[i]
-        dst[i + 1] = sdata[i + 1]
-        dst[i + 2] = sdata[i + 2]
-        dst[i + 3] = sdata[i + 3]
-      } else {
-        byteBlend(sdata, dst, i, i)
-      }
-    }
-  }
-
-  ctx.putImageData(tmp, 0, 0)
-  target.drawImage(canvas, dx, dy)
-}
-
-export function extractImageData(
-  src: ImageData,
-  rect: Rect,
-): ImageData
-export function extractImageData(
-  src: ImageData,
-  x: number,
-  y: number,
-  w: number,
-  h: number,
-): ImageData
-export function extractImageData(
-  src: ImageData,
-  _x: Rect | number,
-  _y?: number,
-  _w?: number,
-  _h?: number,
-): ImageData {
-  const { x, y, w, h } = typeof _x === 'object'
-    ? _x
-    : { x: _x, y: _y!, w: _w!, h: _h! }
-
-  const out = new Uint8ClampedArray(w * h * 4)
-  const { width: srcW, height: srcH, data: srcData } = src
-
-  // Calculate valid intersection
-  const x0 = Math.max(0, x)
-  const y0 = Math.max(0, y)
-  const x1 = Math.min(srcW, x + w)
-  const y1 = Math.min(srcH, y + h)
-
-  if (x1 > x0 && y1 > y0) {
-    for (let row = 0; row < (y1 - y0); row++) {
-      const srcY = y0 + row
-      const srcStart = (srcY * srcW + x0) * 4
-      const rowLen = (x1 - x0) * 4
-
-      const dstRow = (y0 - y) + row
-      const dstCol = (x0 - x)
-      const dstStart = (dstRow * w + dstCol) * 4
-
-      out.set(srcData.subarray(srcStart, srcStart + rowLen), dstStart)
-    }
-  }
-
-  return new ImageData(out, w, h)
-}
-
-export function makeReusableImageData() {
-  let imageData: ImageData | null = null
-  let buffer: Uint8ClampedArray | null = null
-
-  return function getReusableImageData(width: number, height: number) {
-    const size = width * height * 4
-
-    // Allocate or resize if needed
-    if (!buffer || buffer.length !== size) {
-      buffer = new Uint8ClampedArray(size)
-      imageData = new ImageData(buffer as ImageDataArray, width, height)
-    }
-
-    // If size matches, we reuse the buffer as-is.
-    // Caller can clear or overwrite only what they need.
-    return imageData!
-  }
-}
-
-// array of 1 | 0 values. 1 is selected in the mask
-// mask uses normal pixel indexing i = y * width + x
-// export type PixelMask = Uint8Array
 export async function imageDataToPngBlob(
   imageData: ImageData,
   mask: Uint8Array | null = null,
