@@ -1,3 +1,4 @@
+import { makePixelData, setPixelData } from 'pixel-data-js'
 import { drawText, makePixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
@@ -29,18 +30,18 @@ export function makeTileRenderer(
   const pixelCanvas = makePixelCanvas(tileCanvas)
 
   const tileSync = makeSingleTileSync(tileId)
-  let tileImageData = new ImageData(state.scaledTileSize, state.scaledTileSize)
+  let pixelData = makePixelData(new ImageData(state.scaledTileSize, state.scaledTileSize))
 
   function resize() {
     pixelCanvas.resize(state.scaledTileSize, state.scaledTileSize)
-    tileImageData = new ImageData(state.scaledTileSize, state.scaledTileSize)
+    setPixelData(pixelData, new ImageData(state.scaledTileSize, state.scaledTileSize))
     tileSync.reset()
     queueRender()
   }
 
   function updateTile() {
     tileSync(state.tileSheet, () => {
-      tileImageData = state.tileSheet.extractTile(tileId)
+      pixelData = state.tileSheet.extractTile(tileId)
     })
   }
 
@@ -50,7 +51,7 @@ export function makeTileRenderer(
     renderCanvasFrame(
       pixelCanvas,
       state.scale,
-      () => tileImageData!,
+      () => pixelData.imageData,
       (ctx) => {
         toolset.currentToolHandler.tilePixelOverlayDraw?.(ctx, tileId)
         tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)

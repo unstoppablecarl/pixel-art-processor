@@ -103,7 +103,7 @@ export function makeTileSheetRenderer(
     renderCanvasFrame(
       tileGridPixelCanvas!,
       state.scale,
-      () => state.tileSheet.imageData,
+      () => state.tileSheet.pixelData.imageData,
       drawPixelLayer,
       drawScreenLayer,
     )

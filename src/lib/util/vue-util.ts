@@ -15,6 +15,7 @@ import {
   type UnwrapRef,
 } from 'vue'
 import { StepValidationError } from '../pipeline/errors/StepValidationError.ts'
+import type { PixelDataRef } from '../vue/PixelDataRef.ts'
 import type { ImageDataRef } from '../vue/vue-image-data.ts'
 
 export function deepUnwrap<T>(value: T, visited: Map<unknown, unknown> = new Map()): UnwrapNestedRefs<UnwrapRef<T>> {
@@ -86,7 +87,7 @@ export type StepImg = {
 }
 
 export type StepImgInput = Omit<StepImg, 'imageData'> & {
-  imageData: ImageDataRef | ImageData | null,
+  imageData: ImageDataRef | ImageData | PixelDataRef | null,
 }
 
 export function markRawOrNull<T extends object | null>(value: T): T extends null ? null : Raw<T> {

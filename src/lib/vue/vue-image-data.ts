@@ -1,22 +1,21 @@
-import { markRaw, type Raw, reactive, type Ref, shallowReactive, type ShallowReactive, watch } from 'vue'
-import {
-  copyImageData,
-  deserializeImageData,
-  resizeImageData,
-  type SerializedImageData,
-  serializeImageData,
-} from '../util/html-dom/ImageData.ts'
-import { type TileId, WangTileset } from '../wang-tiles/WangTileset.ts'
+import { resizeImageData, type SerializedImageData } from 'pixel-data-js'
+import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
+import { copyImageData, deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
+import type { PixelDataOrRef } from './PixelDataRef.ts'
 
-export function normalizeImageData(value: ImageDataOrRef): ImageData | null {
+export function normalizeImageData(value: ImageDataOrRef | PixelDataOrRef): ImageData | null {
   if (!value) return null
+  if ('imageData' in value) return value.imageData
   if (value instanceof ImageData) return value
-  return value.get()
+  if ('__isPixelDataRef' in value && value?.__isPixelDataRef) return value.getImageData()
+  if ('__isImageDataRef' in value && value?.__isImageDataRef) return value.get()
+  return null
 }
 
 export type ImageDataOrRef = null | ImageData | ImageDataRef;
 
 export type ImageDataRef = ShallowReactive<{
+  __isImageDataRef: true,
   hasValue: boolean,
   watchTarget: number,
   width: number,
@@ -54,6 +53,7 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
 
   let sync: Sync | null = null
   const capsule: ImageDataRef = shallowReactive({
+    __isImageDataRef: true,
     hasValue: !!initial,
     width: initial?.width ?? 0,
     height: initial?.height ?? 0,
@@ -162,33 +162,4 @@ export function imageDataRef(initial: ImageData | null = null): ImageDataRef {
   })
 
   return capsule
-}
-
-export function tilesetSyncedImageDataRef<T>(tileset: Ref<WangTileset<T>>, tileSize: Ref<number>) {
-  const tilesetImageRefs = reactive<Record<TileId, ImageDataRef>>({})
-
-  watch(tileset, (newTileset) => {
-    const newIds = new Set(newTileset.tiles.map(t => t.id))
-
-    for (const id in tilesetImageRefs) {
-      if (!newIds.has(id as TileId)) {
-        delete tilesetImageRefs[id as TileId]
-      }
-    }
-
-    for (const tile of newTileset.tiles) {
-      if (!(tile.id in tilesetImageRefs)) {
-        tilesetImageRefs[tile.id] = imageDataRef(new ImageData(tileSize.value, tileSize.value))
-      }
-    }
-  }, { immediate: true })
-
-  watch(tileSize, (newSize) => {
-    for (const id in tilesetImageRefs) {
-      const item = tilesetImageRefs[id as TileId]
-      item.resize(newSize, newSize)
-    }
-  })
-
-  return tilesetImageRefs
 }

@@ -1,3 +1,4 @@
+import type { PixelData } from 'pixel-data-js'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import type { RGBA } from '../../../../lib/util/data/color.ts'
@@ -76,8 +77,8 @@ function makeTileSheetMutator(
     accumulator: TileSheetPixelAccumulator,
   }) {
 
-  function blendImageData(
-    imageData: ImageData,
+  function blendPixelData(
+    pixelData: PixelData,
     blendMode: BlendMode,
     opts: Omit<BlendImageDataOptions, 'blendMode'>,
   ) {
@@ -86,15 +87,14 @@ function makeTileSheetMutator(
     const sheetRect = {
       x: opts.dx ?? 0,
       y: opts.dy ?? 0,
-      w: opts.sw ?? imageData.width,
-      h: opts.sh ?? imageData.height,
+      w: opts.sw ?? pixelData.w,
+      h: opts.sh ?? pixelData.h,
       srcX: opts.sx ?? 0,
       srcY: opts.sy ?? 0,
     }
     const mask = opts.mask ?? null
 
     const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
-    const imgData32 = new Uint32Array(imageData.data.buffer)
 
     for (let i = 0; i < tileRects.length; i++) {
       const r = tileRects[i]
@@ -103,20 +103,26 @@ function makeTileSheetMutator(
       for (let y = 0; y < r.h; y++) {
         // Source Y base for the 32-bit pixel buffer
         const srcY = r.srcY + y
-        const srcYBase = srcY * imageData.width
+        const srcYBase = srcY * pixelData.w
 
         for (let x = 0; x < r.w; x++) {
           const srcX = r.srcX + x
 
-          // 1. Check Mask: The mask index corresponds to the source image pixel index
           if (mask) {
-            const maskIdx = srcYBase + srcX
-            if (mask[maskIdx] === 0) continue
+            // Calculate coordinates relative to the start of this specific mask slice
+            const maskX = srcX - (opts.sx ?? 0)
+            const maskY = srcY - (opts.sy ?? 0)
+            const maskStride = opts.sw ?? pixelData.w
+            const maskIdx = maskY * maskStride + maskX
+
+            if (mask[maskIdx] === 0) {
+              continue
+            }
           }
 
           // 2. Read the pixel
           const si = srcYBase + srcX
-          const packedColor = imgData32[si]
+          const packedColor = pixelData.data[si]
 
           // 3. Write to accumulator
           accumulator.addTilePacked(tileId, r.x + x, r.y + y, packedColor, blendFn)
@@ -128,8 +134,8 @@ function makeTileSheetMutator(
   function clear(
     x = 0,
     y = 0,
-    w = state.tileSheet.imageData.width,
-    h = state.tileSheet.imageData.height,
+    w = state.tileSheet.pixelData.w,
+    h = state.tileSheet.pixelData.h,
     mask: Uint8Array | null = null,
   ) {
     const sheetRect = { x, y, w, h, srcX: 0, srcY: 0 }
@@ -140,17 +146,12 @@ function makeTileSheetMutator(
       const tileId = r.tileId
 
       for (let ty = 0; ty < r.h; ty++) {
-        const destY = r.y + ty
-        // Calculate mask row start once per row
-        let maskIdx = (r.srcY + ty) * sheetRect.w + r.srcX
-
+        const srcY = r.srcY + ty
+        const srcYBase = srcY * sheetRect.w
         for (let tx = 0; tx < r.w; tx++) {
-          if (mask && !mask[maskIdx++]) continue
-
-          // Use addTilePacked directly with our constant
-          accumulator.addTilePacked(tileId, r.x + tx, destY, PACKED_ERASE)
-
-          if (!mask) maskIdx++ // keep incrementing if we are manually tracking even without mask
+          const srcX = r.srcX + tx
+          if (mask && mask[srcYBase + srcX] === 0) continue
+          accumulator.addTilePacked(tileId, r.x + tx, r.y + ty, PACKED_ERASE)
         }
       }
     }
@@ -176,7 +177,7 @@ function makeTileSheetMutator(
   return {
     writeGridPoints,
     writeTilePoints,
-    blendImageData,
+    blendPixelData,
     clear,
   }
 }

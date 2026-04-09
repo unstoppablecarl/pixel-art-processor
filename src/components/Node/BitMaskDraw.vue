@@ -12,17 +12,16 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
+import type { SerializedImageData } from 'pixel-data-js'
 import { computed, reactive, toRef } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import {
-  type SerializedImageData,
-} from '../../lib/util/html-dom/ImageData.ts'
+import {} from '../../lib/util/html-dom/ImageData.ts'
 import { handleNodeConfigHMR } from '../../lib/util/vite.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'
 import { useInterval } from '../../lib/vue/component-interval.ts'
+import { pixelDataRef } from '../../lib/vue/PixelDataRef.ts'
 import { nodeUsesSidebar } from '../../lib/vue/useSidebar.ts'
-import { imageDataRef } from '../../lib/vue/vue-image-data.ts'
 import { useCanvasPaintController } from '../CanvasEditor/CanvasPaint/CanvasPaintController.ts'
 import CanvasPaint from '../CanvasEditor/CanvasPaint/components/CanvasPaint.vue'
 import NodeCard from '../Card/NodeCard.vue'
@@ -35,7 +34,7 @@ nodeUsesSidebar()
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const maskImageData = imageDataRef()
+const maskImageData = pixelDataRef()
 
 const SIZE_DEFAULTS = rangeSliderConfig({
   value: 64,
@@ -67,7 +66,7 @@ const handler = defineStepHandler(STEP_META, {
     return config
   },
   async run() {
-    const imageData = maskImageData.get()
+    const imageData = maskImageData.getImageData()
     if (imageData === null) return
 
     const bitMask = BitMask.fromImageData(imageData)
@@ -92,14 +91,14 @@ const canvasPaintController = useCanvasPaintController({
   height: computed(() => config.size.value),
   gridColor: toRef(config, 'showGridColor'),
   gridDraw: toRef(config, 'showGrid'),
-  imageDataRef: maskImageData,
+  pixelDataRef: maskImageData,
 })
 
 // canvasPaint.state.imageDataRef.set(maskImageData.get())
 
 useInterval(() => {
   if (canvasPaintController.state.imageDataDirty) {
-    config.maskImageData = canvasPaintController.state.imageDataRef.serialize()
+    config.maskImageData = canvasPaintController.state.pixelDataRef.serialize()
     canvasPaintController.state.imageDataDirty = false
   }
 }, 1000)

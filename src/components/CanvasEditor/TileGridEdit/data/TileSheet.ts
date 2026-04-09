@@ -1,16 +1,17 @@
+import {
+  extractPixelData,
+  makePixelData,
+  PixelData,
+  resizeImageData,
+  type SerializedImageData,
+  setPixelData,
+  writeImageData,
+} from 'pixel-data-js'
 import { markRaw } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
-import {
-  clearImageData,
-  deserializeImageData,
-  extractImageData,
-  resizeImageData,
-  type SerializedImageData,
-  serializeImageData,
-  writeImageData,
-} from '../../../../lib/util/html-dom/ImageData.ts'
+import { deserializeImageData, extractImageData, serializeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import {
   AxialEdgeWangTileset,
   deserializeAxialEdgeWangTileset,
@@ -18,7 +19,7 @@ import {
   type TileId,
   type WangTile,
 } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { applyHistoryPixels, extractHistoryPixels } from '../../_core/data/_history-helpers.ts'
+import { applyHistoryToPixelData } from '../../_core/data/_history-helpers.ts'
 
 export type TileSheet = ReturnType<typeof makeTileSheet>
 
@@ -65,7 +66,7 @@ export function makeTileSheet(
   const height = tilesPerCol * tileSize
 
   let img = imageData ?? new ImageData(width, height)
-  let imgData = markRaw(img)
+  let pixelData = markRaw(makePixelData(img))
 
   // fast path
   function getTileSheetOffset(tileId: TileId, out: Point = { x: 0, y: 0 }): Point {
@@ -122,26 +123,15 @@ export function makeTileSheet(
     sy = 0,
     w = tileSize,
     h = tileSize,
-  ): ImageData {
+  ): PixelData {
     const { x: tx, y: ty } = getTileRect(tileId)
-    return extractImageData(
-      imgData,
+    return extractPixelData(
+      pixelData,
       tx + sx,
       ty + sy,
       w,
       h,
     )
-  }
-
-  function clear(
-    x = 0,
-    y = 0,
-    w = imgData.width,
-    h = imgData.height,
-    mask: Uint8Array | null = null,
-  ) {
-    clearImageData(imgData, x, y, w, h, mask)
-    markAllTilesDirty()
   }
 
   function resizeTileSize(newTileSize: number) {
@@ -155,7 +145,7 @@ export function makeTileSheet(
     for (let index = 0; index < tileCount; index++) {
       const oldX = (index % tilesPerRow) * oldTileSize
       const oldY = Math.floor(index / tilesPerRow) * oldTileSize
-      extracted[index] = extractImageData(imgData, oldX, oldY, oldTileSize, oldTileSize)
+      extracted[index] = extractImageData(pixelData.imageData, oldX, oldY, oldTileSize, oldTileSize)
     }
 
     // Phase 2: resize
@@ -176,7 +166,7 @@ export function makeTileSheet(
 
     // Phase 4: commit
     tileSize = newTileSize
-    imgData = markRaw(newSheet)
+    setPixelData(pixelData, newSheet)
     markAllTilesDirty()
   }
 
@@ -206,8 +196,8 @@ export function makeTileSheet(
         y: o.tileOverlap.y,
         w: o.tileOverlap.w,
         h: o.tileOverlap.h,
-        srcX: rect.srcX ?? 0 + o.srcX,
-        srcY: rect.srcY ?? 0 + o.srcY,
+        srcX: (rect.srcX ?? 0) + o.srcX,
+        srcY: (rect.srcY ?? 0) + o.srcY,
       })
     }
 
@@ -283,7 +273,7 @@ export function makeTileSheet(
   function serialize(): SerializedTileSheet {
     return {
       tileSize,
-      imageData: serializeImageData(imgData),
+      imageData: serializeImageData(pixelData.imageData),
       tileset: tileset.serialize(),
       tilesX: tilesPerRow,
       tilesY: tilesPerCol,
@@ -295,13 +285,13 @@ export function makeTileSheet(
     rect: Rect,
   ) {
     const { x, y, w, h } = rect
-    return extractHistoryPixels(extractTile(tileId, x, y, w, h), rect)
+    return extractPixelData(extractTile(tileId, x, y, w, h), rect)
   }
 
   // this should be the only place the tilesheet image data is directly mutated
   function setHistoryPixels(
     tileId: TileId,
-    data: Uint8ClampedArray,
+    data: Uint32Array,
     rect: Rect,
   ) {
     const { x, y, w, h } = rect
@@ -309,12 +299,11 @@ export function makeTileSheet(
     const tile = tileset.byId.get(tileId)!
     tileVersions[tile.index]++
     currentVersion++
-    return applyHistoryPixels(imgData, data, sx, sy, w, h)
+    return applyHistoryToPixelData(pixelData, data, sx, sy, w, h)
   }
 
   return {
     tileset,
-    clear,
     getTileSheetOffset,
     getTileVersion: (tileId: TileId) => {
       const index = tileset.byId.get(tileId)?.index
@@ -332,8 +321,8 @@ export function makeTileSheet(
     get tilesPerCol() {
       return tilesPerCol
     },
-    get imageData() {
-      return imgData
+    get pixelData() {
+      return pixelData
     },
     get pixelWidth() {
       return tilesPerRow * tileSize
@@ -349,7 +338,7 @@ export function makeTileSheet(
     getTileCoords,
     each,
     sheetPixelToTileId,
-    extractImageData: (rect: Rect): ImageData => extractImageData(imgData, rect),
+    extractPixelData: (rect: Rect): PixelData => extractPixelData(pixelData, rect),
     getHistoryPixels,
     setHistoryPixels,
     getOverlappingTiles,

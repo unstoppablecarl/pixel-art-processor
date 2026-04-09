@@ -1,7 +1,8 @@
+import type { PixelData } from 'pixel-data-js'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import type { PixelColor, RGBA } from '../../../../lib/util/data/color.ts'
 import type { BlendFn, BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import type { ImageDataRef } from '../../../../lib/vue/vue-image-data.ts'
+import type { PixelDataRef } from '../../../../lib/vue/PixelDataRef.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'
 import { applyCanvasPaintAccumulator } from './CanvasPaintHistory.ts'
@@ -17,9 +18,9 @@ export function makeCanvasPaintWriter(
     state: CanvasPaintEditorState,
     canvasRenderer: CanvasRenderer
   }) {
-  const { imageDataRef } = state
+  const { pixelDataRef } = state
   const accumulator = makeCanvasPixelAccumulator()
-  const mutator = makeCanvasPaintMutator({ imageDataRef, accumulator })
+  const mutator = makeCanvasPaintMutator({ pixelDataRef, accumulator })
 
   return {
     withHistory(cb: (mutator: CanvasPaintMutator) => void) {
@@ -38,15 +39,15 @@ const PACKED_ERASE = 0x00000000
 
 function makeCanvasPaintMutator(
   {
-    imageDataRef,
+    pixelDataRef,
     accumulator,
   }: {
-    imageDataRef: ImageDataRef,
+    pixelDataRef: PixelDataRef,
     accumulator: CanvasPixelAccumulator,
   }) {
 
-  function blendImageData(
-    src: ImageData,
+  function blendPixelData(
+    src: PixelData,
     blendFn: BlendFn,
     opts: Omit<BlendImageDataOptions, 'blendMode'>,
   ) {
@@ -54,29 +55,22 @@ function makeCanvasPaintMutator(
     const dy = opts.dy ?? 0
     const sx0 = opts.sx ?? 0
     const sy0 = opts.sy ?? 0
-    const w = opts.sw ?? src.width
-    const h = opts.sh ?? src.height
+    const w = opts.sw ?? src.w
+    const h = opts.sh ?? src.h
     const mask = opts.mask ?? null
-
-    // View source data as 32-bit integers for faster extraction
-    const src32 = new Uint32Array(src.data.buffer)
 
     for (let y = 0; y < h; y++) {
       const srcY = sy0 + y
-      const srcYBase = srcY * src.width
+      const srcYBase = srcY * src.w
       const destY = dy + y
 
       for (let x = 0; x < w; x++) {
         const srcX = sx0 + x
         const srcIdx = srcYBase + srcX
-
-        // 1. Mask Check
         if (mask && !mask[srcIdx]) continue
 
-        // 2. Direct 32-bit read (Packed Color)
-        const packedColor = src32[srcIdx]
+        const packedColor = src.data[srcIdx]
 
-        // 3. High-perf add
         accumulator.addPixelPacked(dx + x, destY, packedColor, blendFn)
       }
     }
@@ -85,8 +79,8 @@ function makeCanvasPaintMutator(
   function clear(
     x = 0,
     y = 0,
-    w = imageDataRef.get()!.width,
-    h = imageDataRef.get()!.height,
+    w = pixelDataRef.get()!.w,
+    h = pixelDataRef.get()!.h,
     mask: Uint8Array | null = null,
   ) {
     for (let iy = 0; iy < h; iy++) {
@@ -120,7 +114,7 @@ function makeCanvasPaintMutator(
   }
 
   return {
-    blendImageData,
+    blendPixelData,
     clear,
     writePixels,
     writePoints,

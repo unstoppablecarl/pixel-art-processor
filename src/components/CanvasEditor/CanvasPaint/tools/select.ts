@@ -1,5 +1,12 @@
+import {
+  type BinaryMask,
+  blendPixelData,
+  blendPixelDataBinaryMask,
+  type Color32,
+  fillPixelData,
+  fillPixelDataBinaryMask,
+} from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import {
   type BaseToolHandler,
   SelectMoveMode,
@@ -9,7 +16,7 @@ import {
 import {
   drawSelectOutline,
   makeBaseSelectHandler,
-  selectMoveBlendModeToWriter,
+  selectMoveBlendModeToBlender32,
 } from '../../_core/tools/selection-helpers.ts'
 import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
 import { type CanvasPaintSelectToolState, makeCanvasPaintSelectToolState } from '../CanvasPaintSelectToolState.ts'
@@ -127,28 +134,46 @@ export function makeCanvasPaintSelectTool(
       if (!sel?.pixels) return
 
       const mode = store.selectMoveBlendMode
-      const writer = selectMoveBlendModeToWriter[mode]!
-      const preview = state.imageDataRef.copy()!
+      const blender = selectMoveBlendModeToBlender32[mode]!
+      const preview = state.pixelDataRef.copy()!
 
       if (!sel.isPasted && toolState.selectionHasMoved()) {
-        // Clear original region
-        clearImageData(preview, sel.original.x, sel.original.y, sel.original.w, sel.original.h, sel.mask)
+
+        if (sel.original.data) {
+
+          // Clear original region
+          fillPixelDataBinaryMask(preview, 0 as Color32, sel.original as BinaryMask)
+        } else {
+          fillPixelData(preview, 0 as Color32, sel.original)
+        }
       }
 
       // Draw moved selection
-      writer(preview, sel.pixels, {
-        dx: sel.current.x,
-        dy: sel.current.y,
-        mask: sel.mask,
-      })
+      if (sel.current.data) {
+        blendPixelDataBinaryMask(preview, sel.pixels, sel.current as BinaryMask, {
+          x: sel.current.x,
+          y: sel.current.y,
+          w: sel.current.w,
+          h: sel.current.h,
+          blendFn: blender,
+        })
+      } else {
+        blendPixelData(preview, sel.pixels, {
+          x: sel.current.x,
+          y: sel.current.y,
+          w: sel.current.w,
+          h: sel.current.h,
+          blendFn: blender,
+        })
+      }
 
-      ctx.putImageData(preview, 0, 0)
+      ctx.putImageData(preview.imageData, 0, 0)
     },
     screenOverlayDraw(ctx) {
       const sel = toolState.selection
       const { scale } = state
       if (sel) {
-        drawSelectOutline(ctx, scale, sel.current, store.cursorColor, sel.mask)
+        drawSelectOutline(ctx, scale, sel.current, store.cursorColor)
       } else {
         const r = toolState.currentDraggedRect
         if (!r) return

@@ -1,6 +1,7 @@
-import type { Color32 } from './color.ts'
 
 // x,y,z are vectors [-1, 1]
+import type { Color32 } from 'pixel-data-js'
+
 export type Normal = {
   x: number,
   y: number,

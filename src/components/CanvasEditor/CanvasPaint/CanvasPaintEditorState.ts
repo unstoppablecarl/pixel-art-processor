@@ -1,24 +1,24 @@
 import type { Ref } from 'vue'
-import { type ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
+import type { PixelDataRef } from '../../../lib/vue/PixelDataRef.ts'
 import { type BaseEditorSettings, EditorState } from '../_core/BaseEditorState.ts'
 
 export type CanvasPaintEditorSettings = BaseEditorSettings & {
   width: Ref<number>
   height: Ref<number>
-  imageDataRef: ImageDataRef
+  pixelDataRef: PixelDataRef
 }
 
 export class CanvasPaintEditorState extends EditorState {
   protected _width: Ref<number>
   protected _height: Ref<number>
-  public imageDataRef: ImageDataRef
+  public pixelDataRef: PixelDataRef
   public imageDataDirty = false
 
   constructor(settings: CanvasPaintEditorSettings) {
     super(settings)
     this._width = settings.width
     this._height = settings.height
-    this.imageDataRef = settings.imageDataRef
+    this.pixelDataRef = settings.pixelDataRef
   }
 
   get width() {

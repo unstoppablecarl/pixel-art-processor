@@ -13,12 +13,12 @@ export const STEP_META = defineStep({
 })
 </script>
 <script setup lang="ts">
+import type { SerializedImageData } from 'pixel-data-js'
 import { computed } from 'vue'
 import type { StepValidationError } from '../../lib/pipeline/errors/StepValidationError.ts'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import {
-  type SerializedImageData,
   serializeImageData,
 } from '../../lib/util/html-dom/ImageData.ts'
 

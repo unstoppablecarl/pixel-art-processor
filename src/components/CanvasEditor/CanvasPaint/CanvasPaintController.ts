@@ -1,7 +1,7 @@
 import { type Ref, toRef, watch, watchEffect } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
-import type { ImageDataRef } from '../../../lib/vue/vue-image-data.ts'
+import type { PixelDataRef } from '../../../lib/vue/PixelDataRef.ts'
 import { type BaseToolManagerSettings, defineToolController } from '../_core/_core-editor-types.ts'
 import { makeToolInputCore } from '../_core/controller/ToolInputCore.ts'
 import { makeBaseInputHandlers } from '../_core/GlobalInputManager.ts'
@@ -22,12 +22,12 @@ export function useCanvasPaintController(
     scale = toRef(useUIStore(), 'imgScale'),
     gridColor,
     gridDraw,
-    imageDataRef,
+    pixelDataRef,
     store = useCanvasEditToolStore(),
   }: BaseToolManagerSettings & {
     width: Ref<number>,
     height: Ref<number>,
-    imageDataRef: ImageDataRef,
+    pixelDataRef: PixelDataRef,
     gridColor: Ref<string>,
     store?: CanvasEditToolStore
   },
@@ -39,7 +39,7 @@ export function useCanvasPaintController(
     scale,
     width,
     height,
-    imageDataRef,
+    pixelDataRef,
   })
 
   const gridCache = makePixelGridLineRenderer({
@@ -53,7 +53,7 @@ export function useCanvasPaintController(
   const canvasRenderer = makeCanvasRenderer({
     state,
     gridCache,
-    getImageData: () => state.imageDataRef.get()!,
+    getImageData: () => state.pixelDataRef.getImageData()!,
   })
 
   const canvasWriter = makeCanvasPaintWriter({ state, canvasRenderer })
@@ -72,7 +72,7 @@ export function useCanvasPaintController(
   watch(brushCursor.watchTarget, () => canvasRenderer.queueRender())
 
   watchEffect(() => {
-    state.imageDataRef.resize(width.value, height.value)
+    state.pixelDataRef.resize(width.value, height.value)
   })
 
   watch(gridDraw, () => canvasRenderer.queueRender())

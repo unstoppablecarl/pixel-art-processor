@@ -1,16 +1,17 @@
+import type { NullableMaskRect, PixelData } from 'pixel-data-js'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'
-import type { DrawRect, GridOriginTileAlignedRect, ISelection, SelectionRect } from './ISelection.ts'
+import type { DrawRect, GridOriginTileAlignedRect, ISelection } from './ISelection.ts'
 
 export class GridOriginSelection implements ISelection {
-  private originalRects: SelectionRect[]
-  private currentRects: SelectionRect[]
+  private originalRects: NullableMaskRect[]
+  private currentRects: NullableMaskRect[]
   private originalRectsBounds: Rect
   private moved = false
-  pixels: ImageData
+  pixels: PixelData
 
-  constructor(rects: SelectionRect[], pixels: ImageData, private geometry: TileGridGeometry) {
+  constructor(rects: NullableMaskRect[], pixels: PixelData, private geometry: TileGridGeometry) {
     this.originalRects = rects
     this.currentRects = rects.map(r => ({ ...r }))
     this.originalRectsBounds = getRectsBounds(rects)
@@ -25,16 +26,16 @@ export class GridOriginSelection implements ISelection {
     return getRectsBounds(this.currentRects)
   }
 
-  getOriginalGridRects(): SelectionRect[] {
+  getOriginalGridRects(): NullableMaskRect[] {
     return this.originalRects
   }
 
-  getCurrentGridRects(): SelectionRect[] {
+  getCurrentGridRects(): NullableMaskRect[] {
     return this.currentRects
   }
 
   // --- Tile Aligned Rects ---
-  private tileAlignedFrom(rects: SelectionRect[], originX: number, originY: number): GridOriginTileAlignedRect[] {
+  private tileAlignedFrom(rects: NullableMaskRect[], originX: number, originY: number): GridOriginTileAlignedRect[] {
     return this.geometry.gridRectsToTileAlignedRects(rects, originX, originY)
   }
 
@@ -55,9 +56,10 @@ export class GridOriginSelection implements ISelection {
       sy: r.bufferY,
       w: r.w,
       h: r.h,
-      mask: r.mask ?? undefined,
+      data: r.data,
+      type: r.type,
       tileId: r.tileId,
-    }))
+    } as DrawRect))
   }
 
   getOriginalSheetDrawRects(): DrawRect[] {
@@ -79,11 +81,12 @@ export class GridOriginSelection implements ISelection {
     return this.geometry.gridRectsToDuplicatedGridDrawRects(this.currentRects, b.x, b.y)
   }
 
-  getOriginalTileRects(tileId: TileId): SelectionRect[] {
+  getOriginalTileRects(tileId: TileId): NullableMaskRect[] {
     throw new Error('not implemented')
   }
+
   //
-  getCurrentTileRects(tileId: TileId): SelectionRect[] {
+  getCurrentTileRects(tileId: TileId): NullableMaskRect[] {
     throw new Error('not implemented')
   }
 
@@ -100,9 +103,10 @@ export class GridOriginSelection implements ISelection {
           sy: r.bufferY,
           w: r.w,
           h: r.h,
-          mask: r.mask ?? undefined,
+          data: r.data,
+          type: r.type,
           tileId: r.tileId,
-        }
+        } as DrawRect
       })
   }
 

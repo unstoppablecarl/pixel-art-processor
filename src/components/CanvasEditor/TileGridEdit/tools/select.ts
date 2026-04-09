@@ -1,10 +1,18 @@
+import {
+  type BinaryMask,
+  blendPixelData,
+  blendPixelDataBinaryMask,
+  type Color32,
+  fillPixelData,
+  fillPixelDataBinaryMask,
+  type NullableMaskRect,
+} from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { clearImageData } from '../../../../lib/util/html-dom/ImageData.ts'
 import { type BaseSelectToolHandler } from '../../_core/_core-editor-types.ts'
 import {
   drawSelectOutline,
   makeBaseSelectHandler,
-  selectMoveBlendModeToWriter,
+  selectMoveBlendModeToBlender32,
 } from '../../_core/tools/selection-helpers.ts'
 import type {
   TileGridEditorToolContext,
@@ -12,7 +20,6 @@ import type {
   TileGridEditorToolHandlerRender,
 } from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
-import type { SelectionRect } from '../lib/ISelection.ts'
 import { mergeAdjacentSelectionRects } from '../lib/SelectionRects.ts'
 import { makeTileGridSelectionToolState, type TileGridSelectionToolState } from '../TileGridSelectionToolState.ts'
 
@@ -169,28 +176,37 @@ export function makeSelectTool(
       if (!sel) return
 
       const mode = store.selectMoveBlendMode
-      const writer = selectMoveBlendModeToWriter[mode]!
-      const preview = gridRenderer.tileGridImageDataRef.copy()!
+      const blender = selectMoveBlendModeToBlender32[mode]!
+      const preview = gridRenderer.tileGridPixelDataRef.copy()!
 
       // 1. Clear original pixels
       for (const r of sel.getOriginalGridDrawRects()) {
-        clearImageData(preview, r.dx, r.dy, r.w, r.h, r.mask)
+        if (r.data) {
+          fillPixelDataBinaryMask(preview, 0 as Color32, r as BinaryMask, r.dx, r.dy)
+        } else {
+          fillPixelData(preview, 0 as Color32, r.dx, r.dy, r.w, r.h)
+        }
       }
 
       // 2. Draw current pixels
       for (const r of sel.getCurrentGridDrawRects()) {
-        writer(preview, sel.pixels, {
-          dx: r.dx,
-          dy: r.dy,
+        const opts = {
+          x: r.dx,
+          y: r.dy,
           sx: r.sx,
           sy: r.sy,
-          sw: r.w,
-          sh: r.h,
-          mask: r.mask,
-        })
+          w: r.w,
+          h: r.h,
+          blendFn: blender,
+        }
+        if (r.data) {
+          blendPixelDataBinaryMask(preview, sel.pixels, r as BinaryMask, opts)
+        } else {
+          blendPixelData(preview, sel.pixels, opts)
+        }
       }
 
-      ctx.putImageData(preview, 0, 0)
+      ctx.putImageData(preview.imageData, 0, 0)
     },
     gridScreenOverlayDraw(ctx) {
       const sel = toolState.selection
@@ -206,9 +222,9 @@ export function makeSelectTool(
       }
 
       const rects = sel.getCurrentGridDrawRects()
-        .map(({ dx, dy, w, h, mask }) => ({
-          x: dx, y: dy, w, h, mask,
-        })) as SelectionRect[]
+        .map(({ dx, dy, w, h, data, type }) => ({
+          x: dx, y: dy, w, h, data, type,
+        })) as NullableMaskRect[]
 
       const merged = mergeAdjacentSelectionRects(rects)
 
@@ -219,7 +235,6 @@ export function makeSelectTool(
           scale,
           g,
           store.cursorColor,
-          g.mask ?? undefined,
         )
       }
     },
@@ -228,27 +243,44 @@ export function makeSelectTool(
       if (!sel) return
 
       const mode = store.selectMoveBlendMode
-      const writer = selectMoveBlendModeToWriter[mode]
+      const blender = selectMoveBlendModeToBlender32[mode]
       const preview = state.tileSheet.extractTile(tileId)
 
       if (sel.hasMoved()) {
         for (const r of sel.getOriginalTileDrawRects(tileId)) {
-          clearImageData(preview, r.dx, r.dy, r.w, r.h, r.mask ?? undefined)
+          const opts = {
+            x: r.dx,
+            y: r.dy,
+            w: r.w,
+            h: r.h,
+          }
+
+          if (r.data) {
+            blendPixelDataBinaryMask(preview, sel.pixels, r as BinaryMask, opts)
+          } else {
+            blendPixelData(preview, sel.pixels, opts)
+          }
         }
       }
       for (const r of sel.getCurrentTileDrawRects(tileId)) {
-        writer(preview, sel.pixels, {
-          dx: r.dx,
-          dy: r.dy,
+        const opts = {
+          x: r.dx,
+          y: r.dy,
           sx: r.sx,
           sy: r.sy,
-          sw: r.w,
-          sh: r.h,
-          mask: r.mask,
-        })
+          w: r.w,
+          h: r.h,
+          blendFn: blender,
+        }
+
+        if (r.data) {
+          blendPixelDataBinaryMask(preview, sel.pixels, r as BinaryMask, opts)
+        } else {
+          blendPixelData(preview, sel.pixels, opts)
+        }
       }
 
-      ctx.putImageData(preview, 0, 0)
+      ctx.putImageData(preview.imageData, 0, 0)
     },
     tileScreenOverlayDraw(ctx, tileId) {
       const sel = toolState.selection
@@ -261,7 +293,6 @@ export function makeSelectTool(
             scale,
             { x: r.dx, y: r.dy, w: r.w, h: r.h },
             store.cursorColor,
-            r.mask ?? undefined,
           )
         }
       } else {

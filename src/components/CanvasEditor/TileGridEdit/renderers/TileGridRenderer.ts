@@ -1,7 +1,7 @@
-import { writeImageData } from '../../../../lib/util/html-dom/ImageData.ts'
+import { blendPixelData, overwriteFast } from 'pixel-data-js'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../lib/util/html-dom/renderCanvasFrame.ts'
-import { imageDataRef } from '../../../../lib/vue/vue-image-data.ts'
+import { pixelDataRef } from '../../../../lib/vue/PixelDataRef.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { type PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import { makeTileSheetSync } from '../data/TileSync.ts'
@@ -23,7 +23,7 @@ export function makeTileGridRenderer(
     tileGridEdgeColorRenderer: TileGridEdgeColorRenderer
   }) {
   const renderCanvasFrame = makeCanvasFrameRenderer()
-  const tileGridImageDataRef = imageDataRef()
+  const tileGridPixelDataRef = pixelDataRef()
 
   const tileSync = makeTileSheetSync(state.tileSheet)
 
@@ -56,7 +56,7 @@ export function makeTileGridRenderer(
   function resize() {
     if (!tileGridPixelCanvas) return
     tileGridPixelCanvas.resize(state.gridScreenWidth, state.gridScreenHeight)
-    tileGridImageDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
+    tileGridPixelDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
 
     tileSync.reset()
     for (const tileRenderer of Object.values(tileRenderers)) {
@@ -79,13 +79,18 @@ export function makeTileGridRenderer(
   }
 
   function updateGridTiles() {
-    tileGridImageDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
+    tileGridPixelDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
     tileSync(state.tileSheet, (tileId) => {
       state.tileGrid.eachWithTileId(tileId, (tileX, tileY, tile) => {
         const tileId = tile.id
         const { gx, gy } = state.tileGridGeometry.gridTileToGridPixel(tileX, tileY)
         const tileImage = state.tileSheet.extractTile(tileId)
-        writeImageData(tileGridImageDataRef.get()!, tileImage, gx, gy, 0, 0, tileImage.width, tileImage.height)
+
+        blendPixelData(tileGridPixelDataRef.get()!, tileImage, {
+          x: gx,
+          y: gy,
+          blendFn: overwriteFast,
+        })
       })
     })
   }
@@ -115,7 +120,7 @@ export function makeTileGridRenderer(
     renderCanvasFrame(
       tileGridPixelCanvas!,
       state.scale,
-      () => tileGridImageDataRef?.get(),
+      () => tileGridPixelDataRef?.getImageData(),
       drawPixelLayer,
       drawScreenLayer,
     )
@@ -123,7 +128,7 @@ export function makeTileGridRenderer(
 
   return {
     state,
-    tileGridImageDataRef,
+    tileGridPixelDataRef,
     registerTileCanvas,
     setTileGridCanvas,
     gridCache,

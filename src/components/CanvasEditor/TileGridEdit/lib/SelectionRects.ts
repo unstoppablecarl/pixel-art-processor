@@ -1,5 +1,6 @@
+import type { NullableMaskRect } from 'pixel-data-js'
+import { MaskType } from 'pixel-data-js'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
-import type { SelectionRect } from './ISelection.ts'
 
 /**
  * Two rects are adjacent if they touch exactly along an edge.
@@ -30,15 +31,15 @@ function areAdjacent(a: Rect, b: Rect): boolean {
 /**
  * Find adjacency-connected islands of rects.
  */
-function findIslands(rects: SelectionRect[]): SelectionRect[][] {
+function findIslands(rects: NullableMaskRect[]): NullableMaskRect[][] {
   const visited = new Set<number>()
-  const islands: SelectionRect[][] = []
+  const islands: NullableMaskRect[][] = []
 
   for (let i = 0; i < rects.length; i++) {
     if (visited.has(i)) continue
 
     const stack = [i]
-    const island: SelectionRect[] = []
+    const island: NullableMaskRect[] = []
 
     while (stack.length) {
       const idx = stack.pop()!
@@ -59,12 +60,12 @@ function findIslands(rects: SelectionRect[]): SelectionRect[][] {
   return islands
 }
 
-function mergeIslandWithMask(rects: SelectionRect[]): SelectionRect {
+function mergeIslandWithMask(rects: NullableMaskRect[]): NullableMaskRect {
   // Compute merged bounds
   const bounds = getRectsBounds(rects)
 
   // Allocate merged mask (if any rect has a mask)
-  const hasMask = rects.some(r => r.mask)
+  const hasMask = rects.some(r => r.data)
   const mergedMask = hasMask
     ? new Uint8Array(bounds.w * bounds.h)
     : null
@@ -75,7 +76,7 @@ function mergeIslandWithMask(rects: SelectionRect[]): SelectionRect {
 
     // Copy each rect's mask into merged mask
     for (const r of rects) {
-      if (!r.mask) continue
+      if (!r.data) continue
 
       const offsetX = r.x - bounds.x
       const offsetY = r.y - bounds.y
@@ -85,9 +86,18 @@ function mergeIslandWithMask(rects: SelectionRect[]): SelectionRect {
           const srcIndex = y * r.w + x
           const dstIndex = (offsetY + y) * bounds.w + (offsetX + x)
 
-          mergedMask[dstIndex] = r.mask[srcIndex]
+          mergedMask[dstIndex] = r.data[srcIndex]
         }
       }
+    }
+
+    return {
+      x: bounds.x,
+      y: bounds.y,
+      w: bounds.w,
+      h: bounds.h,
+      data: mergedMask,
+      type: MaskType.BINARY,
     }
   }
 
@@ -96,11 +106,10 @@ function mergeIslandWithMask(rects: SelectionRect[]): SelectionRect {
     y: bounds.y,
     w: bounds.w,
     h: bounds.h,
-    mask: mergedMask,
   }
 }
 
-export function mergeAdjacentSelectionRects(rects: SelectionRect[]): SelectionRect[] {
+export function mergeAdjacentSelectionRects(rects: NullableMaskRect[]): NullableMaskRect[] {
   if (rects.length === 0) return []
 
   // 1. Find adjacency-connected islands

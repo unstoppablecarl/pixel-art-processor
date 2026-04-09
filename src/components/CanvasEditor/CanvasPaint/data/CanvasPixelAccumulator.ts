@@ -1,13 +1,12 @@
+import { extractPixelDataBuffer, type PixelData } from 'pixel-data-js'
 import { packRGBA, type RGBA } from '../../../../lib/util/data/color.ts'
 import {
-  applyBufferToImageData,
-  extractPixelData,
+  applyBufferToPixelData,
   growBufferIfNeeded,
   type PixelBuffer,
   pixelBufferToRect,
 } from '../../../../lib/util/data/pixel-buffer.ts'
 import { type BlendFn, blendOverwrite } from '../../../../lib/util/html-dom/blit.ts'
-import { extractHistoryPixels } from '../../_core/data/_history-helpers.ts'
 import { type CanvasPatch, type ProtoCanvasPatch } from './CanvasPaintHistory.ts'
 
 export type CanvasPixelAccumulator = ReturnType<typeof makeCanvasPixelAccumulator>
@@ -49,12 +48,12 @@ export function makeCanvasPixelAccumulator() {
     buf.count++
   }
 
-  function toPatches(img: ImageData): ProtoCanvasPatch[] {
+  function toPatches(img: PixelData): ProtoCanvasPatch[] {
     const region = pixelBufferToRect(buf, STRIDE)
     if (!region) return []
 
     // Use the generic extractor for consistency and brevity
-    const before = extractPixelData(img, region)
+    const before = extractPixelDataBuffer(img, region)
 
     return [{
       x: region.x,
@@ -66,8 +65,8 @@ export function makeCanvasPixelAccumulator() {
     }]
   }
 
-  function apply(img: ImageData) {
-    applyBufferToImageData(buf, img, blendRegistry, STRIDE)
+  function apply(img: PixelData) {
+    applyBufferToPixelData(buf, img, blendRegistry, STRIDE)
   }
 
   function reset() {
@@ -75,10 +74,10 @@ export function makeCanvasPixelAccumulator() {
     blendRegistry.length = 0
   }
 
-  function finalizePatches(img: ImageData, patches: ProtoCanvasPatch[]): CanvasPatch[] {
+  function finalizePatches(img: PixelData, patches: ProtoCanvasPatch[]): CanvasPatch[] {
     for (let i = 0; i < patches.length; i++) {
       const p = patches[i]
-      p.after = extractHistoryPixels(img, p)
+      p.after = extractPixelDataBuffer(img, p)
     }
     return patches as CanvasPatch[]
   }

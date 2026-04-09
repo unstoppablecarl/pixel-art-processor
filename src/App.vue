@@ -4,7 +4,7 @@ import AppRoot from './AppRoot.vue'
 
 const appDefaults = {
   BPopover: {
-    delay: { show: 0, hide: 0 },
+    delay: { show: 100, hide: 0 },
     noFade: true,
   },
 }

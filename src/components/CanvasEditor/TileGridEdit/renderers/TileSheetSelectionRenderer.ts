@@ -32,8 +32,8 @@ export function makeTileSheetSelectionRenderer(
     if (!tileGridPixelCanvas) return
     if (toolState.selection) {
       tileGridPixelCanvas.resize(
-        (toolState.selection.pixels.width + 100) * state.scale,
-        (toolState.selection.pixels.height + 100) * state.scale,
+        (toolState.selection.pixels.w + 100) * state.scale,
+        (toolState.selection.pixels.h + 100) * state.scale,
       )
     }
   }
@@ -55,7 +55,7 @@ export function makeTileSheetSelectionRenderer(
 
         drawDebugRect(ctx, { x: dx, y: dy, w: r.w, h: r.h }, 'rgba(0, 255, 0, 0.25)')
 
-        putImageData(ctx, pixels, {
+        putImageData(ctx, pixels.imageData, {
           dx,
           dy,
           sx: r.bufferX,

@@ -1,9 +1,9 @@
 <script setup lang="ts">
+import { imageDataToDataUrl } from 'pixel-data-js'
 import { computed } from 'vue'
 import { getValidationErrorComponent } from '../lib/pipeline/errors/errors.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { useUIStore } from '../lib/store/ui-store.ts'
-import { imageDataToUrlImage } from '../lib/util/html-dom/ImageData.ts'
 import type { StepImg } from '../lib/util/vue-util.ts'
 
 const store = usePipelineStore()
@@ -32,7 +32,7 @@ const encoded = computed(() => {
   if (!imageData) {
     return '/placeholder.png'
   }
-  return imageDataToUrlImage(imageData)
+  return imageDataToDataUrl(imageData)
 })
 
 </script>

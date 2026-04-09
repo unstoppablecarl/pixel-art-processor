@@ -1,7 +1,8 @@
+import { extractPixelDataBuffer } from 'pixel-data-js'
 import { type Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { PixelColor, RGBA } from '../../../../lib/util/data/color.ts'
+import { packRGBA, type PixelColor, type RGBA } from '../../../../lib/util/data/color.ts'
 import {
-  applyBufferToImageData, extractPixelData,
+  applyBufferToPixelData,
   growBufferIfNeeded,
   type PixelBuffer,
   pixelBufferToRect,
@@ -30,7 +31,6 @@ export function makeTileSheetPixelAccumulator() {
   function ensureBuffer(tileId: TileId): PixelBuffer {
     let buf = tileBuffers.get(tileId)
     if (!buf) {
-      // Keep initial allocation but remove the growth check here
       buf = { data: new Uint32Array(256 * STRIDE), count: 0 }
       tileBuffers.set(tileId, buf)
     }
@@ -38,7 +38,7 @@ export function makeTileSheetPixelAccumulator() {
   }
 
   function addTile(tileId: TileId, tx: number, ty: number, color: RGBA, blend = blendOverwrite, isPropagated = false) {
-    const packed = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
+    const packed = packRGBA(color)
     addTilePacked(tileId, tx, ty, packed, blend, isPropagated)
   }
 
@@ -99,7 +99,7 @@ export function makeTileSheetPixelAccumulator() {
     // reuse off obj
     for (const [tileId, buf] of tileBuffers) {
       const offset = tileSheet.getTileSheetOffset(tileId, OFF)
-      applyBufferToImageData(buf, tileSheet.imageData, blendRegistry, STRIDE, offset.x, offset.y)
+      applyBufferToPixelData(buf, tileSheet.pixelData, blendRegistry, STRIDE, offset.x, offset.y)
     }
   }
 
@@ -109,7 +109,7 @@ export function makeTileSheetPixelAccumulator() {
 
   function toPatches(tileSheet: TileSheet): ProtoTileSheetPatch[] {
     const patches: ProtoTileSheetPatch[] = []
-    const img = tileSheet.imageData
+    const img = tileSheet.pixelData
     const rects = getRegions()
 
     for (let i = 0; i < rects.length; i++) {
@@ -121,20 +121,20 @@ export function makeTileSheetPixelAccumulator() {
       const sy = offset.y + r.y
 
       // Use the generic extractor
-      const before = extractPixelData(img, { x: sx, y: sy, w: r.w, h: r.h })
+      const before = extractPixelDataBuffer(img, { x: sx, y: sy, w: r.w, h: r.h })
 
       patches.push({
         tileId: r.tileId,
         x: r.x, y: r.y, w: r.w, h: r.h,
         before,
-        after: null
+        after: null,
       })
     }
     return patches
   }
 
   function finalizePatches(tileSheet: TileSheet, patches: ProtoTileSheetPatch[]): TileSheetPatch[] {
-    const img = tileSheet.imageData
+    const img = tileSheet.pixelData
     for (let i = 0; i < patches.length; i++) {
       const p = patches[i]
       const offset = tileSheet.getTileSheetOffset(p.tileId)

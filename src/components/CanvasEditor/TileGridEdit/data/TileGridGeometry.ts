@@ -1,13 +1,9 @@
 // TileGridGeometry.ts
-import type { Rect } from '../../../../lib/util/data/Rect.ts'
+import { extractMaskBuffer, type NullableMaskRect } from 'pixel-data-js'
+import { type Rect } from '../../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../../lib/wang-tiles/WangGrid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import type {
-  DrawRect,
-  GridOriginTileAlignedRect,
-  SelectionRect,
-  TileOriginTileAlignedRect,
-} from '../lib/ISelection.ts'
+import type { DrawRect, GridOriginTileAlignedRect, TileOriginTileAlignedRect } from '../lib/ISelection.ts'
 import type { TileSheet } from './TileSheet.ts'
 
 export type TileGridGeometry = ReturnType<typeof makeTileGridGeometry>
@@ -50,7 +46,7 @@ export function makeTileGridGeometry(
   }
 
   function gridRectsToTileAlignedRects(
-    rects: SelectionRect[],
+    rects: NullableMaskRect[],
     originX: number,
     originY: number,
   ): GridOriginTileAlignedRect[] {
@@ -67,14 +63,17 @@ export function makeTileGridGeometry(
         const { x: tx, y: ty, w, h } = tileOverlap
         if (w <= 0 || h <= 0) continue
 
-        const mask = sliceMask(r.mask, o.sourceX, o.sourceY, w, h, r.w)
+        let maskData: Uint8Array | null = null
+        if (r.data) {
+          maskData = extractMaskBuffer(r.data, r.w, o.sourceX, o.sourceY, w, h)
+        }
 
         const { x: tsx, y: tsy } = tileSheet.getTileRect(tile.id)
 
         const gridPixelX = r.x + o.sourceX
         const gridPixelY = r.y + o.sourceY
 
-        out.push({
+        const base = {
           tileId: tile.id,
 
           // sheet space
@@ -92,8 +91,17 @@ export function makeTileGridGeometry(
           // pixel buffer space
           bufferX: o.sourceX,
           bufferY: o.sourceY,
-          mask,
-        })
+        }
+
+        if (maskData) {
+          out.push({
+            ...base,
+            data: maskData,
+            type: r.type,
+          } as GridOriginTileAlignedRect)
+        } else {
+          out.push(base)
+        }
       }
     }
 
@@ -102,7 +110,7 @@ export function makeTileGridGeometry(
 
   function tileRectsToDuplicatedGridRects(
     tileId: TileId,
-    rects: SelectionRect[],
+    rects: NullableMaskRect[],
     originX: number,
     originY: number,
   ) {
@@ -111,7 +119,7 @@ export function makeTileGridGeometry(
   }
 
   function gridRectsToDuplicatedGridRects(
-    rects: SelectionRect[],
+    rects: NullableMaskRect[],
     originX: number,
     originY: number,
   ) {
@@ -120,7 +128,7 @@ export function makeTileGridGeometry(
   }
 
   function gridRectsToDuplicatedGridDrawRects(
-    rects: SelectionRect[],
+    rects: NullableMaskRect[],
     originX: number,
     originY: number,
   ): DrawRect[] {
@@ -140,9 +148,10 @@ export function makeTileGridGeometry(
           sy: r.bufferY,
           w: r.w,
           h: r.h,
-          mask: r.mask ?? undefined,
+          data: r.data,
+          type: r.type,
           tileId: r.tileId,
-        })
+        } as DrawRect)
       })
     }
     return out
@@ -150,7 +159,7 @@ export function makeTileGridGeometry(
 
   function tileRectsToTileAlignedRects(
     tileId: TileId,
-    rects: SelectionRect[],
+    rects: NullableMaskRect[],
     originX: number,
     originY: number,
   ): TileOriginTileAlignedRect[] {
@@ -168,8 +177,8 @@ export function makeTileGridGeometry(
       const h = y2 - y1
       if (w <= 0 || h <= 0) continue
 
-      const clippedMask = r.mask
-        ? sliceMask(r.mask, x1 - r.x, y1 - r.y, w, h, r.w)
+      const clippedMask = r.data
+        ? extractMaskBuffer(r.data, r.w, x1 - r.x, y1 - r.y, w, h)
         : null
 
       const sheetX = tileSheetX + x1
@@ -181,7 +190,7 @@ export function makeTileGridGeometry(
       const bufferX = x1 - originX
       const bufferY = y1 - originY
 
-      out.push({
+      const base = {
         tileId,
 
         // sheet space
@@ -199,28 +208,43 @@ export function makeTileGridGeometry(
         // pixel buffer space
         bufferX,
         bufferY,
-        mask: clippedMask,
-      })
+      }
+
+      if (clippedMask) {
+        out.push({
+          ...base,
+          data: clippedMask,
+          type: r.type,
+        } as TileOriginTileAlignedRect)
+      } else {
+        out.push(base)
+      }
     }
 
     return out
   }
 
-  function tileOriginTileAlignedRectToGridRects(rect: TileOriginTileAlignedRect): SelectionRect[] {
-    const { tileId, tileSelectionX, tileSelectionY, w, h, mask } = rect
-    const results: SelectionRect[] = []
+  function tileOriginTileAlignedRectToGridRects(rect: TileOriginTileAlignedRect): NullableMaskRect[] {
+    const { tileId, tileSelectionX, tileSelectionY, w, h, data, type } = rect
+    const results: NullableMaskRect[] = []
 
     tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
       const x = gTileX * tileSize + tileSelectionX
       const y = gTileY * tileSize + tileSelectionY
-
-      results.push({
-        x,
-        y,
-        w,
-        h,
-        mask,
-      })
+      const rect = { x, y, w, h }
+      if (data) {
+        results.push({
+          ...rect,
+          data,
+          type,
+        })
+      } else {
+        results.push({
+          ...rect,
+          data: null,
+          type: null,
+        })
+      }
     })
 
     return results
@@ -230,9 +254,9 @@ export function makeTileGridGeometry(
     rect: GridOriginTileAlignedRect,
     originX: number,
     originY: number,
-  ): SelectionRect[] {
-    const { tileId, gridSelectionX, gridSelectionY, w, h, mask } = rect
-    const results: SelectionRect[] = []
+  ): NullableMaskRect[] {
+    const { tileId, gridSelectionX, gridSelectionY, w, h, data, type } = rect
+    const results: NullableMaskRect[] = []
     const t = gridPixelToTilePixel(gridSelectionX, gridSelectionY)
     if (!t) throw new Error('invalid rect')
 
@@ -240,13 +264,20 @@ export function makeTileGridGeometry(
       const x = gTileX * tileSize + t.tx + originX
       const y = gTileY * tileSize + t.ty + originY
 
-      results.push({
-        x,
-        y,
-        w,
-        h,
-        mask,
-      })
+      const rect = { x, y, w, h }
+      if (data) {
+        results.push({
+          ...rect,
+          data,
+          type,
+        })
+      } else {
+        results.push({
+          ...rect,
+          data: null,
+          type: null,
+        })
+      }
     })
 
     return results
