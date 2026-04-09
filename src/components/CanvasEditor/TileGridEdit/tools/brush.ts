@@ -3,7 +3,7 @@ import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseBrushToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core/_core-editor-types.ts'
-import { useBrushCursor } from '../../_core/renderers/BrushCursor.ts'
+import { useBrushCursor } from '../../_core/renderers/PaintCursor.ts'
 import { makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
 import {
   CanvasType,
@@ -120,7 +120,7 @@ export function makeBrushTool(
     onMouseLeave(canvasType, tileId) {
       gridRenderer.queueRenderAll()
     },
-    gridScreenOverlayDraw(ctx: CanvasRenderingContext2D) {
+    gridScreenOverlayDraw(ctx) {
       if (state.hoverTileId === null) return
       const { scale, tileGrid, tileSize } = state
       const x = state.hoverTilePixelX

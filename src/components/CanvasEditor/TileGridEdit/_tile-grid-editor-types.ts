@@ -17,9 +17,9 @@ export type TileGridEditorToolContext = {
 export type TileGridEditorToolHandlerArgs = [canvasType: CanvasType, tileId?: TileId]
 
 export type TileGridEditorToolHandlerRender = {
-  gridPixelOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
-  gridScreenOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
+  gridPixelOverlayDraw?: (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => void,
+  gridScreenOverlayDraw?: (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => void,
 
-  tilePixelOverlayDraw?: (ctx: CanvasRenderingContext2D, tileId: TileId) => void,
-  tileScreenOverlayDraw?: (ctx: CanvasRenderingContext2D, tileId: TileId) => void,
+  tilePixelOverlayDraw?: (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, tileId: TileId) => void,
+  tileScreenOverlayDraw?: (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, tileId: TileId) => void,
 }

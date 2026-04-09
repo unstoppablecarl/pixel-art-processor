@@ -1,13 +1,13 @@
 import type { Rect } from '../../../../lib/util/data/Rect.ts'
 import { drawText } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 
-export function drawDebugRect(ctx: CanvasRenderingContext2D, r: Rect, color: string) {
+export function drawDebugRect(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, r: Rect, color: string) {
   ctx.globalAlpha = 1
   ctx.fillStyle = color
   ctx.fillRect(r.x, r.y, r.w, r.h)
 }
 
-export function drawDebugRectOutline(ctx: CanvasRenderingContext2D, r: Rect, scale: number, color: string, i: number) {
+export function drawDebugRectOutline(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, r: Rect, scale: number, color: string, i: number) {
   const screenX = r.x * scale + 0.5
   const screenY = r.y * scale + 0.5
   const screenW = r.w * scale - 1

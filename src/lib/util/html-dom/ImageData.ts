@@ -139,7 +139,7 @@ const pixelCanvas = makeReusableCanvas()
 const getTmpImageData = makeReusableImageData()
 
 export function putImageData(
-  target: CanvasRenderingContext2D,
+  target: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   imageData: ImageData,
   opts: PutImageDataOptions = {},
 ) {

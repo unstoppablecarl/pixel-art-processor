@@ -79,7 +79,7 @@ export function makePixelGridLineRenderer(state: GridLineSettings) {
     watchTarget.value++
   }
 
-  function draw(ctx: CanvasRenderingContext2D) {
+  function draw(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {
     ctx.drawImage(canvas, 0, 0)
   }
 

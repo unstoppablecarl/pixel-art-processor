@@ -47,7 +47,7 @@ export function makeTileGridEdgeColorRenderer(
     })
   })
 
-  function drawGridEdges(ctx: CanvasRenderingContext2D) {
+  function drawGridEdges(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {
     const sketch = tileGridEdgeColorSketch
 
     ctx.globalAlpha = 0.5
@@ -56,7 +56,7 @@ export function makeTileGridEdgeColorRenderer(
   }
 
   function drawTileEdges(
-    ctx: CanvasRenderingContext2D,
+    ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
     tileId: TileId,
     x = 0,
     y = 0,

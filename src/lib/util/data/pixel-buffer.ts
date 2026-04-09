@@ -57,7 +57,7 @@ export function applyBufferToPixelData(
   offsetY = 0,
 ) {
   const width = img.w
-  const height = img.h
+  const height = img.w
   const d = buf.data
 
   for (let i = 0; i < buf.count; i++) {

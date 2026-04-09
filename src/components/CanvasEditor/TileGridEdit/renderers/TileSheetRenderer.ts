@@ -40,7 +40,7 @@ export function makeTileSheetRenderer(
   function draw() {
     const toolState = toolset.toolHandlers.SELECT.toolState
 
-    const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
+    const drawPixelLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
       const { tileSize } = state
 
       // base tilesheet debug: tile edges
@@ -70,7 +70,7 @@ export function makeTileSheetRenderer(
       })
     }
 
-    const drawScreenLayer = (ctx: CanvasRenderingContext2D) => {
+    const drawScreenLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
       const sel = toolState.selection
       const { scale, tileSize } = state
 

@@ -6,7 +6,7 @@ import {
   TOOL_HOVER_CSS_CLASSES,
   type ToolHandlerSubToolChanged,
 } from '../../_core/_core-editor-types.ts'
-import { useBrushCursor } from '../../_core/renderers/BrushCursor.ts'
+import { useBrushCursor } from '../../_core/renderers/PaintCursor.ts'
 import { type BrushToolState, makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
 import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
 

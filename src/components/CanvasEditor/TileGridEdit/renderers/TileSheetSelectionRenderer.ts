@@ -41,7 +41,7 @@ export function makeTileSheetSelectionRenderer(
   function draw() {
     const toolState = toolset.toolHandlers.SELECT.toolState
 
-    const drawPixelLayer = (ctx: CanvasRenderingContext2D) => {
+    const drawPixelLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
       const sel = toolState.selection
       if (!sel) return
 

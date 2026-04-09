@@ -41,7 +41,7 @@ export const selectMoveBlendModeToBlender32: Record<BlendMode, BlendColor32> = {
 }
 
 export function drawSelectOutline(
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   scale: number,
   rect: NullableMaskRect,
   color: string,

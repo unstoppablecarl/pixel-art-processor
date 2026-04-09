@@ -1,11 +1,11 @@
-import { makeReusableCanvas } from 'pixel-data-js'
+import { makeReusableOffscreenCanvas } from 'pixel-data-js'
 import { readonly, ref, watchEffect } from 'vue'
 import { useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../../lib/store/ui-store.ts'
 import { getRectFromCenter, isInsideCircle } from '../../../../lib/util/data/Grid.ts'
 import { BrushShape } from '../_core-editor-types.ts'
 
-const pixelCanvas = makeReusableCanvas()
+const pixelCanvas = makeReusableOffscreenCanvas()
 
 export type BrushSettings = {
   scale: number,
@@ -14,9 +14,9 @@ export type BrushSettings = {
   brushSize: number,
 }
 
-export type BrushCursor = ReturnType<typeof makeBrushCursor>
+export type PaintCursor = ReturnType<typeof makePaintCursor>
 
-export function makeBrushCursor() {
+export function makePaintCursor() {
   const { canvas, ctx } = pixelCanvas(1, 1)
   const version = ref(0)
   let current: BrushSettings | undefined
@@ -120,27 +120,27 @@ export function makeBrushCursor() {
     getBounds(x: number, y: number) {
       return getRectFromCenter(x, y, current!.brushSize, current!.brushSize)
     },
-    draw(drawCtx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
+    draw(drawCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, x: number, y: number, scale = 1) {
       if (!current) return
 
       const { dx, dy } = getOrigin(current.brushSize, x, y, scale)
 
       drawCtx.drawImage(canvas, Math.floor(dx), Math.floor(dy))
     },
-    drawRaw(drawCtx: CanvasRenderingContext2D, x: number, y: number, scale = 1) {
+    drawRaw(drawCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, x: number, y: number, scale = 1) {
       drawCtx.drawImage(canvas, Math.floor(x * scale), Math.floor(y * scale))
     },
   }
 }
 
-let BRUSH_CURSOR: BrushCursor
+let BRUSH_CURSOR: PaintCursor
 
 export function useBrushCursor() {
   const uiStore = useUIStore()
   const canvasStore = useCanvasEditToolStore()
 
   if (!BRUSH_CURSOR) {
-    BRUSH_CURSOR = makeBrushCursor()
+    BRUSH_CURSOR = makePaintCursor()
     watchEffect(() => {
       BRUSH_CURSOR.update({
         scale: uiStore.imgScale,

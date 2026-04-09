@@ -9,6 +9,6 @@ export type CanvasPaintToolContext = {
 }
 
 export type CanvasPaintToolHandlerRender = {
-  pixelOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
-  screenOverlayDraw?: (ctx: CanvasRenderingContext2D) => void,
+  pixelOverlayDraw?: (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => void,
+  screenOverlayDraw?: (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => void,
 }

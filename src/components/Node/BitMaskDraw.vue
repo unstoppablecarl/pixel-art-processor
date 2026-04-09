@@ -34,7 +34,7 @@ nodeUsesSidebar()
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const maskImageData = pixelDataRef()
+const maskPixelDataRef = pixelDataRef()
 
 const SIZE_DEFAULTS = rangeSliderConfig({
   value: 64,
@@ -57,16 +57,16 @@ const handler = defineStepHandler(STEP_META, {
   serializeConfig: (config) => {
     return {
       ...config,
-      maskImageData: maskImageData.serialize(),
+      maskImageData: maskPixelDataRef.serialize(),
     }
   },
   deserializeConfig(config) {
-    maskImageData.setSerialized(config.maskImageData)
+    maskPixelDataRef.setSerialized(config.maskImageData)
 
     return config
   },
   async run() {
-    const imageData = maskImageData.getImageData()
+    const imageData = maskPixelDataRef.getImageData()
     if (imageData === null) return
 
     const bitMask = BitMask.fromImageData(imageData)
@@ -91,7 +91,7 @@ const canvasPaintController = useCanvasPaintController({
   height: computed(() => config.size.value),
   gridColor: toRef(config, 'showGridColor'),
   gridDraw: toRef(config, 'showGrid'),
-  pixelDataRef: maskImageData,
+  pixelDataRef: maskPixelDataRef,
 })
 
 // canvasPaint.state.imageDataRef.set(maskImageData.get())

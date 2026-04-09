@@ -33,7 +33,7 @@ function pixelCanvas(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): 
 }
 
 export function drawText(
-  ctx: CanvasRenderingContext2D,
+  ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
   text: string,
   x: number = 0,
   y: number = 0,

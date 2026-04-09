@@ -1,11 +1,4 @@
-import {
-  copyPixelData,
-  makePixelData,
-  PixelData,
-  resizeImageData,
-  type SerializedImageData,
-  setPixelData,
-} from 'pixel-data-js'
+import { makePixelData, PixelData, resizeImageData, type SerializedImageData, setPixelData, copyPixelData } from 'pixel-data-js'
 import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
 import { deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
 
