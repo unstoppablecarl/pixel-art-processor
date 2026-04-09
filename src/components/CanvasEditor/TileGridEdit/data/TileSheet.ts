@@ -309,6 +309,11 @@ export function makeTileSheet(
       const index = tileset.byId.get(tileId)?.index
       return index !== undefined ? tileVersions[index] : -1
     },
+    markTileDirty(tileId: TileId) {
+      const tile = tileset.byId.get(tileId)!
+      tileVersions[tile.index]++
+      currentVersion++
+    },
     get version(): number {
       return currentVersion
     },
@@ -344,6 +349,7 @@ export function makeTileSheet(
     getOverlappingTiles,
     splitRectIntoTileRects,
     serialize,
+    markAllTilesDirty,
   }
 }
 

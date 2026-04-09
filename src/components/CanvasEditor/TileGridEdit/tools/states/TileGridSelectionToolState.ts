@@ -1,6 +1,8 @@
 import {
+  type BinaryMask,
   extractPixelData,
   floodFillSelection,
+  MaskType,
   mergeBinaryMaskRects,
   type NullableBinaryMaskRect,
   type NullableMaskRect,
@@ -10,6 +12,7 @@ import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../..
 import { getRectsBounds, type Rect } from '../../../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../../../lib/wang-tiles/WangTileset.ts'
 import { SelectSubTool } from '../../../_core/_core-editor-types.ts'
+import { selectMoveBlendModeToBlender32 } from '../../../_core/tools/selection-helpers.ts'
 import { CanvasType } from '../../_tile-grid-editor-types.ts'
 import type { TileRect } from '../../data/TileSheetHistory.ts'
 import type { TileSheetWriter } from '../../data/TileSheetWriter.ts'
@@ -185,6 +188,8 @@ export function makeTileGridSelectionToolState(
     if (!selection) return
 
     const mode = store.selectMoveBlendMode
+    const blendFn = selectMoveBlendModeToBlender32[mode]
+
     const originalSheetDrawRects = selection.getOriginalSheetDrawRects()
     const currentSheetDrawRects = selection.getCurrentSheetDrawRects()
     const pixels = selection.pixels
@@ -195,19 +200,33 @@ export function makeTileGridSelectionToolState(
       }
 
       for (const r of currentSheetDrawRects) {
-        mutator.blendPixelData(
-          pixels,
-          mode,
-          {
-            dx: r.dx,
-            dy: r.dy,
-            sx: r.sx,
-            sy: r.sy,
-            sw: r.w,
-            sh: r.h,
-            mask: r.data ?? undefined,
-          },
-        )
+        const opts = {
+          x: r.dx,
+          y: r.dy,
+          sx: r.sx,
+          sy: r.sy,
+          w: r.w,
+          h: r.h,
+          blendFn,
+        }
+        if (r.data) {
+          const mask: BinaryMask = {
+            type: MaskType.BINARY,
+            data: r.data,
+            w: r.w,
+            h: r.h,
+          }
+          mutator.blendPixelData(
+            pixels,
+            opts,
+            mask,
+          )
+        } else {
+          mutator.blendPixelData(
+            pixels,
+            opts,
+          )
+        }
       }
     })
     gridRenderer.updateGridTiles()

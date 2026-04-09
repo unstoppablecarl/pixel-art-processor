@@ -1,17 +1,29 @@
-import type { PixelData } from 'pixel-data-js'
+import {
+  type BinaryMask,
+  type BlendColor32,
+  blendPixelData,
+  blendPixelDataBinaryMask,
+  type Color32,
+  fillPixelData,
+  fillPixelDataBinaryMask,
+  makeBatchedQueue,
+  MaskType,
+  packRGBA,
+  type PixelData,
+  type PixelTile,
+  PixelWriter,
+  type Rect,
+} from 'pixel-data-js'
+import { nextTick } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import type { RGBA } from '../../../../lib/util/data/color.ts'
-import { type BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import { useDirtyBatching } from '../../../../lib/vue/batching.ts'
+import { getHistory } from '../../../../lib/util/history/history.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { BlendMode } from '../../_core/_core-editor-types.ts'
-import { selectMoveBlendModeToBlendFn } from '../../_core/tools/selection-helpers.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { duplicateEdgePixels } from './TileEdgeDuplicator.ts'
-import { applyTileSheetAccumulator } from './TileSheetHistory.ts'
-import { makeTileSheetPixelAccumulator, type TileSheetPixelAccumulator } from './TileSheetPixelAccumulator.ts'
+import type { TileSheet } from './TileSheet.ts'
 
 export type TileSheetWriter = ReturnType<typeof makeTileSheetWriter>
 
@@ -26,110 +38,64 @@ export function makeTileSheetWriter(
     store: CanvasEditToolStore
   }) {
 
-  const { markDirty } = useDirtyBatching<TileId>((dirtyTiles) => {
+  const { markDirty } = makeBatchedQueue<TileId>((dirtyTiles) => {
     for (const tileId of dirtyTiles) {
       gridRenderer.queueRenderTile(tileId)
     }
     gridRenderer.queueRenderGrid()
-  })
+  }, nextTick)
 
-  const accumulator = makeTileSheetPixelAccumulator()
-  const mutator = makeTileSheetMutator({ state, accumulator })
+  function handleReactivity(patchTiles: PixelTile[]) {
+    const affected = getAffectedTileSheetTileIds(state.tileSheet, patchTiles, writer.config.tileSize)
+    for (let i = 0; i < affected.length; i++) {
+      state.tileSheet.markTileDirty(affected[i])
+      markDirty(affected[i])
+    }
+  }
+
+  const writer = new PixelWriter(
+    state.tileSheet.pixelData,
+    (w) => makeTileSheetMutator(w, state),
+    {
+      historyManager: getHistory(),
+    },
+  )
 
   return {
     withHistory(cb: (mutator: TileSheetMutator) => void) {
-      cb(mutator)
-      if (store.duplicateTileEdges) {
-        const tileIds = accumulator.affectedTileIds()
-        for (let i = 0; i < tileIds.length; i++) {
-          const tileId = tileIds[i]
-          duplicateEdgePixels({
-            tileId,
-            tileSheet: state.tileSheet,
-            borderThickness: store.duplicateTileEdgesBorderThickness,
-            accumulator,
-          })
-        }
-      }
+      writer.withHistory(
+        (mutator) => {
+          cb(mutator)
+          if (store.duplicateTileEdges) {
 
-      const finalPatches = applyTileSheetAccumulator(state.tileSheet, gridRenderer, accumulator)
+            const tileIds = getAffectedTileSheetTileIds(state.tileSheet, writer.accumulator.beforeTiles, writer.config.tileSize)
+            for (let i = 0; i < tileIds.length; i++) {
+              const tileId = tileIds[i]
+              duplicateEdgePixels(
+                tileId,
+                store.duplicateTileEdgesBorderThickness,
+                state.tileSheet,
+                writer,
+              )
+            }
+          }
 
-      const allAffected = accumulator.affectedTileIds()
-      for (let i = 0; i < allAffected.length; i++) {
-        markDirty(allAffected[i])
-      }
-
-      return finalPatches
+          handleReactivity(writer.accumulator.beforeTiles)
+        },
+        (patch) => handleReactivity(patch.beforeTiles),
+        (patch) => handleReactivity(patch.afterTiles),
+      )
     },
   }
 }
 
-export type TileSheetMutator = ReturnType<typeof makeTileSheetMutator>
-
-const PACKED_ERASE = 0x00000000
+type TileSheetMutator = ReturnType<typeof makeTileSheetMutator>
 
 function makeTileSheetMutator(
-  {
-    state,
-    accumulator,
-  }: {
-    state: TileGridEditorState
-    accumulator: TileSheetPixelAccumulator,
-  }) {
-
-  function blendPixelData(
-    pixelData: PixelData,
-    blendMode: BlendMode,
-    opts: Omit<BlendImageDataOptions, 'blendMode'>,
-  ) {
-    const blendFn = selectMoveBlendModeToBlendFn[blendMode]
-
-    const sheetRect = {
-      x: opts.dx ?? 0,
-      y: opts.dy ?? 0,
-      w: opts.sw ?? pixelData.w,
-      h: opts.sh ?? pixelData.h,
-      srcX: opts.sx ?? 0,
-      srcY: opts.sy ?? 0,
-    }
-    const mask = opts.mask ?? null
-
-    const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
-
-    for (let i = 0; i < tileRects.length; i++) {
-      const r = tileRects[i]
-      const tileId = r.tileId
-
-      for (let y = 0; y < r.h; y++) {
-        // Source Y base for the 32-bit pixel buffer
-        const srcY = r.srcY + y
-        const srcYBase = srcY * pixelData.w
-
-        for (let x = 0; x < r.w; x++) {
-          const srcX = r.srcX + x
-
-          if (mask) {
-            // Calculate coordinates relative to the start of this specific mask slice
-            const maskX = srcX - (opts.sx ?? 0)
-            const maskY = srcY - (opts.sy ?? 0)
-            const maskStride = opts.sw ?? pixelData.w
-            const maskIdx = maskY * maskStride + maskX
-
-            if (mask[maskIdx] === 0) {
-              continue
-            }
-          }
-
-          // 2. Read the pixel
-          const si = srcYBase + srcX
-          const packedColor = pixelData.data[si]
-
-          // 3. Write to accumulator
-          accumulator.addTilePacked(tileId, r.x + x, r.y + y, packedColor, blendFn)
-        }
-      }
-    }
-  }
+  writer: PixelWriter<any>,
+  state: TileGridEditorState,
+) {
+  const target = writer.config.target
 
   function clear(
     x = 0,
@@ -138,46 +104,108 @@ function makeTileSheetMutator(
     h = state.tileSheet.pixelData.h,
     mask: Uint8Array | null = null,
   ) {
-    const sheetRect = { x, y, w, h, srcX: 0, srcY: 0 }
-    const tileRects = state.tileSheet.splitRectIntoTileRects(sheetRect)
+    const empty = 0 as Color32
 
-    for (let i = 0; i < tileRects.length; i++) {
-      const r = tileRects[i]
-      const tileId = r.tileId
+    writer.accumulator.storeRegionBeforeState(x, y, w, h)
 
-      for (let ty = 0; ty < r.h; ty++) {
-        const srcY = r.srcY + ty
-        const srcYBase = srcY * sheetRect.w
-        for (let tx = 0; tx < r.w; tx++) {
-          const srcX = r.srcX + tx
-          if (mask && mask[srcYBase + srcX] === 0) continue
-          accumulator.addTilePacked(tileId, r.x + tx, r.y + ty, PACKED_ERASE)
-        }
-      }
+    if (mask) {
+      fillPixelDataBinaryMask(target, empty, {
+        type: MaskType.BINARY,
+        w,
+        h,
+        data: mask,
+      }, x, y)
+    } else {
+      fillPixelData(target, empty, { x, y, w, h })
     }
   }
 
+  function writePixel(x: number, y: number, color: RGBA) {
+    writer.accumulator.storePixelBeforeState(x, y)
+    const index = y * target.w + x
+    target.data[index] = packRGBA(color)
+  }
+
   function writeGridPoints(gridPixels: Point[], color: RGBA) {
+    // console.log('writeGridPoints')
     for (let i = 0; i < gridPixels.length; i++) {
       const { x, y } = gridPixels[i]
       const hit = state.tileGridGeometry.gridPixelToTilePixel(x, y)
       if (!hit) continue
+      const sheetPx = state.tileSheet.tileLocalToSheet(hit.tileId, hit.tx, hit.ty)
 
-      accumulator.addTile(hit.tileId, hit.tx, hit.ty, color)
+      // console.log('sheetPx', sheetPx, color)
+      writePixel(sheetPx.x, sheetPx.y, color)
     }
   }
 
   function writeTilePoints(tileId: TileId, tilePixels: Point[], color: RGBA) {
     for (let i = 0; i < tilePixels.length; i++) {
       const { x, y } = tilePixels[i]
-      accumulator.addTile(tileId, x, y, color)
+      const sheetPx = state.tileSheet.tileLocalToSheet(tileId, x, y)
+
+      writePixel(sheetPx.x, sheetPx.y, color)
+    }
+  }
+
+  type BlendPixelDataOpts = Rect & {
+    sx: number,
+    sy: number,
+    blendFn: BlendColor32,
+  }
+
+  function _blendPixelData(
+    pixelData: PixelData,
+    opts: BlendPixelDataOpts,
+    mask: BinaryMask,
+  ): void;
+
+  function _blendPixelData(
+    pixelData: PixelData,
+    opts: BlendPixelDataOpts,
+  ): void;
+
+  function _blendPixelData(
+    pixelData: PixelData,
+    opts: BlendPixelDataOpts,
+    mask?: BinaryMask,
+  ): void {
+
+    writer.accumulator.storeRegionBeforeState(opts.x, opts.y, opts.w, opts.h)
+
+    if (mask) {
+      blendPixelDataBinaryMask(target, pixelData, mask, opts)
+    } else {
+      blendPixelData(target, pixelData, opts)
     }
   }
 
   return {
     writeGridPoints,
     writeTilePoints,
-    blendPixelData,
+    blendPixelData: _blendPixelData,
     clear,
+
   }
+}
+
+function getAffectedTileSheetTileIds(tileSheet: TileSheet, pixelTiles: PixelTile[], tileSize: number) {
+  const affectedIds = new Set<TileId>()
+
+  for (let i = 0; i < pixelTiles.length; i++) {
+    const tile = pixelTiles[i]
+    const rect = {
+      x: tile.tx * tileSize,
+      y: tile.ty * tileSize,
+      w: tileSize,
+      h: tileSize,
+    }
+
+    const overlaps = tileSheet.getOverlappingTiles(rect)
+    for (let j = 0; j < overlaps.length; j++) {
+      affectedIds.add(overlaps[j].tileId)
+    }
+  }
+
+  return Array.from(affectedIds)
 }

@@ -10,6 +10,12 @@ export default defineConfig(({ mode }) => {
     define: {
       __DEV__: mode === 'development',
     },
+    // uncomment for local $ pnpm link pixel-data-js
+    // resolve: {
+    //   alias: {
+    //     'pixel-data-js': fileURLToPath(new URL('./node_modules/pixel-data-js/src/index.ts', import.meta.url)),
+    //   },
+    // },
     build: {
       outDir: 'dist',
       sourcemap: true,

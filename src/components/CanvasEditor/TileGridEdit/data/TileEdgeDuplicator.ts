@@ -1,66 +1,214 @@
+import type { PixelWriter } from 'pixel-data-js'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheet } from './TileSheet.ts'
-import type { TileSheetPixelAccumulator } from './TileSheetPixelAccumulator.ts'
 
-// written for perf over readability
 export function duplicateEdgePixels(
-  {
-    tileId,
-    borderThickness,
-    tileSheet,
-    accumulator,
-  }: {
-    tileId: TileId
-    borderThickness: number
-    tileSheet: TileSheet
-    accumulator: TileSheetPixelAccumulator
-  }) {
-  const entry = accumulator.getRawBufferForTile(tileId)
-  if (!entry || entry.count === 0) return
+  tileId: TileId,
+  borderThickness = 1,
+  tileSheet: TileSheet,
+  writer: PixelWriter<any>,
+) {
+  if (borderThickness <= 0) return
 
-  const { data, count } = entry
-  const { tileSize, tileset } = tileSheet
-  const tile = tileset.byId.get(tileId)!
+  const tileset = tileSheet.tileset
+  const tileSize = tileSheet.tileSize
   const max = tileSize - 1
+
+  const target = writer.config.target
+  const targetData = target.data
+  const targetWidth = target.w
+
+  const chunkShift = writer.config.tileShift
+  const chunkMask = writer.config.tileMask
+  const chunkDim = writer.config.tileSize
+  const targetColumns = writer.config.targetColumns
+  const lookup = writer.accumulator.lookup
+
+  const offset = tileSheet.getTileSheetOffset(tileId)
+  const offsetX = offset.x
+  const offsetY = offset.y
+
+  const tile = tileset.byId.get(tileId)!
 
   const nEdge = tileset.getTilesWithSameEdge(tile, 'N')
   const sEdge = tileset.getTilesWithSameEdge(tile, 'S')
   const wEdge = tileset.getTilesWithSameEdge(tile, 'W')
   const eEdge = tileset.getTilesWithSameEdge(tile, 'E')
 
-  for (let i = 0; i < count; i++) {
-    const p = i * 4
-    if (data[p + 3] === 1) continue
+  const copyToEdge = (
+    destTiles: any[],
+    flipX: boolean,
+    flipY: boolean,
+    tx: number,
+    ty: number,
+    afterColor: number,
+  ) => {
+    const length = destTiles.length
 
-    const coords = data[p]
-    const x = coords >> 16
-    const y = coords & 0xFFFF
-    const rgba = data[p + 1]
-    const blend = accumulator.getBlendAtIdx(data[p + 2])
-    const color = { r: (rgba >> 24) & 0xFF, g: (rgba >> 16) & 0xFF, b: (rgba >> 8) & 0xFF, a: rgba & 0xFF }
+    for (let j = 0; j < length; j++) {
+      const destTile = destTiles[j]
+      const dTileId = destTile.id
+      const dOffset = tileSheet.getTileSheetOffset(dTileId)
 
-    // --- NORTH (Top) ---
-    if (y < borderThickness) {
-      for (const n of nEdge.sameEdge) accumulator.addTile(n.id, x, y, color, blend, true)
-      for (const n of nEdge.mirroredEdge) accumulator.addTile(n.id, x, max - y, color, blend, true)
+      const dx = flipX ? max - tx : tx
+      const dy = flipY ? max - ty : ty
+
+      const globalDx = dOffset.x + dx
+      const globalDy = dOffset.y + dy
+
+      writer.accumulator.storePixelBeforeState(globalDx, globalDy)
+
+      const pIdx = globalDy * targetWidth + globalDx
+      targetData[pIdx] = afterColor
+    }
+  }
+
+  const processPixel = (
+    tx: number,
+    ty: number,
+    isNorth: boolean,
+    isSouth: boolean,
+    isWest: boolean,
+    isEast: boolean,
+  ) => {
+    const gx = offsetX + tx
+    const gy = offsetY + ty
+
+    const chunkX = gx >> chunkShift
+    const chunkY = gy >> chunkShift
+    const chunkId = chunkY * targetColumns + chunkX
+
+    const chunk = lookup[chunkId]
+
+    if (!chunk) return
+
+    const localX = gx & chunkMask
+    const localY = gy & chunkMask
+    const beforeColor = chunk.data[localY * chunkDim + localX]
+
+    const globalIdx = gy * targetWidth + gx
+    const afterColor = targetData[globalIdx]
+
+    if (beforeColor === afterColor) return
+
+    if (isNorth) {
+      copyToEdge(
+        nEdge.sameEdge,
+        false,
+        false,
+        tx,
+        ty,
+        afterColor,
+      )
+      copyToEdge(
+        nEdge.mirroredEdge,
+        false,
+        true,
+        tx,
+        ty,
+        afterColor,
+      )
     }
 
-    // --- SOUTH (Bottom) ---
-    if (y > max - borderThickness) {
-      for (const n of sEdge.sameEdge) accumulator.addTile(n.id, x, y, color, blend, true)
-      for (const n of sEdge.mirroredEdge) accumulator.addTile(n.id, x, max - y, color, blend, true)
+    if (isSouth) {
+      copyToEdge(
+        sEdge.sameEdge,
+        false,
+        false,
+        tx,
+        ty,
+        afterColor,
+      )
+      copyToEdge(
+        sEdge.mirroredEdge,
+        false,
+        true,
+        tx,
+        ty,
+        afterColor,
+      )
     }
 
-    // --- WEST (Left) ---
-    if (x < borderThickness) {
-      for (const n of wEdge.sameEdge) accumulator.addTile(n.id, x, y, color, blend, true)
-      for (const n of wEdge.mirroredEdge) accumulator.addTile(n.id, max - x, y, color, blend, true)
+    if (isWest) {
+      copyToEdge(
+        wEdge.sameEdge,
+        false,
+        false,
+        tx,
+        ty,
+        afterColor,
+      )
+      copyToEdge(
+        wEdge.mirroredEdge,
+        true,
+        false,
+        tx,
+        ty,
+        afterColor,
+      )
     }
 
-    // --- EAST (Right) ---
-    if (x > max - borderThickness) {
-      for (const n of eEdge.sameEdge) accumulator.addTile(n.id, x, y, color, blend, true)
-      for (const n of eEdge.mirroredEdge) accumulator.addTile(n.id, max - x, y, color, blend, true)
+    if (isEast) {
+      copyToEdge(
+        eEdge.sameEdge,
+        false,
+        false,
+        tx,
+        ty,
+        afterColor,
+      )
+      copyToEdge(
+        eEdge.mirroredEdge,
+        true,
+        false,
+        tx,
+        ty,
+        afterColor,
+      )
+    }
+  }
+
+  // Iterate strictly over the perimeter rather than the entire tile
+  for (let ty = 0; ty < tileSize; ty++) {
+    const isNorth = ty < borderThickness
+    const isSouth = ty > max - borderThickness
+
+    if (isNorth || isSouth) {
+      for (let tx = 0; tx < tileSize; tx++) {
+        const isWest = tx < borderThickness
+        const isEast = tx > max - borderThickness
+
+        processPixel(
+          tx,
+          ty,
+          isNorth,
+          isSouth,
+          isWest,
+          isEast,
+        )
+      }
+    } else {
+      for (let tx = 0; tx < borderThickness; tx++) {
+        processPixel(
+          tx,
+          ty,
+          false,
+          false,
+          true,
+          false,
+        )
+      }
+
+      for (let tx = tileSize - borderThickness; tx < tileSize; tx++) {
+        processPixel(
+          tx,
+          ty,
+          false,
+          false,
+          false,
+          true,
+        )
+      }
     }
   }
 }

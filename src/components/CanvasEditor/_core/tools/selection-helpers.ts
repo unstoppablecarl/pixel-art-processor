@@ -1,13 +1,9 @@
-import { type BlendColor32, type NullableMaskRect, overwriteFast } from 'pixel-data-js'
+import { type BlendColor32, type NullableMaskRect, overwritePerfect } from 'pixel-data-js'
 import {
   type BlendFn,
   blendIgnoreSolid,
   blendIgnoreTransparent,
-  blendImageDataIgnoreSolid,
-  blendImageDataIgnoreTransparent,
-  blendImageDataOverwrite,
   blendOverwrite,
-  type ImageDataBlendFn,
 } from '../../../../lib/util/html-dom/blit.ts'
 import {
   type BaseSelectToolState,
@@ -22,14 +18,8 @@ export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn> = {
   [BlendMode.IGNORE_SOLID]: blendIgnoreSolid,
 }
 
-export const selectMoveBlendModeToWriter: Record<BlendMode, ImageDataBlendFn> = {
-  [BlendMode.OVERWRITE]: blendImageDataOverwrite,
-  [BlendMode.IGNORE_TRANSPARENT]: blendImageDataIgnoreTransparent,
-  [BlendMode.IGNORE_SOLID]: blendImageDataIgnoreSolid,
-}
-
 export const selectMoveBlendModeToBlender32: Record<BlendMode, BlendColor32> = {
-  [BlendMode.OVERWRITE]: overwriteFast,
+  [BlendMode.OVERWRITE]: overwritePerfect,
   [BlendMode.IGNORE_TRANSPARENT]: (src, dst) => {
     const alpha = (src >>> 24) & 0xFF
     return alpha === 0 ? dst : src
