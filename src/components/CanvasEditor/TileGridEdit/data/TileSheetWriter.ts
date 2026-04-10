@@ -99,14 +99,12 @@ function makeTileSheetMutator(
   }
 
   function writeGridPoints(gridPixels: Point[], color: RGBA) {
-    // console.log('writeGridPoints')
     for (let i = 0; i < gridPixels.length; i++) {
       const { x, y } = gridPixels[i]
       const hit = state.tileGridGeometry.gridPixelToTilePixel(x, y)
       if (!hit) continue
       const sheetPx = state.tileSheet.tileLocalToSheet(hit.tileId, hit.tx, hit.ty)
 
-      // console.log('sheetPx', sheetPx, color)
       writePixel(sheetPx.x, sheetPx.y, color)
     }
   }
