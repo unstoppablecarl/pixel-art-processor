@@ -97,7 +97,7 @@ export function makeTileGridRenderer(
   const queueRenderGrid = makeRenderQueue(() => {
     updateGridTiles()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
-      toolset.currentToolHandler.gridPixelOverlayDraw?.(ctx)
+      // toolset.currentToolHandler.gridPixelOverlayDraw?.(ctx)
       tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 
