@@ -140,9 +140,8 @@ export function makeCanvasPaintSelectTool(
       if (!sel.isPasted && toolState.selectionHasMoved()) {
 
         if (sel.original.data) {
-
           // Clear original region
-          fillPixelDataBinaryMask(preview, 0 as Color32, sel.original as BinaryMask)
+          fillPixelDataBinaryMask(preview, 0 as Color32, sel.original as BinaryMask, sel.original.x, sel.original.y)
         } else {
           fillPixelData(preview, 0 as Color32, sel.original)
         }
