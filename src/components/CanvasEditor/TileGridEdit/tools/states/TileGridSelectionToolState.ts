@@ -1,8 +1,6 @@
 import {
-  type BinaryMask,
   extractPixelData,
   floodFillSelection,
-  MaskType,
   mergeBinaryMaskRects,
   type NullableBinaryMaskRect,
   type NullableMaskRect,
@@ -14,7 +12,6 @@ import type { TileId } from '../../../../../lib/wang-tiles/WangTileset.ts'
 import { SelectSubTool } from '../../../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlender32 } from '../../../_core/tools/selection-helpers.ts'
 import { CanvasType } from '../../_tile-grid-editor-types.ts'
-import type { TileRect } from '../../data/TileSheetHistory.ts'
 import type { TileSheetWriter } from '../../data/TileSheetWriter.ts'
 import { GridOriginSelection } from '../../lib/GridOriginSelection.ts'
 import { type ISelection, type TileOriginTileAlignedRect } from '../../lib/ISelection.ts'
@@ -23,6 +20,8 @@ import type { TileGridRenderer } from '../../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 
 export type TileGridSelectionToolState = ReturnType<typeof makeTileGridSelectionToolState>
+
+export type TileRect = Rect & { tileId: TileId }
 
 export function makeTileGridSelectionToolState(
   {
@@ -200,33 +199,7 @@ export function makeTileGridSelectionToolState(
       }
 
       for (const r of currentSheetDrawRects) {
-        const opts = {
-          x: r.dx,
-          y: r.dy,
-          sx: r.sx,
-          sy: r.sy,
-          w: r.w,
-          h: r.h,
-          blendFn,
-        }
-        if (r.data) {
-          const mask: BinaryMask = {
-            type: MaskType.BINARY,
-            data: r.data,
-            w: r.w,
-            h: r.h,
-          }
-          mutator.blendPixelData(
-            pixels,
-            opts,
-            mask,
-          )
-        } else {
-          mutator.blendPixelData(
-            pixels,
-            opts,
-          )
-        }
+        mutator.blendSheetDrawRects(r, pixels, blendFn)
       }
     })
     gridRenderer.updateGridTiles()
