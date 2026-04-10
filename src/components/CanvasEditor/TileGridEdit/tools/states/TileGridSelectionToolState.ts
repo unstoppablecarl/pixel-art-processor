@@ -195,7 +195,7 @@ export function makeTileGridSelectionToolState(
 
     tileSheetWriter.withHistory((mutator) => {
       for (const r of originalSheetDrawRects) {
-        mutator.clear(r.dx, r.dy, r.w, r.h, r.data)
+        mutator.clearSheetDrawRect(r)
       }
 
       for (const r of currentSheetDrawRects) {

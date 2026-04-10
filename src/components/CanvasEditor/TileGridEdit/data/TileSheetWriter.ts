@@ -1,10 +1,6 @@
 import {
   type BlendColor32,
-  type Color32,
-  fillPixelData,
-  fillPixelDataBinaryMask,
   makeBatchedQueue,
-  MaskType,
   packRGBA,
   type PixelData,
   type PixelTile,
@@ -17,7 +13,7 @@ import type { RGBA } from '../../../../lib/util/data/color.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { DrawRect } from '../lib/ISelection.ts'
-import { blendSheetDrawRects } from '../lib/TileGrid-blenders.ts'
+import { blendSheetDrawRects, clearSheetDrawRect } from '../lib/TileGrid-blenders.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { duplicateEdgePixels } from './TileEdgeDuplicator.ts'
@@ -96,29 +92,6 @@ function makeTileSheetMutator(
 ) {
   const target = writer.config.target
 
-  function clear(
-    x = 0,
-    y = 0,
-    w = state.tileSheet.pixelData.w,
-    h = state.tileSheet.pixelData.h,
-    mask: Uint8Array | null = null,
-  ) {
-    const empty = 0 as Color32
-
-    writer.accumulator.storeRegionBeforeState(x, y, w, h)
-
-    if (mask) {
-      fillPixelDataBinaryMask(target, empty, {
-        type: MaskType.BINARY,
-        w,
-        h,
-        data: mask,
-      }, x, y)
-    } else {
-      fillPixelData(target, empty, { x, y, w, h })
-    }
-  }
-
   function writePixel(x: number, y: number, color: RGBA) {
     writer.accumulator.storePixelBeforeState(x, y)
     const index = y * target.w + x
@@ -151,7 +124,12 @@ function makeTileSheetMutator(
   return {
     writeGridPoints,
     writeTilePoints,
-    clear,
+    clearSheetDrawRect(r: DrawRect) {
+      const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
+      didChange(
+        clearSheetDrawRect(target, r),
+      )
+    },
     blendSheetDrawRects(r: DrawRect, src: PixelData, blendFn: BlendColor32) {
       const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
       didChange(

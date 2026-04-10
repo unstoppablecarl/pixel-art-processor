@@ -3,6 +3,9 @@ import {
   type BlendColor32,
   blendPixelData,
   blendPixelDataBinaryMask,
+  type Color32,
+  fillPixelData,
+  fillPixelDataBinaryMask,
   MaskType,
   type PixelData,
 } from '../../../../../../pixel-data-js/src'
@@ -23,7 +26,18 @@ export function blendSheetDrawRects(target: PixelData, r: DrawRect, src: PixelDa
     return blendPixelDataBinaryMask(target, src, r as BinaryMask, opts)
   } else if (r.type === MaskType.ALPHA) {
     throw new Error('unsupported mask type')
-  } else {
-    return blendPixelData(target, src, opts)
   }
+  return blendPixelData(target, src, opts)
+}
+
+export function clearSheetDrawRect(target: PixelData, r: DrawRect): boolean {
+  const empty = 0 as Color32
+
+  if (r.type === MaskType.BINARY) {
+    return fillPixelDataBinaryMask(target, empty, r as BinaryMask, r.dx, r.dy)
+  } else if (r.type === MaskType.ALPHA) {
+    throw new Error('unsupported mask type')
+  }
+
+  return fillPixelData(target, empty, r.dx, r.dy, r.w, r.h)
 }
