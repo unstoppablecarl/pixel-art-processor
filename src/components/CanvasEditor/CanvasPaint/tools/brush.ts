@@ -34,14 +34,14 @@ export function makeBrushTool(
       isDrawing = true
       canvasWriter.withHistory((mutator) => {
         const pixels = toolState.getBrushPixels(x, y, state.width, state.height)
-        mutator.writePoints(pixels, store.brushColor)
+        mutator.writePoints(pixels, store.brushColor32)
       })
     },
     onDragStart(x, y) {
       isDrawing = true
       canvasWriter.withHistory((mutator) => {
         const pixels = toolState.getBrushPixels(x, y, state.width, state.height)
-        mutator.writePoints(pixels, store.brushColor)
+        mutator.writePoints(pixels, store.brushColor32)
       })
     },
     onDragMove(x, y) {
@@ -59,7 +59,7 @@ export function makeBrushTool(
 
       canvasWriter.withHistory((mutator) => {
         const brushPoints = points.flatMap(p => toolState.getBrushPixels(p.x, p.y, state.width, state.height))
-        mutator.writePoints(brushPoints, store.brushColor)
+        mutator.writePoints(brushPoints, store.brushColor32)
       })
     },
     onDragEnd() {

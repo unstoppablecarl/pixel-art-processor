@@ -1,12 +1,16 @@
-import type { PixelData } from 'pixel-data-js'
+import {
+  type BinaryMask,
+  type Color32,
+  fillPixelData,
+  fillPixelDataBinaryMask,
+  MaskType,
+  mutatorBlendBinaryMask, mutatorBlendPixelData,
+  PixelWriter,
+} from 'pixel-data-js'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
-import type { PixelColor, RGBA } from '../../../../lib/util/data/color.ts'
-import type { BlendFn, BlendImageDataOptions } from '../../../../lib/util/html-dom/blit.ts'
-import type { PixelDataRef } from '../../../../lib/vue/PixelDataRef.ts'
+import { getHistory } from '../../../../lib/util/history/history.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'
-import { applyCanvasPaintAccumulator } from './CanvasPaintHistory.ts'
-import { type CanvasPixelAccumulator, makeCanvasPixelAccumulator } from './CanvasPixelAccumulator.ts'
 
 export type CanvasPaintWriter = ReturnType<typeof makeCanvasPaintWriter>
 
@@ -18,105 +22,70 @@ export function makeCanvasPaintWriter(
     state: CanvasPaintEditorState,
     canvasRenderer: CanvasRenderer
   }) {
-  const { pixelDataRef } = state
-  const accumulator = makeCanvasPixelAccumulator()
-  const mutator = makeCanvasPaintMutator({ pixelDataRef, accumulator })
+
+  const writer = new PixelWriter(state.pixelDataRef.get()!, makeCanvasPaintMutator, {
+    historyManager: getHistory(),
+  })
 
   return {
     withHistory(cb: (mutator: CanvasPaintMutator) => void) {
-      cb(mutator)
-      const finalPatches = applyCanvasPaintAccumulator(state, accumulator, canvasRenderer)
+      writer.withHistory(cb)
       state.imageDataDirty = true
       canvasRenderer.queueRender()
-
-      return finalPatches
     },
   }
 }
 
 export type CanvasPaintMutator = ReturnType<typeof makeCanvasPaintMutator>
-const PACKED_ERASE = 0x00000000
 
-function makeCanvasPaintMutator(
-  {
-    pixelDataRef,
-    accumulator,
-  }: {
-    pixelDataRef: PixelDataRef,
-    accumulator: CanvasPixelAccumulator,
-  }) {
+function makeCanvasPaintMutator(writer: PixelWriter<any>) {
 
-  function blendPixelData(
-    src: PixelData,
-    blendFn: BlendFn,
-    opts: Omit<BlendImageDataOptions, 'blendMode'>,
-  ) {
-    const dx = opts.dx ?? 0
-    const dy = opts.dy ?? 0
-    const sx0 = opts.sx ?? 0
-    const sy0 = opts.sy ?? 0
-    const w = opts.sw ?? src.w
-    const h = opts.sh ?? src.h
-    const mask = opts.mask ?? null
-
-    for (let y = 0; y < h; y++) {
-      const srcY = sy0 + y
-      const srcYBase = srcY * src.w
-      const destY = dy + y
-
-      for (let x = 0; x < w; x++) {
-        const srcX = sx0 + x
-        const srcIdx = srcYBase + srcX
-        if (mask && !mask[srcIdx]) continue
-
-        const packedColor = src.data[srcIdx]
-
-        accumulator.addPixelPacked(dx + x, destY, packedColor, blendFn)
-      }
-    }
-  }
+  const target = writer.config.target
+  const accumulator = writer.accumulator
 
   function clear(
     x = 0,
     y = 0,
-    w = pixelDataRef.get()!.w,
-    h = pixelDataRef.get()!.h,
-    mask: Uint8Array | null = null,
+    w = target.w,
+    h = target.h,
+    maskData: Uint8Array | null = null,
   ) {
-    for (let iy = 0; iy < h; iy++) {
-      const destY = y + iy
-      const maskRowOffset = iy * w
+    const didChange = accumulator.storeRegionBeforeState(x, y, w, h)
 
-      for (let ix = 0; ix < w; ix++) {
-        if (mask && !mask[maskRowOffset + ix]) continue
+    if (maskData) {
+      const mask: BinaryMask = {
+        data: maskData,
+        type: MaskType.BINARY,
+        w,
+        h,
+      }
+      didChange(
+        fillPixelDataBinaryMask(target, 0 as Color32, mask, x, y),
+      )
+    } else {
+      didChange(
+        fillPixelData(target, 0 as Color32, x, y, w, h),
+      )
+    }
+  }
 
-        accumulator.addPixelPacked(x + ix, destY, PACKED_ERASE)
+  function writePoints(points: Point[], color: Color32) {
+    for (let i = 0; i < points.length; i++) {
+      const { x, y } = points[i]
+      const index = y * target.w + x
+
+      const current = target.data[index]
+      if (current !== color) {
+        accumulator.storePixelBeforeState(x, y)
+        target.data[index] = color
       }
     }
   }
 
-  function writePixels(pixels: PixelColor[]) {
-    for (let i = 0; i < pixels.length; i++) {
-      const p = pixels[i]
-      const c = p.color
-      const packed = (c.r << 24) | (c.g << 16) | (c.b << 8) | (c.a >>> 0)
-      accumulator.addPixelPacked(p.x, p.y, packed)
-    }
-  }
-
-  function writePoints(points: Point[], color: RGBA) {
-    // Pre-pack the color once before the loop
-    const packed = (color.r << 24) | (color.g << 16) | (color.b << 8) | (color.a >>> 0)
-    for (let i = 0; i < points.length; i++) {
-      const p = points[i]
-      accumulator.addPixelPacked(p.x, p.y, packed)
-    }
-  }
-
   return {
-    blendPixelData,
+    ...mutatorBlendBinaryMask(writer),
+    ...mutatorBlendPixelData(writer),
     clear,
-    writePixels,
     writePoints,
   }
 }

@@ -1,4 +1,11 @@
-import { makePixelData, PixelData, resizeImageData, type SerializedImageData, setPixelData, copyPixelData } from 'pixel-data-js'
+import {
+  copyPixelData,
+  makePixelData,
+  PixelData,
+  resizeImageData,
+  type SerializedImageData,
+  setPixelData,
+} from 'pixel-data-js'
 import { markRaw, type Raw, shallowReactive, type ShallowReactive } from 'vue'
 import { deserializeImageData, serializeImageData } from '../util/html-dom/ImageData.ts'
 
@@ -11,11 +18,10 @@ export type PixelDataRef = ShallowReactive<{
   width: number,
   height: number,
 
-  readonly get: () => PixelData | null,
+  readonly get: () => PixelData,
   readonly getImageData: () => ImageData | null,
-  readonly copy: () => PixelData | null,
-  readonly set: (newValue: PixelData | null) => void,
-  readonly setImageData: (newValue: ImageData | null) => void,
+  readonly copy: () => PixelData,
+  readonly set: (newValue: ImageData | null) => void,
 
   readonly setQuiet: (newValue: PixelData | null) => void,
 
@@ -38,8 +44,10 @@ export type PixelDataRef = ShallowReactive<{
 }>
 
 export function pixelDataRef(initial: PixelData | null = null): PixelDataRef {
-  if (initial) markRaw(initial)
-  let image: PixelData | null = initial
+  const empty = { width: 0, height: 0, data: new Uint8ClampedArray(0) } as ImageData
+
+  const image: PixelData = initial ?? makePixelData(empty)
+  markRaw(image)
 
   const capsule: PixelDataRef = shallowReactive({
     __isPixelDataRef: true,
@@ -49,24 +57,24 @@ export function pixelDataRef(initial: PixelData | null = null): PixelDataRef {
     watchTarget: 0,
 
     setQuiet(newValue: PixelData | null) {
-      if (image === null && newValue === null) return
+      if (image.imageData === empty && newValue === null) return
       if (!newValue) {
-        image = null
+        setPixelData(image, empty)
         capsule.hasValue = false
         capsule.width = 0
         capsule.height = 0
-
         return
       }
 
-      if (image &&
+      if (
         image.w === newValue.w &&
-        image.h === newValue.h) {
+        image.h === newValue.h
+      ) {
 
         image.data.set(newValue.data)
       } else {
-        image = newValue
-        markRaw(image)
+        setPixelData(image, newValue.imageData)
+
         capsule.hasValue = true
         capsule.width = newValue.w
         capsule.height = newValue.h
@@ -78,80 +86,69 @@ export function pixelDataRef(initial: PixelData | null = null): PixelDataRef {
       offsetX = 0,
       offsetY = 0,
     ) {
-      if (!image) {
-        capsule.set(makePixelData(new ImageData(newWidth, newHeight)))
+      if (image.imageData === empty) {
+        setPixelData(image, new ImageData(newWidth, newHeight))
         return
       }
       if (image.w === newWidth && image.h === newHeight) return
 
       const newImage = resizeImageData(image.imageData as ImageData, newWidth, newHeight, offsetX, offsetY)
-      setPixelData(image, newImage)
-      capsule.set(image)
+      capsule.set(newImage)
     },
     destructiveResize(
       newWidth: number,
       newHeight: number,
     ) {
-      if (!image) {
-        capsule.set(makePixelData(new ImageData(newWidth, newHeight)))
+      if (image.imageData === empty) {
+        capsule.set(new ImageData(newWidth, newHeight))
         return
       }
       if (image.w === newWidth && image.h === newHeight) return
 
-      setPixelData(image, new ImageData(newWidth, newHeight))
-      capsule.set(image)
+      capsule.set(new ImageData(newWidth, newHeight))
     },
     clear() {
-      if (!image) return
+      if (image.imageData === empty) return
 
-      image = null
-      capsule.hasValue = false
-      capsule.width = 0
-      capsule.height = 0
-      capsule.watchTarget++
+      capsule.set(null)
     },
     clearPixels() {
-      if (!image) return
+      if (image.imageData === empty) return
       image.data.fill(0)
       capsule.watchTarget++
     },
-    set(newValue: PixelData | null) {
-      if (image === null && newValue === null) return
-      capsule.setQuiet(newValue)
+    set(newValue: ImageData | null) {
+      if (image.imageData === empty && newValue === null) return
+
+      const val = newValue ?? empty
+      setPixelData(image, val)
+
+      capsule.hasValue = val !== empty
+      capsule.width = image.w
+      capsule.height = image.h
       capsule.watchTarget++
-    },
-    setImageData(newValue: ImageData | null) {
-      if (newValue === null) {
-        capsule.set(null)
-        return
-      }
-
-      if (!image) {
-        capsule.set(makePixelData(newValue))
-        return
-      }
-
-      setPixelData(image, newValue)
-      capsule.set(image)
     },
     get() {
       return image
     },
     getImageData() {
-      return image?.imageData ?? null
+      return image.imageData === empty ? null : image.imageData
     },
     triggerRef() {
       capsule.watchTarget++
     },
-    copy: () => image ? copyPixelData(image) : null,
-    serialize: () => serializeImageData(image?.imageData ?? null),
+    copy: () => copyPixelData(image),
+    serialize: () => {
+      if (image.imageData === empty) return null
+      return serializeImageData(image.imageData)
+    },
     setSerialized(serialized: SerializedImageData | null) {
       const imageData = deserializeImageData(serialized)
-      capsule.setImageData(imageData)
+      capsule.set(imageData)
     },
     // set the capsule value and mark the serialized obj raw so it can be safely set to the config object
     deserializeConfig<T extends SerializedImageData | null>(serialized: T): T extends null ? null : Raw<T> {
-      capsule.setImageData(deserializeImageData(serialized))
+      capsule.set(deserializeImageData(serialized))
       if (!serialized) return null as any
       return markRaw(serialized) as any
     },

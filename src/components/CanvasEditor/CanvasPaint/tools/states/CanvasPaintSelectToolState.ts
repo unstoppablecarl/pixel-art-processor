@@ -1,10 +1,17 @@
-import { extractPixelData, floodFillSelection, makePixelData, trimRectBounds } from 'pixel-data-js'
+import {
+  type BinaryMask,
+  extractPixelData,
+  floodFillSelection,
+  makePixelData,
+  MaskType,
+  trimRectBounds,
+} from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect } from '../../../../../lib/util/data/Rect.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../../../lib/util/html-dom/clipboard.ts'
 import { imageDataToPngBlob } from '../../../../../lib/util/html-dom/ImageData.ts'
 import { SelectSubTool } from '../../../_core/_core-editor-types.ts'
-import { selectMoveBlendModeToBlendFn } from '../../../_core/tools/selection-helpers.ts'
+import { selectMoveBlendModeToBlender32 } from '../../../_core/tools/selection-helpers.ts'
 import type { CanvasPaintEditorState } from '../../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../../CanvasRenderer.ts'
 import type { CanvasPaintWriter } from '../../data/CanvasPaintWriter.ts'
@@ -226,17 +233,33 @@ export function makeCanvasPaintSelectToolState(
       }
 
       const c = selection.current
-      const modeFn = selectMoveBlendModeToBlendFn[mode]
+      // const modeFn = selectMoveBlendModeToBlendFn[mode]
+      const blendFn = selectMoveBlendModeToBlender32[mode]
 
-      mutator.blendPixelData(
-        selection.pixels,
-        modeFn,
-        {
-          dx: c.x,
-          dy: c.y,
-          mask: selection.current.data,
-        },
-      )
+      const ops = {
+        x: c.x,
+        y: c.y,
+        blendFn,
+      }
+      if (selection.current.data) {
+        const mask: BinaryMask = {
+          type: MaskType.BINARY,
+          data: selection.current.data,
+          w: selection.pixels.w,
+          h: selection.pixels.h,
+        }
+
+        mutator.blendBinaryMask(
+          selection.pixels,
+          mask,
+          ops,
+        )
+      } else {
+        mutator.blendPixelData(
+          selection.pixels,
+          ops,
+        )
+      }
     })
 
     state.imageDataDirty = true
