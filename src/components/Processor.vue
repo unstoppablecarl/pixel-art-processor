@@ -5,8 +5,9 @@ import { isFork } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { useUIStore } from '../lib/store/ui-store.ts'
 import { useSidebar } from '../lib/vue/useSidebar.ts'
+import CanvasEditFooter from './CanvasEditor/_core/components/CanvasEditFooter.vue'
 import AppHeader from './AppHeader.vue'
-import CanvasPaintSidebar from './CanvasEditor/_core/components/CanvasPaintSidebar.vue'
+import CanvasEditSidebar from './CanvasEditor/_core/components/CanvasEditSidebar.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
 import WangTileGridPatternPreview from './Processor/WangTileGridPatternPreview.vue'
@@ -49,9 +50,11 @@ const { visible } = useSidebar()
 
   <div :class="{
     'overflow': true,
-    'tool-sidebar-visible' : visible
+    'canvas-edit-visible' : visible,
+    'app-container': true,
   }">
-    <CanvasPaintSidebar />
+    <CanvasEditSidebar />
+    <CanvasEditFooter />
     <div class="processor-container pb-3">
       <PipelineBranch
         :node-ids="rootNodeIds"
@@ -63,5 +66,8 @@ const { visible } = useSidebar()
     </div>
 
     <WangTileGridPatternPreview />
+
   </div>
 </template>
+<style lang="scss">
+</style>

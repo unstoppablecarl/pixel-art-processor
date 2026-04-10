@@ -1,10 +1,9 @@
 import hotkeys from 'hotkeys-js'
 import {
-  BrushSubTool,
-  SelectMoveMode,
-  SelectSubTool,
-  Tool,
-} from '../components/CanvasEditor/_core/_core-editor-types.ts'
+  toolsMetaToKeyBindEntries,
+  toolsMetaToModifierKeyBindEntries,
+} from '../components/CanvasEditor/_core/tools-input.ts'
+import type { KeyboardEventFilter } from './_lib-types.ts'
 import { useCanvasEditToolStore } from './store/canvas-edit-tool-store.ts'
 import type { VueHistory } from './util/history/history.ts'
 
@@ -16,13 +15,7 @@ export function bindInputKeys(history: VueHistory) {
   const toolStore = useCanvasEditToolStore()
 
   const keys = {
-    // tools
-    '[': () => toolStore.decreaseBrushSize(),
-    ']': () => toolStore.increaseBrushSize(),
-    'b': () => toolStore.setTool(Tool.BRUSH, BrushSubTool.ADD),
-    'e': () => toolStore.setTool(Tool.BRUSH, BrushSubTool.REMOVE),
-    'm': () => toolStore.setTool(Tool.SELECT, SelectSubTool.RECT),
-    'w': () => toolStore.setTool(Tool.SELECT, SelectSubTool.FLOOD),
+    ...toolsMetaToKeyBindEntries(toolStore),
 
     // undo
     'command+z, ctrl+z': history.undo,
@@ -32,20 +25,18 @@ export function bindInputKeys(history: VueHistory) {
     hotkeys(k, v)
   }
 
-  const unbinds = [
-    bindModifierKeysUpDown((e) => e.key === 'Meta' || e.key === 'Control', {
-      up: () => toolStore.selectionMoveMode = SelectMoveMode.SELECTION,
-      down: () => toolStore.selectionMoveMode = SelectMoveMode.CONTENT,
-    }),
-  ]
+  const unbinds = toolsMetaToModifierKeyBindEntries(toolStore).map(({ filter, up, down }) => {
+    return bindModifierKeysUpDown(filter, {
+      up: () => up(toolStore),
+      down: () => down(toolStore),
+    })
+  })
 
   return () => {
     hotkeys.unbind()
     unbinds.forEach(u => u())
   }
 }
-
-export type KeyboardEventFilter = (e: KeyboardEvent) => boolean
 
 export function bindModifierKeysUpDown(filter: KeyboardEventFilter, { up, down }: {
   up: () => void,

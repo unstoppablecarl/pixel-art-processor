@@ -115,8 +115,8 @@ const grid = computed(() => {
 })
 </script>
 <template>
-  <div :style="cssStyle">
-    <div class="w-100 d-flex flex-nowrap p-3 bg-dark border-top border-bottom">
+  <div :style="cssStyle" class="preview-margin">
+    <div class="d-flex flex-nowrap p-3 bg-dark rounded m-3 preview-container-border">
       <div class="fw-bold me-3 py-3">
         Pattern Preview
       </div>
@@ -181,9 +181,16 @@ const grid = computed(() => {
   </div>
 </template>
 <style lang="scss">
+.preview-margin {
+  margin: 0 var(--node-card-margin) 0;
+}
 
 .preview-row {
   height: var(--node-img-height);
+}
+
+.preview-container-border {
+  border: 1px solid var(--border-color);
 }
 
 .preview-cell {

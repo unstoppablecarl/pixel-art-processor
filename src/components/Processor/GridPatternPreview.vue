@@ -98,9 +98,9 @@ const grid = computed(() => {
 </script>
 <template>
   <div :style="cssStyle">
-    <div class="w-100 d-flex flex-nowrap p-3 bg-dark border-top border-bottom">
+    <div class="w-100 d-flex flex-nowrap p-3 bg-dark border">
       <div class="fw-bold me-3 py-3">
-        Pattern Preview
+        zPattern Preview
       </div>
 
       <div class="form-group d-flex align-items-center gap-2 mb-0">

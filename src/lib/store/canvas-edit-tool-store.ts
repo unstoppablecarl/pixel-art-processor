@@ -105,7 +105,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     mapper.$restoreState(data)
   }
 
-  function setTool(tool: Tool, subTool: SubToolOf<Tool> | null = null) {
+  function setTool<T extends Tool>(tool: T, subTool: SubToolOf<T> | null = null) {
     currentTool.value = tool
     const hasSubTools = !!SubTools[tool]
     if (!hasSubTools) {

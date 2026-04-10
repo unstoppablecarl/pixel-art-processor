@@ -17,7 +17,7 @@ const { currentTool } = storeToRefs(store)
 const hasTileGridNode = computed(() => pipelineStore.hasWithDef(NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE))
 </script>
 <template>
-  <div class="canvas-paint-sidebar shadow-sm">
+  <div class="canvas-edit-sidebar shadow-sm">
     <div class="section">
       <div class="btn-grid w-100" role="group">
         <ToolButton
@@ -57,12 +57,12 @@ const hasTileGridNode = computed(() => pipelineStore.hasWithDef(NODE_WANG_TILE_B
   </div>
 </template>
 <style lang="scss">
-.canvas-paint-sidebar {
+.canvas-edit-sidebar {
   --bs-bg-opacity: 1;
   background-color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity)) !important;
   top: var(--navbar-height);
   left: 0;
-  width: var(--canvas-paint-sidebar-width);
+  width: var(--canvas-edit-sidebar-width);
   height: 300px;
   position: fixed;
   z-index: 20;
@@ -80,7 +80,7 @@ const hasTileGridNode = computed(() => pipelineStore.hasWithDef(NODE_WANG_TILE_B
   }
 }
 
-.tool-sidebar-visible .canvas-paint-sidebar {
+.canvas-edit-visible .canvas-edit-sidebar {
   transform: translateX(0%);
 }
 </style>
