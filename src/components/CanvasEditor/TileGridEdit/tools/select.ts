@@ -1,14 +1,6 @@
-import {
-  type BinaryMask,
-  blendPixelData,
-  blendPixelDataBinaryMask,
-  type Color32,
-  fillPixelData,
-  fillPixelDataBinaryMask,
-  type NullableMaskRect,
-} from 'pixel-data-js'
+import { type NullableMaskRect } from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { type BaseSelectToolHandler } from '../../_core/_core-editor-types.ts'
+import { type BaseSelectToolHandler, SelectMoveMode } from '../../_core/_core-editor-types.ts'
 import {
   drawSelectOutline,
   makeBaseSelectHandler,
@@ -21,6 +13,7 @@ import type {
 } from '../_tile-grid-editor-types.ts'
 import { CanvasType } from '../_tile-grid-editor-types.ts'
 import { mergeAdjacentSelectionRects } from '../lib/SelectionRects.ts'
+import { blendSheetDrawRect, clearSheetDrawRect } from '../lib/TileGrid-blenders.ts'
 import { makeTileGridSelectionToolState, type TileGridSelectionToolState } from './states/TileGridSelectionToolState.ts'
 
 export type TileGridSelectToolHandler =
@@ -106,7 +99,11 @@ export function makeSelectTool(
         }
 
         if (ts.gridPointInSelection(x, y)) {
-          ts.gridDragStart(x, y)
+          if (store.selectionMoveMode === SelectMoveMode.CONTENT) {
+            ts.startMovingContent()
+          } else {
+            ts.startMovingSelection()
+          }
           return
         }
 
@@ -124,7 +121,11 @@ export function makeSelectTool(
         }
 
         if (ts.tilePointInSelection(x, y, tileId)) {
-          ts.tileDragStart(x, y, tileId)
+          if (store.selectionMoveMode === SelectMoveMode.CONTENT) {
+            ts.startMovingContent()
+          } else {
+            ts.startMovingSelection()
+          }
           return
         }
 
@@ -174,36 +175,22 @@ export function makeSelectTool(
     gridPixelOverlayDraw(ctx) {
       const sel = toolState.selection
       if (!sel) return
+      if (!sel.isLifted) return
 
       const mode = store.selectMoveBlendMode
-      const blender = selectMoveBlendModeToBlender32[mode]!
+      const blendFn = selectMoveBlendModeToBlender32[mode]!
       const preview = gridRenderer.tileGridPixelDataRef.copy()!
 
       // 1. Clear original pixels
-      for (const r of sel.getOriginalGridDrawRects()) {
-        if (r.data) {
-          fillPixelDataBinaryMask(preview, 0 as Color32, r as BinaryMask, r.dx, r.dy)
-        } else {
-          fillPixelData(preview, 0 as Color32, r.dx, r.dy, r.w, r.h)
+      if (sel.hasMoved()) {
+        for (const r of sel.getOriginalGridDrawRects()) {
+          clearSheetDrawRect(preview, r)
         }
       }
 
       // 2. Draw current pixels
       for (const r of sel.getCurrentGridDrawRects()) {
-        const opts = {
-          x: r.dx,
-          y: r.dy,
-          sx: r.sx,
-          sy: r.sy,
-          w: r.w,
-          h: r.h,
-          blendFn: blender,
-        }
-        if (r.data) {
-          blendPixelDataBinaryMask(preview, sel.pixels, r as BinaryMask, opts)
-        } else {
-          blendPixelData(preview, sel.pixels, opts)
-        }
+        blendSheetDrawRect(preview, r, sel.pixels, blendFn)
       }
 
       ctx.putImageData(preview.imageData, 0, 0)
@@ -241,43 +228,19 @@ export function makeSelectTool(
     tilePixelOverlayDraw(ctx, tileId) {
       const sel = toolState.selection
       if (!sel) return
+      if (!sel.isLifted) return
 
       const mode = store.selectMoveBlendMode
-      const blender = selectMoveBlendModeToBlender32[mode]
+      const blendFn = selectMoveBlendModeToBlender32[mode]
       const preview = state.tileSheet.extractTile(tileId)
 
       if (sel.hasMoved()) {
         for (const r of sel.getOriginalTileDrawRects(tileId)) {
-          const opts = {
-            x: r.dx,
-            y: r.dy,
-            w: r.w,
-            h: r.h,
-          }
-
-          if (r.data) {
-            blendPixelDataBinaryMask(preview, sel.pixels, r as BinaryMask, opts)
-          } else {
-            blendPixelData(preview, sel.pixels, opts)
-          }
+          clearSheetDrawRect(preview, r)
         }
       }
       for (const r of sel.getCurrentTileDrawRects(tileId)) {
-        const opts = {
-          x: r.dx,
-          y: r.dy,
-          sx: r.sx,
-          sy: r.sy,
-          w: r.w,
-          h: r.h,
-          blendFn: blender,
-        }
-
-        if (r.data) {
-          blendPixelDataBinaryMask(preview, sel.pixels, r as BinaryMask, opts)
-        } else {
-          blendPixelData(preview, sel.pixels, opts)
-        }
+        blendSheetDrawRect(preview, r, sel.pixels, blendFn)
       }
 
       ctx.putImageData(preview.imageData, 0, 0)

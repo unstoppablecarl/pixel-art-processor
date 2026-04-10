@@ -74,5 +74,8 @@ export interface ISelection {
   hasMoved(): boolean
   pixels: PixelData
 
+  isLifted: boolean
+  lift(): void
+
   getOverlappingTileIds(): TileId[]
 }

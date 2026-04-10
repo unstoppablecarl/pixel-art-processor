@@ -148,22 +148,17 @@ export function makeCanvasPaintSelectTool(
       }
 
       // Draw moved selection
+      const opts = {
+        x: sel.current.x,
+        y: sel.current.y,
+        w: sel.current.w,
+        h: sel.current.h,
+        blendFn: blender,
+      }
       if (sel.current.data) {
-        blendPixelDataBinaryMask(preview, sel.pixels, sel.current as BinaryMask, {
-          x: sel.current.x,
-          y: sel.current.y,
-          w: sel.current.w,
-          h: sel.current.h,
-          blendFn: blender,
-        })
+        blendPixelDataBinaryMask(preview, sel.pixels, sel.current as BinaryMask, opts)
       } else {
-        blendPixelData(preview, sel.pixels, {
-          x: sel.current.x,
-          y: sel.current.y,
-          w: sel.current.w,
-          h: sel.current.h,
-          blendFn: blender,
-        })
+        blendPixelData(preview, sel.pixels, opts)
       }
 
       ctx.putImageData(preview.imageData, 0, 0)

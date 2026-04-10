@@ -132,13 +132,26 @@ export function makeTileGridSelectionToolState(
     selecting = false
   }
 
-  function gridDragStart(gx: number, gy: number) {
+  function startMovingSelection() {
     if (!selection) return
+
+    // if content is lifted, commit it first then drop back to a fresh marquee
+    if (selection.isLifted) {
+      commit()
+      rebuildSelection()
+    }
+
     dragging = true
   }
 
-  function tileDragStart(tx: number, ty: number, tileId: TileId) {
-    if (!selection) return
+  function startMovingContent() {
+    if (!selection || dragging) return
+
+    // promote marquee -> content on first content-drag
+    if (!selection.isLifted) {
+      selection.lift()
+    }
+
     dragging = true
   }
 
@@ -293,7 +306,7 @@ export function makeTileGridSelectionToolState(
     selection = makeGridOriginSelection(all)
   }
 
-  function rebuildSelectionAfterCommit() {
+  function rebuildSelection() {
     if (!selection) return
 
     if (inputSpace === CanvasType.GRID) {
@@ -325,8 +338,15 @@ export function makeTileGridSelectionToolState(
       return
     }
 
-    commit()
-    rebuildSelectionAfterCommit()
+    if (selection.isLifted) {
+      // content drag: write pixels to sheet, rebuild at new position
+      commit()
+      rebuildSelection()
+    } else {
+      // marquee-only drag: bounds moved but no pixel write — just reanchor
+      rebuildSelection()
+    }
+
     drawAffectedTiles()
     dragging = false
   }
@@ -394,8 +414,6 @@ export function makeTileGridSelectionToolState(
     finalizeSelection,
     addToSelection,
     subtractFromSelection,
-    gridDragStart,
-    tileDragStart,
     dragEnd,
 
     moveSelectionOnGrid,
@@ -405,7 +423,8 @@ export function makeTileGridSelectionToolState(
     gridPointInSelection,
 
     finalizeFloodSelection,
-
+    startMovingContent,
+    startMovingSelection,
     inFloodMode() {
       return store.currentSubTool === SelectSubTool.FLOOD
     },

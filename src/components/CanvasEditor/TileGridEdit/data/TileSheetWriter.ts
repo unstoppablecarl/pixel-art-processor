@@ -13,7 +13,7 @@ import type { RGBA } from '../../../../lib/util/data/color.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { DrawRect } from '../lib/ISelection.ts'
-import { blendSheetDrawRects, clearSheetDrawRect } from '../lib/TileGrid-blenders.ts'
+import { blendSheetDrawRect, clearSheetDrawRect } from '../lib/TileGrid-blenders.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { duplicateEdgePixels } from './TileEdgeDuplicator.ts'
@@ -131,7 +131,7 @@ function makeTileSheetMutator(
     blendSheetDrawRects(r: DrawRect, src: PixelData, blendFn: BlendColor32) {
       const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
       didChange(
-        blendSheetDrawRects(target, r, src, blendFn),
+        blendSheetDrawRect(target, r, src, blendFn),
       )
     },
   }

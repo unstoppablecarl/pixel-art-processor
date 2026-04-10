@@ -10,6 +10,7 @@ export class TileOriginSelection implements ISelection {
   private originalRectsBounds: Rect
   private moved = false
   pixels: PixelData
+  isLifted = false
 
   constructor(rects: NullableMaskRect[], private tileId: TileId, private geometry: TileGridGeometry) {
 
@@ -54,6 +55,10 @@ export class TileOriginSelection implements ISelection {
     this.currentRects = rects.map(r => ({ ...r }))
     this.originalRectsBounds = getRectsBounds(rects)
     this.pixels = pixels
+  }
+
+  lift(): void {
+    this.isLifted = true
   }
 
   hasMoved(): boolean {

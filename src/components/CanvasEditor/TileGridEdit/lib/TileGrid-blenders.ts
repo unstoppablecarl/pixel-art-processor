@@ -11,7 +11,7 @@ import {
 } from '../../../../../../pixel-data-js/src'
 import type { DrawRect } from './ISelection.ts'
 
-export function blendSheetDrawRects(target: PixelData, r: DrawRect, src: PixelData, blendFn: BlendColor32): boolean {
+export function blendSheetDrawRect(target: PixelData, r: DrawRect, src: PixelData, blendFn: BlendColor32): boolean {
   const opts = {
     x: r.dx,
     y: r.dy,
