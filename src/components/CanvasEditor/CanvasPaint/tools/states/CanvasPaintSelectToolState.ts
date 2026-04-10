@@ -1,11 +1,4 @@
-import {
-  type BinaryMask,
-  extractPixelData,
-  floodFillSelection,
-  makePixelData,
-  MaskType,
-  trimRectBounds,
-} from 'pixel-data-js'
+import { extractPixelData, floodFillSelection, makePixelData, trimRectBounds } from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect } from '../../../../../lib/util/data/Rect.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../../../lib/util/html-dom/clipboard.ts'
@@ -223,40 +216,15 @@ export function makeCanvasPaintSelectToolState(
     const mode = store.selectMoveBlendMode
 
     canvasWriter.withHistory((mutator) => {
-      if (!selection?.pixels) return
+      if (!selection) return
+      const pixels = selection?.pixels
+      if (!pixels) return
 
       if (!selection.isPasted) {
         mutator.clearSelectionRect(selection.original)
       }
-
-      const c = selection.current
-      // const modeFn = selectMoveBlendModeToBlendFn[mode]
       const blendFn = selectMoveBlendModeToBlender32[mode]
-
-      const ops = {
-        x: c.x,
-        y: c.y,
-        blendFn,
-      }
-      if (selection.current.data) {
-        const mask: BinaryMask = {
-          type: MaskType.BINARY,
-          data: selection.current.data,
-          w: selection.pixels.w,
-          h: selection.pixels.h,
-        }
-
-        mutator.blendBinaryMask(
-          selection.pixels,
-          mask,
-          ops,
-        )
-      } else {
-        mutator.blendPixelData(
-          selection.pixels,
-          ops,
-        )
-      }
+      mutator.blendSelectionRect(selection.current!, pixels, blendFn)
     })
 
     state.imageDataDirty = true
