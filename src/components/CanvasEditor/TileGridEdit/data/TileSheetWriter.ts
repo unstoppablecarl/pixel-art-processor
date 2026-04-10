@@ -1,8 +1,5 @@
 import {
-  type BinaryMask,
   type BlendColor32,
-  blendPixelData,
-  blendPixelDataBinaryMask,
   type Color32,
   fillPixelData,
   fillPixelDataBinaryMask,
@@ -20,6 +17,7 @@ import type { RGBA } from '../../../../lib/util/data/color.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { DrawRect } from '../lib/ISelection.ts'
+import { blendSheetDrawRects } from '../lib/TileGrid-blenders.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { duplicateEdgePixels } from './TileEdgeDuplicator.ts'
@@ -150,33 +148,16 @@ function makeTileSheetMutator(
     }
   }
 
-  function blendSheetDrawRects(r: DrawRect, src: PixelData, blendFn: BlendColor32) {
-    const opts = {
-      x: r.dx,
-      y: r.dy,
-      sx: r.sx,
-      sy: r.sy,
-      w: r.w,
-      h: r.h,
-      blendFn,
-    }
-
-    writer.accumulator.storeRegionBeforeState(opts.x, opts.y, opts.w, opts.h)
-
-    if (r.type === MaskType.BINARY) {
-      blendPixelDataBinaryMask(target, src, r as BinaryMask, opts)
-    } else if (r.type === MaskType.ALPHA) {
-      throw new Error('unsupported mask type')
-    } else {
-      blendPixelData(target, src, opts)
-    }
-  }
-
   return {
     writeGridPoints,
     writeTilePoints,
     clear,
-    blendSheetDrawRects,
+    blendSheetDrawRects(r: DrawRect, src: PixelData, blendFn: BlendColor32) {
+      const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
+      didChange(
+        blendSheetDrawRects(target, r, src, blendFn),
+      )
+    },
   }
 }
 
