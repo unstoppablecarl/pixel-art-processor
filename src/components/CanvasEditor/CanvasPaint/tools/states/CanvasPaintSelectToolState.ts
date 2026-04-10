@@ -182,8 +182,7 @@ export function makeCanvasPaintSelectToolState(
 
       canvasWriter.withHistory((mutator) => {
         if (!selection) return
-        const o = selection.original
-        mutator.clear(o.x, o.y, o.w, o.h, o.data)
+        mutator.clearSelectionRect(selection.original)
       })
 
       clearSelection()
@@ -195,8 +194,7 @@ export function makeCanvasPaintSelectToolState(
     // marquee selection grab current pixels
     canvasWriter.withHistory((mutator) => {
       if (!selection) return
-      const c = selection.current
-      mutator.clear(c.x, c.y, c.w, c.h, c.data)
+      mutator.clearSelectionRect(selection.current)
     })
   }
 
@@ -228,8 +226,7 @@ export function makeCanvasPaintSelectToolState(
       if (!selection?.pixels) return
 
       if (!selection.isPasted) {
-        const o = selection.original
-        mutator.clear(o.x, o.y, o.w, o.h, o.data)
+        mutator.clearSelectionRect(selection.original)
       }
 
       const c = selection.current

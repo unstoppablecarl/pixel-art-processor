@@ -12,7 +12,6 @@ import {
   type PixelData,
   type PixelTile,
   PixelWriter,
-  type Rect,
 } from 'pixel-data-js'
 import { nextTick } from 'vue'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
@@ -20,6 +19,7 @@ import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../li
 import type { RGBA } from '../../../../lib/util/data/color.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
+import type { DrawRect } from '../lib/ISelection.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { duplicateEdgePixels } from './TileEdgeDuplicator.ts'
@@ -150,44 +150,33 @@ function makeTileSheetMutator(
     }
   }
 
-  type BlendPixelDataOpts = Rect & {
-    sx: number,
-    sy: number,
-    blendFn: BlendColor32,
-  }
-
-  function _blendPixelData(
-    pixelData: PixelData,
-    opts: BlendPixelDataOpts,
-    mask: BinaryMask,
-  ): void;
-
-  function _blendPixelData(
-    pixelData: PixelData,
-    opts: BlendPixelDataOpts,
-  ): void;
-
-  function _blendPixelData(
-    pixelData: PixelData,
-    opts: BlendPixelDataOpts,
-    mask?: BinaryMask,
-  ): void {
+  function blendSheetDrawRects(r: DrawRect, src: PixelData, blendFn: BlendColor32) {
+    const opts = {
+      x: r.dx,
+      y: r.dy,
+      sx: r.sx,
+      sy: r.sy,
+      w: r.w,
+      h: r.h,
+      blendFn,
+    }
 
     writer.accumulator.storeRegionBeforeState(opts.x, opts.y, opts.w, opts.h)
 
-    if (mask) {
-      blendPixelDataBinaryMask(target, pixelData, mask, opts)
+    if (r.type === MaskType.BINARY) {
+      blendPixelDataBinaryMask(target, src, r as BinaryMask, opts)
+    } else if (r.type === MaskType.ALPHA) {
+      throw new Error('unsupported mask type')
     } else {
-      blendPixelData(target, pixelData, opts)
+      blendPixelData(target, src, opts)
     }
   }
 
   return {
     writeGridPoints,
     writeTilePoints,
-    blendPixelData: _blendPixelData,
     clear,
-
+    blendSheetDrawRects,
   }
 }
 

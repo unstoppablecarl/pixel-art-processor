@@ -1,4 +1,4 @@
-import { blendPixelData, makeCanvasFrameRenderer, makeRenderQueue, overwriteFast } from 'pixel-data-js'
+import { makeCanvasFrameRenderer, makeRenderQueue, writePixelData } from 'pixel-data-js'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../../lib/util/html-dom/PixelCanvas.ts'
 import { pixelDataRef } from '../../../../lib/vue/PixelDataRef.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
@@ -85,11 +85,7 @@ export function makeTileGridRenderer(
         const { gx, gy } = state.tileGridGeometry.gridTileToGridPixel(tileX, tileY)
         const tileImage = state.tileSheet.extractTile(tileId)
 
-        blendPixelData(tileGridPixelDataRef.get()!, tileImage, {
-          x: gx,
-          y: gy,
-          blendFn: overwriteFast,
-        })
+        writePixelData(tileGridPixelDataRef.get()!, tileImage, gx, gy)
       })
     })
   }
@@ -97,7 +93,7 @@ export function makeTileGridRenderer(
   const queueRenderGrid = makeRenderQueue(() => {
     updateGridTiles()
     const drawPixelLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
-      // toolset.currentToolHandler.gridPixelOverlayDraw?.(ctx)
+      toolset.currentToolHandler.gridPixelOverlayDraw?.(ctx)
       tileGridEdgeColorRenderer.drawGridEdges(ctx)
     }
 

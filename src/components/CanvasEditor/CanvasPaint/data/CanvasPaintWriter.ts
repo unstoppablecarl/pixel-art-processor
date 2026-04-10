@@ -1,14 +1,13 @@
 import {
-  type BinaryMask,
   type Color32,
-  fillPixelData,
-  fillPixelDataBinaryMask,
-  MaskType,
-  mutatorBlendBinaryMask, mutatorBlendPixelData,
+  mutatorBlendBinaryMask,
+  mutatorBlendPixelData,
+  type NullableMaskRect,
   PixelWriter,
 } from 'pixel-data-js'
 import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts'
 import { getHistory } from '../../../../lib/util/history/history.ts'
+import { clearSelectionRect } from '../../_core/blenders.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'
 
@@ -43,32 +42,6 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
   const target = writer.config.target
   const accumulator = writer.accumulator
 
-  function clear(
-    x = 0,
-    y = 0,
-    w = target.w,
-    h = target.h,
-    maskData: Uint8Array | null = null,
-  ) {
-    const didChange = accumulator.storeRegionBeforeState(x, y, w, h)
-
-    if (maskData) {
-      const mask: BinaryMask = {
-        data: maskData,
-        type: MaskType.BINARY,
-        w,
-        h,
-      }
-      didChange(
-        fillPixelDataBinaryMask(target, 0 as Color32, mask, x, y),
-      )
-    } else {
-      didChange(
-        fillPixelData(target, 0 as Color32, x, y, w, h),
-      )
-    }
-  }
-
   function writePoints(points: Point[], color: Color32) {
     for (let i = 0; i < points.length; i++) {
       const { x, y } = points[i]
@@ -85,7 +58,12 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
   return {
     ...mutatorBlendBinaryMask(writer),
     ...mutatorBlendPixelData(writer),
-    clear,
+    clearSelectionRect(sel: NullableMaskRect) {
+      const didChange = accumulator.storeRegionBeforeState(sel.x, sel.y, sel.w, sel.h)
+      didChange(
+        clearSelectionRect(target, sel),
+      )
+    },
     writePoints,
   }
 }

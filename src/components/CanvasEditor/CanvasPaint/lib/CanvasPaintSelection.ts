@@ -13,8 +13,8 @@ export function makeCanvasPaintSelection(
     pastedPixels = null,
   }: CanvasPaintSelectionOpts) {
 
-  let current = { ...rect }
-  const original = { ...rect }
+  let current: NullableMaskRect = { ...rect }
+  const original: NullableMaskRect = { ...rect }
   let pixels = pastedPixels
 
   let anchorX: number | null = null
@@ -69,10 +69,10 @@ export function makeCanvasPaintSelection(
     get pixels() {
       return pixels
     },
-    get original() {
+    get original(): NullableMaskRect {
       return original
     },
-    get current() {
+    get current(): NullableMaskRect {
       return current
     },
     get isPasted() {
