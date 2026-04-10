@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
+import { makeSimplePersistMapper } from 'pinia-simple-persist'
 import { ref } from 'vue'
-import { makeStateMapper } from './_store-helpers.ts'
 
 type SerializedData = {
   debugSidebarVisible: boolean,
@@ -14,16 +14,16 @@ export const useUIStore = defineStore('ui', () => {
   const imgScale = ref(4)
   const showTileIds = ref(false)
 
-  const mapper = makeStateMapper<SerializedData>(
+  const mapper = makeSimplePersistMapper<SerializedData>(
     {
       debugSidebarVisible,
       imgScale,
       showTileIds,
     },
     {
-      debugSidebarVisible: false,
-      imgScale: 4,
-      showTileIds: false,
+      debugSidebarVisible: debugSidebarVisible.value,
+      imgScale: imgScale.value,
+      showTileIds: showTileIds.value,
     },
   )
 

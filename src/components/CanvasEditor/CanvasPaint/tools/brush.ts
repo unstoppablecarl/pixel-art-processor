@@ -6,7 +6,7 @@ import {
   TOOL_HOVER_CSS_CLASSES,
   type ToolHandlerSubToolChanged,
 } from '../../_core/_core-editor-types.ts'
-import { useBrushCursor } from '../../_core/renderers/PaintCursor.ts'
+import { useBrushCursor } from '../../_core/data/Brush.ts'
 import { type BrushToolState, makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
 import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
 
@@ -78,9 +78,7 @@ export function makeBrushTool(
       const y = state.mouseY
       if (x == null || y == null) return
 
-      const { scale } = state
-
-      cursor.draw(ctx, x, y, scale)
+      cursor.draw(ctx, x, y)
     },
   }
 }

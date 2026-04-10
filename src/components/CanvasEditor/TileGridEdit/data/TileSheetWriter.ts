@@ -55,7 +55,7 @@ export function makeTileSheetWriter(
 
   const writer = new PixelWriter(
     state.tileSheet.pixelData,
-    (w) => makeTileSheetMutator(w, state),
+    (w) => makeTileSheetMutator(w, state, markDirty),
     {
       historyManager: getHistory(),
     },
@@ -94,6 +94,7 @@ type TileSheetMutator = ReturnType<typeof makeTileSheetMutator>
 function makeTileSheetMutator(
   writer: PixelWriter<any>,
   state: TileGridEditorState,
+  markDirty: (tileId: TileId) => void,
 ) {
   const target = writer.config.target
 
@@ -140,6 +141,7 @@ function makeTileSheetMutator(
   }
 
   function writeTilePoints(tileId: TileId, tilePixels: Point[], color: RGBA) {
+    markDirty(tileId)
     for (let i = 0; i < tilePixels.length; i++) {
       const { x, y } = tilePixels[i]
       const sheetPx = state.tileSheet.tileLocalToSheet(tileId, x, y)

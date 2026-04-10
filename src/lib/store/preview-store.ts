@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { makeSimplePersistMapper } from 'pinia-simple-persist'
 import { ref } from 'vue'
 
 type SerializedData = {
@@ -15,27 +16,28 @@ export const usePreviewStore = defineStore('html-dom-preview', () => {
   const gridWidth = ref(10)
   const gridHeight = ref(10)
 
+  const mapper = makeSimplePersistMapper<SerializedData>({
+    scale,
+    seed,
+    gridWidth,
+    gridHeight,
+  }, {
+    scale: scale.value,
+    seed: seed.value,
+    gridWidth: gridWidth.value,
+    gridHeight: gridHeight.value,
+  })
+
   function $reset() {
-    scale.value = 4
-    seed.value = 0
-    gridWidth.value = 10
-    gridHeight.value = 10
+    mapper.$reset()
   }
 
   function $serializeState(): SerializedData {
-    return {
-      scale: scale.value,
-      gridWidth: gridWidth.value,
-      gridHeight: gridHeight.value,
-      seed: seed.value
-    }
+    return mapper.$serializeState()
   }
 
   function $restoreState(data: SerializedData) {
-    scale.value = data.scale
-    gridWidth.value = data.gridWidth
-    gridHeight.value = data.gridHeight
-    seed.value = data.seed
+    mapper.$restoreState(data)
   }
 
   return {
@@ -45,7 +47,7 @@ export const usePreviewStore = defineStore('html-dom-preview', () => {
     scale,
     seed,
     gridWidth,
-    gridHeight
+    gridHeight,
   }
 
 }, {

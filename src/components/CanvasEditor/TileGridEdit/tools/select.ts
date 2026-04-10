@@ -216,7 +216,7 @@ export function makeSelectTool(
         const rects = toolState.currentDraggedRectsGrid
         if (!rects) return
         for (const r of rects) {
-          drawSelectOutline(ctx, scale, r, store.cursorColor)
+          drawSelectOutline(ctx, scale, r, store.cursorColorCss)
         }
         return
       }
@@ -234,7 +234,7 @@ export function makeSelectTool(
           ctx,
           scale,
           g,
-          store.cursorColor,
+          store.cursorColorCss,
         )
       }
     },
@@ -292,14 +292,14 @@ export function makeSelectTool(
             ctx,
             scale,
             { x: r.dx, y: r.dy, w: r.w, h: r.h },
-            store.cursorColor,
+            store.cursorColorCss,
           )
         }
       } else {
         const r = toolState.currentDraggedRectTile
         if (!r) return
         if (r.tileId !== tileId) return
-        drawSelectOutline(ctx, scale, r, store.cursorColor)
+        drawSelectOutline(ctx, scale, r, store.cursorColorCss)
       }
     },
   }

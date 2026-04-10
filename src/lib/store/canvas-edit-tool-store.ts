@@ -1,6 +1,7 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
-import { type Color32, packRGBA } from 'pixel-data-js'
+import { makeSimplePersistMapper } from 'pinia-simple-persist'
+import { type Color32, color32ToCssRGBA, packRGBA } from 'pixel-data-js'
 import { computed, ref, shallowRef } from 'vue'
 import {
   BlendMode,
@@ -11,8 +12,7 @@ import {
   SubTools,
   Tool,
 } from '../../components/CanvasEditor/_core/_core-editor-types.ts'
-import { type RGBA, RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
-import { makeStateMapper } from './_store-helpers.ts'
+import { type RGBA, RGBA_CYAN, RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
 
 type SerializedData = {
   currentTool: Tool,
@@ -21,7 +21,7 @@ type SerializedData = {
   brushShape: BrushShape,
   primaryColor: RGBA,
   brushSize: number,
-  cursorColor: string,
+  cursorColor: RGBA,
   selectMoveBlendMode: BlendMode,
   selectFloodContiguous: boolean,
   selectFloodTolerance: number,
@@ -36,9 +36,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const currentSubTool = ref<SubToolOf<Tool> | null>(null)
 
   const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
-  const primaryColor32 = computed(() => {
-    return packRGBA(primaryColor.value)
-  })
+  const primaryColor32 = computed(() => packRGBA(primaryColor.value))
 
   const brushShape = ref<BrushShape>(BrushShape.CIRCLE)
   const brushSize = shallowRef<number>(10)
@@ -54,7 +52,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
   const brushBitMaskColor = computed(() => brushMode.value === BrushSubTool.ADD ? RGBA_WHITE : RGBA_ERASE)
 
-  const cursorColor = ref('cyan')
+  const cursorColor = shallowRef<RGBA>(RGBA_CYAN)
+  const cursorColor32 = computed(() => packRGBA(cursorColor.value))
+  const cursorColorCss = computed(() => color32ToCssRGBA(cursorColor32.value))
 
   const duplicateTileEdges = ref(true)
   const duplicateTileEdgesBorderThickness = ref(1)
@@ -62,7 +62,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   // transient non-serialized state
   const selectionMoveMode = ref<SelectMoveMode>(SelectMoveMode.SELECTION)
 
-  const mapper = makeStateMapper<SerializedData>(
+  const mapper = makeSimplePersistMapper<SerializedData>(
     {
       currentTool,
       currentSubTool,
@@ -77,17 +77,17 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
       duplicateTileEdgesBorderThickness,
     },
     {
-      currentTool: Tool.BRUSH,
-      currentSubTool: null,
-      primaryColor: RGBA_WHITE,
-      brushShape: BrushShape.CIRCLE,
-      cursorColor: 'cyan',
-      brushSize: 10,
-      selectMoveBlendMode: BlendMode.IGNORE_TRANSPARENT,
-      selectFloodContiguous: true,
-      selectFloodTolerance: 0,
-      duplicateTileEdges: true,
-      duplicateTileEdgesBorderThickness: 1,
+      currentTool: currentTool.value,
+      currentSubTool: currentSubTool.value,
+      primaryColor: primaryColor.value,
+      brushShape: brushShape.value,
+      cursorColor: cursorColor.value,
+      brushSize: brushSize.value,
+      selectMoveBlendMode: selectMoveBlendMode.value,
+      selectFloodContiguous: selectFloodContiguous.value,
+      selectFloodTolerance: selectFloodTolerance.value,
+      duplicateTileEdges: duplicateTileEdges.value,
+      duplicateTileEdgesBorderThickness: duplicateTileEdgesBorderThickness.value,
     },
   )
 
@@ -138,6 +138,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     primaryColor,
 
     cursorColor,
+    cursorColor32,
+    cursorColorCss,
+
     brushShape,
     brushMode,
     brushSize,

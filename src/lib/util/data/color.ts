@@ -11,6 +11,7 @@ export type PixelColor = Point & { color: RGBA }
 export const RGBA_ERASE = { r: 0, g: 0, b: 0, a: 0 } as Readonly<RGBA>
 export const RGBA_WHITE = { r: 255, g: 255, b: 255, a: 255 } as Readonly<RGBA>
 export const RGBA_RED = { r: 255, g: 0, b: 0, a: 255 } as Readonly<RGBA>
+export const RGBA_CYAN = { r: 0, g: 255, b: 255, a: 255 } as Readonly<RGBA>
 
 export function serializeRGBA({ r, g, b, a }: RGBA): SerializedRGBA {
   return `${r},${g},${b},${a}`
@@ -42,24 +43,10 @@ export function unpackColorTo(packed: Color32, target = SCRATCH_RGBA): RGBA {
   return target
 }
 
-export function RGBAToCssColor(color: RGBA) {
-  return `rgba(${color.r},${color.g},${color.b},${color.a / 255})`
-}
-
 export function arrayIndexToColor(index: number, length: number, alpha = 255, spin = 0): RGBA {
   const hue: number = (index * 360) / length
   const color = tinycolor({ h: hue, s: 1, l: .5 }).spin(spin * 360).toRgb()
   color.a = alpha
   return color
-}
-
-export function colorDistance(a: RGBA, b: RGBA) {
-  // Photoshop-like: max channel difference
-  return Math.max(
-    Math.abs(a.r - b.r),
-    Math.abs(a.g - b.g),
-    Math.abs(a.b - b.b),
-    Math.abs(a.a - b.a),
-  )
 }
 

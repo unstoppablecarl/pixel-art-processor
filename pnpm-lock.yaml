@@ -4,6 +4,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+overrides:
+  pixel-data-js: link:../../Library/pnpm/global/5/node_modules/pixel-data-js
+
 importers:
 
   .:
@@ -24,11 +27,11 @@ importers:
         specifier: ^3.0.4
         version: 3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
       pinia-simple-persist:
-        specifier: ^0.0.9
-        version: 0.0.9(pinia@3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)))(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
+        specifier: ^0.1.0
+        version: 0.1.0(pinia@3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)))(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
       pixel-data-js:
-        specifier: ^0.33.0
-        version: 0.33.0
+        specifier: link:../../Library/pnpm/global/5/node_modules/pixel-data-js
+        version: link:../../Library/pnpm/global/5/node_modules/pixel-data-js
       poisson-disk-sampling:
         specifier: ^2.3.1
         version: 2.3.1
@@ -1421,8 +1424,8 @@ packages:
     resolution: {integrity: sha512-5gTmgEY/sqK6gFXLIsQNH19lWb4ebPDLA4SdLP7dsWkIXHWlG66oPuVvXSGFPppYZz8ZDZq0dYYrbHfBCVUb1Q==}
     engines: {node: '>=12'}
 
-  pinia-simple-persist@0.0.9:
-    resolution: {integrity: sha512-jhiH+R9mqbAo4DsQDVgmigG/N+LhvgJViSgQmNlOjngRNAt7cgwF77p6xm9dEwRmA3imVKj158Q6p0FY/FIZsw==}
+  pinia-simple-persist@0.1.0:
+    resolution: {integrity: sha512-qV9OahrmkdGbKtL6rSMias6pzNjYMozZ0+QoZ8NB2ZmejvhxATeJCf+i4FkM1aHWrVu2MimyLtwrFe1jxl4iDQ==}
     peerDependencies:
       pinia: '>=2.2.2'
       typescript: '*'
@@ -1439,9 +1442,6 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
-
-  pixel-data-js@0.33.0:
-    resolution: {integrity: sha512-YvC450T8KR+EGfT5+zomeHpYlxPRD3oBnHZwkTfmJUECQEa1ORB76GbRQR/iFTG4S/U9ZHzaQSiBq396IZFlDw==}
 
   pkg-types@1.3.1:
     resolution: {integrity: sha512-/Jm5M4RvtBFVkKWRu2BLUTNP8/M2a+UwuAX+ae4770q1qVGtfjG+WTCupoZixokjmHiry8uI+dlY8KXYV5HVVQ==}
@@ -3169,7 +3169,7 @@ snapshots:
 
   picomatch@4.0.3: {}
 
-  pinia-simple-persist@0.0.9(pinia@3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)))(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)):
+  pinia-simple-persist@0.1.0(pinia@3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)))(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)):
     dependencies:
       pinia: 3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
       vue: 3.5.24(typescript@5.9.3)
@@ -3182,8 +3182,6 @@ snapshots:
       vue: 3.5.24(typescript@5.9.3)
     optionalDependencies:
       typescript: 5.9.3
-
-  pixel-data-js@0.33.0: {}
 
   pkg-types@1.3.1:
     dependencies:

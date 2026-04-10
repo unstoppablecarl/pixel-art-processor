@@ -26,12 +26,18 @@
     "forceConsistentCasingInFileNames": true,
     "allowImportingTsExtensions": true,
     "noEmit": true,
+    "preserveSymlinks": false,
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "types": [
       "vite/client",
       "vitest/globals",
       "node",
     ],
+    "paths": {
+      "pixel-data-js": [
+        "./node_modules/pixel-data-js/src/index.ts"
+      ]
+    }
   },
   "exclude": [
     "dist",

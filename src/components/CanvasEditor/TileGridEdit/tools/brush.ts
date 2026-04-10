@@ -3,7 +3,7 @@ import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseBrushToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core/_core-editor-types.ts'
-import { useBrushCursor } from '../../_core/renderers/PaintCursor.ts'
+import { useBrushCursor } from '../../_core/data/Brush.ts'
 import { makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
 import {
   CanvasType,
@@ -122,7 +122,7 @@ export function makeBrushTool(
     },
     gridScreenOverlayDraw(ctx) {
       if (state.hoverTileId === null) return
-      const { scale, tileGrid, tileSize } = state
+      const { tileGrid, tileSize } = state
       const x = state.hoverTilePixelX
       const y = state.hoverTilePixelY
 
@@ -130,7 +130,7 @@ export function makeBrushTool(
         const screenX = (gTileX * tileSize + x!)
         const screenY = (gTileY * tileSize + y!)
 
-        cursor.draw(ctx, screenX, screenY, scale)
+        cursor.draw(ctx, screenX, screenY)
       })
     },
     tileScreenOverlayDraw(ctx, tileId) {
@@ -160,8 +160,7 @@ export function makeBrushTool(
       const y = state.hoverTilePixelY
       if (x == null || y == null) return
 
-      const { scale } = state
-      cursor.draw(ctx, x, y, scale)
+      cursor.draw(ctx, x, y)
     },
   }
 }
