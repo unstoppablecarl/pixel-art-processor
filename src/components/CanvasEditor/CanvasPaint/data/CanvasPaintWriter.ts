@@ -1,7 +1,10 @@
 import {
+  type AlphaMask,
+  applyAlphaMaskToPixelData,
   type BinaryMask,
   type BlendColor32,
   blendPixelData,
+  blendPixelDataAlphaMask,
   blendPixelDataBinaryMask,
   type Color32,
   fillPixelData,
@@ -31,11 +34,15 @@ export function makeCanvasPaintWriter(
     historyManager: getHistory(),
   })
 
+  const after = () => {
+    state.imageDataDirty = true
+    canvasRenderer.queueRender()
+  }
+
   return {
     withHistory(cb: (mutator: CanvasPaintMutator) => void) {
-      writer.withHistory(cb)
-      state.imageDataDirty = true
-      canvasRenderer.queueRender()
+      writer.withHistory(cb, after, after)
+      after()
     },
   }
 }
@@ -63,12 +70,13 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
   return {
     clearSelectionRect(sel: NullableMaskRect) {
       const didChange = accumulator.storeRegionBeforeState(sel.x, sel.y, sel.w, sel.h)
+      if (!didChange) return false
       let result = false
       if (sel.data) {
         if (sel.type === MaskType.BINARY) {
           result = fillPixelDataBinaryMask(target, 0 as Color32, sel as BinaryMask, sel.x, sel.y)
         } else {
-          throw new Error('unsupported mask type')
+          result = applyAlphaMaskToPixelData(target, sel as AlphaMask, { invertMask: true })
         }
       } else {
         result = fillPixelData(target, 0 as Color32, sel)
@@ -77,21 +85,29 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
       didChange(result)
     },
     blendSelectionRect(sel: NullableMaskRect, pixels: PixelData, blendFn: BlendColor32) {
-      const opts = {
-        x: sel.x,
-        y: sel.y,
-        blendFn,
-      }
-      const didChange = accumulator.storeRegionBeforeState(sel.x, sel.y, sel.w, sel.h)
 
+      const didChange = accumulator.storeRegionBeforeState(sel.x, sel.y, sel.w, sel.h)
+      if (!didChange) return false
       let result = false
       if (sel.data) {
+        const opts = {
+          x: sel.x,
+          y: sel.y,
+          blendFn,
+        }
         if (sel.type === MaskType.BINARY) {
           result = blendPixelDataBinaryMask(target, pixels, sel as BinaryMask, opts)
         } else {
-          throw new Error('unsupported mask type')
+          result = blendPixelDataAlphaMask(target, pixels, sel as AlphaMask, opts)
         }
       } else {
+        const opts = {
+          x: sel.x,
+          y: sel.y,
+          w: sel.w,
+          h: sel.h,
+          blendFn,
+        }
         result = blendPixelData(target, pixels, opts)
       }
 

@@ -122,17 +122,25 @@ function makeTileSheetMutator(
   return {
     writeGridPoints,
     writeTilePoints,
-    clearSheetDrawRect(r: DrawRect) {
-      const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
-      didChange(
-        clearSheetDrawRect(target, r),
-      )
+    clearSheetDrawRects(rects: DrawRect[]) {
+      for (const r of rects) {
+        const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
+        if (!didChange) continue
+
+        didChange(
+          clearSheetDrawRect(target, r),
+        )
+      }
     },
-    blendSheetDrawRects(r: DrawRect, src: PixelData, blendFn: BlendColor32) {
-      const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
-      didChange(
-        blendSheetDrawRect(target, r, src, blendFn),
-      )
+    blendSheetDrawRects(rects: DrawRect[], src: PixelData, blendFn: BlendColor32) {
+      for (const r of rects) {
+        const didChange = writer.accumulator.storeRegionBeforeState(r.dx, r.dy, r.w, r.h)
+        if (!didChange) continue
+
+        didChange(
+          blendSheetDrawRect(target, r, src, blendFn),
+        )
+      }
     },
   }
 }

@@ -207,13 +207,8 @@ export function makeTileGridSelectionToolState(
     const pixels = selection.pixels
 
     tileSheetWriter.withHistory((mutator) => {
-      for (const r of originalSheetDrawRects) {
-        mutator.clearSheetDrawRect(r)
-      }
-
-      for (const r of currentSheetDrawRects) {
-        mutator.blendSheetDrawRects(r, pixels, blendFn)
-      }
+      mutator.clearSheetDrawRects(originalSheetDrawRects)
+      mutator.blendSheetDrawRects(currentSheetDrawRects, pixels, blendFn)
     })
     gridRenderer.updateGridTiles()
     dragging = false
