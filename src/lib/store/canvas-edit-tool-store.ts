@@ -11,7 +11,7 @@ import {
   type SubToolOf,
   SubTools,
   Tool,
-} from '../../components/CanvasEditor/_core/_core-editor-types.ts'
+} from '../../CanvasEditor/_core/_core-editor-types.ts'
 import { type RGBA, RGBA_CYAN, RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
 
 type SerializedData = {

@@ -33,14 +33,14 @@ import {
   makeAxialEdgeWangTileset,
 } from '../../../lib/wang-tiles/WangTileset.ts'
 import CanvasPaint from '../../CanvasPaint.vue'
-import TileCanvas from '../../CanvasEditor/TileGridEdit/components/TileCanvas.vue'
-import TileGridCanvas from '../../CanvasEditor/TileGridEdit/components/TileGridCanvas.vue'
-import { makeTileGridManager } from '../../CanvasEditor/TileGridEdit/data/TileGridManager.ts'
+import TileCanvas from '../../../CanvasEditor/TileGridEdit/components/TileCanvas.vue'
+import TileGridCanvas from '../../../CanvasEditor/TileGridEdit/components/TileGridCanvas.vue'
+import { makeTileGridManager } from '../../../CanvasEditor/TileGridEdit/data/TileGridManager.ts'
 import {
   deserializeTileSheet,
   type SerializedTileSheet,
-} from '../../CanvasEditor/TileGridEdit/data/TileSheet.ts'
-import { useTileGridController } from '../../CanvasEditor/TileGridEdit/TileGridController.ts'
+} from '../../../CanvasEditor/TileGridEdit/data/TileSheet.ts'
+import { useTileGridController } from '../../../CanvasEditor/TileGridEdit/TileGridController.ts'
 import NodeCard from '../../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../../UIForms/CheckboxColorList.vue'

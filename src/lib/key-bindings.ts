@@ -2,7 +2,7 @@ import hotkeys from 'hotkeys-js'
 import {
   toolsMetaToKeyBindEntries,
   toolsMetaToModifierKeyBindEntries,
-} from '../components/CanvasEditor/_core/tools-input.ts'
+} from '../CanvasEditor/_core/tools-input.ts'
 import type { KeyboardEventFilter } from './_lib-types.ts'
 import { useCanvasEditToolStore } from './store/canvas-edit-tool-store.ts'
 import type { VueHistory } from './util/history/history.ts'
