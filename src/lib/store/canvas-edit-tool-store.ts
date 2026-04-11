@@ -61,6 +61,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
   // transient non-serialized state
   const selectionMoveMode = ref<SelectMoveMode>(SelectMoveMode.SELECTION)
+  const mouseOverSelection = ref(false)
 
   const mapper = makeSimplePersistMapper<SerializedData>(
     {
@@ -165,6 +166,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     },
 
     selectionMoveMode,
+    mouseOverSelection,
   }
 }, {
   persist: true,
