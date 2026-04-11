@@ -1,7 +1,7 @@
 import type { Ref } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
 import { Tool } from '../_core/_core-editor-types.ts'
-import { makeUIContext } from '../_core/tools/tool-cursor-css-states.ts'
+import { makeSelectUIContext } from '../_core/tools/state/SelectUIContext.ts'
 import { makeToolset } from '../_core/Toolset.ts'
 import type { CanvasPaintToolContext } from './_canvas-paint-editor-types.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'
@@ -41,8 +41,8 @@ export function makeCanvasPaintToolset(
     ),
     [Tool.SELECT]: makeCanvasPaintSelectTool(
       context,
-      makeUIContext(Tool.SELECT, currentCursorCssClass),
-      store
+      makeSelectUIContext(store, currentCursorCssClass),
+      store,
     ),
   }
 

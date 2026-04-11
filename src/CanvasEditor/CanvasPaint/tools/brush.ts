@@ -2,7 +2,7 @@ import type { CanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-st
 import { interpolateLine } from '../../../lib/util/data/Grid.ts'
 import { type BaseToolHandler, BrushSubTool, type ToolHandlerSubToolChanged } from '../../_core/_core-editor-types.ts'
 import { useBrushCursor } from '../../_core/data/Brush.ts'
-import { type BrushToolState, makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
+import { type BrushToolState, makeBrushToolState } from '../../_core/tools/state/BrushToolState.ts'
 import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
 
 export type CanvasPaintBrushToolHandler =

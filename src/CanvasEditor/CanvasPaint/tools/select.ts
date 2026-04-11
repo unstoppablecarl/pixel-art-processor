@@ -9,11 +9,8 @@ import {
 import type { CanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import {
   type BaseToolHandler,
-  type BaseUIContext,
-  SelectCursorState,
   SelectMoveMode,
   SelectSubTool,
-  Tool,
   type ToolHandlerSubToolChanged,
 } from '../../_core/_core-editor-types.ts'
 import {
@@ -21,6 +18,7 @@ import {
   makeBaseSelectHandler,
   selectMoveBlendModeToBlender32,
 } from '../../_core/tools/selection-helpers.ts'
+import type { SelectUIContext } from '../../_core/tools/state/SelectUIContext.ts'
 import type { CanvasPaintToolContext, CanvasPaintToolHandlerRender } from '../_canvas-paint-editor-types.ts'
 import { type CanvasPaintSelectToolState, makeCanvasPaintSelectToolState } from './states/CanvasPaintSelectToolState.ts'
 
@@ -35,7 +33,7 @@ export function makeCanvasPaintSelectTool(
     canvasRenderer,
     canvasWriter,
   }: CanvasPaintToolContext,
-  uiContext: BaseUIContext<Tool.SELECT>,
+  uiContext: SelectUIContext,
   store: CanvasEditToolStore,
 ): CanvasPaintSelectToolHandler {
   const toolState = makeCanvasPaintSelectToolState({ state, canvasRenderer, canvasWriter })
@@ -50,11 +48,9 @@ export function makeCanvasPaintSelectTool(
       canvasRenderer.queueRender()
     },
     onMouseMove(x, y) {
-      const state = toolState.pointInSelection(x, y) ? SelectCursorState.OVER_SELECTION : SelectCursorState.NONE
-      uiContext.setCursorState(state)
+      uiContext.setCursorState(toolState.pointInSelection(x, y))
     },
     onMouseLeave() {
-      uiContext.setCursorState(SelectCursorState.NONE)
     },
     onCut() {
       toolState.cutSelection().then(() => {

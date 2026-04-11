@@ -1,7 +1,7 @@
 import { type Ref } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
 import { Tool } from '../_core/_core-editor-types.ts'
-import { makeUIContext } from '../_core/tools/tool-cursor-css-states.ts'
+import { makeSelectUIContext } from '../_core/tools/state/SelectUIContext.ts'
 import { makeToolset } from '../_core/Toolset.ts'
 import type { TileGridEditorToolContext } from './_tile-grid-editor-types.ts'
 import type { TileSheetWriter } from './data/TileSheetWriter.ts'
@@ -41,7 +41,7 @@ export function makeTileGridToolset(
     ),
     [Tool.SELECT]: makeSelectTool(
       context,
-      makeUIContext(Tool.SELECT, currentCursorCssClass),
+      makeSelectUIContext(store, currentCursorCssClass),
       store,
     ),
   }

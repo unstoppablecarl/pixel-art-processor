@@ -4,7 +4,7 @@ import { interpolateLine } from '../../../lib/util/data/Grid.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import { type BaseBrushToolHandler } from '../../_core/_core-editor-types.ts'
 import { useBrushCursor } from '../../_core/data/Brush.ts'
-import { makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
+import { makeBrushToolState } from '../../_core/tools/state/BrushToolState.ts'
 import {
   CanvasType,
   type TileGridEditorToolContext,

@@ -1,5 +1,5 @@
 import { type Ref, type ShallowRef } from 'vue'
-import type { BrushToolState } from './tools/BrushToolState.ts'
+import type { BrushToolState } from './tools/state/BrushToolState.ts'
 
 export const TOOL_HOVER_CSS_CLASSES: Record<Tool, string> = {
   BRUSH: 'brush',
@@ -35,16 +35,6 @@ export const SubTools = {
   [Tool.SELECT]: SelectSubTool,
   [Tool.BRUSH]: BrushSubTool,
 } as const
-
-export enum SelectCursorState {
-  NONE,
-  OVER_SELECTION,
-}
-
-export interface ToolCursorStateMap {
-  [Tool.SELECT]: SelectCursorState
-  [Tool.BRUSH]: null
-}
 
 export type AnySubTool = SubToolOf<Tool>
 export type SubToolOf<T extends Tool> =
@@ -171,7 +161,3 @@ export type BaseSelectToolHandler<S extends BaseSelectToolState, TArgs extends a
 export type BaseBrushToolHandler<TArgs extends any[] = []> =
   & BaseToolHandler<BrushToolState, TArgs>
   & ToolHandlerSubToolChanged<BrushSubTool>
-
-export type BaseUIContext<T extends Tool> = {
-  setCursorState: (state: ToolCursorStateMap[T]) => void,
-}

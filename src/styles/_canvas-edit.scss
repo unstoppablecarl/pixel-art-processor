@@ -3,8 +3,12 @@
   image-rendering: pixelated;
 
   &.select {
-    &.over-selection {
+    &.over-selection-move-selection {
       cursor: move;
+    }
+
+    &.over-selection-move-content {
+      cursor: pointer;
     }
 
     cursor: crosshair;
