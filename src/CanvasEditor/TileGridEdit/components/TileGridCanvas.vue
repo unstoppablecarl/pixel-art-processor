@@ -21,7 +21,8 @@ const {
   handlePaste,
   handleCut,
 
-  currentCursorCssClass
+  currentToolCssClass,
+  currentCursorCssClass,
 } = toolController.getInputHandlers(canvasRef, CanvasType.GRID)
 
 onMounted(() => {
@@ -34,7 +35,7 @@ const dataAttr = DATA_LOCAL_TOOL_ID
     tabindex="0"
     ref="canvasRef"
     class="canvas-pixel-draw"
-    :class="currentCursorCssClass"
+    :class="[currentToolCssClass, currentCursorCssClass]"
     v-bind:[dataAttr]="toolController.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"

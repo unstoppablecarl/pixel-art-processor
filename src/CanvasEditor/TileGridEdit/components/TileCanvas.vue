@@ -23,7 +23,7 @@ const {
   handleCopy,
   handlePaste,
   handleCut,
-
+  currentToolCssClass,
   currentCursorCssClass,
 } = toolController.getInputHandlers(canvasRef, CanvasType.TILE, tileId)
 
@@ -38,7 +38,7 @@ const dataAttr = DATA_LOCAL_TOOL_ID
     tabindex="0"
     ref="canvasRef"
     class="canvas-pixel-draw"
-    :class="currentCursorCssClass"
+    :class="[currentToolCssClass, currentCursorCssClass]"
     v-bind:[dataAttr]="toolController.id"
     @mousedown="handleMouseDown"
     @mousemove="handleMouseMove"
