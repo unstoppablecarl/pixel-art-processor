@@ -31,8 +31,8 @@ export function makeCanvasPaintSelection(
   }
 
   // promotes a Marquee to a Floating Layer by providing pixels.
-  function lift(imgData: PixelData) {
-    pixels = imgData
+  function lift(target: PixelData) {
+    pixels = target
   }
 
   function move(mouseX: number, mouseY: number) {
