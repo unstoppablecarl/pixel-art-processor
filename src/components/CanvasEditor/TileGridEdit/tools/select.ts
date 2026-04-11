@@ -1,6 +1,12 @@
 import { type NullableMaskRect } from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import { type BaseSelectToolHandler, SelectMoveMode } from '../../_core/_core-editor-types.ts'
+import {
+  type BaseSelectToolHandler,
+  type BaseUIContext,
+  SelectCursorState,
+  SelectMoveMode,
+  Tool,
+} from '../../_core/_core-editor-types.ts'
 import {
   drawSelectOutline,
   makeBaseSelectHandler,
@@ -26,6 +32,7 @@ export function makeSelectTool(
     gridRenderer,
     tileSheetWriter,
   }: TileGridEditorToolContext,
+  uiContext: BaseUIContext<Tool.SELECT>,
   store: CanvasEditToolStore,
 ): TileGridSelectToolHandler {
 
@@ -43,6 +50,23 @@ export function makeSelectTool(
     },
     onSubToolChanged() {
       toolState.draw()
+    },
+    onMouseMove(x, y, canvasType, tileId) {
+      const ts = toolState
+
+      let mouseOver = false
+      if (canvasType === CanvasType.GRID) {
+        mouseOver = ts.gridPointInSelection(x, y)
+
+      }
+      if (canvasType === CanvasType.TILE) {
+        mouseOver = ts.tilePointInSelection(x, y, tileId!)
+      }
+
+      uiContext.setCursorState(mouseOver ? SelectCursorState.OVER_SELECTION : SelectCursorState.NONE)
+    },
+    onMouseLeave() {
+      uiContext.setCursorState(SelectCursorState.NONE)
     },
     onClick(x, y, canvasType, tileId) {
       const ts = toolState

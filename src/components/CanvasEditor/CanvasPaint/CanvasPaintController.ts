@@ -1,4 +1,4 @@
-import { type Ref, toRef, watch, watchEffect } from 'vue'
+import { ref, type Ref, toRef, watch, watchEffect } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { PixelDataRef } from '../../../lib/vue/PixelDataRef.ts'
@@ -32,6 +32,7 @@ export function useCanvasPaintController(
     store?: CanvasEditToolStore
   },
 ) {
+  const currentCursorCssClass = ref<string | null>(null)
 
   const state = makCanvasPaintEditorState({
     id,
@@ -63,6 +64,7 @@ export function useCanvasPaintController(
     state,
     canvasRenderer,
     canvasWriter,
+    currentCursorCssClass,
   })
 
   canvasRenderer.setToolset(toolset)
@@ -99,6 +101,7 @@ export function useCanvasPaintController(
     canvasRenderer,
     getInputHandlers(canvas) {
       return makeBaseInputHandlers({
+        currentCursorCssClass,
         toolset,
         scale,
         canvas,

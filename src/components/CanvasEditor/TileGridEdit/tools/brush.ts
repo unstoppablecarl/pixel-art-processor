@@ -2,7 +2,7 @@ import type { Point } from '../../../../lib/node-data-types/BaseDataStructure.ts
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { interpolateLine } from '../../../../lib/util/data/Grid.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
-import { type BaseBrushToolHandler, TOOL_HOVER_CSS_CLASSES } from '../../_core/_core-editor-types.ts'
+import { type BaseBrushToolHandler } from '../../_core/_core-editor-types.ts'
 import { useBrushCursor } from '../../_core/data/Brush.ts'
 import { makeBrushToolState } from '../../_core/tools/BrushToolState.ts'
 import {
@@ -18,9 +18,9 @@ export type TileGridBrushToolHandler =
 
 export function makeBrushTool(
   {
-    tileSheetWriter,
-    gridRenderer,
     state,
+    gridRenderer,
+    tileSheetWriter,
   }: TileGridEditorToolContext,
   store: CanvasEditToolStore,
 ): TileGridBrushToolHandler {
@@ -66,7 +66,6 @@ export function makeBrushTool(
 
   return {
     toolState,
-    cursorCssClass: TOOL_HOVER_CSS_CLASSES.BRUSH,
     onMouseDown: (x, y, canvasType, tileId) => {
       isDrawing = true
       writeBrushAt(x, y, canvasType, tileId)

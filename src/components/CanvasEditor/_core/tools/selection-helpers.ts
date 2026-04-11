@@ -5,12 +5,7 @@ import {
   blendIgnoreTransparent,
   blendOverwrite,
 } from '../../../../lib/util/html-dom/blit.ts'
-import {
-  type BaseSelectToolState,
-  BlendMode,
-  DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK,
-  TOOL_HOVER_CSS_CLASSES,
-} from '../_core-editor-types.ts'
+import { type BaseSelectToolState, BlendMode, DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK } from '../_core-editor-types.ts'
 
 export const selectMoveBlendModeToBlendFn: Record<BlendMode, BlendFn> = {
   [BlendMode.OVERWRITE]: blendOverwrite,
@@ -111,7 +106,6 @@ export function selectHandlerDocumentClick(cb: () => void) {
 
 export function makeBaseSelectHandler(toolState: BaseSelectToolState) {
   return {
-    cursorCssClass: TOOL_HOVER_CSS_CLASSES.SELECT,
     onDocumentClick(t: HTMLElement) {
       if (t.closest(`[${DATA_ATTR_EXCLUDE_SELECT_CANCEL_CLICK}]`)) return
       toolState.clearSelection()

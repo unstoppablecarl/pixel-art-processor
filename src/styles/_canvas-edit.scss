@@ -1,7 +1,14 @@
 
 .canvas-pixel-draw {
   image-rendering: pixelated;
-  cursor: crosshair;
+
+  &.select {
+    &.over-selection {
+      cursor: move;
+    }
+
+    cursor: crosshair;
+  }
 
   &.brush {
     cursor: none;

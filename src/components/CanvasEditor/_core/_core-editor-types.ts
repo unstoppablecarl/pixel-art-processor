@@ -36,6 +36,16 @@ export const SubTools = {
   [Tool.BRUSH]: BrushSubTool,
 } as const
 
+export enum SelectCursorState {
+  NONE,
+  OVER_SELECTION,
+}
+
+export interface ToolCursorStateMap {
+  [Tool.SELECT]: SelectCursorState
+  [Tool.BRUSH]: null
+}
+
 export type AnySubTool = SubToolOf<Tool>
 export type SubToolOf<T extends Tool> =
   T extends keyof SubToolMap ? SubToolMap[T] : null
@@ -126,8 +136,6 @@ export type BaseToolHandler<S, TArgs extends any[] = []> = {
   onSelect?: () => void,
   onDeselect?: () => void,
 
-  cursorCssClass?: (() => string | null) | string,
-
   onCut?: (e: ClipboardEvent) => void,
   onCopy?: (e: ClipboardEvent) => void,
   onPaste?: (e: ClipboardEvent) => void,
@@ -163,3 +171,7 @@ export type BaseSelectToolHandler<S extends BaseSelectToolState, TArgs extends a
 export type BaseBrushToolHandler<TArgs extends any[] = []> =
   & BaseToolHandler<BrushToolState, TArgs>
   & ToolHandlerSubToolChanged<BrushSubTool>
+
+export type BaseUIContext<T extends Tool> = {
+  setCursorState: (state: ToolCursorStateMap[T]) => void,
+}

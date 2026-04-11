@@ -1,8 +1,7 @@
-import { ref, type Ref, type ShallowRef } from 'vue'
+import { readonly, ref, type Ref, type ShallowRef } from 'vue'
 import type { Optional } from '../../../lib/_helpers.ts'
 import type { Position } from '../../../lib/pipeline/_types.ts'
-import type { InputTarget, ToolInputHandlers } from './_core-editor-types.ts'
-import { makeGetCurrentCursorCssClass } from './controller/CurrentCursorCssClass.ts'
+import { type InputTarget, TOOL_HOVER_CSS_CLASSES, type ToolInputHandlers } from './_core-editor-types.ts'
 import type { Toolset } from './Toolset.ts'
 
 export function makeGlobalInputManager() {
@@ -98,23 +97,25 @@ export function makeBaseInputHandlers(
     canvas,
     scale,
     input,
+    currentCursorCssClass,
   }: {
     toolset: Toolset<any>,
     canvas: Readonly<ShallowRef<HTMLCanvasElement | null>>,
     scale: Ref<number>,
     input: Optional<InputTarget, 'getCoordsFromEvent' | 'onHoverStart' | 'onHoverEnd' | 'onCopy' | 'onPaste'>,
+    currentCursorCssClass: Ref<string | null>,
   },
 ) {
 
-  const currentCursorCssClass = ref<string | null>(null)
-  const getCurrentCursorClass = makeGetCurrentCursorCssClass(toolset)
+  const currentToolCssClass = ref<string | null>(null)
 
   const globalInput = useGlobalInput({
     getCoordsFromEvent: canvasCoordGetter(canvas, scale),
     onHoverStart() {
-      currentCursorCssClass.value = getCurrentCursorClass()
+      currentToolCssClass.value = TOOL_HOVER_CSS_CLASSES[toolset.currentTool]
     },
     onHoverEnd() {
+      currentToolCssClass.value = null
       currentCursorCssClass.value = null
     },
     onCut(e) {
@@ -131,6 +132,7 @@ export function makeBaseInputHandlers(
 
   return {
     ...globalInput,
+    currentToolCssClass: readonly(currentToolCssClass),
     currentCursorCssClass,
   }
 }

@@ -9,8 +9,11 @@ import {
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import {
   type BaseToolHandler,
+  type BaseUIContext,
+  SelectCursorState,
   SelectMoveMode,
   SelectSubTool,
+  Tool,
   type ToolHandlerSubToolChanged,
 } from '../../_core/_core-editor-types.ts'
 import {
@@ -32,6 +35,7 @@ export function makeCanvasPaintSelectTool(
     canvasRenderer,
     canvasWriter,
   }: CanvasPaintToolContext,
+  uiContext: BaseUIContext<Tool.SELECT>,
   store: CanvasEditToolStore,
 ): CanvasPaintSelectToolHandler {
   const toolState = makeCanvasPaintSelectToolState({ state, canvasRenderer, canvasWriter })
@@ -44,6 +48,13 @@ export function makeCanvasPaintSelectTool(
     },
     onSubToolChanged() {
       canvasRenderer.queueRender()
+    },
+    onMouseMove(x, y) {
+      const state = toolState.pointInSelection(x, y) ? SelectCursorState.OVER_SELECTION : SelectCursorState.NONE
+      uiContext.setCursorState(state)
+    },
+    onMouseLeave() {
+      uiContext.setCursorState(SelectCursorState.NONE)
     },
     onCut() {
       toolState.cutSelection().then(() => {

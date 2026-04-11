@@ -1,4 +1,4 @@
-import { computed, toRef, watch } from 'vue'
+import { computed, ref, toRef, watch } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
@@ -33,6 +33,7 @@ export function useTileGridController(
     store?: CanvasEditToolStore
   },
 ) {
+  const currentCursorCssClass = ref<string | null>(null)
 
   const tileGridGeometry = computed(() => makeTileGridGeometry(
     tileGridManager.tileGrid.value,
@@ -77,6 +78,7 @@ export function useTileGridController(
     state,
     tileSheetWriter,
     gridRenderer,
+    currentCursorCssClass,
   })
 
   gridRenderer.setToolset(toolset)
@@ -126,6 +128,7 @@ export function useTileGridController(
     tileSheetWriter,
     getInputHandlers(canvas, canvasType: CanvasType, tileId?: TileId) {
       return makeBaseInputHandlers({
+        currentCursorCssClass,
         toolset,
         canvas,
         scale,
