@@ -19,8 +19,14 @@ const currentKeys = computed(() => {
 })
 
 const currentModifiers = computed(() => {
-  return TOOLS_META[store.currentTool].modifierKeyBindings
+  return TOOLS_META[store.currentTool].modifierKeyBindings.map(item => {
+    return {
+      ...item,
+      isDownComputed: item.isDown(store),
+    }
+  })
 })
+
 </script>
 <template>
   <nav class="navbar navbar-expand fixed-bottom shadow border-bottom canvas-paint-footer">
@@ -46,10 +52,12 @@ const currentModifiers = computed(() => {
       </span>
       <template v-for="k in currentModifiers">
         <span class="btn btn-sm btn-transparent disabled ms-3 fw-bold">default</span>
-        <span class="btn-sm-py text-muted ms-1"> {{ k.upDescription}}</span>
-
-        <span class="btn btn-sm btn-transparent disabled ms-3 fw-bold">{{ k.downKey }}</span>
-        <span class="btn-sm-py text-muted ms-1"> {{ k.downDescription}}</span>
+        <span class="btn-sm-py text-muted ms-1"> {{ k.upDescription }}</span>
+        <span class="btn btn-sm disabled ms-3 fw-bold" :class="{
+          'btn-transparent': !k.isDownComputed,
+          'btn-primary': k.isDownComputed
+        }">{{ k.downKey }}</span>
+        <span class="btn-sm-py text-muted ms-1"> {{ k.downDescription }}</span>
       </template>
     </div>
   </nav>
@@ -74,6 +82,7 @@ const currentModifiers = computed(() => {
       border-left: 1px solid var(--bs-border-color);
     }
 
+    .btn-primary,
     .btn-transparent {
       border: 1px solid rgba(255, 255, 255, 0.1);
       opacity: 1;

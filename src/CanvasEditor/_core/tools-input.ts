@@ -30,6 +30,7 @@ export type ModifierKeyBinding = {
   downDescription: string,
   up: ToolStoreFn,
   down: ToolStoreFn,
+  isDown: (store: CanvasEditToolStore) => boolean,
 }
 
 export type ToolsMeta = Record<Tool, ToolMeta>
@@ -94,6 +95,7 @@ export const TOOLS_META: ToolsMeta = {
             store.selectionMoveMode = SelectMoveMode.CONTENT
           }
         },
+        isDown: (store) => store.selectionMoveMode === SelectMoveMode.CONTENT,
       },
     ],
     subTools: {
