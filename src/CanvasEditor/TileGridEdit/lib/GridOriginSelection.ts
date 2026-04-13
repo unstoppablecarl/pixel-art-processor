@@ -11,12 +11,14 @@ export class GridOriginSelection implements ISelection {
   private moved = false
   pixels: PixelData
   isLifted = false
+  public isPasted: boolean
 
-  constructor(rects: NullableMaskRect[], pixels: PixelData, private geometry: TileGridGeometry) {
+  constructor(rects: NullableMaskRect[], pixels: PixelData, private geometry: TileGridGeometry, isPasted = false) {
     this.originalRects = rects
     this.currentRects = rects.map(r => ({ ...r }))
     this.originalRectsBounds = getRectsBounds(rects)
     this.pixels = pixels
+    this.isPasted = isPasted
   }
 
   lift(): void {

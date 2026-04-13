@@ -1,3 +1,4 @@
+import { makePixelData } from 'pixel-data-js'
 import {
   extractPixelData,
   floodFillSelection,
@@ -8,6 +9,8 @@ import {
 } from '../../../../../../pixel-data-js/src'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
+import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../../lib/util/html-dom/clipboard.ts'
+import { imageDataToPngBlob } from '../../../../lib/util/html-dom/ImageData.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { SelectSubTool } from '../../../_core/_core-editor-types.ts'
 import { selectMoveBlendModeToBlender32 } from '../../../_core/tools/selection-helpers.ts'
@@ -207,7 +210,9 @@ export function makeTileGridSelectionToolState(
     const pixels = selection.pixels
 
     tileSheetWriter.withHistory((mutator) => {
-      mutator.clearSheetDrawRects(originalSheetDrawRects)
+      if (!selection!.isPasted) {
+        mutator.clearSheetDrawRects(originalSheetDrawRects)
+      }
       mutator.blendSheetDrawRects(currentSheetDrawRects, pixels, blendFn)
     })
     gridRenderer.updateGridTiles()
@@ -346,15 +351,95 @@ export function makeTileGridSelectionToolState(
     dragging = false
   }
 
+  function getSelectionPixels() {
+    // If content is already lifted/pasted, pixels are carried on the selection directly.
+    // Otherwise extract fresh from the rendered grid at the selection's current bounds.
+    if (selection!.pixels) return selection!.pixels
+
+    const gridRects = selection!.getCurrentGridRects()
+    const bounds = getRectsBounds(gridRects)
+    return extractPixelData(gridRenderer.tileGridPixelDataRef.get()!, bounds)
+  }
+
+  async function copySelection() {
+    if (!selection) return
+
+    const pixels = getSelectionPixels()
+    const gridRects = selection.getCurrentGridRects()
+
+    // If the selection has a single rect with a mask (e.g. from flood fill),
+    // pass it through so the exported PNG respects the non-rectangular shape.
+    // Multi-rect selections fall back to rectangular export — no single mask applies.
+    const maskData = gridRects.length === 1 ? gridRects[0].data ?? undefined : undefined
+
+    await imageDataToPngBlob(pixels.imageData, maskData)
+      .then(blob => writePngBlobToClipboard(blob))
+  }
+
+  async function cutSelection() {
+    if (!selection) return
+
+    if (selection.isLifted) {
+      await copySelection()
+
+      tileSheetWriter.withHistory((mutator) => {
+        mutator.clearSheetDrawRects(selection!.getOriginalSheetDrawRects())
+      })
+
+      clearSelection()
+      gridRenderer.updateGridTiles()
+      return
+    }
+
+    // Marquee/flood selection: respect the mask when clearing.
+    // clearSheetDrawRects receives DrawRects which already carry the mask
+    // via the `data` and `type` fields projected from the NullableMaskRect —
+    // so passing getCurrentSheetDrawRects() is sufficient and mask-aware.
+    await copySelection()
+
+    tileSheetWriter.withHistory((mutator) => {
+      mutator.clearSheetDrawRects(selection!.getCurrentSheetDrawRects())
+    })
+
+    clearSelection()
+    gridRenderer.updateGridTiles()
+  }
+
+  async function pasteSelection(e: ClipboardEvent) {
+    const imageData = await getImageDataFromClipboard(e)
+
+    if (!imageData) return
+
+    clearSelection()
+
+    const gridPixelWidth = state.tileGridManager.canvasWidth.value
+    const gridPixelHeight = state.tileGridManager.canvasHeight.value
+
+    const rect: NullableMaskRect = {
+      x: Math.floor((gridPixelWidth / 2) - (imageData.width / 2)),
+      y: Math.floor((gridPixelHeight / 2) - (imageData.height / 2)),
+      w: imageData.width,
+      h: imageData.height,
+      data: undefined,
+      type: undefined,
+    }
+
+    const pixels = makePixelData(imageData)
+
+    selection = new GridOriginSelection([rect], pixels, state.tileGridGeometry, true)
+    selection.lift()
+
+    inputSpace = CanvasType.GRID
+    inputTileId = null
+    selecting = false
+
+    drawAffectedTiles()
+  }
+
   return {
-    get inputTileId() {
-      return inputTileId
-    },
-
-    get isTileSelection() {
-      return inputSpace === CanvasType.TILE
-    },
-
+    cutSelection,
+    copySelection,
+    pasteSelection,
     get currentDraggedRectsGrid(): Rect[] | null {
       const rect = currentNormalizedRect()
       if (!rect) return null

@@ -186,6 +186,17 @@ export function makeSelectTool(
 
       gridRenderer.queueRenderAll()
     },
+    onCopy() {
+      toolState.copySelection()
+    },
+    onCut() {
+      toolState.cutSelection()
+    },
+    onPaste(e) {
+      toolState.pasteSelection(e).then(() => {
+        gridRenderer.queueRenderGrid()
+      })
+    },
     gridPixelOverlayDraw(ctx) {
       const sel = toolState.selection
       if (!sel) return
@@ -196,7 +207,7 @@ export function makeSelectTool(
       const preview = gridRenderer.tileGridPixelDataRef.copy()!
 
       // 1. Clear original pixels
-      if (sel.hasMoved()) {
+      if (sel.hasMoved() && !sel.isPasted) {
         for (const r of sel.getOriginalGridDrawRects()) {
           clearSheetDrawRect(preview, r)
         }

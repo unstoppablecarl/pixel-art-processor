@@ -11,8 +11,11 @@ export class TileOriginSelection implements ISelection {
   private moved = false
   pixels: PixelData
   isLifted = false
+  public isPasted: boolean
 
-  constructor(rects: NullableMaskRect[], private tileId: TileId, private geometry: TileGridGeometry) {
+  constructor(rects: NullableMaskRect[], private tileId: TileId, private geometry: TileGridGeometry, isPasted = false) {
+
+    this.isPasted = isPasted
 
     const tileAlignedRects = this.geometry.tileRectsToTileAlignedRects(
       tileId,

@@ -77,5 +77,6 @@ export interface ISelection {
   isLifted: boolean
   lift(): void
 
+  isPasted: boolean
   getOverlappingTileIds(): TileId[]
 }
