@@ -18,9 +18,8 @@ export function duplicateEdgePixels(
   const targetData = target.data
   const targetWidth = target.w
 
-  const chunkShift = writer.config.tileShift
-  const chunkMask = writer.config.tileMask
   const chunkDim = writer.config.tileSize
+  const invChunkSize = 1 / chunkDim
   const targetColumns = writer.config.targetColumns
   const lookup = writer.accumulator.lookup
 
@@ -74,16 +73,17 @@ export function duplicateEdgePixels(
     const gx = offsetX + tx
     const gy = offsetY + ty
 
-    const chunkX = gx >> chunkShift
-    const chunkY = gy >> chunkShift
+    const chunkX = (gx * invChunkSize) | 0
+    const chunkY = (gy * invChunkSize) | 0
     const chunkId = chunkY * targetColumns + chunkX
 
     const chunk = lookup[chunkId]
 
     if (!chunk) return
 
-    const localX = gx & chunkMask
-    const localY = gy & chunkMask
+
+    const localX = gx - chunkX * chunkDim
+    const localY = gy - chunkY * chunkDim
     const beforeColor = chunk.data[localY * chunkDim + localX]
 
     const globalIdx = gy * targetWidth + gx

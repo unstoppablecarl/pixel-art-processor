@@ -1,5 +1,4 @@
 import { type Ref, type ShallowRef } from 'vue'
-import type { BrushToolState } from './tools/state/BrushToolState.ts'
 
 export const TOOL_HOVER_CSS_CLASSES: Record<Tool, string> = {
   BRUSH: 'brush',
@@ -157,7 +156,3 @@ export type BaseSelectToolState = {
 export type BaseSelectToolHandler<S extends BaseSelectToolState, TArgs extends any[] = []> =
   & BaseToolHandler<S, TArgs>
   & ToolHandlerSubToolChanged<SelectSubTool>
-
-export type BaseBrushToolHandler<TArgs extends any[] = []> =
-  & BaseToolHandler<BrushToolState, TArgs>
-  & ToolHandlerSubToolChanged<BrushSubTool>
