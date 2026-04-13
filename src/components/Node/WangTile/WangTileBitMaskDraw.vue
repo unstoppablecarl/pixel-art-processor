@@ -28,7 +28,6 @@ import { handleNodeConfigHMR } from '../../../lib/util/vite.ts'
 import { reactiveFromRefs } from '../../../lib/util/vue-util.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_GRID } from '../../../lib/vue/canvas-draw-ui.ts'
 import { useInterval } from '../../../lib/vue/component-interval.ts'
-import { useDebugSidebar } from '../../../lib/vue/debug-sidebar.ts'
 import {
   makeAxialEdgeWangTileset,
 } from '../../../lib/wang-tiles/WangTileset.ts'
@@ -156,16 +155,16 @@ useInterval(() => {
   }
 }, 1000)
 
-const debugSidebar = useDebugSidebar()
+// const debugSidebar = useDebugSidebar()
 
 onMounted(() => {
   tileGridController.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
   tileGridController.gridRenderer.queueRenderGrid()
 })
 watchEffect(() => {
-  if (debugSidebar.canvas.value) {
-    tileGridController.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
-  }
+  // if (debugSidebar.canvas.value) {
+  // tileGridController.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
+  // }
 })
 
 const uiStore = useUIStore()
