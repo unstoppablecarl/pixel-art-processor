@@ -47,6 +47,7 @@ export type NodeProps<N extends InitializedNode<any, any, any, any>> = {
 const dimensions = computed(() => {
   const { width, height } = node.getOutputSize()
 
+  if (!width && !height) return
   return width + 'x' + height
 })
 
