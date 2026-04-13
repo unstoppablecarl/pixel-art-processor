@@ -7,14 +7,19 @@ import {
   blendPixelDataAlphaMask,
   blendPixelDataBinaryMask,
   type Color32,
+  ColorPaintBuffer,
+  commitColorPaintBuffer,
   fillPixelData,
   fillPixelDataBinaryMask,
+  makeColorPaintBufferCanvasRenderer,
+  makePixelTile,
   MaskType,
   type NullableMaskRect,
   type PixelData,
   PixelWriter,
+  sourceOverPerfect,
+  TilePool,
 } from '../../../../../pixel-data-js/src'
-import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 import { getHistory } from '../../../lib/util/history/history.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'
@@ -39,7 +44,28 @@ export function makeCanvasPaintWriter(
     canvasRenderer.queueRender()
   }
 
+  const pool = new TilePool(256, makePixelTile)
+  const paintBuffer = new ColorPaintBuffer(writer.config, pool)
+  const renderer = makeColorPaintBufferCanvasRenderer(paintBuffer)
+
   return {
+    paintBuffer,
+    renderer,
+    paintBufferCommit(
+      alpha = 255,
+      blendFn = sourceOverPerfect,
+    ) {
+      writer.withHistory(() => {
+        return commitColorPaintBuffer(
+          writer.accumulator,
+          paintBuffer,
+          alpha,
+          blendFn,
+          blendPixelData,
+        )
+      }, after, after)
+      after()
+    },
     withHistory(cb: (mutator: CanvasPaintMutator) => void) {
       writer.withHistory(cb, after, after)
       after()
@@ -53,19 +79,6 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
 
   const target = writer.config.target
   const accumulator = writer.accumulator
-
-  function writePoints(points: Point[], color: Color32) {
-    for (let i = 0; i < points.length; i++) {
-      const { x, y } = points[i]
-      const index = y * target.w + x
-
-      const current = target.data[index]
-      if (current !== color) {
-        accumulator.storePixelBeforeState(x, y)
-        target.data[index] = color
-      }
-    }
-  }
 
   return {
     clearSelectionRect(sel: NullableMaskRect) {
@@ -85,7 +98,6 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
       didChange(result)
     },
     blendSelectionRect(sel: NullableMaskRect, pixels: PixelData, blendFn: BlendColor32) {
-
       const didChange = accumulator.storeRegionBeforeState(sel.x, sel.y, sel.w, sel.h)
       if (!didChange) return false
       let result = false
@@ -113,6 +125,5 @@ function makeCanvasPaintMutator(writer: PixelWriter<any>) {
 
       didChange(result)
     },
-    writePoints,
   }
 }

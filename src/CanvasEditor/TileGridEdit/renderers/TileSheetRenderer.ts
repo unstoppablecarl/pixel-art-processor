@@ -32,8 +32,8 @@ export function makeTileSheetRenderer(
   function resize() {
     if (!tileGridPixelCanvas) return
     tileGridPixelCanvas.resize(
-      state.tileSheet.pixelWidth * state.scale,
-      state.tileSheet.pixelHeight * state.scale,
+      state.tileSheet.pixelData.w * state.scale,
+      state.tileSheet.pixelData.h * state.scale,
     )
   }
 

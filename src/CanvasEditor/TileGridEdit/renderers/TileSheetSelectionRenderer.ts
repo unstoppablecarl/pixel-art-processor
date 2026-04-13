@@ -38,6 +38,7 @@ export function makeTileSheetSelectionRenderer(
   }
 
   function draw() {
+    if (!tileGridPixelCanvas) return
     const toolState = toolset.toolHandlers.SELECT.toolState
 
     const drawPixelLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {

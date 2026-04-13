@@ -7,7 +7,7 @@ import type { TileGridEditorToolContext } from './_tile-grid-editor-types.ts'
 import type { TileSheetWriter } from './data/TileSheetWriter.ts'
 import type { TileGridRenderer } from './renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from './TileGridEditorState.ts'
-import { makeBrushTool } from './tools/brush.ts'
+import { makeTileGridBrushTool } from './tools/brush.ts'
 import { makeSelectTool } from './tools/select.ts'
 
 export type TileGridToolset = ReturnType<typeof makeTileGridToolset>
@@ -35,7 +35,7 @@ export function makeTileGridToolset(
   }
 
   const handlers = {
-    [Tool.BRUSH]: makeBrushTool(
+    [Tool.BRUSH]: makeTileGridBrushTool(
       context,
       store,
     ),

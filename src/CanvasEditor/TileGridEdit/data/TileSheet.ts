@@ -1,4 +1,6 @@
+import { markRaw } from 'vue'
 import {
+  blendPixelData,
   extractPixelData,
   makePixelData,
   type MutablePixelData32,
@@ -7,9 +9,7 @@ import {
   type SerializedImageData,
   setPixelData,
   writePixelData,
-  writePixelDataBuffer,
 } from '../../../../../pixel-data-js/src'
-import { markRaw } from 'vue'
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../../../lib/util/data/Rect.ts'
@@ -48,7 +48,6 @@ export function makeTileSheet(
   }) {
   const tileCount = tileset.tiles.length
   const tileVersions = new Uint32Array(tileCount)
-
   let currentVersion = 0
 
   function markAllTilesDirty() {
@@ -69,29 +68,45 @@ export function makeTileSheet(
   let img = imageData ?? new ImageData(width, height)
   let pixelData = markRaw(makePixelData(img))
 
+  let tileSheetTiles: TileSheetTile[] = []
+
+  for (const t of tileset.tiles) {
+    const index = t.index
+
+    const tx = index % tilesPerRow
+    const ty = Math.floor(index / tilesPerRow)
+
+    tileSheetTiles[t.index] = {
+      tileId: t.id,
+      index: index,
+      tx,
+      ty,
+      x: tx * tileSize,
+      y: ty * tileSize,
+      edges: t.edges,
+      edgesId: t.edgesId,
+    }
+  }
+
   // fast path
   function getTileSheetOffset(tileId: TileId, out: Point = { x: 0, y: 0 }): Point {
     const index = tileset.byId.get(tileId)!.index
-    out.x = (index % tilesPerRow) * tileSize
-    out.y = (Math.floor(index / tilesPerRow)) * tileSize
+    const t = tileSheetTiles[index]
+    out.x = t.x
+    out.y = t.y
+
     return out
   }
 
   function getTileRect(tileId: TileId): Rect {
-    const { sTileX, sTileY } = getTileCoords(tileId)
+    const index = tileset.byId.get(tileId)!.index
+    const t = tileSheetTiles[index]
+
     return {
-      x: sTileX * tileSize,
-      y: sTileY * tileSize,
+      x: t.tx * tileSize,
+      y: t.ty * tileSize,
       w: tileSize,
       h: tileSize,
-    }
-  }
-
-  function getTileCoords(tileId: TileId) {
-    const index = tileset.byId.get(tileId)!.index
-    return {
-      sTileX: index % tilesPerRow,
-      sTileY: Math.floor(index / tilesPerRow),
     }
   }
 
@@ -102,19 +117,19 @@ export function makeTileSheet(
   }
 
   function sheetToTileLocal(tileId: TileId, sx: number, sy: number) {
-    // Get the tile’s position in the tile sheet grid
-    const { sTileX, sTileY } = getTileCoords(tileId)
+    const index = tileset.byId.get(tileId)!.index
+    const t = tileSheetTiles[index]
 
-    const localX = sx - sTileX * tileSize
-    const localY = sy - sTileY * tileSize
+    const localX = sx - t.tx * tileSize
+    const localY = sy - t.ty * tileSize
 
     return { x: localX, y: localY }
   }
 
   function each(cb: (sTileX: number, sTileY: number, tile: WangTile<number>) => void) {
     tileset.tiles.forEach((tile) => {
-      const { sTileX, sTileY } = getTileCoords(tile.id)
-      cb(sTileX, sTileY, tile)
+      const t = tileSheetTiles[tile.index]
+      cb(t.tx, t.ty, tile)
     })
   }
 
@@ -183,25 +198,6 @@ export function makeTileSheet(
     const tileIndex = tileY * tilesPerRow + tileX
     const tile = tileset.tiles[tileIndex]
     return tile ? tile.id : null
-  }
-
-  function splitRectIntoTileRects(rect: Rect & { srcX?: number, srcY?: number }) {
-    const overlaps = getOverlappingTiles(rect)
-    const out = []
-    for (let i = 0; i < overlaps.length; i++) {
-      const o = overlaps[i]
-      out.push({
-        tileId: o.tileId,
-        x: o.tileOverlap.x,
-        y: o.tileOverlap.y,
-        w: o.tileOverlap.w,
-        h: o.tileOverlap.h,
-        srcX: (rect.srcX ?? 0) + o.srcX,
-        srcY: (rect.srcY ?? 0) + o.srcY,
-      })
-    }
-
-    return out
   }
 
   function getOverlappingTiles(rect: Rect) {
@@ -280,26 +276,22 @@ export function makeTileSheet(
     }
   }
 
-  function getHistoryPixels(
-    tileId: TileId,
-    rect: Rect,
-  ) {
-    const { x, y, w, h } = rect
-    return extractPixelData(extractTile(tileId, x, y, w, h), rect)
-  }
+  function blendTilePixelData(tileId: TileId, src: PixelData & { x: number, y: number }) {
+    const result = blendPixelData(
+      pixelData,
+      src,
+      {
+        x: src.x,
+        y: src.y,
+      },
+    )
 
-  // this should be the only place the tilesheet image data is directly mutated
-  function setHistoryPixels(
-    tileId: TileId,
-    data: Uint32Array,
-    rect: Rect,
-  ) {
-    const { x, y, w, h } = rect
-    const { x: sx, y: sy } = tileLocalToSheet(tileId, x, y)
+    if (!result) return false
     const tile = tileset.byId.get(tileId)!
     tileVersions[tile.index]++
     currentVersion++
-    return writePixelDataBuffer(pixelData, data, sx, sy, w, h)
+
+    return true
   }
 
   return {
@@ -315,42 +307,30 @@ export function makeTileSheet(
       tileVersions[tile.index]++
       currentVersion++
     },
+    get tiles() {
+      return tileSheetTiles
+    },
     get version(): number {
       return currentVersion
     },
     get tileSize() {
       return tileSize
     },
-    // get tilesPerRow() {
-    //   return tilesPerRow
-    // },
-    // get tilesPerCol() {
-    //   return tilesPerCol
-    // },
     get pixelData() {
       return pixelData
-    },
-    get pixelWidth() {
-      return pixelData.w
-    },
-    get pixelHeight() {
-      return pixelData.h
     },
     getTileRect,
     tileLocalToSheet,
     sheetToTileLocal,
     extractTile,
     resizeTileSize,
-    getTileCoords,
     each,
     sheetPixelToTileId,
     extractPixelData: (rect: Rect): PixelData => extractPixelData(pixelData, rect),
-    getHistoryPixels,
-    setHistoryPixels,
     getOverlappingTiles,
-    splitRectIntoTileRects,
     serialize,
     markAllTilesDirty,
+    blendTilePixelData,
   }
 }
 
@@ -362,4 +342,13 @@ export function deserializeTileSheet(serialized: SerializedTileSheet): TileSheet
     tileset: deserializeAxialEdgeWangTileset(serialized.tileset),
     imageData: deserializeImageData(serialized.imageData),
   })
+}
+
+export type TileSheetTile = Pick<WangTile<number>, 'edgesId' | 'edges'> & {
+  readonly tileId: TileId,
+  readonly index: number,
+  readonly tx: number,
+  readonly ty: number,
+  readonly x: number,
+  readonly y: number,
 }

@@ -72,6 +72,12 @@ export function useTileGridController(
     store,
   })
 
+  watch([
+    state.tileGridManager.tileset,
+    state.tileGridManager.tileSheet,
+    state.tileGridManager.tileSize,
+  ], () => tileSheetWriter.sync())
+
   watch(gridCache.watchTarget, () => gridRenderer.queueRenderAll())
 
   const toolset = makeTileGridToolset({
