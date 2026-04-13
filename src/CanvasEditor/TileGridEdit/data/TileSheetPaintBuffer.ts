@@ -23,9 +23,9 @@ export class TileSheetPaintBuffer {
     this.tiles = new Array(tileset.tiles.length)
 
     for (const tile of tileset.tiles) {
-      const t = state.tileSheet.tiles[tile.index]
+      const t = state.tileSheet.tiles[tile.id]
 
-      this.tiles[tile.index] = {
+      this.tiles[tile.id] = {
         ...t,
         ...makePixelData(new ImageData(tileSize, tileSize)),
       }
@@ -33,7 +33,7 @@ export class TileSheetPaintBuffer {
   }
 
   get(tileId: TileId): TileSheetPaintBufferTile {
-    const index = this.state.tileSheet.tileset.byId.get(tileId)!.index
+    const index = this.state.tileSheet.tileset.byId.get(tileId)!.id
     return this.tiles[index]
   }
 

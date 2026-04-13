@@ -61,7 +61,7 @@ export function makeTileRenderer(
         }
         if (state.drawTileIds) {
           const tile = state.tileset.byId.get(tileId)!
-          drawText(ctx, tile.index + ': ' + tile.id)
+          drawText(ctx, tile.id + ': ' + tile.id)
         }
         toolset.currentToolHandler.tileScreenOverlayDraw?.(ctx, tileId)
       },

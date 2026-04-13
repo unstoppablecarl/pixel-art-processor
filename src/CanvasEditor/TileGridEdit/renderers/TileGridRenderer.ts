@@ -29,7 +29,7 @@ export function makeTileGridRenderer(
   let toolset: TileGridToolset
   let tileGridPixelCanvas: PixelCanvas | undefined
 
-  const tileRenderers: Record<TileId, TileRenderer> = {}
+  const tileRenderers = new Map<TileId, TileRenderer>()
 
   function setTileGridCanvas(canvas: HTMLCanvasElement) {
     tileGridPixelCanvas = makePixelCanvas(canvas)
@@ -39,14 +39,15 @@ export function makeTileGridRenderer(
 
   function registerTileCanvas(tileId: TileId, tileCanvas: HTMLCanvasElement) {
     if (!toolset) throw new Error('currentToolRenderer not set')
-    tileRenderers[tileId] = makeTileRenderer({
-      tileId,
-      state,
-      gridCache,
-      tileCanvas,
-      toolset,
-      tileGridEdgeColorRenderer,
-    })
+    tileRenderers.set(tileId, makeTileRenderer({
+        tileId,
+        state,
+        gridCache,
+        tileCanvas,
+        toolset,
+        tileGridEdgeColorRenderer,
+      }),
+    )
 
     queueRenderTile(tileId)
     queueRenderGrid()
@@ -64,7 +65,7 @@ export function makeTileGridRenderer(
   }
 
   function queueRenderTiles(tileIds?: TileId[]) {
-    Object.entries(tileRenderers).forEach(([tileId, tileRenderer]) => {
+    tileRenderers.forEach((tileRenderer, tileId) => {
       if (!tileIds || tileIds.includes(tileId as TileId)) {
         tileRenderer.queueRender()
         queueRenderGrid()
@@ -73,7 +74,7 @@ export function makeTileGridRenderer(
   }
 
   function queueRenderTile(tileId: TileId) {
-    tileRenderers[tileId]?.queueRender()
+    tileRenderers.get(tileId)?.queueRender()
     queueRenderGrid()
   }
 
@@ -105,7 +106,7 @@ export function makeTileGridRenderer(
         state.tileGrid.each((tileX, tileY, tile) => {
           const x = tileX * state.tileSize * state.scale
           const y = tileY * state.tileSize * state.scale
-          drawText(ctx, tile.index + '', x, y)
+          drawText(ctx, tile.id + '', x, y)
         })
       }
 

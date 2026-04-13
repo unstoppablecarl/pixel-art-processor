@@ -71,12 +71,12 @@ export function makeTileSheet(
   let tileSheetTiles: TileSheetTile[] = []
 
   for (const t of tileset.tiles) {
-    const index = t.index
+    const index = t.id
 
     const tx = index % tilesPerRow
     const ty = Math.floor(index / tilesPerRow)
 
-    tileSheetTiles[t.index] = {
+    tileSheetTiles[t.id] = {
       tileId: t.id,
       index: index,
       tx,
@@ -90,7 +90,7 @@ export function makeTileSheet(
 
   // fast path
   function getTileSheetOffset(tileId: TileId, out: Point = { x: 0, y: 0 }): Point {
-    const index = tileset.byId.get(tileId)!.index
+    const index = tileset.byId.get(tileId)!.id
     const t = tileSheetTiles[index]
     out.x = t.x
     out.y = t.y
@@ -99,7 +99,7 @@ export function makeTileSheet(
   }
 
   function getTileRect(tileId: TileId): Rect {
-    const index = tileset.byId.get(tileId)!.index
+    const index = tileset.byId.get(tileId)!.id
     const t = tileSheetTiles[index]
 
     return {
@@ -117,7 +117,7 @@ export function makeTileSheet(
   }
 
   function sheetToTileLocal(tileId: TileId, sx: number, sy: number) {
-    const index = tileset.byId.get(tileId)!.index
+    const index = tileset.byId.get(tileId)!.id
     const t = tileSheetTiles[index]
 
     const localX = sx - t.tx * tileSize
@@ -128,7 +128,7 @@ export function makeTileSheet(
 
   function each(cb: (sTileX: number, sTileY: number, tile: WangTile<number>) => void) {
     tileset.tiles.forEach((tile) => {
-      const t = tileSheetTiles[tile.index]
+      const t = tileSheetTiles[tile.id]
       cb(t.tx, t.ty, tile)
     })
   }
@@ -288,7 +288,7 @@ export function makeTileSheet(
 
     if (!result) return false
     const tile = tileset.byId.get(tileId)!
-    tileVersions[tile.index]++
+    tileVersions[tile.id]++
     currentVersion++
 
     return true
@@ -298,13 +298,12 @@ export function makeTileSheet(
     tileset,
     getTileSheetOffset,
     getTileVersion: (tileId: TileId) => {
-      const index = tileset.byId.get(tileId)?.index
-      return index !== undefined ? tileVersions[index] : -1
+      return tileVersions[tileId] ?? -1
     },
     // mark tile as needing to be re-rendered when renderer next looks for changes
     markTileDirty(tileId: TileId) {
       const tile = tileset.byId.get(tileId)!
-      tileVersions[tile.index]++
+      tileVersions[tile.id]++
       currentVersion++
     },
     get tiles() {

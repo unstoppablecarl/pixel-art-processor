@@ -30,7 +30,7 @@ export function makeTileGridGeometry(
   }
 
   const SCRATCH_gridPixelToTilePixel = {
-    tileId: '' as TileId,
+    tileId: -1 as TileId,
     tx: -1,
     ty: -1,
   }

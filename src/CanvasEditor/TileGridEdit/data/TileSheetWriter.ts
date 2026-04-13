@@ -105,7 +105,7 @@ export function makeTileSheetWriter(
       const tileSize = state.tileSize
 
       state.tileGrid.each((x, y, t) => {
-        const tile = tiles[t.index]
+        const tile = tiles[t.id]
         ctx.putImageData(tile.imageData, 0, 0)
         targetCtx.drawImage(canvas, x * tileSize, y * tileSize)
       })

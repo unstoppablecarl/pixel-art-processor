@@ -1,10 +1,9 @@
 import type { Direction, DirectionSet } from '../pipeline/_types.ts'
 
-export type TileId = string & { readonly __tileId: unique symbol };
+export type TileId = number & { readonly __tileId: unique symbol };
 
 export interface WangTile<T> {
   readonly id: TileId;
-  readonly index: number,
   readonly edgesId: string,
   readonly edges: DirectionSet<T>;
 }
@@ -12,7 +11,6 @@ export interface WangTile<T> {
 export function populateIndexedWangTile<T>(tile: WangTile<number>, values: T[]): WangTile<T> {
   return {
     id: tile.id,
-    index: tile.index,
     edgesId: tile.edgesId,
     edges: {
       N: values[tile.edges.N],
@@ -41,9 +39,8 @@ export class WangTileset<T> {
             const index = tiles.length
 
             tiles.push({
-              id: makeTileId(index),
+              id: index as TileId,
               edgesId: makeEdgesId(N, E, S, W),
-              index,
               edges: {
                 N: colors[N],
                 E: colors[E],
@@ -82,9 +79,8 @@ export class WangTileset<T> {
 
             const index = tiles.length
             tiles.push({
-              id: makeTileId(index),
+              id: index as TileId,
               edgesId: makeEdgesId<T>(iN, iE, iS, iW),
-              index,
               edges: {
                 N: iN,
                 E: iE,
@@ -201,9 +197,8 @@ export function makeAxialEdgeWangTileset(
           const index = tiles.length
 
           tiles.push({
-            id: makeTileId(index),
+            id: index as TileId,
             edgesId: makeEdgesId(N, E, S, W),
-            index,
             edges:
               {
                 N, E, S, W,
@@ -232,10 +227,6 @@ export const oppositeEdge: Record<Direction, Direction> = {
   E: 'W' as Direction,
   W: 'E' as Direction,
 } as const
-
-export function makeTileId(index: number) {
-  return 'tile-' + index as TileId
-}
 
 export function makeEdgesId<T = number>(N: T, E: T, S: T, W: T) {
   return `tile-${N}-${E}-${S}-${W}`

@@ -241,7 +241,7 @@ export class GridToTileSheetPaintBuffer {
         const wangTile = grid.get(tx, ty)
         if (!wangTile) continue
 
-        const tile = this.tileSheetPaintBuffer.tiles[wangTile.index]
+        const tile = this.tileSheetPaintBuffer.tiles[wangTile.id]
         if (!tile) continue
 
         const tileLeft = tx * tileSize

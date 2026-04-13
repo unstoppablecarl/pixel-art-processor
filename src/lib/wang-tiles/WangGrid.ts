@@ -76,7 +76,7 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
     return result
   }
 
-  eachWithTileId(tileId: string, cb: (x: number, y: number, tile: WangTile<T>) => void) {
+  eachWithTileId(tileId: TileId, cb: (x: number, y: number, tile: WangTile<T>) => void) {
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {
         const tile = this.get(x, y)
@@ -87,7 +87,7 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
     }
   }
 
-  mapWithTileId<R>(tileId: string, cb: (x: number, y: number, tile: WangTile<T>) => R): R[] {
+  mapWithTileId<R>(tileId: TileId, cb: (x: number, y: number, tile: WangTile<T>) => R): R[] {
     const result = []
     for (let y = 0; y < this.height; y++) {
       for (let x = 0; x < this.width; x++) {

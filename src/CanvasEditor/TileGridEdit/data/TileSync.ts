@@ -23,7 +23,7 @@ export function makeTileSheetSync(tileSheet: TileSheet) {
     for (let i = 0; i < tiles.length; i++) {
       const tile = tiles[i]
       const currentVersion = sheet.getTileVersion(tile.id)
-      const index = tile.index
+      const index = tile.id
 
       if (currentVersion !== localVersions[index]) {
         onTileChanged(tile.id)

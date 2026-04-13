@@ -15,7 +15,7 @@ type ImageOutput = {
   index: number,
   node: AnyNode,
   image: ImageData
-  tileId: string,
+  tileId: number,
   key: string,
   encoded: string,
 }
