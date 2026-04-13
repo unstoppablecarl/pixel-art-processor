@@ -1,8 +1,7 @@
-// TileGridGeometry.ts
 import { extractMaskBuffer, type NullableMaskRect } from '../../../../../pixel-data-js/src'
 import { type Rect } from '../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
-import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
+import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { DrawRect, GridOriginTileAlignedRect, TileOriginTileAlignedRect } from '../lib/ISelection.ts'
 import type { TileSheet } from './TileSheet.ts'
 
@@ -13,12 +12,27 @@ export function makeTileGridGeometry(
   tileSheet: TileSheet,
   tileSize: number,
 ) {
+  const SCRATCH_gridPixelToGridTile = {
+    gTileX: -1,
+    gTileY: -1,
+    tile: null as unknown as WangTile<number>,
+  }
+
   function gridPixelToGridTile(gx: number, gy: number) {
     const gTileX = Math.floor(gx / tileSize)
     const gTileY = Math.floor(gy / tileSize)
     const tile = tileGrid.get(gTileX, gTileY)
     if (!tile) return null
-    return { gTileX, gTileY, tile }
+    SCRATCH_gridPixelToGridTile.gTileX = gTileX
+    SCRATCH_gridPixelToGridTile.gTileY = gTileY
+    SCRATCH_gridPixelToGridTile.tile = tile
+    return SCRATCH_gridPixelToGridTile
+  }
+
+  const SCRATCH_gridPixelToTilePixel = {
+    tileId: '' as TileId,
+    tx: -1,
+    ty: -1,
   }
 
   function gridPixelToTilePixel(gx: number, gy: number) {
@@ -27,7 +41,12 @@ export function makeTileGridGeometry(
     const { gTileX, gTileY, tile } = hit
     const tx = gx - gTileX * tileSize
     const ty = gy - gTileY * tileSize
-    return { tileId: tile.id, tx, ty }
+
+    SCRATCH_gridPixelToTilePixel.tileId = tile.id
+    SCRATCH_gridPixelToTilePixel.tx = tx
+    SCRATCH_gridPixelToTilePixel.ty = ty
+
+    return SCRATCH_gridPixelToTilePixel
   }
 
   function gridPixelToSheetPixel(gx: number, gy: number) {
