@@ -55,7 +55,7 @@ export function makeBrushTool(
       canvasRenderer.queueRender()
     },
     pixelOverlayDraw(ctx) {
-      canvasWriter.renderer.draw(ctx)
+      toolState.draw(ctx)
     },
     screenOverlayDraw(ctx) {
       const x = state.mouseX

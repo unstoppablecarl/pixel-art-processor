@@ -19,7 +19,7 @@ import {
   PixelWriter,
   sourceOverPerfect,
   TilePool,
-} from '../../../../../pixel-data-js/src'
+} from 'pixel-data-js'
 import { getHistory } from '../../../lib/util/history/history.ts'
 import type { CanvasPaintEditorState } from '../CanvasPaintEditorState.ts'
 import type { CanvasRenderer } from '../CanvasRenderer.ts'
@@ -44,18 +44,23 @@ export function makeCanvasPaintWriter(
     canvasRenderer.queueRender()
   }
 
+  function withHistory(cb: (mutator: CanvasPaintMutator) => void) {
+    writer.withHistory(cb, after, after)
+    after()
+  }
+
   const pool = new TilePool(256, makePixelTile)
   const paintBuffer = new ColorPaintBuffer(writer.config, pool)
-  const renderer = makeColorPaintBufferCanvasRenderer(paintBuffer)
+  const paintBufferRenderer = makeColorPaintBufferCanvasRenderer(paintBuffer)
 
   return {
     paintBuffer,
-    renderer,
+    paintBufferRenderer,
     paintBufferCommit(
       alpha = 255,
       blendFn = sourceOverPerfect,
     ) {
-      writer.withHistory(() => {
+      withHistory(() => {
         return commitColorPaintBuffer(
           writer.accumulator,
           paintBuffer,
@@ -63,13 +68,9 @@ export function makeCanvasPaintWriter(
           blendFn,
           blendPixelData,
         )
-      }, after, after)
-      after()
+      })
     },
-    withHistory(cb: (mutator: CanvasPaintMutator) => void) {
-      writer.withHistory(cb, after, after)
-      after()
-    },
+    withHistory,
   }
 }
 

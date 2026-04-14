@@ -12,7 +12,6 @@ import {
   SubTools,
   Tool,
 } from '../../CanvasEditor/_core/_core-editor-types.ts'
-import { RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
 
 type SerializedData = {
   currentTool: Tool,
@@ -48,9 +47,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const selectFloodTolerance = ref(0)
 
   const brushSizeDebounced = refDebounced(brushSize, 200)
-  const brushColor = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor.value : 0 as Color32)
-
-  const brushBitMaskColor = computed(() => brushMode.value === BrushSubTool.ADD ? RGBA_WHITE : RGBA_ERASE)
+  const brushColor = computed(() => primaryColor.value)
 
   const cursorColor = ref<Color32>(CYAN)
   const cursorColorCss = computed(() => color32ToCssRGBA(cursorColor.value))
@@ -148,7 +145,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
     brushSizeDebounced,
     brushColor,
-    brushBitMaskColor,
 
     selectMoveBlendMode,
     selectFloodContiguous,
