@@ -35,6 +35,7 @@ function init() {
     const color = canvasStore.cursorColor
     const scale = uiStore.imgScale
 
+    version.value += 1
     if (canvasStore.brushShape === BrushShape.CIRCLE) {
       BRUSH = makeCirclePaintBinaryMask(size)
     } else {

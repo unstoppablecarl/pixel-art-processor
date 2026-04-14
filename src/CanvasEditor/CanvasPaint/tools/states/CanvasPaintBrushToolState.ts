@@ -19,7 +19,6 @@ export function makeCanvasPaintBrushToolState(
     store: CanvasEditToolStore,
   }) {
 
-  const brush = useBrush()
 
   function write(
     x: number,
@@ -27,6 +26,8 @@ export function makeCanvasPaintBrushToolState(
     x2: number = x,
     y2: number = y,
   ) {
+    const brush = useBrush()
+
     const buffer = canvasWriter.paintBuffer
     let changed: boolean
 

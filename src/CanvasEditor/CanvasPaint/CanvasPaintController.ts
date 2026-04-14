@@ -71,7 +71,10 @@ export function useCanvasPaintController(
 
   const uiStore = useUIStore()
   const brushCursor = useBrushCursor()
-  watch(brushCursor.watchTarget, () => canvasRenderer.queueRender())
+  watch(brushCursor.watchTarget, () => {
+    console.log('a')
+    canvasRenderer.queueRender()
+  })
 
   watchEffect(() => {
     state.pixelDataRef.resize(width.value, height.value)
