@@ -1,3 +1,4 @@
+import { sourceOverPerfect } from 'pixel-data-js'
 import { markRaw } from 'vue'
 import {
   blendPixelData,
@@ -273,13 +274,18 @@ export function makeTileSheet(
     }
   }
 
-  function blendTilePixelData(tileId: TileId, src: PixelData & { x: number, y: number }) {
+  function blendTilePixelData(tileId: TileId, src: PixelData & {
+    x: number,
+    y: number
+  }, alpha = 255, blendFn = sourceOverPerfect) {
     const result = blendPixelData(
       pixelData,
       src,
       {
         x: src.x,
         y: src.y,
+        blendFn,
+        alpha,
       },
     )
 

@@ -46,7 +46,7 @@ export function makeTileGridBrushTool(
       isDrawing = false
       toolState.commit()
     },
-    onClick(){
+    onClick() {
       toolState.commit()
     },
     onMouseMove(x, y): void {
@@ -58,7 +58,7 @@ export function makeTileGridBrushTool(
       gridRenderer.queueRenderAll()
     },
     gridPixelOverlayDraw(ctx) {
-      tileSheetWriter.tileGridPaintBufferDraw(ctx)
+      toolState.drawGrid(ctx)
     },
     gridScreenOverlayDraw(ctx) {
       if (state.hoverTileId === null) return
@@ -74,7 +74,7 @@ export function makeTileGridBrushTool(
       })
     },
     tilePixelOverlayDraw(ctx, tileId) {
-      tileSheetWriter.tilePaintBufferDraw(ctx, tileId)
+      toolState.drawTile(ctx, tileId)
     },
     tileScreenOverlayDraw(ctx, tileId) {
       if (state.mouseGridX && state.mouseGridY) {

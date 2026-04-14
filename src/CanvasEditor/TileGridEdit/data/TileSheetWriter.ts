@@ -1,4 +1,10 @@
-import { makeBatchedQueue, makeReusableOffscreenCanvas, type PixelTile, PixelWriter } from 'pixel-data-js'
+import {
+  makeBatchedQueue,
+  makeReusableOffscreenCanvas,
+  type PixelTile,
+  PixelWriter,
+  sourceOverPerfect,
+} from 'pixel-data-js'
 import { nextTick } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { getHistory } from '../../../lib/util/history/history.ts'
@@ -79,7 +85,12 @@ export function makeTileSheetWriter(
       tileSheetPaintBuffer.sync()
     },
     tilePaintBuffer,
-    tilePaintBufferDraw(targetCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, tileId: TileId) {
+    tilePaintBufferDraw(
+      targetCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+      tileId: TileId,
+      alpha = 255,
+      compOperation: GlobalCompositeOperation = 'source-over',
+    ) {
       const {
         canvas,
         ctx,
@@ -87,13 +98,23 @@ export function makeTileSheetWriter(
         state.tileSize,
         state.tileSize,
       )
+      targetCtx.globalAlpha = alpha / 255
+      targetCtx.globalCompositeOperation = compOperation
+
       const tile = tileSheetPaintBuffer.get(tileId)
       ctx.putImageData(tile.imageData, 0, 0)
       targetCtx.drawImage(canvas, 0, 0)
+
+      targetCtx.globalAlpha = 1
+      targetCtx.globalCompositeOperation = 'source-over'
     },
 
     tileGridPaintBuffer,
-    tileGridPaintBufferDraw(targetCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {
+    tileGridPaintBufferDraw(
+      targetCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,
+      alpha = 255,
+      compOperation: GlobalCompositeOperation = 'source-over',
+    ) {
       const {
         canvas,
         ctx,
@@ -103,14 +124,19 @@ export function makeTileSheetWriter(
       )
       const tiles = tileSheetPaintBuffer.tiles
       const tileSize = state.tileSize
+      targetCtx.globalAlpha = alpha / 255
+      targetCtx.globalCompositeOperation = compOperation
 
       state.tileGrid.each((x, y, t) => {
         const tile = tiles[t.id]
         ctx.putImageData(tile.imageData, 0, 0)
         targetCtx.drawImage(canvas, x * tileSize, y * tileSize)
       })
+
+      targetCtx.globalAlpha = 1
+      targetCtx.globalCompositeOperation = 'source-over'
     },
-    paintBufferCommit() {
+    paintBufferCommit(alpha = 255, blendFn = sourceOverPerfect) {
       const tileSize = state.tileSize
       const bufferTiles = tileSheetPaintBuffer.tiles
       if (bufferTiles.length < 1) return
@@ -127,7 +153,7 @@ export function makeTileSheetWriter(
               if (!didChange) continue
 
               const changed = didChange(
-                state.tileSheet.blendTilePixelData(tile.tileId, tile),
+                state.tileSheet.blendTilePixelData(tile.tileId, tile, alpha, blendFn),
               )
 
               if (changed) {

@@ -1,6 +1,7 @@
-import { MaskType } from '../../../../../../pixel-data-js/src'
+import { destinationOutPerfect, MaskType, packColor } from '../../../../../../pixel-data-js/src'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
+import { SubTools, Tool } from '../../../_core/_core-editor-types.ts'
 import { useBrush } from '../../../_core/data/Brush.ts'
 import { CanvasType } from '../../_tile-grid-editor-types.ts'
 import type { TileSheetWriter } from '../../data/TileSheetWriter.ts'
@@ -8,6 +9,9 @@ import type { TileGridRenderer } from '../../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 
 export type TileGridBrushToolState = ReturnType<typeof makeTileGridBrushToolState>
+const ERASE = packColor(255, 0, 0, 255)
+
+const ERASE_SUB_TOOL = SubTools[Tool.BRUSH].REMOVE
 
 export function makeTileGridBrushToolState(
   {
@@ -23,7 +27,6 @@ export function makeTileGridBrushToolState(
   },
 ) {
 
-
   function writeGrid(
     x: number,
     y: number,
@@ -32,9 +35,10 @@ export function makeTileGridBrushToolState(
   ) {
     const brush = useBrush()
 
-    const color = store.brushColor
     const buffer = tileSheetWriter.tileGridPaintBuffer
     let affectedTileIds: TileId[]
+    const eraseMode = store.currentSubTool === ERASE_SUB_TOOL
+    const color = eraseMode ? ERASE : store.brushColor
 
     if (brush.data) {
       if (brush.type === MaskType.BINARY) {
@@ -62,6 +66,9 @@ export function makeTileGridBrushToolState(
     const brush = useBrush()
 
     if (brush.data) {
+      const eraseMode = store.currentSubTool === ERASE_SUB_TOOL
+      const color = eraseMode ? ERASE : store.brushColor
+
       if (brush.type === MaskType.BINARY) {
         changed = buffer.paintBinaryMask(tileId, color, brush, x, y, x2, y2)
       } else {
@@ -101,7 +108,7 @@ export function makeTileGridBrushToolState(
     if (canvasType === CanvasType.GRID) {
       writeGrid(x, y, x2, y2)
     } else {
-      writeTile(tileId!, x, y)
+      writeTile(tileId!, x, y, x2, y2)
     }
   }
 
@@ -109,7 +116,25 @@ export function makeTileGridBrushToolState(
     writeBrush,
     strokeBrush,
     commit: () => {
-      tileSheetWriter.paintBufferCommit()
+      if (store.currentSubTool === ERASE_SUB_TOOL) {
+        tileSheetWriter.paintBufferCommit(255, destinationOutPerfect)
+      } else {
+        tileSheetWriter.paintBufferCommit()
+      }
+    },
+    drawTile(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D, tileId: TileId) {
+      if (store.currentSubTool === ERASE_SUB_TOOL) {
+        tileSheetWriter.tilePaintBufferDraw(ctx, tileId, 255, 'destination-out')
+      } else {
+        tileSheetWriter.tilePaintBufferDraw(ctx, tileId)
+      }
+    },
+    drawGrid(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {
+      if (store.currentSubTool === ERASE_SUB_TOOL) {
+        tileSheetWriter.tileGridPaintBufferDraw(ctx, 255, 'destination-out')
+      } else {
+        tileSheetWriter.tileGridPaintBufferDraw(ctx)
+      }
     },
   }
 }

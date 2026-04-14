@@ -7,6 +7,7 @@ import type { CanvasPaintWriter } from '../../data/CanvasPaintWriter.ts'
 
 export type CanvasPaintBrushToolState = ReturnType<typeof makeCanvasPaintBrushToolState>
 const ERASE = packColor(255, 0, 0, 255)
+const ERASE_SUB_TOOL = SubTools[Tool.BRUSH].REMOVE
 
 export function makeCanvasPaintBrushToolState(
   {
@@ -31,7 +32,7 @@ export function makeCanvasPaintBrushToolState(
     const buffer = canvasWriter.paintBuffer
     let changed: boolean
 
-    const eraseMode = store.currentSubTool === SubTools[Tool.BRUSH].REMOVE
+    const eraseMode = store.currentSubTool === ERASE_SUB_TOOL
     const color = eraseMode ? ERASE : store.brushColor
 
     if (brush.data) {
@@ -52,14 +53,14 @@ export function makeCanvasPaintBrushToolState(
   return {
     write,
     draw(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {
-      if (store.currentSubTool === SubTools[Tool.BRUSH].REMOVE) {
+      if (store.currentSubTool === ERASE_SUB_TOOL) {
         canvasWriter.paintBufferRenderer.draw(ctx, 255, 'destination-out')
       } else {
         canvasWriter.paintBufferRenderer.draw(ctx)
       }
     },
     commit() {
-      if (store.currentSubTool === SubTools[Tool.BRUSH].REMOVE) {
+      if (store.currentSubTool === ERASE_SUB_TOOL) {
         canvasWriter.paintBufferCommit(255, destinationOutPerfect)
       } else {
         canvasWriter.paintBufferCommit()
