@@ -6,7 +6,7 @@ import { type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
 import { GridToTileSheetPaintBuffer } from './TileSheetWriter/GridToTileSheetPaintBuffer.ts'
-import { duplicateEdgePixels } from './TileSheetWriter/TileEdgeDuplicator.ts'
+import { duplicateChangedEdgePixels } from './TileSheetWriter/duplicateChangedEdgePixels.ts'
 import type { TileSheet } from './TileSheet.ts'
 import { makeTileSheetMutator, type TileSheetMutator } from './TileSheetWriter/TileSheetMutator.ts'
 import { TileSheetPaintBuffer } from './TileSheetWriter/TileSheetPaintBuffer.ts'
@@ -46,7 +46,7 @@ export function makeTileSheetWriter(
 
   function handleDuplicateEdges(tileIds: TileId[]) {
     if (store.duplicateTileEdges) {
-      const affectedTIds = duplicateEdgePixels(
+      const affectedTIds = duplicateChangedEdgePixels(
         tileIds,
         store.duplicateTileEdgesBorderThickness,
         state.tileSheet,
