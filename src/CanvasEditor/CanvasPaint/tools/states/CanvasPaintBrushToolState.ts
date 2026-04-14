@@ -25,9 +25,9 @@ export function makeCanvasPaintBrushToolState(
     x2: number = x,
     y2: number = y,
   ) {
-    const color = store.brushColor32
+    const color = store.brushColor
     const buffer = canvasWriter.paintBuffer
-    let changed = false
+    let changed: boolean
 
     if (brush.data) {
       if (brush.type === MaskType.BINARY) {

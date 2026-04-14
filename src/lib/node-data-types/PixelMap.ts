@@ -1,5 +1,5 @@
-import type { Color32 } from 'pixel-data-js'
-import { type RGBA, type SerializedRGBA, serializeRGBA, unpackColorTo } from '../util/data/color.ts'
+import { type Color32, unpackColorTo } from 'pixel-data-js'
+import { type RGBA, type SerializedRGBA, serializeRGBA } from '../util/data/color.ts'
 
 import { validateSizes } from './_helpers/_data-type-helpers.ts'
 import { BaseDataStructure } from './BaseDataStructure.ts'

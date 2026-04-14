@@ -32,7 +32,7 @@ function init() {
 
   watchEffect(() => {
     const size = canvasStore.brushSize
-    const color = canvasStore.cursorColor32
+    const color = canvasStore.cursorColor
     const scale = uiStore.imgScale
 
     if (canvasStore.brushShape === BrushShape.CIRCLE) {

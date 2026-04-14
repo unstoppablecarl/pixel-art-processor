@@ -1,7 +1,7 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { makeSimplePersistMapper } from 'pinia-simple-persist'
-import { type Color32, color32ToCssRGBA, packRGBA } from 'pixel-data-js'
+import { type Color32, color32ToCssRGBA, packColor } from 'pixel-data-js'
 import { computed, ref, shallowRef } from 'vue'
 import {
   BlendMode,
@@ -12,16 +12,16 @@ import {
   SubTools,
   Tool,
 } from '../../CanvasEditor/_core/_core-editor-types.ts'
-import { type RGBA, RGBA_CYAN, RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
+import { RGBA_ERASE, RGBA_WHITE } from '../util/data/color.ts'
 
 type SerializedData = {
   currentTool: Tool,
   currentSubTool: SubToolOf<Tool> | null,
 
   brushShape: BrushShape,
-  primaryColor: RGBA,
+  primaryColor: Color32,
   brushSize: number,
-  cursorColor: RGBA,
+  cursorColor: Color32,
   selectMoveBlendMode: BlendMode,
   selectFloodContiguous: boolean,
   selectFloodTolerance: number,
@@ -30,13 +30,14 @@ type SerializedData = {
   duplicateTileEdgesBorderThickness: number,
 }
 
+const CYAN = packColor(0, 255, 255, 255)
+
 export type CanvasEditToolStore = ReturnType<typeof useCanvasEditToolStore>
 export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const currentTool = ref<Tool>(Tool.BRUSH)
   const currentSubTool = ref<SubToolOf<Tool> | null>(BrushSubTool.ADD)
 
-  const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
-  const primaryColor32 = computed(() => packRGBA(primaryColor.value))
+  const primaryColor = ref<Color32>(0xffffffff as Color32)
 
   const brushShape = ref<BrushShape>(BrushShape.CIRCLE)
   const brushSize = shallowRef<number>(10)
@@ -47,14 +48,12 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const selectFloodTolerance = ref(0)
 
   const brushSizeDebounced = refDebounced(brushSize, 200)
-  const brushColor = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor.value : RGBA_ERASE)
-  const brushColor32 = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor32.value : 0 as Color32)
+  const brushColor = computed(() => brushMode.value === BrushSubTool.ADD ? primaryColor.value : 0 as Color32)
 
   const brushBitMaskColor = computed(() => brushMode.value === BrushSubTool.ADD ? RGBA_WHITE : RGBA_ERASE)
 
-  const cursorColor = shallowRef<RGBA>(RGBA_CYAN)
-  const cursorColor32 = computed(() => packRGBA(cursorColor.value))
-  const cursorColorCss = computed(() => color32ToCssRGBA(cursorColor32.value))
+  const cursorColor = ref<Color32>(CYAN)
+  const cursorColorCss = computed(() => color32ToCssRGBA(cursorColor.value))
 
   const duplicateTileEdges = ref(true)
   const duplicateTileEdgesBorderThickness = ref(1)
@@ -139,7 +138,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     primaryColor,
 
     cursorColor,
-    cursorColor32,
     cursorColorCss,
 
     brushShape,
@@ -148,7 +146,6 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
     brushSizeDebounced,
     brushColor,
-    brushColor32,
     brushBitMaskColor,
 
     selectMoveBlendMode,

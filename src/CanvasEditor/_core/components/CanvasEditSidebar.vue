@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
-import { useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
-import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE } from '../../../components/Node/WangTile/WangTileBitMaskDraw.vue'
 import ToolButton from '../../../components/UI/ToolButton.vue'
+import { useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
+import { usePipelineStore } from '../../../lib/store/pipeline-store.ts'
 import { BrushSubTool, SelectSubTool, Tool } from '../_core-editor-types.ts'
+import BrushColor from './ToolOptions/BrushColor.vue'
 import BrushToolOptions from './ToolOptions/BrushToolOptions.vue'
 import SelectToolOptions from './ToolOptions/SelectToolOptions.vue'
 import TileEdgeDuplicationToolOptions from './ToolOptions/TileEdgeDuplicationToolOptions.vue'
@@ -53,6 +54,7 @@ const hasTileGridNode = computed(() => pipelineStore.hasWithDef(NODE_WANG_TILE_B
     </div>
 
     <TileEdgeDuplicationToolOptions v-if="hasTileGridNode" />
+    <BrushColor v-model:color="store.primaryColor" />
 
   </div>
 </template>
