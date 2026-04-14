@@ -16,7 +16,6 @@ import type { SerializedImageData } from 'pixel-data-js'
 import { computed, reactive, toRef } from 'vue'
 import type { NodeId } from '../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
-import {} from '../../lib/util/html-dom/ImageData.ts'
 import { handleNodeConfigHMR } from '../../lib/util/vite.ts'
 import { canvasDrawCheckboxColors, DEFAULT_SHOW_GRID } from '../../lib/vue/canvas-draw-ui.ts'
 import { useInterval } from '../../lib/vue/component-interval.ts'
@@ -34,13 +33,13 @@ nodeUsesSidebar()
 
 const { nodeId } = defineProps<{ nodeId: NodeId }>()
 
-const maskPixelDataRef = pixelDataRef()
-
 const SIZE_DEFAULTS = rangeSliderConfig({
   value: 64,
   min: 8,
   max: 512,
 })
+const maskPixelDataRef = pixelDataRef()
+maskPixelDataRef.set(new ImageData(SIZE_DEFAULTS.value, SIZE_DEFAULTS.value))
 
 const handler = defineStepHandler(STEP_META, {
   config() {
@@ -93,8 +92,6 @@ const canvasPaintController = useCanvasPaintController({
   gridDraw: toRef(config, 'showGrid'),
   pixelDataRef: maskPixelDataRef,
 })
-
-// canvasPaint.state.imageDataRef.set(maskImageData.get())
 
 useInterval(() => {
   if (canvasPaintController.state.imageDataDirty) {

@@ -61,7 +61,7 @@ export function makeCanvasPaintWriter(
       blendFn = sourceOverPerfect,
     ) {
       withHistory(() => {
-        return commitColorPaintBuffer(
+        commitColorPaintBuffer(
           writer.accumulator,
           paintBuffer,
           alpha,
