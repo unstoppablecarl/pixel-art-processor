@@ -90,8 +90,7 @@ export function makeTileSheet(
 
   // fast path
   function getTileSheetOffset(tileId: TileId, out: Point = { x: 0, y: 0 }): Point {
-    const index = tileset.byId.get(tileId)!.id
-    const t = tileSheetTiles[index]
+    const t = tileSheetTiles[tileId]
     out.x = t.x
     out.y = t.y
 
@@ -99,8 +98,7 @@ export function makeTileSheet(
   }
 
   function getTileRect(tileId: TileId): Rect {
-    const index = tileset.byId.get(tileId)!.id
-    const t = tileSheetTiles[index]
+    const t = tileSheetTiles[tileId]
 
     return {
       x: t.tileX * tileSize,
@@ -117,8 +115,7 @@ export function makeTileSheet(
   }
 
   function sheetToTileLocal(tileId: TileId, sx: number, sy: number) {
-    const index = tileset.byId.get(tileId)!.id
-    const t = tileSheetTiles[index]
+    const t = tileSheetTiles[tileId]
 
     const localX = sx - t.tileX * tileSize
     const localY = sy - t.tileY * tileSize
@@ -287,8 +284,7 @@ export function makeTileSheet(
     )
 
     if (!result) return false
-    const tile = tileset.byId.get(tileId)!
-    tileVersions[tile.id]++
+    tileVersions[tileId]++
     currentVersion++
 
     return true
@@ -302,8 +298,7 @@ export function makeTileSheet(
     },
     // mark tile as needing to be re-rendered when renderer next looks for changes
     markTileDirty(tileId: TileId) {
-      const tile = tileset.byId.get(tileId)!
-      tileVersions[tile.id]++
+      tileVersions[tileId]++
       currentVersion++
     },
     get tiles() {
