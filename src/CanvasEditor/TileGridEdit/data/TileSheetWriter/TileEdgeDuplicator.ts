@@ -1,7 +1,7 @@
-import type { PixelWriter } from '../../../../../pixel-data-js/src'
-import type { Direction } from '../../../lib/pipeline/_types.ts'
-import { type TileId, type WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { TileSheet } from './TileSheet.ts'
+import type { PixelWriter } from '../../../../../../pixel-data-js/src'
+import type { Direction } from '../../../../lib/pipeline/_types.ts'
+import { type TileId, type WangTile } from '../../../../lib/wang-tiles/WangTileset.ts'
+import type { TileSheet } from '../TileSheet.ts'
 
 export function duplicateEdgePixels(
   targetTileIds: TileId[],

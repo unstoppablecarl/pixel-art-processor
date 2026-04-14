@@ -1,6 +1,6 @@
-import { type BlendColor32, type PixelData, PixelWriter } from '../../../../../pixel-data-js/src'
-import type { DrawRect } from '../lib/ISelection.ts'
-import { blendSheetDrawRect, clearSheetDrawRect } from '../lib/TileGrid-blenders.ts'
+import { type BlendColor32, type PixelData, PixelWriter } from '../../../../../../pixel-data-js/src'
+import type { DrawRect } from '../../lib/ISelection.ts'
+import { blendSheetDrawRect, clearSheetDrawRect } from '../../lib/TileGrid-blenders.ts'
 
 export type TileSheetMutator = ReturnType<typeof makeTileSheetMutator>
 

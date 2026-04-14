@@ -6,9 +6,9 @@ import {
   type PaintRect,
   type Rect,
   trimRectBounds,
-} from 'pixel-data-js'
-import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
-import type { TileGridEditorState } from '../TileGridEditorState.ts'
+} from '../../../../../../pixel-data-js/src'
+import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
+import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 import type { TileSheetPaintBuffer, TileSheetPaintBufferTile } from './TileSheetPaintBuffer.ts'
 
 export class GridToTileSheetPaintBuffer {

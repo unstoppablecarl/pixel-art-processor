@@ -4,8 +4,8 @@ import {
   type PaintAlphaMask,
   type PaintBinaryMask,
   type PaintRect,
-} from 'pixel-data-js'
-import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
+} from '../../../../../../pixel-data-js/src'
+import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheetPaintBuffer } from './TileSheetPaintBuffer.ts'
 
 export class TileToTileSheetPaintBuffer {
