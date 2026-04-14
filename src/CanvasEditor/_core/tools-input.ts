@@ -57,7 +57,25 @@ export const TOOLS_META: ToolsMeta = {
         },
       },
     ],
-    modifierKeyBindings: [],
+    modifierKeyBindings: [
+      {
+        downDescription: 'Lock to cardinal directions',
+        downKey: 'Shift',
+        upDescription: '',
+        filter: (e) => e.key === 'Shift',
+        up: (store) => {
+          if (store.currentTool === Tool.BRUSH) {
+            store.brushLockCardinalDirections = false
+          }
+        },
+        down: (store) => {
+          if (store.currentTool === Tool.BRUSH) {
+            store.brushLockCardinalDirections = true
+          }
+        },
+        isDown: (store) => store.brushLockCardinalDirections,
+      },
+    ],
     subTools: {
       [BrushSubTool.ADD]: {
         displayName: 'Add',
@@ -137,7 +155,7 @@ export function toolsMetaToKeyBindEntries(store: CanvasEditToolStore) {
   return out
 }
 
-export function toolsMetaToModifierKeyBindEntries(store: CanvasEditToolStore) {
+export function toolsMetaToModifierKeyBindEntries() {
   const out: ModifierKeyBinding[] = []
 
   for (const tool of Object.values(TOOLS_META)) {

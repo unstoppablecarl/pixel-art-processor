@@ -51,9 +51,11 @@ const currentModifiers = computed(() => {
         modifiers
       </span>
       <template v-for="k in currentModifiers">
-        <span class="btn btn-sm btn-transparent disabled ms-3 fw-bold">default</span>
-        <span class="btn-sm-py text-muted ms-1"> {{ k.upDescription }}</span>
-        <span class="btn btn-sm disabled ms-3 fw-bold" :class="{
+        <template v-if="k.upDescription">
+          <span class="btn btn-sm btn-transparent disabled ms-3 fw-bold">default</span>
+          <span class="btn-sm-py text-muted ms-1"> {{ k.upDescription }}</span>
+        </template>
+          <span class="btn btn-sm disabled ms-3 fw-bold" :class="{
           'btn-transparent': !k.isDownComputed,
           'btn-primary': k.isDownComputed
         }">{{ k.downKey }}</span>

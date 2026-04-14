@@ -1,14 +1,8 @@
 import hotkeys from 'hotkeys-js'
-import {
-  toolsMetaToKeyBindEntries,
-  toolsMetaToModifierKeyBindEntries,
-} from '../CanvasEditor/_core/tools-input.ts'
+import { toolsMetaToKeyBindEntries, toolsMetaToModifierKeyBindEntries } from '../CanvasEditor/_core/tools-input.ts'
 import type { KeyboardEventFilter } from './_lib-types.ts'
 import { useCanvasEditToolStore } from './store/canvas-edit-tool-store.ts'
 import type { VueHistory } from './util/history/history.ts'
-
-export const COPY_KEYS = 'command+c, ctrl+c'
-export const PASTE_KEYS = 'command+v, ctrl+v'
 
 export function bindInputKeys(history: VueHistory) {
 
@@ -25,7 +19,7 @@ export function bindInputKeys(history: VueHistory) {
     hotkeys(k, v)
   }
 
-  const unbinds = toolsMetaToModifierKeyBindEntries(toolStore).map(({ filter, up, down }) => {
+  const unbinds = toolsMetaToModifierKeyBindEntries().map(({ filter, up, down }) => {
     return bindModifierKeysUpDown(filter, {
       up: () => up(toolStore),
       down: () => down(toolStore),
