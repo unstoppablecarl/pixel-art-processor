@@ -1,6 +1,6 @@
 import type { PixelData } from '../../../../../../pixel-data-js/src'
 import { makePixelData } from '../../../../../../pixel-data-js/src'
-import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
+import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 import type { TileSheetTile } from '../TileSheet.ts'
 
@@ -33,8 +33,7 @@ export class TileSheetPaintBuffer {
   }
 
   get(tileId: TileId): TileSheetPaintBufferTile {
-    const index = this.state.tileSheet.tileset.byId.get(tileId)!.id
-    return this.tiles[index]
+    return this.tiles[tileId]
   }
 
   clear() {
