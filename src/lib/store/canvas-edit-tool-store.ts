@@ -33,7 +33,7 @@ type SerializedData = {
 export type CanvasEditToolStore = ReturnType<typeof useCanvasEditToolStore>
 export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
   const currentTool = ref<Tool>(Tool.BRUSH)
-  const currentSubTool = ref<SubToolOf<Tool> | null>(null)
+  const currentSubTool = ref<SubToolOf<Tool> | null>(BrushSubTool.ADD)
 
   const primaryColor = shallowRef<RGBA>(RGBA_WHITE)
   const primaryColor32 = computed(() => packRGBA(primaryColor.value))
