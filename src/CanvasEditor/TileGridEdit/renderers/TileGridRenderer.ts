@@ -59,7 +59,7 @@ export function makeTileGridRenderer(
     tileGridPixelDataRef.destructiveResize(state.gridScreenWidth, state.gridScreenHeight)
 
     tileSync.reset()
-    for (const tileRenderer of Object.values(tileRenderers)) {
+    for (const [_tileId, tileRenderer] of tileRenderers) {
       tileRenderer.resize()
     }
   }
