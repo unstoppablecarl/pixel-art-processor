@@ -46,14 +46,14 @@ export function makeTileSheetWriter(
 
   function handleDuplicateEdges(tileIds: TileId[]) {
     if (store.duplicateTileEdges) {
-      for (let i = 0; i < tileIds.length; i++) {
-        const tileId = tileIds[i]
-        duplicateEdgePixels(
-          tileId,
-          store.duplicateTileEdgesBorderThickness,
-          state.tileSheet,
-          writer,
-        )
+      const affectedTIds = duplicateEdgePixels(
+        tileIds,
+        store.duplicateTileEdgesBorderThickness,
+        state.tileSheet,
+        writer,
+      )
+      if (affectedTIds) {
+        handleReactivityTileIds(affectedTIds)
       }
     }
   }

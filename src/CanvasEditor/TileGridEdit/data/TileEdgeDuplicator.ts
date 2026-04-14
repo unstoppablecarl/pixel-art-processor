@@ -1,14 +1,18 @@
 import type { PixelWriter } from '../../../../../pixel-data-js/src'
-import { type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
+import type { Direction } from '../../../lib/pipeline/_types.ts'
+import { type TileId, type WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileSheet } from './TileSheet.ts'
 
 export function duplicateEdgePixels(
-  tileId: TileId,
+  targetTileIds: TileId[],
   borderThickness = 1,
   tileSheet: TileSheet,
   writer: PixelWriter<any>,
-) {
+): TileId[] | undefined {
   if (borderThickness <= 0) return
+
+  const affectedCount = targetTileIds.length
+  if (affectedCount === 0) return
 
   const tileset = tileSheet.tileset
   const tileSize = tileSheet.tileSize
@@ -23,24 +27,15 @@ export function duplicateEdgePixels(
   const targetColumns = writer.config.targetColumns
   const lookup = writer.accumulator.lookup
 
-  const offset = tileSheet.getTileSheetOffset(tileId)
-  const offsetX = offset.x
-  const offsetY = offset.y
-
-  const tile = tileset.byId.get(tileId)!
-
-  const nEdge = tileset.getTilesWithSameEdge(tile, 'N')
-  const sEdge = tileset.getTilesWithSameEdge(tile, 'S')
-  const wEdge = tileset.getTilesWithSameEdge(tile, 'W')
-  const eEdge = tileset.getTilesWithSameEdge(tile, 'E')
+  const affectedTileIds = new Set<TileId>()
 
   const copyToEdge = (
-    destTiles: any[],
-    flipX: boolean,
-    flipY: boolean,
+    destTiles: WangTile<number>[],
     tx: number,
     ty: number,
     afterColor: number,
+    edgeDirection: Direction,
+    isMirrored: boolean,
   ) => {
     const length = destTiles.length
 
@@ -49,8 +44,16 @@ export function duplicateEdgePixels(
       const dTileId = destTile.id
       const dOffset = tileSheet.getTileSheetOffset(dTileId)
 
-      const dx = flipX ? max - tx : tx
-      const dy = flipY ? max - ty : ty
+      let dx = tx
+      let dy = ty
+
+      if (isMirrored) {
+        if (edgeDirection === 'N' || edgeDirection === 'S') {
+          dy = max - ty
+        } else {
+          dx = max - tx
+        }
+      }
 
       const globalDx = dOffset.x + dx
       const globalDy = dOffset.y + dy
@@ -59,156 +62,96 @@ export function duplicateEdgePixels(
 
       const pIdx = globalDy * targetWidth + globalDx
       targetData[pIdx] = afterColor
+      affectedTileIds.add(dTileId)
     }
   }
 
-  const processPixel = (
-    tx: number,
-    ty: number,
-    isNorth: boolean,
-    isSouth: boolean,
-    isWest: boolean,
-    isEast: boolean,
-  ) => {
-    const gx = offsetX + tx
-    const gy = offsetY + ty
+  for (let i = 0; i < affectedCount; i++) {
+    const tileId = targetTileIds[i]
+    const tile = tileset.byId.get(tileId)!
+    const offset = tileSheet.getTileSheetOffset(tileId)
+    const offsetX = offset.x
+    const offsetY = offset.y
 
-    const chunkX = (gx * invChunkSize) | 0
-    const chunkY = (gy * invChunkSize) | 0
-    const chunkId = chunkY * targetColumns + chunkX
+    const nEdge = tileset.getTilesWithSameEdge(tile, 'N')
+    const sEdge = tileset.getTilesWithSameEdge(tile, 'S')
+    const wEdge = tileset.getTilesWithSameEdge(tile, 'W')
+    const eEdge = tileset.getTilesWithSameEdge(tile, 'E')
 
-    const chunk = lookup[chunkId]
+    const processPixel = (
+      tx: number,
+      ty: number,
+      isNorth: boolean,
+      isSouth: boolean,
+      isWest: boolean,
+      isEast: boolean,
+    ) => {
+      const gx = offsetX + tx
+      const gy = offsetY + ty
 
-    if (!chunk) return
+      const chunkX = (gx * invChunkSize) | 0
+      const chunkY = (gy * invChunkSize) | 0
+      const chunkId = chunkY * targetColumns + chunkX
 
+      const chunk = lookup[chunkId]
 
-    const localX = gx - chunkX * chunkDim
-    const localY = gy - chunkY * chunkDim
-    const beforeColor = chunk.data[localY * chunkDim + localX]
+      // If no chunk exists, this pixel wasn't in the undo buffer,
+      // meaning it wasn't touched by this specific mutation.
+      if (!chunk) return
 
-    const globalIdx = gy * targetWidth + gx
-    const afterColor = targetData[globalIdx]
+      const localX = gx - chunkX * chunkDim
+      const localY = gy - chunkY * chunkDim
+      const beforeColor = chunk.data[localY * chunkDim + localX]
 
-    if (beforeColor === afterColor) return
+      const globalIdx = gy * targetWidth + gx
+      const afterColor = targetData[globalIdx]
 
-    if (isNorth) {
-      copyToEdge(
-        nEdge.sameEdge,
-        false,
-        false,
-        tx,
-        ty,
-        afterColor,
-      )
-      copyToEdge(
-        nEdge.mirroredEdge,
-        false,
-        true,
-        tx,
-        ty,
-        afterColor,
-      )
-    }
+      if (beforeColor === afterColor) return
 
-    if (isSouth) {
-      copyToEdge(
-        sEdge.sameEdge,
-        false,
-        false,
-        tx,
-        ty,
-        afterColor,
-      )
-      copyToEdge(
-        sEdge.mirroredEdge,
-        false,
-        true,
-        tx,
-        ty,
-        afterColor,
-      )
-    }
-
-    if (isWest) {
-      copyToEdge(
-        wEdge.sameEdge,
-        false,
-        false,
-        tx,
-        ty,
-        afterColor,
-      )
-      copyToEdge(
-        wEdge.mirroredEdge,
-        true,
-        false,
-        tx,
-        ty,
-        afterColor,
-      )
-    }
-
-    if (isEast) {
-      copyToEdge(
-        eEdge.sameEdge,
-        false,
-        false,
-        tx,
-        ty,
-        afterColor,
-      )
-      copyToEdge(
-        eEdge.mirroredEdge,
-        true,
-        false,
-        tx,
-        ty,
-        afterColor,
-      )
-    }
-  }
-
-  // Iterate strictly over the perimeter rather than the entire tile
-  for (let ty = 0; ty < tileSize; ty++) {
-    const isNorth = ty < borderThickness
-    const isSouth = ty > max - borderThickness
-
-    if (isNorth || isSouth) {
-      for (let tx = 0; tx < tileSize; tx++) {
-        const isWest = tx < borderThickness
-        const isEast = tx > max - borderThickness
-
-        processPixel(
-          tx,
-          ty,
-          isNorth,
-          isSouth,
-          isWest,
-          isEast,
-        )
-      }
-    } else {
-      for (let tx = 0; tx < borderThickness; tx++) {
-        processPixel(
-          tx,
-          ty,
-          false,
-          false,
-          true,
-          false,
-        )
+      if (isNorth) {
+        copyToEdge(nEdge.sameEdge, tx, ty, afterColor, 'N', false)
+        copyToEdge(nEdge.mirroredEdge, tx, ty, afterColor, 'N', true)
       }
 
-      for (let tx = tileSize - borderThickness; tx < tileSize; tx++) {
-        processPixel(
-          tx,
-          ty,
-          false,
-          false,
-          false,
-          true,
-        )
+      if (isSouth) {
+        copyToEdge(sEdge.sameEdge, tx, ty, afterColor, 'S', false)
+        copyToEdge(sEdge.mirroredEdge, tx, ty, afterColor, 'S', true)
+      }
+
+      if (isWest) {
+        copyToEdge(wEdge.sameEdge, tx, ty, afterColor, 'W', false)
+        copyToEdge(wEdge.mirroredEdge, tx, ty, afterColor, 'W', true)
+      }
+
+      if (isEast) {
+        copyToEdge(eEdge.sameEdge, tx, ty, afterColor, 'E', false)
+        copyToEdge(eEdge.mirroredEdge, tx, ty, afterColor, 'E', true)
+      }
+    }
+
+    for (let ty = 0; ty < tileSize; ty++) {
+      const isNorth = ty < borderThickness
+      const isSouth = ty > max - borderThickness
+
+      if (isNorth || isSouth) {
+        for (let tx = 0; tx < tileSize; tx++) {
+          const isWest = tx < borderThickness
+          const isEast = tx > max - borderThickness
+
+          processPixel(tx, ty, isNorth, isSouth, isWest, isEast)
+        }
+      } else {
+        // Skip the inner horizontal span entirely
+        for (let tx = 0; tx < borderThickness; tx++) {
+          processPixel(tx, ty, false, false, true, false)
+        }
+
+        for (let tx = tileSize - borderThickness; tx < tileSize; tx++) {
+          processPixel(tx, ty, false, false, false, true)
+        }
       }
     }
   }
+
+  return Array.from(affectedTileIds)
 }
