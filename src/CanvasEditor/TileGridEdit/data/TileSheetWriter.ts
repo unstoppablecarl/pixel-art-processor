@@ -5,9 +5,9 @@ import { getHistory } from '../../../lib/util/history/history.ts'
 import { type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridRenderer } from '../renderers/TileGridRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
-import { GridToTileSheetPaintBuffer } from './TileSheetWriter/GridToTileSheetPaintBuffer.ts'
-import { duplicateChangedEdgePixels } from './TileSheetWriter/duplicateChangedEdgePixels.ts'
 import type { TileSheet } from './TileSheet.ts'
+import { duplicateChangedEdgePixels } from './TileSheetWriter/duplicateChangedEdgePixels.ts'
+import { GridToTileSheetPaintBuffer } from './TileSheetWriter/GridToTileSheetPaintBuffer.ts'
 import { makeTileSheetMutator, type TileSheetMutator } from './TileSheetWriter/TileSheetMutator.ts'
 import { TileSheetPaintBuffer } from './TileSheetWriter/TileSheetPaintBuffer.ts'
 import { TileToTileSheetPaintBuffer } from './TileSheetWriter/TileToTileSheetPaintBuffer.ts'
@@ -66,8 +66,8 @@ export function makeTileSheetWriter(
     },
   )
   const tileSheetPaintBuffer = new TileSheetPaintBuffer(state)
-  const tileGridPaintBuffer = new GridToTileSheetPaintBuffer(tileSheetPaintBuffer, state)
-  const tilePaintBuffer = new TileToTileSheetPaintBuffer(tileSheetPaintBuffer)
+  const tileGridPaintBuffer = new GridToTileSheetPaintBuffer(state.tileset, store, tileSheetPaintBuffer, state)
+  const tilePaintBuffer = new TileToTileSheetPaintBuffer(state.tileset, store, tileSheetPaintBuffer)
 
   const SCRATCH_affectedTileIds: TileId[] = []
 
@@ -110,7 +110,6 @@ export function makeTileSheetWriter(
         targetCtx.drawImage(canvas, x * tileSize, y * tileSize)
       })
     },
-
     paintBufferCommit() {
       const tileSize = state.tileSize
       const bufferTiles = tileSheetPaintBuffer.tiles
@@ -136,8 +135,6 @@ export function makeTileSheetWriter(
               }
             }
           }
-
-          handleDuplicateEdges(SCRATCH_affectedTileIds)
 
           tileSheetPaintBuffer.clear()
           handleReactivityTileIds(SCRATCH_affectedTileIds)
