@@ -1,7 +1,7 @@
 import { refDebounced } from '@vueuse/core'
 import { defineStore } from 'pinia'
 import { makeSimplePersistMapper } from 'pinia-simple-persist'
-import { type Color32, color32ToCssRGBA, packColor } from 'pixel-data-js'
+import { type Color32, color32ToCssRGBA, color32ToCssRGBAString, packColor } from 'pixel-data-js'
 import { computed, ref, shallowRef } from 'vue'
 import {
   BlendMode,
@@ -54,6 +54,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
   const cursorColor = ref<Color32>(CYAN)
   const cursorColorCss = computed(() => color32ToCssRGBA(cursorColor.value))
+  const cursorColorCssString = computed(() => color32ToCssRGBAString(cursorColor.value))
 
   const duplicateTileEdges = ref(true)
   const duplicateTileEdgesBorderThickness = ref(1)
@@ -139,6 +140,7 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
 
     cursorColor,
     cursorColorCss,
+    cursorColorCssString,
 
     brushShape,
     brushMode,

@@ -174,11 +174,11 @@ export function makeCanvasPaintSelectTool(
       const sel = toolState.selection
       const { scale } = state
       if (sel) {
-        drawSelectOutline(ctx, scale, sel.current, store.cursorColorCss)
+        drawSelectOutline(ctx, scale, sel.current, store.cursorColorCssString)
       } else {
         const r = toolState.currentDraggedRect
         if (!r) return
-        drawSelectOutline(ctx, scale, r, store.cursorColorCss)
+        drawSelectOutline(ctx, scale, r, store.cursorColorCssString)
       }
     },
   }

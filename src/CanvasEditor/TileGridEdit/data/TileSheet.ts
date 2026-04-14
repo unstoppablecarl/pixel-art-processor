@@ -79,8 +79,8 @@ export function makeTileSheet(
     tileSheetTiles[t.id] = {
       tileId: t.id,
       index: index,
-      tx,
-      ty,
+      tileX: tx,
+      tileY: ty,
       x: tx * tileSize,
       y: ty * tileSize,
       edges: t.edges,
@@ -103,8 +103,8 @@ export function makeTileSheet(
     const t = tileSheetTiles[index]
 
     return {
-      x: t.tx * tileSize,
-      y: t.ty * tileSize,
+      x: t.tileX * tileSize,
+      y: t.tileY * tileSize,
       w: tileSize,
       h: tileSize,
     }
@@ -120,8 +120,8 @@ export function makeTileSheet(
     const index = tileset.byId.get(tileId)!.id
     const t = tileSheetTiles[index]
 
-    const localX = sx - t.tx * tileSize
-    const localY = sy - t.ty * tileSize
+    const localX = sx - t.tileX * tileSize
+    const localY = sy - t.tileY * tileSize
 
     return { x: localX, y: localY }
   }
@@ -129,7 +129,7 @@ export function makeTileSheet(
   function each(cb: (sTileX: number, sTileY: number, tile: WangTile<number>) => void) {
     tileset.tiles.forEach((tile) => {
       const t = tileSheetTiles[tile.id]
-      cb(t.tx, t.ty, tile)
+      cb(t.tileX, t.tileY, tile)
     })
   }
 
@@ -346,8 +346,8 @@ export function deserializeTileSheet(serialized: SerializedTileSheet): TileSheet
 export type TileSheetTile = Pick<WangTile<number>, 'edgesId' | 'edges'> & {
   readonly tileId: TileId,
   readonly index: number,
-  readonly tx: number,
-  readonly ty: number,
+  readonly tileX: number,
+  readonly tileY: number,
   readonly x: number,
   readonly y: number,
 }
