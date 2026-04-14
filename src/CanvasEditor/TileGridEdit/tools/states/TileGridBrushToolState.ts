@@ -23,7 +23,6 @@ export function makeTileGridBrushToolState(
   },
 ) {
 
-  const brush = useBrush()
 
   function writeGrid(
     x: number,
@@ -31,6 +30,8 @@ export function makeTileGridBrushToolState(
     x2: number = x,
     y2: number = y,
   ) {
+    const brush = useBrush()
+
     const color = store.brushColor
     const buffer = tileSheetWriter.tileGridPaintBuffer
     let affectedTileIds: TileId[]
@@ -58,6 +59,7 @@ export function makeTileGridBrushToolState(
     const color = store.brushColor
     const buffer = tileSheetWriter.tilePaintBuffer
     let changed: boolean
+    const brush = useBrush()
 
     if (brush.data) {
       if (brush.type === MaskType.BINARY) {
