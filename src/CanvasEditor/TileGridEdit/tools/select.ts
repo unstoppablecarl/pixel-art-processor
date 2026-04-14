@@ -1,4 +1,4 @@
-import { type NullableMaskRect } from '../../../../../pixel-data-js/src'
+import { type NullableMaskRect } from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type BaseSelectToolHandler, SelectMoveMode } from '../../_core/_core-editor-types.ts'
 import {

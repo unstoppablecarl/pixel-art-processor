@@ -1,4 +1,4 @@
-import { extractPixelData, floodFillSelection, makePixelData, trimRectBounds } from '../../../../../../pixel-data-js/src'
+import { extractPixelData, floodFillSelection, makePixelData, trimRectBounds } from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { type Rect } from '../../../../lib/util/data/Rect.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../../lib/util/html-dom/clipboard.ts'

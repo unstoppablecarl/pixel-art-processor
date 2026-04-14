@@ -1,5 +1,5 @@
-import type { PixelData } from '../../../../../../pixel-data-js/src'
-import { makePixelData } from '../../../../../../pixel-data-js/src'
+import type { PixelData } from 'pixel-data-js'
+import { makePixelData } from 'pixel-data-js'
 import { type TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 import type { TileSheetTile } from '../TileSheet.ts'

@@ -1,4 +1,4 @@
-import { type MaskType, type NullableMaskRect, type PixelData } from '../../../../../pixel-data-js/src'
+import { type MaskType, type NullableMaskRect, type PixelData } from 'pixel-data-js'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 
 export type TileAlignedRect = {

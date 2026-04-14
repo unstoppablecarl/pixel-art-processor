@@ -8,7 +8,7 @@ import {
   fillPixelDataBinaryMask,
   MaskType,
   type PixelData,
-} from '../../../../../pixel-data-js/src'
+} from 'pixel-data-js'
 import type { DrawRect } from './ISelection.ts'
 
 export function blendSheetDrawRect(target: PixelData, r: DrawRect, src: PixelData, blendFn: BlendColor32): boolean {

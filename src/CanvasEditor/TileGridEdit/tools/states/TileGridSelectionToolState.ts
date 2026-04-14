@@ -1,12 +1,12 @@
-import { makePixelData } from 'pixel-data-js'
 import {
   extractPixelData,
   floodFillSelection,
+  makePixelData,
   mergeBinaryMaskRects,
   type NullableBinaryMaskRect,
   type NullableMaskRect,
   subtractBinaryMaskRects,
-} from '../../../../../../pixel-data-js/src'
+} from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { getRectsBounds, type Rect } from '../../../../lib/util/data/Rect.ts'
 import { getImageDataFromClipboard, writePngBlobToClipboard } from '../../../../lib/util/html-dom/clipboard.ts'

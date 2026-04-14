@@ -1,4 +1,4 @@
-import { makeCanvasPixelDataRenderer, makePixelData, makeReusableOffscreenCanvas, type PixelData } from '../../../../../pixel-data-js/src'
+import { makeCanvasPixelDataRenderer, makePixelData, makeReusableOffscreenCanvas, type PixelData } from 'pixel-data-js'
 import { computed, type ComputedRef, type Ref, watchEffect } from 'vue'
 import { arrayIndexToColor } from '../../../lib/util/data/color.ts'
 import { makeWangTileEdgesPixelMap } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'

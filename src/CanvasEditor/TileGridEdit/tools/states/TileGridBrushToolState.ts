@@ -1,4 +1,4 @@
-import { destinationOutPerfect, MaskType, packColor } from '../../../../../../pixel-data-js/src'
+import { destinationOutPerfect, MaskType, packColor } from 'pixel-data-js'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import type { TileId } from '../../../../lib/wang-tiles/WangTileset.ts'
 import { SubTools, Tool } from '../../../_core/_core-editor-types.ts'

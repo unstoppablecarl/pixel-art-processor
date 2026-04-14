@@ -1,4 +1,4 @@
-import { type BlendColor32, type NullableMaskRect, overwritePerfect } from '../../../../../pixel-data-js/src'
+import { type BlendColor32, type NullableMaskRect, overwritePerfect } from 'pixel-data-js'
 import {
   type BlendFn,
   blendIgnoreSolid,

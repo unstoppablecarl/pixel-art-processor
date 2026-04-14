@@ -1,4 +1,4 @@
-import { extractMaskBuffer, type NullableMaskRect } from '../../../../../pixel-data-js/src'
+import { extractMaskBuffer, type NullableMaskRect } from 'pixel-data-js'
 import { type Rect } from '../../../lib/util/data/Rect.ts'
 import type { AxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'

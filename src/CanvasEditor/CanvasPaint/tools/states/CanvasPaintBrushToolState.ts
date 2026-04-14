@@ -1,4 +1,4 @@
-import { destinationOutPerfect, MaskType, packColor } from '../../../../../../pixel-data-js/src'
+import { destinationOutPerfect, MaskType, packColor } from 'pixel-data-js'
 import { type CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import { SubTools, Tool } from '../../../_core/_core-editor-types.ts'
 import { useBrush } from '../../../_core/data/Brush.ts'
@@ -19,7 +19,6 @@ export function makeCanvasPaintBrushToolState(
     canvasRenderer: CanvasRenderer,
     store: CanvasEditToolStore,
   }) {
-
 
   function write(
     x: number,

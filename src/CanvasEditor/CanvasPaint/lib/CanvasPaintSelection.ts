@@ -1,4 +1,4 @@
-import type { NullableMaskRect, PixelData } from '../../../../../pixel-data-js/src'
+import type { NullableMaskRect, PixelData } from 'pixel-data-js'
 
 export type CanvasPaintSelection = ReturnType<typeof makeCanvasPaintSelection>
 

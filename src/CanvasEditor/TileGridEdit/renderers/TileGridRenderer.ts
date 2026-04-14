@@ -1,4 +1,4 @@
-import { makeCanvasFrameRenderer, makeRenderQueue, writePixelData } from '../../../../../pixel-data-js/src'
+import { makeCanvasFrameRenderer, makeRenderQueue, writePixelData } from 'pixel-data-js'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import { pixelDataRef } from '../../../lib/vue/PixelDataRef.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'

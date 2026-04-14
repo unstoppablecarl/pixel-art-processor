@@ -1,5 +1,5 @@
-import type { NullableMaskRect } from '../../../../../pixel-data-js/src'
-import { MaskType } from '../../../../../pixel-data-js/src'
+import type { NullableMaskRect } from 'pixel-data-js'
+import { MaskType } from 'pixel-data-js'
 import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
 
 /**

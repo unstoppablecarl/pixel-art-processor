@@ -1,4 +1,4 @@
-import { type BlendColor32, type PixelData, PixelWriter } from '../../../../../../pixel-data-js/src'
+import { type BlendColor32, type PixelData, PixelWriter } from 'pixel-data-js'
 import type { DrawRect } from '../../lib/ISelection.ts'
 import { blendSheetDrawRect, clearSheetDrawRect } from '../../lib/TileGrid-blenders.ts'
 

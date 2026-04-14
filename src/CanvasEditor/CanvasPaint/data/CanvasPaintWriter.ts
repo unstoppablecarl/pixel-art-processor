@@ -69,6 +69,7 @@ export function makeCanvasPaintWriter(
           blendPixelData,
         )
       })
+      paintBuffer.clear()
     },
     withHistory,
   }

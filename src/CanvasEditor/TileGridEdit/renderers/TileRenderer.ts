@@ -1,4 +1,4 @@
-import { makeCanvasFrameRenderer, makePixelData, makeRenderQueue, setPixelData } from '../../../../../pixel-data-js/src'
+import { makeCanvasFrameRenderer, makePixelData, makeRenderQueue, setPixelData } from 'pixel-data-js'
 import { drawText, makePixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'

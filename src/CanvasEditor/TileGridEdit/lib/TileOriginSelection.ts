@@ -1,4 +1,4 @@
-import { type NullableMaskRect, type PixelData, trimMaskRectBounds } from '../../../../../pixel-data-js/src'
+import { type NullableMaskRect, type PixelData, trimMaskRectBounds } from 'pixel-data-js'
 import { getRectsBounds, type Rect } from '../../../lib/util/data/Rect.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridGeometry } from '../data/TileGridGeometry.ts'

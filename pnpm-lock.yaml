@@ -4,9 +4,6 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-overrides:
-  pixel-data-js: link:../../Library/pnpm/global/5/node_modules/pixel-data-js
-
 importers:
 
   .:
@@ -30,8 +27,8 @@ importers:
         specifier: ^0.1.0
         version: 0.1.0(pinia@3.0.4(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3)))(typescript@5.9.3)(vue@3.5.24(typescript@5.9.3))
       pixel-data-js:
-        specifier: link:../../Library/pnpm/global/5/node_modules/pixel-data-js
-        version: link:../../Library/pnpm/global/5/node_modules/pixel-data-js
+        specifier: ^0.38.0
+        version: 0.38.0
       poisson-disk-sampling:
         specifier: ^2.3.1
         version: 2.3.1
@@ -1415,6 +1412,9 @@ packages:
     peerDependenciesMeta:
       typescript:
         optional: true
+
+  pixel-data-js@0.38.0:
+    resolution: {integrity: sha512-lsmk5s12xPR4Mf698Zr+XJRcBqPb0XTwpWkxnXnwbT0O9aMhZ4Vx9sv8b08jIpyQOSb6gbQ/wgdKJdtRD7IFlg==}
 
   poisson-disk-sampling@2.3.1:
     resolution: {integrity: sha512-O3TzHR8IA+Do5zC7EgPdHLOYOpUJ6DikiTwqRqXdSPUhx1ZqfeH6PqAD86KKi+8Nq8vnL2navErsgURKTe089w==}
@@ -3093,6 +3093,8 @@ snapshots:
       vue: 3.5.24(typescript@5.9.3)
     optionalDependencies:
       typescript: 5.9.3
+
+  pixel-data-js@0.38.0: {}
 
   poisson-disk-sampling@2.3.1:
     dependencies:

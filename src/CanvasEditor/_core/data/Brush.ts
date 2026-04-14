@@ -4,7 +4,7 @@ import {
   makePaintRect,
   type PaintBrush,
   type PaintCursorRenderer,
-} from '../../../../../pixel-data-js/src'
+} from 'pixel-data-js'
 import { readonly, type Ref, ref, watchEffect } from 'vue'
 import { useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../../lib/store/ui-store.ts'

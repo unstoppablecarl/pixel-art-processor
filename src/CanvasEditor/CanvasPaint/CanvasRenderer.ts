@@ -1,4 +1,4 @@
-import { makeCanvasFrameRenderer, makeRenderQueue } from '../../../../pixel-data-js/src'
+import { makeCanvasFrameRenderer, makeRenderQueue } from 'pixel-data-js'
 import { makePixelCanvas, type PixelCanvas } from '../../lib/util/html-dom/PixelCanvas.ts'
 import { type PixelGridLineRenderer } from '../_core/renderers/PixelGridLineRenderer.ts'
 import type { CanvasPaintEditorState } from './CanvasPaintEditorState.ts'

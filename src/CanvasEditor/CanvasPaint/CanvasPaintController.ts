@@ -72,7 +72,6 @@ export function useCanvasPaintController(
   const uiStore = useUIStore()
   const brushCursor = useBrushCursor()
   watch(brushCursor.watchTarget, () => {
-    console.log('a')
     canvasRenderer.queueRender()
   })
 

@@ -35,7 +35,7 @@
     ],
     "paths": {
       "pixel-data-js": [
-        "./node_modules/pixel-data-js/src/index.ts"
+        "./node_modules/pixel-data-js/dist/index.prod.d.ts"
       ]
     }
   },

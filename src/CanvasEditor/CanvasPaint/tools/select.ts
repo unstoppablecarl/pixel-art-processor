@@ -5,7 +5,7 @@ import {
   type Color32,
   fillPixelData,
   fillPixelDataBinaryMask,
-} from '../../../../../pixel-data-js/src'
+} from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import {
   type BaseToolHandler,

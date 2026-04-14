@@ -1,5 +1,3 @@
-import { sourceOverPerfect } from 'pixel-data-js'
-import { markRaw } from 'vue'
 import {
   blendPixelData,
   extractPixelData,
@@ -9,8 +7,10 @@ import {
   resizePixelData,
   type SerializedImageData,
   setPixelData,
+  sourceOverPerfect,
   writePixelData,
-} from '../../../../../pixel-data-js/src'
+} from 'pixel-data-js'
+import { markRaw } from 'vue'
 import type { Point } from '../../../lib/node-data-types/BaseDataStructure.ts'
 
 import type { Rect } from '../../../lib/util/data/Rect.ts'
