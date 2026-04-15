@@ -18,7 +18,7 @@ export type BrushAxisLock = ReturnType<typeof makeBrushAxisLock>
 export function makeBrushAxisLock(
   store: CanvasEditToolStore,
   // pixels of movement required to "commit" to an axis
-  threshold = 3,
+  threshold = 1,
 ) {
   let lastDrawnX: number | null = null
   let lastDrawnY: number | null = null
