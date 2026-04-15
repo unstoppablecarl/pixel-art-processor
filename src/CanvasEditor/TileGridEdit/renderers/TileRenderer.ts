@@ -23,17 +23,21 @@ export function makeTileRenderer(
     gridCache: PixelGridLineRenderer,
     tileCanvas: HTMLCanvasElement,
     toolset: TileGridToolset,
-    tileGridEdgeColorRenderer: TileGridEdgeColorRenderer
+    tileGridEdgeColorRenderer: TileGridEdgeColorRenderer,
   }) {
   const renderCanvasFrame = makeCanvasFrameRenderer()
   const pixelCanvas = makePixelCanvas(tileCanvas)
 
   const tileSync = makeSingleTileSync(tileId)
-  let pixelData = makePixelData(new ImageData(state.scaledTileSize, state.scaledTileSize))
+  let pixelData = makePixelData(new ImageData(
+    state.reactive.scaledTileSize.value,
+    state.reactive.scaledTileSize.value
+  ))
 
   function resize() {
-    pixelCanvas.resize(state.scaledTileSize, state.scaledTileSize)
-    setPixelData(pixelData, new ImageData(state.scaledTileSize, state.scaledTileSize))
+    const size = state.reactive.scaledTileSize.value
+    pixelCanvas.resize(size, size)
+    setPixelData(pixelData, new ImageData(size, size))
     tileSync.reset()
     queueRender()
   }
@@ -53,14 +57,16 @@ export function makeTileRenderer(
       () => pixelData.imageData,
       (ctx) => {
         toolset.currentToolHandler.tilePixelOverlayDraw?.(ctx, tileId)
-        tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
+        if (state.reactive.showTileEdgeColors.value) {
+          tileGridEdgeColorRenderer.drawTileEdges(ctx, tileId)
+        }
       },
       (ctx) => {
         if (state.shouldDrawGrid()) {
           gridCache.draw(ctx)
         }
-        if (state.drawTileIds) {
-          const tile = state.tileset.byId.get(tileId)!
+        if (state.reactive.showTileIds.value) {
+          const tile = state.reactive.tileset.value.byId.get(tileId)!
           drawText(ctx, tile.id + ': ' + tile.id)
         }
         toolset.currentToolHandler.tileScreenOverlayDraw?.(ctx, tileId)

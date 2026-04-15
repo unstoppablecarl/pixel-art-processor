@@ -1,4 +1,5 @@
 import { makeCanvasFrameRenderer } from 'pixel-data-js'
+import { watch } from 'vue'
 import { drawText, makePixelCanvas, type PixelCanvas } from '../../../lib/util/html-dom/PixelCanvas.ts'
 import type { PixelGridLineRenderer } from '../../_core/renderers/PixelGridLineRenderer.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
@@ -18,7 +19,7 @@ export function makeTileSheetRenderer(
     state: TileGridEditorState,
     toolset: TileGridToolset
     gridCache: PixelGridLineRenderer,
-    tileGridEdgeColorRenderer: TileGridEdgeColorRenderer
+    tileGridEdgeColorRenderer: TileGridEdgeColorRenderer,
   }) {
 
   const renderCanvasFrame = makeCanvasFrameRenderer()
@@ -31,9 +32,12 @@ export function makeTileSheetRenderer(
 
   function resize() {
     if (!tileGridPixelCanvas) return
+    const scale = state.reactive.scale.value
+    const target = state.tileSheet.pixelData
+
     tileGridPixelCanvas.resize(
-      state.tileSheet.pixelData.w * state.scale,
-      state.tileSheet.pixelData.h * state.scale,
+      target.w * scale,
+      target.h * scale,
     )
   }
 
@@ -43,12 +47,15 @@ export function makeTileSheetRenderer(
     const drawPixelLayer = (ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) => {
       const { tileSize } = state
 
-      // base tilesheet debug: tile edges
-      state.tileSheet.each((tileX, tileY, tile) => {
-        const x = tileX * tileSize
-        const y = tileY * tileSize
-        tileGridEdgeColorRenderer.drawTileEdges(ctx, tile.id, x, y)
-      })
+      if (state.reactive.showTileEdgeColors.value) {
+
+        // base tilesheet debug: tile edges
+        state.tileSheet.each((tileX, tileY, tile) => {
+          const x = tileX * tileSize
+          const y = tileY * tileSize
+          tileGridEdgeColorRenderer.drawTileEdges(ctx, tile.id, x, y)
+        })
+      }
 
       const sel = toolState.selection
       if (!sel) return
@@ -78,7 +85,7 @@ export function makeTileSheetRenderer(
         gridCache.draw(ctx)
       }
 
-      if (state.drawTileIds) {
+      if (state.reactive.showTileEdgeColors.value) {
         state.tileSheet.each((tileX, tileY, tile) => {
           const x = tileX * tileSize * scale
           const y = tileY * tileSize * scale
@@ -108,6 +115,19 @@ export function makeTileSheetRenderer(
       drawScreenLayer,
     )
   }
+
+  watch([
+    state.reactive.tileSheet,
+    state.reactive.tileSize,
+    state.reactive.scale,
+    state.reactive.showTileIds,
+    state.reactive.showTileEdgeColors,
+    state.reactive.showTileEdgeColorsOpacity,
+    gridCache.watchTarget,
+  ], () => {
+    resize()
+
+  })
 
   return {
     state,

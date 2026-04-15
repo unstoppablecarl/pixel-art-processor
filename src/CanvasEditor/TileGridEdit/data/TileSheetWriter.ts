@@ -5,7 +5,7 @@ import {
   PixelWriter,
   sourceOverPerfect,
 } from 'pixel-data-js'
-import { nextTick } from 'vue'
+import { nextTick, watch } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { getHistory } from '../../../lib/util/history/history.ts'
 import { type TileId } from '../../../lib/wang-tiles/WangTileset.ts'
@@ -85,11 +85,16 @@ export function makeTileSheetWriter(
   const getCanvas = makeReusableOffscreenCanvas()
   const getTileCanvas = makeReusableOffscreenCanvas()
 
+  watch([
+    state.reactive.tileset,
+    state.reactive.tileSheet,
+    state.reactive.tileSize,
+  ], () => {
+    writer = syncWriter()
+    tileSheetPaintBuffer.sync()
+  })
+
   return {
-    sync() {
-      writer = syncWriter()
-      tileSheetPaintBuffer.sync()
-    },
     tilePaintBuffer,
     tilePaintBufferDraw(
       targetCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D,

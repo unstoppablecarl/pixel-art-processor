@@ -1,10 +1,9 @@
-import { ref, toRef, watch } from 'vue'
+import { type Ref, ref, toRef } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../lib/store/ui-store.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import { type BaseToolManagerSettings, defineToolController } from '../_core/_core-editor-types.ts'
 import { makeToolInputCore } from '../_core/controller/ToolInputCore.ts'
-import { useBrushCursor } from '../_core/data/Brush.ts'
 import { makeBaseInputHandlers } from '../_core/GlobalInputManager.ts'
 import { makePixelGridLineRenderer } from '../_core/renderers/PixelGridLineRenderer.ts'
 import { CanvasType, type TileGridEditorToolHandlerArgs } from './_tile-grid-editor-types.ts'
@@ -24,34 +23,46 @@ export function useTileGridController(
   {
     id,
     tileGridManager,
-    scale = toRef(useUIStore(), 'imgScale'),
-    gridColor,
-    gridDraw,
+    showGridColor,
+    showGrid,
+    showTileEdgeColors,
+    showTileEdgeColorsOpacity,
     store = useCanvasEditToolStore(),
+    scale = toRef(useUIStore(), 'imgScale'),
+    showTileIds = toRef(useUIStore(), 'showTileIds'),
   }: BaseToolManagerSettings & {
+    store?: CanvasEditToolStore,
+    showTileIds?: Ref<boolean>
     tileGridManager: TileGridManager,
-    store?: CanvasEditToolStore
+    showTileEdgeColors: Ref<boolean>,
+    showTileEdgeColorsOpacity: Ref<number>,
   },
 ) {
+
   const currentCursorCssClass = ref<string | null>(null)
 
   const tileGridGeometry = makeTileGridGeometry(tileGridManager)
-  const tileGridEdgeColorRenderer = makeTileGridEdgeColorRenderer(tileGridManager)
 
   const state = makeTileGridEditorState({
     id,
     tileGridManager,
     tileGridGeometry,
     scale,
-    gridDraw,
+    showGrid,
+    showGridColor,
+    showTileEdgeColors,
+    showTileEdgeColorsOpacity,
+    showTileIds,
   })
+
+  const tileGridEdgeColorRenderer = makeTileGridEdgeColorRenderer(tileGridManager, state)
 
   const gridCache = makePixelGridLineRenderer({
     scale,
-    color: gridColor,
+    color: showGridColor,
     width: tileGridManager.canvasWidth,
     height: tileGridManager.canvasHeight,
-    visible: gridDraw,
+    visible: showGrid,
   })
 
   const gridRenderer = makeTileGridRenderer({
@@ -65,14 +76,6 @@ export function useTileGridController(
     gridRenderer,
     store,
   })
-
-  watch([
-    state.tileGridManager.tileset,
-    state.tileGridManager.tileSheet,
-    state.tileGridManager.tileSize,
-  ], () => tileSheetWriter.sync())
-
-  watch(gridCache.watchTarget, () => gridRenderer.queueRenderAll())
 
   const toolset = makeTileGridToolset({
     state,
@@ -94,27 +97,6 @@ export function useTileGridController(
     state,
     toolset,
     gridCache,
-  })
-
-  const uiStore = useUIStore()
-  const brushCursor = useBrushCursor()
-  watch(brushCursor.watchTarget, () => gridRenderer.queueRenderAll())
-
-  watch(gridDraw, () => {
-    tileSheetRenderer.draw()
-    gridRenderer.queueRenderAll()
-    tileSheetRenderer.draw()
-  })
-
-  watch([
-    tileGridManager.tileSize,
-    scale,
-    () => uiStore.showTileIds,
-    tileGridManager.tileGrid,
-  ], () => {
-    gridRenderer.resize()
-    gridRenderer.queueRenderAll()
-    tileSheetRenderer.resize()
   })
 
   const input = makeToolInputCore(state, toolset)

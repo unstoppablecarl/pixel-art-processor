@@ -30,9 +30,10 @@ export function makeTileSheetSelectionRenderer(
     const toolState = toolset.toolHandlers.SELECT.toolState
     if (!tileGridPixelCanvas) return
     if (toolState.selection) {
+      const scale = state.reactive.scale.value
       tileGridPixelCanvas.resize(
-        (toolState.selection.pixels.w + 100) * state.scale,
-        (toolState.selection.pixels.h + 100) * state.scale,
+        (toolState.selection.pixels.w + 100) * scale,
+        (toolState.selection.pixels.h + 100) * scale,
       )
     }
   }
@@ -84,7 +85,7 @@ export function makeTileSheetSelectionRenderer(
 
     renderCanvasFrame(
       tileGridPixelCanvas!,
-      state.scale,
+      state.reactive.scale.value,
       () => null,
       drawPixelLayer,
       drawScreenLayer,

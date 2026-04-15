@@ -62,7 +62,8 @@ const CONFIG_DEFAULTS = () => (
     tileSheet: null as null | SerializedTileSheet,
     verticalEdgeValueCount: 2,
     horizontalEdgeValueCount: 2,
-
+    showTileEdgeColors: true,
+    showTileEdgeColorsOpacity: 0.25,
   }
 )
 
@@ -136,8 +137,10 @@ if (import.meta.hot && !import.meta.env.VITEST) {
 const tileGridController = useTileGridController({
   id: node.id,
   tileGridManager,
-  gridColor: toRef(config, 'showGridColor'),
-  gridDraw: toRef(config, 'showGrid'),
+  showGridColor: toRef(config, 'showGridColor'),
+  showGrid: toRef(config, 'showGrid'),
+  showTileEdgeColors: toRef(config, 'showTileEdgeColors'),
+  showTileEdgeColorsOpacity: toRef(config, 'showTileEdgeColorsOpacity'),
 })
 
 const tileSheetCanvas = useTemplateRef('tileSheetCanvas')
@@ -265,6 +268,24 @@ const uiStore = useUIStore()
             <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
           </div>
           <div class="section">
+            <div class="hstack">
+              <CheckBoxInput
+                :id="`${nodeId}-show-edge-colors`"
+                label="Show Edge Colors"
+                v-model="config.showTileEdgeColors"
+              />
+
+
+              <NumberInput
+                :id="`${nodeId}-show-edge-colors-opacity`"
+                label=" | Opacity"
+                v-model="config.showTileEdgeColorsOpacity"
+                :max="1"
+                :step="0.05"
+                :disabled="!config.showTileEdgeColors"
+                class="form-check-item ms-1"
+              />
+            </div>
 
             <CheckBoxInput
               :id="`${nodeId}-show-tile-ids`"

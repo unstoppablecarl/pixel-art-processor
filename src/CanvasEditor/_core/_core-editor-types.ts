@@ -145,8 +145,8 @@ export const defineToolController = <TArgs extends any[]>() =>
 export type BaseToolManagerSettings = {
   id: string,
   scale?: Ref<number>,
-  gridColor: Ref<string>,
-  gridDraw: Ref<boolean>,
+  showGridColor: Ref<string>,
+  showGrid: Ref<boolean>,
 }
 
 export type BaseSelectToolState = {

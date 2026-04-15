@@ -3,12 +3,14 @@ import type { BaseEditorState } from './_core-editor-types.ts'
 
 export type BaseEditorSettings = {
   id: string,
-  gridDraw: Ref<boolean>,
+  showGrid: Ref<boolean>,
+  showGridColor: Ref<string>
   scale: Ref<number>
 }
 
 export class EditorState implements BaseEditorState {
-  protected _gridDraw: Ref<boolean>
+  protected _showGrid: Ref<boolean>
+  protected _showGridColor: Ref<string>
   protected _scale: Ref<number>
   public mouseX: number | null = null
   public mouseY: number | null = null
@@ -25,12 +27,14 @@ export class EditorState implements BaseEditorState {
   constructor({
                 id,
                 scale,
-                gridDraw,
+                showGrid,
+                showGridColor,
               }: BaseEditorSettings,
   ) {
     this.id = id
     this._scale = scale
-    this._gridDraw = gridDraw
+    this._showGrid = showGrid
+    this._showGridColor = showGridColor
   }
 
   get scale() {
@@ -38,6 +42,10 @@ export class EditorState implements BaseEditorState {
   }
 
   shouldDrawGrid() {
-    return this._gridDraw.value && this._scale.value > 3
+    return this._showGrid.value && this._scale.value > 3
+  }
+
+  get showGridColor() {
+    return this._showGridColor.value
   }
 }

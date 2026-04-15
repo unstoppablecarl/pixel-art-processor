@@ -4,13 +4,14 @@ import { arrayIndexToColor } from '../../../lib/util/data/color.ts'
 import { makeWangTileEdgesPixelMap } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridManager } from '../data/TileGridManager.ts'
+import type { TileGridEditorState } from '../TileGridEditorState.ts'
 
 export type TileGridEdgeColorRenderer = ReturnType<typeof makeTileGridEdgeColorRenderer>
 
 export function makeTileGridEdgeColorRenderer(
   tileGridManager: TileGridManager,
+  state: TileGridEditorState,
 ) {
-  const EDGE_COLOR_ALPHA = 0.25
 
   const getGridCache = makeReusableOffscreenCanvas()
   const renderTile = makeCanvasPixelDataRenderer()
@@ -30,21 +31,18 @@ export function makeTileGridEdgeColorRenderer(
     ))
   })
 
-  watchEffect(() => {
-    const tileSize = tileGridManager.tileSize.value
-    const tileGrid = tileGridManager.tileGrid.value
-
-    gridCache = getGridCache(
-      tileSize * tileGrid.width,
-      tileSize * tileGrid.height,
-    )
-  })
-
   // draw colored tile edges
   watchEffect(() => {
     const tileGrid = tileGridManager.tileGrid.value
     if (!tileGrid) return
-    const tileSize = tileGridManager.tileSize.value
+    const tileSize = state.reactive.tileSize.value
+    const width = state.reactive.tileGridManager.canvasWidth.value
+    const height = state.reactive.tileGridManager.canvasHeight.value
+
+    gridCache = getGridCache(
+      width,
+      height,
+    )
 
     tileGrid.each((tx, ty, tile) => {
       if (!tile) return
@@ -52,17 +50,12 @@ export function makeTileGridEdgeColorRenderer(
       const x = tx * tileSize
       const y = ty * tileSize
 
-      gridCache = getGridCache(
-        tileSize * tileGrid.width,
-        tileSize * tileGrid.height,
-      )
-
       gridCache.ctx.putImageData(pixelData.imageData, x, y)
     })
   })
 
   function drawGridEdges(ctx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D) {
-    ctx.globalAlpha = EDGE_COLOR_ALPHA
+    ctx.globalAlpha = state.reactive.showTileEdgeColorsOpacity.value
     ctx.drawImage(gridCache.canvas, 0, 0)
     ctx.globalAlpha = 1
   }
@@ -74,7 +67,7 @@ export function makeTileGridEdgeColorRenderer(
     y = 0,
   ) {
     const pixelData = cachedWangTileEdgeColorImageData.value[tileId]
-    ctx.globalAlpha = EDGE_COLOR_ALPHA
+    ctx.globalAlpha = state.reactive.showTileEdgeColorsOpacity.value
     renderTile(ctx, pixelData, x, y)
     ctx.globalAlpha = 1
   }

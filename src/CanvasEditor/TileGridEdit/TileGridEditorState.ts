@@ -1,3 +1,4 @@
+import { computed, type Ref } from 'vue'
 import type { AxialEdgeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { BaseEditorState } from '../_core/_core-editor-types.ts'
@@ -51,20 +52,7 @@ type MouseGridState =
 }
 
 interface BaseTileGridEditorState {
-  gridTilesWidth: number
-  gridTilesHeight: number
-
   tileSize: number
-
-  readonly gridPixelWidth: number
-  readonly gridPixelHeight: number
-
-  readonly gridScreenWidth: number
-  readonly gridScreenHeight: number
-
-  readonly scaledTileSize: number
-
-  drawTileIds: boolean
 
   scale: number
 
@@ -90,16 +78,39 @@ interface BaseTileGridEditorState {
   readonly tileGridManager: TileGridManager,
   readonly tileGridGeometry: TileGridGeometry,
   readonly tileset: AxialEdgeWangTileset<number>
+
+  readonly reactive: ReturnType<typeof makeReactive>
 }
 
-type TileGridEditorSettings = BaseEditorSettings & {
+export type TileGridEditorSettings = BaseEditorSettings & {
   tileGridManager: TileGridManager,
   tileGridGeometry: TileGridGeometry,
+  showTileIds: Ref<boolean>,
+  showTileEdgeColors: Ref<boolean>,
+  showTileEdgeColorsOpacity: Ref<number>,
+}
+
+function makeReactive(settings: TileGridEditorSettings) {
+  return {
+    tileSize: settings.tileGridManager.tileSize,
+    scaledTileSize: computed(() => settings.tileGridManager.tileSize.value * settings.scale.value),
+
+    tileGridManager: settings.tileGridManager,
+    tileGrid: settings.tileGridManager.tileGrid,
+    tileSheet: settings.tileGridManager.tileSheet,
+    tileset: settings.tileGridManager.tileset,
+
+    showGrid: settings.showGrid,
+    showGridColor: settings.showGridColor,
+    showTileIds: settings.showTileIds,
+    showTileEdgeColors: settings.showTileEdgeColors,
+    showTileEdgeColorsOpacity: settings.showTileEdgeColorsOpacity,
+
+    scale: settings.scale,
+  }
 }
 
 class TileGridEditorStateC extends EditorState {
-
-  public drawTileIds = true
 
   // only when mouse over grid
   public mouseGridX: number | null = null
@@ -120,66 +131,34 @@ class TileGridEditorStateC extends EditorState {
 
   public dragStartTileId: number | null = null
 
-  protected _tileGridManager: TileGridManager
-  protected _tileGridGeometry: TileGridGeometry
+  readonly tileGridManager: TileGridManager
+  readonly tileGridGeometry: TileGridGeometry
+
+  readonly reactive: ReturnType<typeof makeReactive>
 
   constructor(settings: TileGridEditorSettings) {
     super(settings)
 
-    this._tileGridManager = settings.tileGridManager
-    this._tileGridGeometry = settings.tileGridGeometry
-  }
+    this.reactive = makeReactive(settings)
 
-  get gridPixelWidth() {
-    return this.gridTilesWidth * this.tileSize
-  }
-
-  get gridPixelHeight() {
-    return this.gridTilesWidth * this.tileSize
-  }
-
-  get gridScreenWidth() {
-    return this.scale * this.gridTilesWidth * this.tileSize
-  }
-
-  get gridScreenHeight() {
-    return this.scale * this.gridTilesHeight * this.tileSize
-  }
-
-  get scaledTileSize() {
-    return this.scale * this.tileSize
+    this.tileGridManager = settings.tileGridManager
+    this.tileGridGeometry = settings.tileGridGeometry
   }
 
   get tileSize() {
-    return this._tileGridManager.tileSize.value
+    return this.reactive.tileSize.value
   }
 
   get tileset() {
-    return this._tileGridManager.tileset.value
+    return this.reactive.tileset.value
   }
 
   get tileSheet() {
-    return this._tileGridManager.tileSheet.value
+    return this.reactive.tileSheet.value
   }
 
   get tileGrid() {
-    return this._tileGridManager.tileGrid.value
-  }
-
-  get tileGridGeometry() {
-    return this._tileGridGeometry
-  }
-
-  get tileGridManager() {
-    return this._tileGridManager
-  }
-
-  get gridTilesWidth() {
-    return this._tileGridManager.tileGrid.value.width
-  }
-
-  get gridTilesHeight() {
-    return this._tileGridManager.tileGrid.value.height
+    return this.reactive.tileGrid.value
   }
 }
 
