@@ -1,4 +1,3 @@
-import type { Ref } from 'vue'
 import type { AxialEdgeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { AxialEdgeWangTileset, type TileId } from '../../lib/wang-tiles/WangTileset.ts'
 import type { BaseEditorState } from '../_core/_core-editor-types.ts'
@@ -95,12 +94,10 @@ interface BaseTileGridEditorState {
 
 type TileGridEditorSettings = BaseEditorSettings & {
   tileGridManager: TileGridManager,
-  tileGridGeometry: Ref<TileGridGeometry>,
+  tileGridGeometry: TileGridGeometry,
 }
 
 class TileGridEditorStateC extends EditorState {
-
-  public tileSize = 64
 
   public drawTileIds = true
 
@@ -124,7 +121,7 @@ class TileGridEditorStateC extends EditorState {
   public dragStartTileId: number | null = null
 
   protected _tileGridManager: TileGridManager
-  protected _tileGridGeometry: Ref<TileGridGeometry>
+  protected _tileGridGeometry: TileGridGeometry
 
   constructor(settings: TileGridEditorSettings) {
     super(settings)
@@ -153,6 +150,10 @@ class TileGridEditorStateC extends EditorState {
     return this.scale * this.tileSize
   }
 
+  get tileSize() {
+    return this._tileGridManager.tileSize.value
+  }
+
   get tileset() {
     return this._tileGridManager.tileset.value
   }
@@ -166,7 +167,7 @@ class TileGridEditorStateC extends EditorState {
   }
 
   get tileGridGeometry() {
-    return this._tileGridGeometry.value
+    return this._tileGridGeometry
   }
 
   get tileGridManager() {

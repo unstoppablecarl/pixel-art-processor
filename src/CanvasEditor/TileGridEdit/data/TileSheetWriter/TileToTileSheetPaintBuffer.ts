@@ -7,14 +7,18 @@ import {
 } from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
 import type { TileId, WangTile, WangTileset } from '../../../../lib/wang-tiles/WangTileset.ts'
+import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 import type { TileSheetPaintBuffer } from './TileSheetPaintBuffer.ts'
 
 export class TileToTileSheetPaintBuffer {
+  protected tileset: WangTileset<number>
+
   constructor(
-    protected tileset: WangTileset<number>,
     protected store: CanvasEditToolStore,
     public tileSheetPaintBuffer: TileSheetPaintBuffer,
+    protected state: TileGridEditorState,
   ) {
+    this.tileset = state.tileset
   }
 
   private createFastMirrorPixel(tileId: TileId, targetW: number) {

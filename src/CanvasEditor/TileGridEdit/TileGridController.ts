@@ -1,4 +1,4 @@
-import { computed, ref, toRef, watch } from 'vue'
+import { ref, toRef, watch } from 'vue'
 import { type CanvasEditToolStore, useCanvasEditToolStore } from '../../lib/store/canvas-edit-tool-store.ts'
 import { useUIStore } from '../../lib/store/ui-store.ts'
 import type { TileId } from '../../lib/wang-tiles/WangTileset.ts'
@@ -35,16 +35,8 @@ export function useTileGridController(
 ) {
   const currentCursorCssClass = ref<string | null>(null)
 
-  const tileGridGeometry = computed(() => makeTileGridGeometry(
-    tileGridManager.tileGrid.value,
-    tileGridManager.tileSheet.value,
-    tileGridManager.tileSize.value,
-  ))
-
-  const tileGridEdgeColorRenderer = makeTileGridEdgeColorRenderer(
-    tileGridManager.tileGrid,
-    tileGridManager.tileSize,
-  )
+  const tileGridGeometry = makeTileGridGeometry(tileGridManager)
+  const tileGridEdgeColorRenderer = makeTileGridEdgeColorRenderer(tileGridManager)
 
   const state = makeTileGridEditorState({
     id,
@@ -140,16 +132,16 @@ export function useTileGridController(
         scale,
         input: {
           onMouseDown(x: number, y: number) {
-            updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
+            updatePointerState(state, tileGridGeometry, x, y, canvasType, tileId)
             state.dragStartTileId = state.mouseTileId
             input.pointerDown(x, y, canvasType, tileId)
           },
           onMouseMove(x: number, y: number) {
-            updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
+            updatePointerState(state, tileGridGeometry, x, y, canvasType, tileId)
             input.pointerMove(x, y, canvasType, tileId)
           },
           onMouseUp(x: number, y: number) {
-            updatePointerState(state, tileGridGeometry.value, x, y, canvasType, tileId)
+            updatePointerState(state, tileGridGeometry, x, y, canvasType, tileId)
             input.pointerUp(x, y, canvasType, tileId)
             state.dragStartTileId = null
           },

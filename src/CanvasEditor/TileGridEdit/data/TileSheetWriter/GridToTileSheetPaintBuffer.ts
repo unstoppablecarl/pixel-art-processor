@@ -8,7 +8,7 @@ import {
   trimRectBounds,
 } from 'pixel-data-js'
 import type { CanvasEditToolStore } from '../../../../lib/store/canvas-edit-tool-store.ts'
-import type { TileId, WangTile, WangTileset } from '../../../../lib/wang-tiles/WangTileset.ts'
+import type { TileId, WangTile } from '../../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridEditorState } from '../../TileGridEditorState.ts'
 import type { TileSheetPaintBuffer, TileSheetPaintBufferTile } from './TileSheetPaintBuffer.ts'
 
@@ -23,7 +23,6 @@ export class GridToTileSheetPaintBuffer {
   scratchAffectedTileIds: TileId[] = []
 
   constructor(
-    protected tileset: WangTileset<number>,
     protected store: CanvasEditToolStore,
     public tileSheetPaintBuffer: TileSheetPaintBuffer,
     protected state: TileGridEditorState,
@@ -38,7 +37,7 @@ export class GridToTileSheetPaintBuffer {
     if (!this.store.duplicateTileEdges) return null
 
     const paintBuffer = this.tileSheetPaintBuffer
-    const tileset = this.tileset
+    const tileset = this.state.tileset
     const wangTile = tileset.byId.get(tileId)
 
     if (!wangTile) return null

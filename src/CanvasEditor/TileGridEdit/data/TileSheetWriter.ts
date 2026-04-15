@@ -64,16 +64,21 @@ export function makeTileSheetWriter(
     }
   }
 
-  const writer = new PixelWriter(
-    state.tileSheet.pixelData,
-    makeTileSheetMutator,
-    {
-      historyManager: getHistory(),
-    },
-  )
+  let writer = syncWriter()
+
+  function syncWriter() {
+    return new PixelWriter(
+      state.tileSheet.pixelData,
+      makeTileSheetMutator,
+      {
+        historyManager: getHistory(),
+      },
+    )
+  }
+
   const tileSheetPaintBuffer = new TileSheetPaintBuffer(state)
-  const tileGridPaintBuffer = new GridToTileSheetPaintBuffer(state.tileset, store, tileSheetPaintBuffer, state)
-  const tilePaintBuffer = new TileToTileSheetPaintBuffer(state.tileset, store, tileSheetPaintBuffer)
+  const tileGridPaintBuffer = new GridToTileSheetPaintBuffer(store, tileSheetPaintBuffer, state)
+  const tilePaintBuffer = new TileToTileSheetPaintBuffer(store, tileSheetPaintBuffer, state)
 
   const SCRATCH_affectedTileIds: TileId[] = []
 
@@ -82,6 +87,7 @@ export function makeTileSheetWriter(
 
   return {
     sync() {
+      writer = syncWriter()
       tileSheetPaintBuffer.sync()
     },
     tilePaintBuffer,

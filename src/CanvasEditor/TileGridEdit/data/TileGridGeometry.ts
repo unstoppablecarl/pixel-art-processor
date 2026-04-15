@@ -1,16 +1,13 @@
 import { extractMaskBuffer, type NullableMaskRect } from 'pixel-data-js'
 import { type Rect } from '../../../lib/util/data/Rect.ts'
-import type { AxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 import type { TileId, WangTile } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { DrawRect, GridOriginTileAlignedRect, TileOriginTileAlignedRect } from '../lib/ISelection.ts'
-import type { TileSheet } from './TileSheet.ts'
+import type { TileGridManager } from './TileGridManager.ts'
 
 export type TileGridGeometry = ReturnType<typeof makeTileGridGeometry>
 
 export function makeTileGridGeometry(
-  tileGrid: AxialEdgeWangGrid<number>,
-  tileSheet: TileSheet,
-  tileSize: number,
+  tileGridManager: TileGridManager,
 ) {
   const SCRATCH_gridPixelToGridTile = {
     gTileX: -1,
@@ -19,9 +16,10 @@ export function makeTileGridGeometry(
   }
 
   function gridPixelToGridTile(gx: number, gy: number) {
+    const tileSize = tileGridManager.tileSize.value
     const gTileX = Math.floor(gx / tileSize)
     const gTileY = Math.floor(gy / tileSize)
-    const tile = tileGrid.get(gTileX, gTileY)
+    const tile = tileGridManager.tileGrid.value.get(gTileX, gTileY)
     if (!tile) return null
     SCRATCH_gridPixelToGridTile.gTileX = gTileX
     SCRATCH_gridPixelToGridTile.gTileY = gTileY
@@ -39,8 +37,8 @@ export function makeTileGridGeometry(
     const hit = gridPixelToGridTile(gx, gy)
     if (!hit) return null
     const { gTileX, gTileY, tile } = hit
-    const tx = gx - gTileX * tileSize
-    const ty = gy - gTileY * tileSize
+    const tx = gx - gTileX * tileGridManager.tileSize.value
+    const ty = gy - gTileY * tileGridManager.tileSize.value
 
     SCRATCH_gridPixelToTilePixel.tileId = tile.id
     SCRATCH_gridPixelToTilePixel.tx = tx
@@ -53,14 +51,14 @@ export function makeTileGridGeometry(
     const hit = gridPixelToTilePixel(gx, gy)
     if (!hit) return null
     const { tileId, tx, ty } = hit
-    const { x, y } = tileSheet.tileLocalToSheet(tileId, tx, ty)
+    const { x, y } = tileGridManager.tileSheet.value.tileLocalToSheet(tileId, tx, ty)
     return { tileId, tx, ty, x, y }
   }
 
   function gridTileToGridPixel(gTileX: number, gTileY: number, tx = 0, ty = 0) {
     return {
-      gx: gTileX * tileSize + tx,
-      gy: gTileY * tileSize + ty,
+      gx: gTileX * tileGridManager.tileSize.value + tx,
+      gy: gTileY * tileGridManager.tileSize.value + ty,
     }
   }
 
@@ -70,6 +68,8 @@ export function makeTileGridGeometry(
     originY: number,
   ): GridOriginTileAlignedRect[] {
     const out: GridOriginTileAlignedRect[] = []
+    const tileGrid = tileGridManager.tileGrid.value
+    const tileSize = tileGridManager.tileSize.value
 
     for (const r of rects) {
       const overlaps = tileGrid.getOverlappingTiles(
@@ -87,7 +87,7 @@ export function makeTileGridGeometry(
           maskData = extractMaskBuffer(r.data, r.w, o.sourceX, o.sourceY, w, h)
         }
 
-        const { x: tsx, y: tsy } = tileSheet.getTileRect(tile.id)
+        const { x: tsx, y: tsy } = tileGridManager.tileSheet.value.getTileRect(tile.id)
 
         const gridPixelX = r.x + o.sourceX
         const gridPixelY = r.y + o.sourceY
@@ -152,17 +152,18 @@ export function makeTileGridGeometry(
     originY: number,
   ): DrawRect[] {
     const aligned = gridRectsToTileAlignedRects(rects, originX, originY)
+    const tileGrid = tileGridManager.tileGrid.value
 
     const out: DrawRect[] = []
     for (const r of aligned) {
       const localX = originX + r.gridSelectionX
       const localY = originY + r.gridSelectionY
       tileGrid.mapWithTileId(r.tileId, (gx, gy) => {
-        const tileOriginX = gx * tileSize
-        const tileOriginY = gy * tileSize
+        const tileOriginX = gx * tileGridManager.tileSize.value
+        const tileOriginY = gy * tileGridManager.tileSize.value
         out.push({
-          dx: tileOriginX + (localX % tileSize),
-          dy: tileOriginY + (localY % tileSize),
+          dx: tileOriginX + (localX % tileGridManager.tileSize.value),
+          dy: tileOriginY + (localY % tileGridManager.tileSize.value),
           sx: r.bufferX,
           sy: r.bufferY,
           w: r.w,
@@ -182,7 +183,8 @@ export function makeTileGridGeometry(
     originX: number,
     originY: number,
   ): TileOriginTileAlignedRect[] {
-    const { x: tileSheetX, y: tileSheetY } = tileSheet.getTileRect(tileId)
+    const { x: tileSheetX, y: tileSheetY } = tileGridManager.tileSheet.value.getTileRect(tileId)
+    const tileSize = tileGridManager.tileSize.value
 
     const out: TileOriginTileAlignedRect[] = []
 
@@ -246,8 +248,9 @@ export function makeTileGridGeometry(
   function tileOriginTileAlignedRectToGridRects(rect: TileOriginTileAlignedRect): NullableMaskRect[] {
     const { tileId, tileSelectionX, tileSelectionY, w, h, data, type } = rect
     const results: NullableMaskRect[] = []
+    const tileSize = tileGridManager.tileSize.value
 
-    tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
+    tileGridManager.tileGrid.value.mapWithTileId(tileId, (gTileX, gTileY) => {
       const x = gTileX * tileSize + tileSelectionX
       const y = gTileY * tileSize + tileSelectionY
       const rect = { x, y, w, h }
@@ -278,8 +281,9 @@ export function makeTileGridGeometry(
     const results: NullableMaskRect[] = []
     const t = gridPixelToTilePixel(gridSelectionX, gridSelectionY)
     if (!t) throw new Error('invalid rect')
+    const tileSize = tileGridManager.tileSize.value
 
-    tileGrid.mapWithTileId(tileId, (gTileX, gTileY) => {
+    tileGridManager.tileGrid.value.mapWithTileId(tileId, (gTileX, gTileY) => {
       const x = gTileX * tileSize + t.tx + originX
       const y = gTileY * tileSize + t.ty + originY
 
@@ -303,13 +307,19 @@ export function makeTileGridGeometry(
   }
 
   function getOverlappingTilesOnGrid(rect: Rect) {
-    return tileGrid.getOverlappingTiles(rect, tileSize)
+    return tileGridManager.tileGrid.value.getOverlappingTiles(rect, tileGridManager.tileSize.value)
   }
 
   return {
-    tileSize,
-    tileSheet,
-    tileGrid,
+    get tileSize() {
+      return tileGridManager.tileSize.value
+    },
+    get tileSheet() {
+      return tileGridManager.tileSheet.value
+    },
+    get tileGrid() {
+      return tileGridManager.tileGrid.value
+    },
     // tileAlignedRectToGridRects,
     gridRectsToTileAlignedRects,
     tileRectsToTileAlignedRects,
@@ -323,7 +333,7 @@ export function makeTileGridGeometry(
     gridPixelToSheetPixel,
     gridTileToGridPixel,
     getOverlappingTilesOnGrid,
-    sheetPixelToTileId: tileSheet.sheetPixelToTileId,
-    tileLocalToSheet: tileSheet.tileLocalToSheet,
+    // sheetPixelToTileId: tileSheet.sheetPixelToTileId,
+    // tileLocalToSheet: tileSheet.tileLocalToSheet,
   }
 }

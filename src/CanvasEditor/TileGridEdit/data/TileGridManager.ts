@@ -1,11 +1,10 @@
-import { computed, shallowRef, watch } from "vue"
-import type { ComputedRef, Ref } from "vue"
-
-import type { AxialEdgeWangTileset } from "../../../lib/wang-tiles/WangTileset.ts"
+import type { ComputedRef, Ref } from 'vue'
+import { computed, shallowRef, watch } from 'vue'
 import { type AxialEdgeWangGrid, makeAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 
-import { makeTileSheet } from "./TileSheet.ts"
-import { makeTileGridGeometry } from "./TileGridGeometry.ts"
+import type { AxialEdgeWangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
+
+import { makeTileSheet } from './TileSheet.ts'
 
 export type TileGridManager = ReturnType<typeof makeTileGridManager>
 
@@ -26,7 +25,7 @@ export function makeTileGridManager(
     makeTileSheet({
       tileset: tileset.value,
       tileSize: tileSize.value,
-    })
+    }),
   )
 
   watch(tileset, () => {
@@ -40,19 +39,12 @@ export function makeTileGridManager(
     tileSheet.value.resizeTileSize(tileSize.value)
   })
 
-  const geometry = computed(() =>
-    makeTileGridGeometry(tileGrid.value, tileSheet.value, tileSize.value)
-  )
-
   return {
     // reactive grid state
     tileGrid,
     tileset,
     tileSize,
     tileSheet,
-
-    // geometry transforms
-    geometry,
 
     // dimensions
     gridWidth,
