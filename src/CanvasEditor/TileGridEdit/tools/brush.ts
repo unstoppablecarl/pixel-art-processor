@@ -1,6 +1,7 @@
 import type { CanvasEditToolStore } from '../../../lib/store/canvas-edit-tool-store.ts'
 import { type BaseToolHandler } from '../../_core/_core-editor-types.ts'
 import { useBrushCursor } from '../../_core/data/Brush.ts'
+import { makeBrushAxisLock } from '../../_core/tools/BrushAxisLock.ts'
 import {
   type TileGridEditorToolContext,
   type TileGridEditorToolHandlerArgs,
@@ -25,25 +26,31 @@ export function makeTileGridBrushTool(
   let isDrawing = false
   const cursor = useBrushCursor()
 
+  const axisLock = makeBrushAxisLock(store)
+
   return {
     toolState,
     onMouseDown: (x, y, canvasType, tileId) => {
       isDrawing = true
+      axisLock.onMouseDown(x, y)
       toolState.writeBrush(x, y, canvasType, tileId)
     },
     onDragStart(x, y, canvasType, tileId) {
       isDrawing = true
+      axisLock.onDragStart(x, y)
       toolState.writeBrush(x, y, canvasType, tileId)
     },
     onDragMove(x, y, canvasType, tileId) {
       if (!isDrawing) return
       const { mouseLastX, mouseLastY } = state
       if (mouseLastX == null || mouseLastY == null) return
-
-      toolState.strokeBrush(x, y, mouseLastX, mouseLastY, canvasType, tileId)
+      const r = axisLock.onDragMove(x, y)
+      if (!r) return
+      toolState.strokeBrush(r.x, r.y, r.lastDrawnX, r.lastDrawnY, canvasType, tileId)
     },
     onDragEnd() {
       isDrawing = false
+      axisLock.onDragEnd()
       toolState.commit()
     },
     onClick() {
