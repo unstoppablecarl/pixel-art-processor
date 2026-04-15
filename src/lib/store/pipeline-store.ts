@@ -20,7 +20,7 @@ import { getNodeRegistry } from '../pipeline/NodeRegistry.ts'
 import type { ImgSize } from '../pipeline/types/image-types.ts'
 import { logNodeEventWarning } from '../util/logs.ts'
 import { prng } from '../util/prng.ts'
-import { makeNodeRunnerQueue } from './pipeline-store/node-runner-queue.ts'
+import { makeNodeRunnerQueue } from './helpers/node-runner-queue.ts'
 
 type SerializedState = {
   nodes: AnyNodeSerialized[],

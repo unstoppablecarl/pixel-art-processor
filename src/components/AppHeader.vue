@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { useUIStore } from '../lib/store/ui-store.ts'
+import SaveLoad from './SaveLoad.vue'
 
 const store = usePipelineStore()
 const uiStore = useUIStore()
@@ -40,6 +41,7 @@ const uiStore = useUIStore()
           >
         </div>
       </form>
+      <SaveLoad/>
     </div>
   </nav>
 
