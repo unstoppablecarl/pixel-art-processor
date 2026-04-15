@@ -8,6 +8,7 @@ export type GridLineSettings = {
   width: Ref<number>,
   height: Ref<number>,
   scale: Ref<number>,
+  visible: Ref<boolean>
 }
 
 export type GridLineSettingsRaw = {
@@ -15,6 +16,7 @@ export type GridLineSettingsRaw = {
   width: number,
   height: number,
   scale: number,
+  visible: boolean,
 }
 
 export function makePixelGridLineRenderer(state: GridLineSettings) {
@@ -28,19 +30,23 @@ export function makePixelGridLineRenderer(state: GridLineSettings) {
       width: state.width.value,
       height: state.height.value,
       scale: state.scale.value,
+      visible: state.visible.value,
     })
   })
+
   function changed(settings: GridLineSettingsRaw): boolean {
     if (!current) return true
     return (current.scale !== settings.scale ||
       current.width !== settings.width ||
       current.height !== settings.height ||
-      current.color !== settings.color)
+      current.color !== settings.color ||
+      current.visible !== settings.visible
+    )
   }
 
   function update(newState: GridLineSettingsRaw) {
-    const { scale, width, height, color } = newState
-    if (!changed({ scale, width, height, color })) {
+    const { scale, width, height, color, visible } = newState
+    if (!changed({ scale, width, height, color, visible })) {
       return
     }
 

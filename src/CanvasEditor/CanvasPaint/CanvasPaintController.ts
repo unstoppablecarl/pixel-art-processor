@@ -48,7 +48,9 @@ export function useCanvasPaintController(
     width,
     height,
     scale,
+    visible: gridDraw,
   })
+
   watch(gridCache.watchTarget, () => canvasRenderer.queueRender())
 
   const canvasRenderer = makeCanvasRenderer({

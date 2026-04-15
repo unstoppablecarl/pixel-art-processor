@@ -1,9 +1,9 @@
-import { ref, type Ref } from 'vue'
+import { type Ref } from 'vue'
 import type { BaseEditorState } from './_core-editor-types.ts'
 
 export type BaseEditorSettings = {
   id: string,
-  gridDraw?: Ref<boolean>,
+  gridDraw: Ref<boolean>,
   scale: Ref<number>
 }
 
@@ -25,7 +25,7 @@ export class EditorState implements BaseEditorState {
   constructor({
                 id,
                 scale,
-                gridDraw = ref(true),
+                gridDraw,
               }: BaseEditorSettings,
   ) {
     this.id = id

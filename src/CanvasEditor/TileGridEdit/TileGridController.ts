@@ -43,6 +43,7 @@ export function useTileGridController(
     tileGridManager,
     tileGridGeometry,
     scale,
+    gridDraw,
   })
 
   const gridCache = makePixelGridLineRenderer({
@@ -50,6 +51,7 @@ export function useTileGridController(
     color: gridColor,
     width: tileGridManager.canvasWidth,
     height: tileGridManager.canvasHeight,
+    visible: gridDraw,
   })
 
   const gridRenderer = makeTileGridRenderer({
@@ -99,6 +101,7 @@ export function useTileGridController(
   watch(brushCursor.watchTarget, () => gridRenderer.queueRenderAll())
 
   watch(gridDraw, () => {
+    tileSheetRenderer.draw()
     gridRenderer.queueRenderAll()
     tileSheetRenderer.draw()
   })

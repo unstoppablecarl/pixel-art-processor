@@ -62,6 +62,7 @@ const CONFIG_DEFAULTS = () => (
     tileSheet: null as null | SerializedTileSheet,
     verticalEdgeValueCount: 2,
     horizontalEdgeValueCount: 2,
+
   }
 )
 
@@ -173,6 +174,7 @@ const uiStore = useUIStore()
   <NodeCard
     :node="node"
     :images="[]"
+    :img-size="config.tileSize"
     :img-columns="4"
   >
     <template #body>

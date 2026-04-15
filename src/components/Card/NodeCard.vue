@@ -29,6 +29,7 @@ const {
   mutable = true,
   subHeader = '',
   imgColumns = 1,
+  imgSize = null,
 } = defineProps<NodeProps<any>>()
 
 export type NodeProps<N extends InitializedNode<any, any, any, any>> = {
@@ -42,6 +43,7 @@ export type NodeProps<N extends InitializedNode<any, any, any, any>> = {
   mutable?: boolean,
   subHeader?: string,
   imgColumns?: number
+  imgSize?: number,
 }
 
 const dimensions = computed(() => {
@@ -85,7 +87,7 @@ const nodeImages = computed((): StepImg[] => {
 })
 
 const cssStyle = computed(() => {
-  const width = nodeImages.value?.[0]?.imageData?.width || store.getFallbackOutputWidth(node)
+  const width = imgSize ?? nodeImages.value?.[0]?.imageData?.width ?? store.getFallbackOutputWidth(node)
 
   return [
     `--node-img-width: ${width}px;`,
