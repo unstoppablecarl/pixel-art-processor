@@ -17,4 +17,8 @@
   &.brush {
     cursor: none;
   }
+
+  &:focus {
+    outline: none;
+  }
 }
