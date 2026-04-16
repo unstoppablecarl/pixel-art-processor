@@ -20,10 +20,11 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
     readonly width: number,
     readonly height: number,
     readonly tileset: TS,
+    cells?: (WangTile<T> | null)[],
   ) {
     this.width = width
     this.height = height
-    this.cells = Array<WangTile<T> | null>(width * height).fill(null)
+    this.cells = cells ?? Array<WangTile<T> | null>(width * height).fill(null)
   }
 
   private index(x: number, y: number): number {
