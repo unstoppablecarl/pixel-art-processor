@@ -59,6 +59,7 @@ export function makeTileGridEdgeColorRenderer(
     y = 0,
   ) {
     const pixelData = cachedWangTileEdgeColorImageData.value[tileId]
+    if (!pixelData) return
     ctx.globalAlpha = state.reactive.showTileEdgeColorsOpacity.value
     renderTile(ctx, pixelData, x, y)
     ctx.globalAlpha = 1

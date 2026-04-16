@@ -109,10 +109,12 @@ export function makeTileSheetWriter(
         state.tileSize,
         state.tileSize,
       )
+      const tile = tileSheetPaintBuffer.get(tileId)
+      if (!tile) return
+
       targetCtx.globalAlpha = alpha / 255
       targetCtx.globalCompositeOperation = compOperation
 
-      const tile = tileSheetPaintBuffer.get(tileId)
       ctx.putImageData(tile.imageData, 0, 0)
       targetCtx.drawImage(canvas, 0, 0)
 

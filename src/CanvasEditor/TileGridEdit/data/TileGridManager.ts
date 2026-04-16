@@ -1,10 +1,8 @@
-import type { ComputedRef, Ref } from 'vue'
-import { computed, shallowRef, watch } from 'vue'
+import { PixelData } from 'pixel-data-js'
+import { computed, type ComputedRef, type Ref, shallowRef, watch } from 'vue'
 import { type AxialEdgeWangGrid, makePerfectAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
-
-import type { AxialEdgeWangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
-
-import { makeTileSheet } from './TileSheet.ts'
+import { AxialEdgeWangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
+import { makeTileSheet, type TileSheetTile } from './TileSheet.ts'
 
 export type TileGridManager = ReturnType<typeof makeTileGridManager>
 
@@ -29,10 +27,34 @@ export function makeTileGridManager(
   )
 
   watch(tileset, () => {
-    tileSheet.value = makeTileSheet({
+
+    const existingByEdgeIds = new Map<string, TileSheetTile>()
+
+    const existingTiles = tileSheet.value.tiles
+    for (const tile of existingTiles) {
+      existingByEdgeIds.set(tile.edgesId, tile)
+    }
+
+    const newTileSheet = makeTileSheet({
       tileset: tileset.value,
       tileSize: tileSize.value,
     })
+
+    for (const tile of tileset.value.tiles) {
+      const existing = existingByEdgeIds.get(tile.edgesId)
+      if (!existing) continue
+
+      const pixelData = tileSheet.value.extractTile(existing.tileId);
+      (pixelData as any).x = newTileSheet.tiles[tile.id].x;
+      (pixelData as any).y = newTileSheet.tiles[tile.id].y
+
+      newTileSheet.blendTilePixelData(tile.id, pixelData as PixelData & {
+        x: number,
+        y: number
+      })
+    }
+
+    tileSheet.value = newTileSheet
   })
 
   watch(tileSize, () => {
@@ -42,7 +64,7 @@ export function makeTileGridManager(
   return {
     // reactive grid state
     tileGrid,
-    tileset,
+    tileset: computed(() => tileset.value),
     tileSize,
     tileSheet,
 

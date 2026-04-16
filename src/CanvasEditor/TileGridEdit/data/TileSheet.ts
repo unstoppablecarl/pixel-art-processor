@@ -79,7 +79,6 @@ export function makeTileSheet(
 
     tileSheetTiles[t.id] = {
       tileId: t.id,
-      index: index,
       tileX: tx,
       tileY: ty,
       x: tx * tileSize,
@@ -346,7 +345,6 @@ export function deserializeTileSheet(serialized: SerializedTileSheet): TileSheet
 
 export type TileSheetTile = Pick<WangTile<number>, 'edgesId' | 'edges'> & {
   readonly tileId: TileId,
-  readonly index: number,
   readonly tileX: number,
   readonly tileY: number,
   readonly x: number,
