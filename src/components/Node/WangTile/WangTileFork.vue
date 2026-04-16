@@ -9,10 +9,12 @@ export interface IRunnerResultMeta {
   wangTileInfo?: WangTile<number>
 }
 
+export const NODE_WANG_TILE_FORK_DISPLAY_NAME = 'Wang Tile | Fork'
+
 export const STEP_META = defineFork({
   type: NodeType.FORK,
   def: 'fork_wang_tiles' as NodeDef,
-  displayName: 'Wang Tile | Fork',
+  displayName: NODE_WANG_TILE_FORK_DISPLAY_NAME,
   noInput: true,
   outputDataType: BitMask,
   branchDefs: [branchStepMeta.def],

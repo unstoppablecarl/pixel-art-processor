@@ -1,7 +1,9 @@
-import { makeCanvasPixelDataRenderer, makePixelData, makeReusableOffscreenCanvas, type PixelData } from 'pixel-data-js'
-import { computed, watchEffect } from 'vue'
-import { arrayIndexToColor } from '../../../lib/util/data/color.ts'
-import { makeWangTileEdgesPixelMap } from '../../../lib/wang-tiles/wang-tile-vue-helpers.ts'
+import { makeCanvasPixelDataRenderer, makeReusableOffscreenCanvas } from 'pixel-data-js'
+import { watchEffect } from 'vue'
+import {
+  makeCachedWangTileEdgeColorImageDataComputed,
+  makeTileSheetEdgeColorsComputed,
+} from '../lib/TileSheet-edge-color-computed.ts'
 import type { TileId } from '../../../lib/wang-tiles/WangTileset.ts'
 import type { TileGridManager } from '../data/TileGridManager.ts'
 import type { TileGridEditorState } from '../TileGridEditorState.ts'
@@ -18,18 +20,8 @@ export function makeTileGridEdgeColorRenderer(
 
   let gridCache = getGridCache(1, 1)
 
-  const edgeColors = computed(() => {
-    const edgeValues = tileGridManager.tileGrid.value.tileset.edgeValues()
-    return edgeValues.map((edgeValue) => arrayIndexToColor(edgeValue, edgeValues.length, 255))
-  })
-
-  const cachedWangTileEdgeColorImageData = computed((): Record<TileId, PixelData> => {
-    return Object.fromEntries(tileGridManager.tileGrid.value.tileset.tiles.map((tile) => [
-        tile.id,
-        makePixelData(makeWangTileEdgesPixelMap(tileGridManager.tileSize.value, tile, edgeColors.value).toImageData()),
-      ],
-    ))
-  })
+  const edgeColors = makeTileSheetEdgeColorsComputed(tileGridManager.tileSheet)
+  const cachedWangTileEdgeColorImageData = makeCachedWangTileEdgeColorImageDataComputed(tileGridManager.tileSheet, edgeColors)
 
   // draw colored tile edges
   watchEffect(() => {

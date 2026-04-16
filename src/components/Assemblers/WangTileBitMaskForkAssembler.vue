@@ -7,6 +7,7 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { makeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import { WangTileset } from '../../lib/wang-tiles/WangTileset.ts'
+import { NODE_WANG_TILE_FORK_DISPLAY_NAME } from '../Node/WangTile/WangTileFork.vue'
 
 const previewStore = usePreviewStore()
 const store = usePipelineStore()
@@ -90,7 +91,7 @@ const IMAGE_VAR_PREFIX = `--preview-img-list-`
 const makeImgVar = (node: AnyNode, index: number) => IMAGE_VAR_PREFIX + node.id + index
 
 const grid = computed(() => {
-  if (!stepOutputNodes.value.length) return null
+  if (!stepOutputNodes.value.length) return
   if (!tileGrid.value) return
 
   const result: { index: number, cssStyle: string, node: AnyNode }[][] = []
@@ -115,10 +116,10 @@ const grid = computed(() => {
 })
 </script>
 <template>
-  <div :style="cssStyle" class="preview-margin">
-    <div class="d-flex flex-nowrap p-3 bg-dark rounded m-3 preview-container-border">
+  <div :style="cssStyle">
+    <div class="d-flex flex-nowrap p-3 bg-dark rounded my-3 preview-container-border">
       <div class="fw-bold me-3 py-3">
-        Pattern Preview
+        {{ NODE_WANG_TILE_FORK_DISPLAY_NAME }} Assembler
       </div>
 
       <div class="form-group d-flex align-items-center gap-2 mb-0">
@@ -166,9 +167,12 @@ const grid = computed(() => {
           />
         </BFormFloatingLabel>
       </div>
-
+      <div v-if="!grid" class="text-danger-emphasis p-3">
+        No valid output found
+      </div>
+      <slot name="after"></slot>
     </div>
-    <div class="min-vh-100 final-preview" v-if="stepOutputNodes.length">
+    <div class="min-vh-100 final-preview" v-if="grid">
       <div v-for="row in grid" class="preview-row">
         <div v-for="{index, cssStyle, node} in row" :style="cssStyle" class="preview-cell">
           <div class="label">
@@ -181,9 +185,6 @@ const grid = computed(() => {
   </div>
 </template>
 <style lang="scss">
-.preview-margin {
-  margin: 0 var(--node-card-margin) 0;
-}
 
 .preview-row {
   height: var(--node-img-height);

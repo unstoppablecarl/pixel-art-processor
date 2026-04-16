@@ -1,6 +1,6 @@
 import type { ComputedRef, Ref } from 'vue'
 import { computed, shallowRef, watch } from 'vue'
-import { type AxialEdgeWangGrid, makeAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
+import { type AxialEdgeWangGrid, makePerfectAxialEdgeWangGrid } from '../../../lib/wang-tiles/WangGrid.ts'
 
 import type { AxialEdgeWangTileset } from '../../../lib/wang-tiles/WangTileset.ts'
 
@@ -11,7 +11,7 @@ export type TileGridManager = ReturnType<typeof makeTileGridManager>
 export function makeTileGridManager(
   tileset: ComputedRef<AxialEdgeWangTileset<number>>,
   tileSize: Ref<number>,
-  tileGridFactory: (tileset: AxialEdgeWangTileset<number>) => AxialEdgeWangGrid<number> = makeAxialEdgeWangGrid,
+  tileGridFactory: (tileset: AxialEdgeWangTileset<number>) => AxialEdgeWangGrid<number> = makePerfectAxialEdgeWangGrid,
 ) {
   const tileGrid = computed(() => tileGridFactory(tileset.value))
 

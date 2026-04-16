@@ -1,16 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from 'vue'
+import CanvasEditFooter from '../CanvasEditor/_core/components/CanvasEditFooter.vue'
+import CanvasEditSidebar from '../CanvasEditor/_core/components/CanvasEditSidebar.vue'
 import type { NodeId } from '../lib/pipeline/_types.ts'
 import { isFork } from '../lib/pipeline/Node.ts'
 import { usePipelineStore } from '../lib/store/pipeline-store.ts'
 import { useUIStore } from '../lib/store/ui-store.ts'
 import { useSidebar } from '../lib/vue/useSidebar.ts'
-import CanvasEditFooter from '../CanvasEditor/_core/components/CanvasEditFooter.vue'
 import AppHeader from './AppHeader.vue'
-import CanvasEditSidebar from '../CanvasEditor/_core/components/CanvasEditSidebar.vue'
+import Assemblers from './Assemblers/Assemblers.vue'
 import AddRootStepButtons from './Processor/AddRootStepButtons.vue'
 import PipelineBranch from './Processor/PipelineBranch.vue'
-import WangTileGridPatternPreview from './Processor/WangTileGridPatternPreview.vue'
 
 const store = usePipelineStore()
 const uiStore = useUIStore()
@@ -65,7 +65,9 @@ const { visible } = useSidebar()
       <AddRootStepButtons />
     </div>
 
-    <WangTileGridPatternPreview />
+    <div>
+      <Assemblers />
+    </div>
 
   </div>
 </template>

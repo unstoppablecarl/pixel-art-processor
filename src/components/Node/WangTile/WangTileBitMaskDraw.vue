@@ -5,14 +5,21 @@ import { defineStep } from '../../../lib/pipeline/types/definitions.ts'
 import { nodeUsesSidebar } from '../../../lib/vue/useSidebar.ts'
 
 export const NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE = 'wang_tile_bit_mask_draw_image' as NodeDef
+export const NODE_WANG_TILE_BIT_MASK_DRAW_DISPLAY_NAME = 'Wang Tile | BitMask: Draw'
 
 export const STEP_META = defineStep({
   type: NodeType.STEP,
   def: NODE_WANG_TILE_BIT_MASK_DRAW_IMAGE,
-  displayName: 'Wang Tile | BitMask: Draw',
+  displayName: NODE_WANG_TILE_BIT_MASK_DRAW_DISPLAY_NAME,
   noInput: true,
   outputDataType: BitMask,
 })
+
+export interface IRunnerResultMeta {
+  axialEdgeWangTileGrid?: {
+    tileSheet: SerializedTileSheet,
+  }
+}
 </script>
 <script setup lang="ts">
 import {
@@ -115,14 +122,12 @@ const handler = defineStepHandler<Config>(STEP_META, {
   //   }]
   // },
   async run() {
-    // const imageData = maskImageData.get()
-    // if (imageData === null) return
-
-    // const bitMask = BitMask.fromImageData(imageData)
-
     return {
-      // preview: imageData,
-      // output: bitMask,
+      meta: {
+        axialEdgeWangTileGrid: {
+          tileSheet: tileGridManager.tileSheet.value.serialize(),
+        },
+      } as IRunnerResultMeta,
     }
   },
 })
@@ -247,7 +252,6 @@ const uiStore = useUIStore()
                     :step="1"
                     :min="1"
                     input-width="50px"
-                    class="me-2"
                   />
                 </div>
                 <div class="hstack ms-2">
