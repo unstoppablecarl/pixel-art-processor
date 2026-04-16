@@ -19,7 +19,7 @@ import {
   computed, onMounted,
   type Reactive,
   ref, toRef,
-  useTemplateRef, watchEffect,
+  useTemplateRef,
 } from 'vue'
 import type { NodeId } from '../../../lib/pipeline/_types.ts'
 import { defineStepHandler, useStepHandler } from '../../../lib/pipeline/NodeHandler/StepHandler.ts'
@@ -159,18 +159,20 @@ useInterval(() => {
   }
 }, 1000)
 
+const newTileSize = ref(config.tileSize)
+
 // const debugSidebar = useDebugSidebar()
 
 onMounted(() => {
   tileGridController.tileSheetRenderer.setTileSheetCanvas(tileSheetCanvas.value!)
   tileGridController.gridRenderer.queueRenderGrid()
 })
-watchEffect(() => {
-  // if (debugSidebar.canvas.value) {
-  // tileGridController.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
-  // }
-})
-
+// watchEffect(() => {
+// if (debugSidebar.canvas.value) {
+// tileGridController.tileSheetSelectionRenderer.setTileSheetCanvas(debugSidebar.canvas.value)
+// }
+// })
+const imgColumns = computed(() => Math.ceil(Math.sqrt(tileGridManager.tileset.value.tiles.length)))
 const uiStore = useUIStore()
 </script>
 <template>
@@ -178,131 +180,138 @@ const uiStore = useUIStore()
     :node="node"
     :images="[]"
     :img-size="config.tileSize"
-    :img-columns="4"
+    :img-columns="imgColumns"
   >
-    <template #body>
-      <div class="canvas-tile-container" v-for="item in tileset.tiles" :key="item.id">
-        <TileCanvas
-          :tile-id="item.id"
-          :tool-controller="tileGridController"
-        />
-      </div>
-    </template>
-    <template #footer>
-      <div class="m-1 mt-2">
-        Tile Grid
-      </div>
-      <TileGridCanvas
-        :tool-controller="tileGridController"
-      />
-      <div class="m-1 mt-2">
-        Tile Sheet
-      </div>
-      <div>
-
-        <canvas
-          ref="tileSheetCanvas"
-        ></canvas>
-      </div>
-
-      <CardFooterSettingsTabs
-        :node-id="nodeId"
-        v-model:active-tab-index="config.activeTabIndex"
-        extra-tab-label="Editor"
-      >
-        <template #settings>
-
-          <div class="section">
-            <div class="hstack">
-              <NumberInput
-                :id="`${nodeId}-tile-size`"
-                label="Tile Size"
-                v-model="config.tileSize"
-                :step="1"
-                :min="1"
-                input-width="50px"
-                class="me-auto"
-              />
-            </div>
-          </div>
-          <div class="section">
-            <div class="hstack">
-
-              <div class="form-label col-form-label text-end pe-2 section-heading-text">
-                Edge Variants
-
-              </div>
-
-              <NumberInput
-                :id="`${nodeId}-verticalEdgeValueCount`"
-                label="Vertical"
-                v-model="config.verticalEdgeValueCount"
-                :step="1"
-                :min="1"
-                input-width="50px"
-                class="me-2"
-              />
-
-              <NumberInput
-                :id="`${nodeId}-horizontalEdgeValueCount`"
-                label="Horizontal"
-                v-model="config.horizontalEdgeValueCount"
-                :step="1"
-                :min="1"
-                input-width="50px"
-              />
-            </div>
-          </div>
-
-        </template>
-
-        <template #extra>
-          <div class="section">
-
-            <button
-              role="button"
-              @click="canvasPaintRef?.clearCanvas()"
-              class="btn btn-danger btn-sm ms-2"
-            >
-              Clear Canvas
-            </button>
-
-          </div>
-        </template>
-        <template #display-options>
-
-          <div class="section">
-            <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
-          </div>
-          <div class="section">
-            <div class="hstack">
-              <CheckBoxInput
-                :id="`${nodeId}-show-edge-colors`"
-                label="Show Edge Colors"
-                v-model="config.showTileEdgeColors"
-              />
-
-
-              <NumberInput
-                :id="`${nodeId}-show-edge-colors-opacity`"
-                label=" | Opacity"
-                v-model="config.showTileEdgeColorsOpacity"
-                :max="1"
-                :step="0.05"
-                :disabled="!config.showTileEdgeColors"
-                class="form-check-item ms-1"
-              />
-            </div>
-
-            <CheckBoxInput
-              :id="`${nodeId}-show-tile-ids`"
-              label="Show Tile IDs"
-              v-model="uiStore.showTileIds"
+    <template #body-and-footer>
+      <div class="card-footer">
+        <div class="m-1 mt-2 heading-padded">
+          Tiles
+        </div>
+        <div class="img-grid">
+          <div class="canvas-tile-container" v-for="item in tileset.tiles" :key="item.id">
+            <TileCanvas
+              :tile-id="item.id"
+              :tool-controller="tileGridController"
             />
           </div>
-        </template>
+        </div>
+        <div class="card-footer-padded">
+          <div class="m-1 mt-2">
+            Tile Grid
+          </div>
+          <TileGridCanvas
+            :tool-controller="tileGridController"
+          />
+          <div class="m-1 mt-2">
+            Tile Sheet
+          </div>
+          <div>
+            <canvas ref="tileSheetCanvas"></canvas>
+          </div>
+        </div>
+        <CardFooterSettingsTabs
+          :node-id="nodeId"
+          v-model:active-tab-index="config.activeTabIndex"
+          extra-tab-label="Editor"
+        >
+          <template #settings>
 
-      </CardFooterSettingsTabs>
+            <div class="section">
+              <div class="hstack">
+                <NumberInput
+                  :id="`${nodeId}-tile-size`"
+                  label="Tile Size"
+                  v-model="newTileSize"
+                  :step="1"
+                  :min="1"
+                  input-width="50px"
+                />
+                <button role="button" class="btn btn-sm btn-secondary me-auto ms-2"
+                        @click="config.tileSize = newTileSize">
+                  Set
+                </button>
+              </div>
+            </div>
+            <div class="section">
+              <div class="hstack">
+
+                <div class="form-label col-form-label text-end pe-2 section-heading-text">
+                  Edge Variants
+                </div>
+
+                <div class="hstack">
+                  <NumberInput
+                    :id="`${nodeId}-verticalEdgeValueCount`"
+                    label="Vertical"
+                    v-model="config.verticalEdgeValueCount"
+                    :step="1"
+                    :min="1"
+                    input-width="50px"
+                    class="me-2"
+                  />
+                </div>
+                <div class="hstack ms-2">
+                  <NumberInput
+                    :id="`${nodeId}-horizontalEdgeValueCount`"
+                    label="Horizontal"
+                    v-model="config.horizontalEdgeValueCount"
+                    :step="1"
+                    :min="1"
+                    input-width="50px"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </template>
+
+          <template #extra>
+            <div class="section">
+
+              <button
+                role="button"
+                @click="canvasPaintRef?.clearCanvas()"
+                class="btn btn-danger btn-sm ms-2"
+              >
+                Clear Canvas
+              </button>
+
+            </div>
+          </template>
+          <template #display-options>
+
+            <div class="section">
+              <CheckboxColorList :items="canvasDrawCheckboxColors(config)" />
+            </div>
+            <div class="section">
+              <div class="hstack">
+                <CheckBoxInput
+                  :id="`${nodeId}-show-edge-colors`"
+                  label="Show Edge Colors"
+                  v-model="config.showTileEdgeColors"
+                />
+                <div class="hstack form-check-item ms-1">
+                  <NumberInput
+                    :id="`${nodeId}-show-edge-colors-opacity`"
+                    label=" | Opacity"
+                    v-model="config.showTileEdgeColorsOpacity"
+                    :max="1"
+                    :step="0.05"
+                    :disabled="!config.showTileEdgeColors"
+                  />
+                </div>
+              </div>
+
+              <CheckBoxInput
+                :id="`${nodeId}-show-tile-ids`"
+                label="Show Tile IDs"
+                v-model="uiStore.showTileIds"
+              />
+            </div>
+          </template>
+
+        </CardFooterSettingsTabs>
+      </div>
     </template>
   </NodeCard>
 </template>
@@ -310,5 +319,9 @@ const uiStore = useUIStore()
 .canvas-tile-container {
   width: calc(var(--node-img-width, 150px) * var(--node-img-scale, 1));
   height: calc(var(--node-img-width, 150px) * var(--node-img-scale, 1));
+}
+
+.heading-padded {
+  padding-left: var(--node-img-gap);
 }
 </style>

@@ -71,7 +71,9 @@
 .card-fork {
   > .card-body,
   > .auto-animate > .card-body,
-  > .auto-animate > .auto-animate > .card-body {
+  > .auto-animate > .auto-animate > .card-body,
+  > .auto-animate > .card-footer > .img-grid,
+  > .card-footer > .img-grid {
     display: grid;
 
     gap: var(--node-img-gap);
@@ -88,6 +90,10 @@
 
     .form-label {
       display: block;
+    }
+
+    .card-footer-padded {
+      padding: var(--node-img-gap);
     }
 
     // flat version of cap color without alpha
