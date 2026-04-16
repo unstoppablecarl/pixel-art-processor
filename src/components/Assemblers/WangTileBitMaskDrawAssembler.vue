@@ -193,8 +193,8 @@ const grid = computed(() => {
     </div>
     <div class="min-vh-100 final-preview" v-if="grid">
       <div v-for="row in grid" class="preview-row">
-        <div v-for="{cssStyle, tile} in row" :style="cssStyle" class="preview-cell">
-          <div class="label">
+        <div v-for="{cssStyle, tile} in row" :style="cssStyle" class="draw-preview-cell">
+          <div class="draw-label">
             <div>edges: {{ tile.edgesId }}</div>
             <div>id: {{ tile.id }}</div>
           </div>
@@ -212,7 +212,7 @@ const grid = computed(() => {
   border: 1px solid var(--border-color);
 }
 
-.preview-cell {
+.draw-preview-cell {
   display: inline-block;
   background-image: var(--node-img-final-preview);
   background-size: var(--node-img-final-preview-size);
@@ -224,17 +224,17 @@ const grid = computed(() => {
   image-rendering: -moz-crisp-edges;
   image-rendering: crisp-edges;
 
-  .label {
+  .draw-label {
     opacity: 0;
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.7);
-    padding: 2rem;
+    padding: 0.25rem;
     vertical-align: middle;
-  }
 
-  .label:hover {
-    opacity: 1;
+    &:hover {
+      opacity: 1;
+    }
   }
 }
 </style>

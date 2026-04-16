@@ -1,4 +1,5 @@
 import type { Rect } from '../util/data/Rect.ts'
+import { prng } from '../util/prng.ts'
 import { AxialEdgeWangTileset, makeEdgesId, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
 
 export type OverlappingTile<T> = {
@@ -102,33 +103,26 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
 
   /** Check if placing tileId at (x, y) is locally valid */
   isPlacementValid(x: number, y: number, tileId: TileId): boolean {
-    const tileset = this.tileset
-    const tile = tileset.byId.get(tileId)
+    const tile = this.tileset.byId.get(tileId)
     if (!tile) return false
 
-
-    const upId = this.get(x, y - 1)?.id
-    const downId = this.get(x, y + 1)?.id
-    const leftId = this.get(x - 1, y)?.id
-    const rightId = this.get(x + 1, y)?.id
-
-    if (upId) {
-      const upTile = tileset.byId.get(upId)
+    const upTile = this.get(x, y - 1)
+    if (upTile) {
       if (!upTile || upTile.edges.S !== tile.edges.N) return false
     }
 
-    if (downId) {
-      const downTile = tileset.byId.get(downId)
+    const downTile = this.get(x, y + 1)
+    if (downTile) {
       if (!downTile || downTile.edges.N !== tile.edges.S) return false
     }
 
-    if (leftId) {
-      const leftTile = tileset.byId.get(leftId)
+    const leftTile = this.get(x - 1, y)
+    if (leftTile) {
       if (!leftTile || leftTile.edges.E !== tile.edges.W) return false
     }
 
-    if (rightId) {
-      const rightTile = tileset.byId.get(rightId)
+    const rightTile = this.get(x + 1, y)
+    if (rightTile) {
       if (!rightTile || rightTile.edges.W !== tile.edges.E) return false
     }
 
@@ -220,7 +214,9 @@ export class AxialEdgeWangGrid<T> extends WangGrid<T, AxialEdgeWangTileset<T>> {
 
 }
 
-export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>, chooseCandidate?: (candidates: readonly WangTile<T>[]) => WangTile<T>): WangGrid<T> | false {
+type ChooseCandidate<T> = (candidates: readonly WangTile<T>[]) => WangTile<T>
+
+export function makeWangGrid<T>(width: number, height: number, tileset: WangTileset<T>, chooseCandidate: ChooseCandidate<T> = prng.randomArrayValue as ChooseCandidate<T>): WangGrid<T> | false {
   const used = new Set<TileId>()
 
   function getValidCandidates(grid: WangGrid<T>, x: number, y: number): readonly WangTile<T>[] {
@@ -240,11 +236,14 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
       const candidates = getValidCandidates(grid, x, y)
 
       if (candidates.length === 0) {
+        console.log('no candidates')
         return false
       }
 
-      // const chosen = prng.randomArrayValue(candidates as WangTile<T>[])
       const chosen = chooseCandidate?.(candidates) ?? candidates[0]
+      if (!grid.isPlacementValid(x, y, chosen.id)) {
+        console.log('ERR')
+      }
       grid.set(x, y, chosen)
       used.add(chosen.id)
     }
@@ -253,7 +252,7 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
   return grid
 }
 
-export function makeAxialEdgeWangGrid<T>(
+export function makePerfectAxialEdgeWangGrid<T>(
   tileset: AxialEdgeWangTileset<T>,
   wrapEdges = true,
 ): AxialEdgeWangGrid<T> {
