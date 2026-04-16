@@ -22,7 +22,7 @@ const modelValue = defineModel<number>({ required: true })
 
 </script>
 <template>
-  <div class="hstack">
+
     <label class="form-label col-form-label text-end pe-2 me-auto" :for="id">{{ label }}</label>
     <input
       :id="id"
@@ -35,5 +35,5 @@ const modelValue = defineModel<number>({ required: true })
       v-model="modelValue"
       :style="inputWidth ? `width: ${inputWidth}` : ''"
     />
-  </div>
+
 </template>

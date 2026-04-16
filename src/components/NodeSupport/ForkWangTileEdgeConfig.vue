@@ -157,14 +157,15 @@ watch(validRanges, (ranges) => {
     :min="validRanges.chunks.min"
     :max="validRanges.chunks.max"
   />
-
-  <NumberInput
-    :id="`${nodeId}-${index}-chunks-shuffle`"
-    label="Shuffle Seed"
-    :step="1"
-    :min="0"
-    v-model="shuffleSeed"
-    input-width="50%"
-  />
+  <div class="hstack">
+    <NumberInput
+      :id="`${nodeId}-${index}-chunks-shuffle`"
+      label="Shuffle Seed"
+      :step="1"
+      :min="0"
+      v-model="shuffleSeed"
+      input-width="50%"
+    />
+  </div>
 
 </template>

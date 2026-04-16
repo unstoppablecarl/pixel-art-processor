@@ -178,14 +178,16 @@ const computedSize = computed(() => config.size.value)
           v-model:step="config.horizontalChunks.step"
         />
 
-        <NumberInput
-          :id="`${nodeId}-horizontal-chunks-shuffle`"
-          label="Shuffle Seed"
-          :step="1"
-          :min="0"
-          v-model="config.horizontalShuffleSeed"
-          input-width="50%"
-        />
+        <div class="hstack">
+          <NumberInput
+            :id="`${nodeId}-horizontal-chunks-shuffle`"
+            label="Shuffle Seed"
+            :step="1"
+            :min="0"
+            v-model="config.horizontalShuffleSeed"
+            input-width="50%"
+          />
+        </div>
       </div>
       <div class="section">
         <div class="section-heading-container hstack">
@@ -207,16 +209,16 @@ const computedSize = computed(() => config.size.value)
           v-model:max="config.verticalChunks.max"
           v-model:step="config.verticalChunks.step"
         />
-
-        <NumberInput
-          :id="`${nodeId}-vertical-chunks-shuffle`"
-          label="Shuffle Seed"
-          :step="1"
-          :min="0"
-          v-model="config.verticalShuffleSeed"
-          input-width="50%"
-
-        />
+        <div class="hstack">
+          <NumberInput
+            :id="`${nodeId}-vertical-chunks-shuffle`"
+            label="Shuffle Seed"
+            :step="1"
+            :min="0"
+            v-model="config.verticalShuffleSeed"
+            input-width="50%"
+          />
+        </div>
       </div>
     </template>
   </NodeCard>
