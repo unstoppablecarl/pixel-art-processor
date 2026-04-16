@@ -57,7 +57,7 @@ const CONFIG_DEFAULTS = () => (
   {
     ...DEFAULT_SHOW_GRID.CONFIG,
     activeTabIndex: 0,
-    tileSize: 64,
+    tileSize: 32,
 
     tileSheet: null as null | SerializedTileSheet,
     verticalEdgeValueCount: 2,
@@ -189,10 +189,17 @@ const uiStore = useUIStore()
       </div>
     </template>
     <template #footer>
+      <div class="m-1 mt-2">
+        Tile Grid
+      </div>
       <TileGridCanvas
         :tool-controller="tileGridController"
       />
+      <div class="m-1 mt-2">
+        Tile Sheet
+      </div>
       <div>
+
         <canvas
           ref="tileSheetCanvas"
         ></canvas>

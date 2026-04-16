@@ -19,12 +19,12 @@ export function makeTileGridEdgeColorRenderer(
   let gridCache = getGridCache(1, 1)
 
   const edgeColors = computed(() => {
-    const edgeValues = tileGridManager.tileGrid.value.tileSet.edgeValues()
+    const edgeValues = tileGridManager.tileGrid.value.tileset.edgeValues()
     return edgeValues.map((edgeValue) => arrayIndexToColor(edgeValue, edgeValues.length, 255))
   })
 
   const cachedWangTileEdgeColorImageData = computed((): Record<TileId, PixelData> => {
-    return Object.fromEntries(tileGridManager.tileGrid.value.tileSet.tiles.map((tile) => [
+    return Object.fromEntries(tileGridManager.tileGrid.value.tileset.tiles.map((tile) => [
         tile.id,
         makePixelData(makeWangTileEdgesPixelMap(tileGridManager.tileSize.value, tile, edgeColors.value).toImageData()),
       ],

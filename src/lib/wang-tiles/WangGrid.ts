@@ -1,5 +1,4 @@
 import type { Rect } from '../util/data/Rect.ts'
-import { Sketch } from '../util/html-dom/Sketch.ts'
 import { AxialEdgeWangTileset, makeEdgesId, type TileId, type WangTile, type WangTileset } from './WangTileset.ts'
 
 export type OverlappingTile<T> = {
@@ -20,7 +19,7 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
   constructor(
     readonly width: number,
     readonly height: number,
-    readonly tileSet: TS,
+    readonly tileset: TS,
   ) {
     this.width = width
     this.height = height
@@ -101,9 +100,11 @@ export class WangGrid<T, TS extends WangTileset<T> = WangTileset<T>> {
   }
 
   /** Check if placing tileId at (x, y) is locally valid */
-  isPlacementValid(tileset: WangTileset<T>, x: number, y: number, tileId: TileId): boolean {
+  isPlacementValid(x: number, y: number, tileId: TileId): boolean {
+    const tileset = this.tileset
     const tile = tileset.byId.get(tileId)
     if (!tile) return false
+
 
     const upId = this.get(x, y - 1)?.id
     const downId = this.get(x, y + 1)?.id
@@ -223,7 +224,7 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
 
   function getValidCandidates(grid: WangGrid<T>, x: number, y: number): readonly WangTile<T>[] {
     const { tiles } = tileset
-    const candidates = tiles.filter(tile => grid.isPlacementValid(tileset, x, y, tile.id))
+    const candidates = tiles.filter(tile => grid.isPlacementValid(x, y, tile.id))
 
     const unusedCandidates = candidates.filter(tile => !used.has(tile.id))
 
@@ -249,68 +250,6 @@ export function makeWangGrid<T>(width: number, height: number, tileset: WangTile
   }
 
   return grid
-}
-
-export function drawWangGrid<T>(
-  {
-    grid,
-    width,
-    height,
-    tileSize,
-    edgeThickness,
-    colorForEdge,
-  }:
-  {
-    grid: WangGrid<T>,
-    width: number,
-    height: number,
-    tileSize: number,
-    edgeThickness: number,
-    colorForEdge: (edge: T) => string,
-  },
-) {
-
-  const sketch = new Sketch(
-    width * tileSize,
-    height * tileSize,
-  )
-
-  const ctx = sketch.ctx
-
-  for (let y = 0; y < grid.height; y++) {
-    for (let x = 0; x < grid.width; x++) {
-      const tile = grid.get(x, y)
-      if (!tile) continue
-
-      const px = x * tileSize
-      const py = y * tileSize
-
-      // Draw tile background
-      ctx.fillStyle = '#fff'
-      ctx.fillRect(px, py, tileSize, tileSize)
-
-      // Edge thickness
-      const t = Math.max(2, edgeThickness)
-
-      // North
-      ctx.fillStyle = colorForEdge(tile.edges.N)
-      ctx.fillRect(px, py, tileSize, t)
-
-      // South
-      ctx.fillStyle = colorForEdge(tile.edges.S)
-      ctx.fillRect(px, py + tileSize - t, tileSize, t)
-
-      // West
-      ctx.fillStyle = colorForEdge(tile.edges.W)
-      ctx.fillRect(px, py, t, tileSize)
-
-      // East
-      ctx.fillStyle = colorForEdge(tile.edges.E)
-      ctx.fillRect(px + tileSize - t, py, t, tileSize)
-    }
-  }
-
-  return sketch
 }
 
 export function makeAxialEdgeWangGrid<T>(
@@ -346,6 +285,7 @@ export function makeAxialEdgeWangGrid<T>(
       const gx = wrapEdges ? x + 1 : x
       const gy = wrapEdges ? y + 1 : y
 
+      grid.isPlacementValid(gx, gy, tile.id)
       grid.set(gx, gy, tile)
     }
   }
@@ -375,17 +315,30 @@ export function makeAxialEdgeWangGrid<T>(
 
 function makeDeBruijnPairs<T>(values: readonly T[]): { top: T; bottom: T }[] {
   const n = values.length
-  const result: { top: T; bottom: T }[] = []
 
-  for (let i = 0; i < n; i++) {
-    for (let j = 0; j < n; j++) {
-      const top = values[i]
-      const bottom = values[(i + j) % n] // <-- key insight
-      result.push({ top, bottom })
+  // Hierholzer's algorithm on the complete directed graph:
+  // node i has edges i→0, i→1, ..., i→(n-1)
+  // Since outEdges[v] = [0,1,...,n-1], edgePointers[v] doubles as the next target node
+  const edgePointers = new Array(n).fill(0)
+  const stack: number[] = [0]
+  const circuit: number[] = []
+
+  while (stack.length > 0) {
+    const v = stack[stack.length - 1]
+    if (edgePointers[v] < n) {
+      stack.push(edgePointers[v]++) // go to node edgePointers[v], then advance
+    } else {
+      circuit.push(stack.pop()!)
     }
   }
 
-  return result
+  circuit.reverse()
+  // circuit has n²+1 nodes: circuit[0] === circuit[n²] === 0
+
+  return Array.from({ length: n * n }, (_, i) => ({
+    top: values[circuit[i]],
+    bottom: values[circuit[i + 1]],
+  }))
 }
 
 export function makeRandomWangGrid<T>(
