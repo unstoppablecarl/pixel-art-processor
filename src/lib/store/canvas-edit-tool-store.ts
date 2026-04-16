@@ -155,7 +155,9 @@ export const useCanvasEditToolStore = defineStore('canvas-edit', () => {
     duplicateTileEdgesBorderThickness,
 
     decreaseBrushSize() {
-      brushSize.value--
+      if (brushSize.value > 1) {
+        brushSize.value--
+      }
     },
     increaseBrushSize() {
       brushSize.value++
