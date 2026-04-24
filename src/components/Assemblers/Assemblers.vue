@@ -20,7 +20,7 @@ function setActive(id: AssemblerId, value: boolean) {
 
 </script>
 <template>
-  <div class="assemblers" v-for="item in assemblers">
+  <div class="assemblers pb-1" v-for="item in assemblers">
     <button role="button" class="btn btn-secondary" v-if="!item.active" @click="setActive(item.id,true)">
       Add {{ item.name }}
     </button>
