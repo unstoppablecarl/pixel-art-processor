@@ -46,7 +46,7 @@ export abstract class BaseDataStructure<
   SerializedT = T
 > {
   readonly bounds: Readonly<Bounds>
-  cacheBust: number
+  cacheBust: number = 0
 
   protected _data: D
   protected _data32?: Uint32Array
@@ -75,7 +75,7 @@ export abstract class BaseDataStructure<
 
     if (sourceData) this._data.set(sourceData)
     else this._data.fill(0)
-    this.cacheBust = Date.now()
+    this.cacheBust++
   }
 
   protected abstract initData(width: number, height: number): D;
@@ -496,13 +496,13 @@ export abstract class BaseDataStructure<
    * pixelMap.invalidate() // Notify Vue
    */
   invalidate(): this {
-    this.cacheBust = Date.now()
+    this.cacheBust++
     return this
   }
 
   mutate(cb: () => void) {
     cb()
-    this.cacheBust = Date.now()
+    this.cacheBust++
   }
 
   isOneSolidValue(): boolean {
