@@ -12,7 +12,7 @@ import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
 import { usePreviewStore } from '../../lib/store/preview-store.ts'
 import { makeWangGrid } from '../../lib/wang-tiles/WangGrid.ts'
 import type { WangTile } from '../../lib/wang-tiles/WangTileset.ts'
-import { NODE_WANG_TILE_FORK_DISPLAY_NAME } from '../Node/WangTile/WangTileFork.vue'
+import { NODE_WANG_TILE_BIT_MASK_DRAW_DISPLAY_NAME } from '../Node/WangTile/WangTileBitMaskDraw.vue'
 import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import NumberInput from '../UIForms/NumberInput.vue'
 
@@ -121,7 +121,7 @@ const grid = computed(() => {
   <div :style="cssStyle">
     <div class="d-flex flex-nowrap p-3 bg-dark rounded my-3 preview-container-border">
       <div class="fw-bold me-3 py-3">
-        {{ NODE_WANG_TILE_FORK_DISPLAY_NAME }} Assembler
+        {{ NODE_WANG_TILE_BIT_MASK_DRAW_DISPLAY_NAME }} Assembler
       </div>
 
       <div class="form-group d-flex align-items-center gap-2 mb-0">

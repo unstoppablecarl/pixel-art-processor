@@ -18,8 +18,9 @@ export function smoothIslandGaussian(
 ): void {
   const mask = island.mask
 
+  const temp = new BitMask(mask.width, mask.height)
   for (let iter = 0; iter < iterations; iter++) {
-    const temp = new BitMask(mask.width, mask.height)
+    temp.clear()
 
     // Copy all pixels from mask
     for (let y = 0; y < mask.height; y++) {
