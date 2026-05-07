@@ -16,6 +16,7 @@ import { type InitializedNode, isStep } from '../../lib/pipeline/Node.ts'
 import { defineStepHandler, useStepHandler } from '../../lib/pipeline/NodeHandler/StepHandler.ts'
 import { isNormalMeta } from '../../lib/pipeline/types/definitions.ts'
 import { usePipelineStore } from '../../lib/store/pipeline-store.ts'
+import { prng } from '../../lib/util/prng.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
 import RangeSlider from '../UIForms/RangeSlider.vue'
@@ -67,6 +68,7 @@ const handler = defineStepHandler(STEP_META, {
 
       let nextInput = inputData
       for (let i = 0; i < config.repeatCount.value; i++) {
+        prng()
         const result = await prev.runRaw({
           config: prevConfig,
           inputData: nextInput,
