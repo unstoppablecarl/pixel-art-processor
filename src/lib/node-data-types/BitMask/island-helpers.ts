@@ -3,7 +3,7 @@ import { CARDINAL_DIRECTIONS, type Point } from '../BaseDataStructure.ts'
 import type { BitMask } from '../BitMask.ts'
 import { Island, IslandType } from './Island.ts'
 
-export function getIslands(mask: BitMask): Island[] {
+export function getIslands(mask: BitMask, edgeGrowRatio?: number, limitEdgeGrowWidth?: boolean): Island[] {
   const visited = new Set<string>()
   const islands: Island[] = []
 
@@ -15,7 +15,7 @@ export function getIslands(mask: BitMask): Island[] {
 
         let type = getIslandType(mask, minY, maxY, minX, maxX)
 
-        islands.push(new Island(mask, idIncrement++, minX, maxX, minY, maxY, type))
+        islands.push(new Island(mask, idIncrement++, minX, maxX, minY, maxY, type, edgeGrowRatio, limitEdgeGrowWidth))
       }
     }
   }
@@ -61,7 +61,6 @@ function findIslandBounds(mask: BitMask, startX: number, startY: number, visited
   maxY += 1
   return { minX, maxX, minY, maxY }
 }
-
 
 function getIslandType(mask: BitMask, minY: number, maxY: number, minX: number, maxX: number) {
   let topCount = 0

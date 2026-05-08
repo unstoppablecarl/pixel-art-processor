@@ -37,6 +37,7 @@ import { prng } from '../../lib/util/prng.ts'
 import NodeCard from '../Card/NodeCard.vue'
 import CardFooterSettingsTabs from '../UI/CardFooterSettingsTabs.vue'
 import CheckboxColorList from '../UIForms/CheckboxColorList.vue'
+import CheckBoxInput from '../UIForms/CheckBoxInput.vue'
 import RecordSelect from '../UIForms/RecordSelect.vue'
 import RangeSlider from '../UIForms/RangeSlider.vue'
 import { rangeSliderConfig } from '../UIForms/RangeSlider.ts'
@@ -82,6 +83,9 @@ const handler = defineStepHandler(STEP_META, {
 
       populationFactor: 1,
 
+      limitEdgeGrowthDistance: true,
+      limitEdgeGrowthWidth: true,
+      edgeGrowRatio: 0.5,
       activeTabIndex: 0,
       ...DEFAULT_SHOW_ISLANDS.CONFIG,
       ...DEFAULT_EXPANDABLE.CONFIG,
@@ -94,8 +98,9 @@ const handler = defineStepHandler(STEP_META, {
     if (!inputData) return
 
     const mask = inputData.copy()
-    const islands = getIslands(mask)
     const C = config
+    const edgeGrowRatio = C.limitEdgeGrowthDistance ? C.edgeGrowRatio : -1
+    const islands = getIslands(mask, edgeGrowRatio, C.limitEdgeGrowthWidth)
 
     const map: Record<GrowType, () => IslandMutator> = {
       [GrowType.CLUSTER]: () => clusterGrower(C.clusterRadius),
@@ -195,6 +200,29 @@ const config = node.config
             :id="`${nodeId}-population-factor`"
             label="Population Factor"
             v-model:value="config.populationFactor"
+            :decimals="2"
+            :min="0"
+            :max="1"
+            :step="0.01"
+          />
+
+          <CheckBoxInput
+            :id="`${nodeId}-limit-edge-growth-width`"
+            label="Limit Edge Growth Width"
+            v-model="config.limitEdgeGrowthWidth"
+          />
+
+          <CheckBoxInput
+            :id="`${nodeId}-limit-edge-growth-distance`"
+            label="Limit Edge Growth Distance"
+            v-model="config.limitEdgeGrowthDistance"
+          />
+
+          <RangeSlider
+            v-show="config.limitEdgeGrowthDistance"
+            :id="`${nodeId}-edge-grow-ratio`"
+            label="Edge Grow Ratio"
+            v-model:value="config.edgeGrowRatio"
             :decimals="2"
             :min="0"
             :max="1"

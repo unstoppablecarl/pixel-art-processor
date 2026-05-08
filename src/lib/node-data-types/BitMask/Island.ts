@@ -23,8 +23,6 @@ export const isIslandType = (type: IslandType, match: IslandType) => {
   return (type & match) !== 0
 }
 
-const GROW_RATIO = 0.5
-
 export type IslandPointFilter = (x: number, y: number, island: Island) => boolean
 export type IslandFilter = (island: Island, index?: number | undefined) => boolean
 
@@ -36,6 +34,7 @@ export class Island {
   readonly initialBounds: Bounds
 
   private maskWidth: number // cache
+  private maskHeight: number // cache
   private _expandable: Point[] | null = null // Cache for getExpandable()
   private _edge: Point[] | null = null // Cache for getEdge()
 
@@ -47,9 +46,13 @@ export class Island {
     minY: number,
     maxY: number,
     readonly type: AssignableIslandType = IslandType.NORMAL,
+    readonly edgeGrowRatio: number = 0.5,
+    readonly limitEdgeGrowthWidth: boolean = true,
   ) {
     if (minX > maxX || minY > maxY) throw new Error('Invalid bounds')
     this.maskWidth = this.mask.width // Cache fixed width
+    this.maskHeight = this.mask.height // Cache fixed height
+
     this.bounds = mask.bounds.trimNewBounds({ minX, maxX, minY, maxY })
     this.initialBounds = this.bounds.copy()
     this.expandableBounds = new Bounds()
@@ -199,42 +202,62 @@ export class Island {
 
   protected updateExpandableBounds() {
     if (this.type == IslandType.NORMAL) return true
+    if (!this.limitEdgeGrowthWidth && this.edgeGrowRatio !== -1) return true
 
     let minX = this.initialBounds.minX
     let maxX = this.initialBounds.maxX
     let minY = this.initialBounds.minY
     let maxY = this.initialBounds.maxY
 
-    if (this.type === IslandType.LEFT_EDGE) {
-      maxX = this.initialBounds.minX + this.initialBounds.height * GROW_RATIO
+    if (this.edgeGrowRatio !== -1) {
+      if (this.type === IslandType.LEFT_EDGE) {
+        maxX = this.initialBounds.minX + this.initialBounds.height * this.edgeGrowRatio
+      }
+
+      if (this.type === IslandType.RIGHT_EDGE) {
+        minX = this.initialBounds.maxX - this.initialBounds.height * this.edgeGrowRatio
+      }
+
+      if (this.type === IslandType.TOP_EDGE) {
+        maxY = this.initialBounds.minY + this.initialBounds.width * this.edgeGrowRatio
+      }
+
+      if (this.type === IslandType.BOTTOM_EDGE) {
+        minY = this.initialBounds.maxY - this.initialBounds.width * this.edgeGrowRatio
+      }
+    } else {
+      if (this.type === IslandType.LEFT_EDGE) {
+        maxX = this.maskWidth
+      }
+
+      if (this.type === IslandType.RIGHT_EDGE) {
+        minX = 0
+      }
+
+      if (this.type === IslandType.TOP_EDGE) {
+        maxY = this.maskHeight
+      }
+
+      if (this.type === IslandType.BOTTOM_EDGE) {
+        minY = 0
+      }
     }
 
-    if (this.type === IslandType.RIGHT_EDGE) {
-      minX = this.initialBounds.maxX - this.initialBounds.height * GROW_RATIO
-    }
+    if (this.limitEdgeGrowthWidth) {
+      // never grow wider
+      const isHorizontalEdge = (this.type & IslandType.HORIZONTAL_EDGE) !== 0
+      if (isHorizontalEdge) {
+        minX = this.initialBounds.minX + 1
+        maxX = this.initialBounds.maxX - 1
+      }
 
-    if (this.type === IslandType.TOP_EDGE) {
-      maxY = this.initialBounds.minY + this.initialBounds.width * GROW_RATIO
+      // never grow taller
+      const isVerticalEdge = (this.type & IslandType.VERTICAL_EDGE) !== 0
+      if (isVerticalEdge) {
+        minY = this.initialBounds.minY + 1
+        maxY = this.initialBounds.maxY - 1
+      }
     }
-
-    if (this.type === IslandType.BOTTOM_EDGE) {
-      minY = this.initialBounds.maxY - this.initialBounds.width * GROW_RATIO
-    }
-
-    // never grow wider
-    const isHorizontalEdge = (this.type & IslandType.HORIZONTAL_EDGE) !== 0
-    if (isHorizontalEdge) {
-      minX = this.initialBounds.minX + 1
-      maxX = this.initialBounds.maxX - 1
-    }
-
-    // never grow taller
-    const isVerticalEdge = (this.type & IslandType.VERTICAL_EDGE) !== 0
-    if (isVerticalEdge) {
-      minY = this.initialBounds.minY + 1
-      maxY = this.initialBounds.maxY - 1
-    }
-
     // if (__DEV__) {
     //   if (isNaN(minX) || isNaN(maxX) || isNaN(minY) || isNaN(maxY)) {
     //     console.error('invalid island expandable bounds', minX, maxX, minY, maxY)
